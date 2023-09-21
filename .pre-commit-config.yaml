@@ -1,0 +1,28 @@
+repos:
+  - repo: https://github.com/pycqa/flake8.git
+    rev: 4.0.0
+    hooks:
+      - id: flake8
+        args: ["--max-line-length=300"]
+  - repo: https://github.com/PyCQA/isort.git
+    rev: 4.3.21
+    hooks:
+      - id: isort
+  - repo: https://github.com/pre-commit/mirrors-yapf.git
+    rev: v0.30.0
+    hooks:
+      - id: yapf
+        args: ["--style=pep8"]
+  - repo: https://github.com/pre-commit/pre-commit-hooks.git
+    rev: v3.1.0
+    hooks:
+      - id: trailing-whitespace
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: requirements-txt-fixer
+      - id: double-quote-string-fixer
+      - id: check-merge-conflict
+      - id: fix-encoding-pragma
+        args: ["--remove"]
+      - id: mixed-line-ending
+        args: ["--fix=lf"]

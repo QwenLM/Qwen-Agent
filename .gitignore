@@ -6,8 +6,7 @@ __pycache__
 .vscode
 .DS_Store
 
-qwenagent/llm/gpt.py
-qwenagent/llm/tools.py
-qwenagent/demo/ghostwriter/server/GhostwriterCache/*
-
-
+qwen_agent/llm/gpt.py
+qwen_agent/llm/tools.py
+qwen_agent/demo/ghostwriter/GhostwriterCache/*
+workspace/*

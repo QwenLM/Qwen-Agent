@@ -1,0 +1,45 @@
+{
+    "name": "GhostWriter",
+    "description" : "An Extension Driven by LLM",
+    "version": "1.0",
+    "manifest_version": 3,
+
+    "background": {
+        "service_worker": "background.js"
+      },
+
+    "action": {
+        "default_popup": "src/popup.html",
+        "default_icon": "img/popup.png",
+        "default_title": "GhostWriter"
+    },
+    "permissions": [
+        "tabs",
+        "notifications",
+        "storage",
+        "scripting",
+        "activeTab"
+    ],
+    "host_permissions": [
+        "http://*/*",
+        "https://*/*"
+    ],
+    "icons": {
+        "16": "img/popup.png",
+        "32": "img/popup.png",
+        "48": "img/popup.png",
+        "128": "img/popup.png"
+      },
+      "content_scripts": [
+        {
+          "js": ["src/content.js"],
+          "matches": [
+            "https://www.jianshu.com/p/*",
+            "https://*/*",
+            "http://*/*",
+            "file:///*/*"
+          ]
+        }
+      ]
+
+}

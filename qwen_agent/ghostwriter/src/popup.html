@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GhostWriter</title>
+  <script type="text/javascript" src="../js/jquery-3.7.0.min.js"></script>
+  <script src="popup.js"></script>
+  <style>
+    .title-style {
+      margin-top: 10px;
+      margin-left: 5px;
+      font-family: Arial, sans-serif;
+      font-size: 24px;
+      color: #333;
+    }
+
+    body {
+        width: 500px;
+        height: 600px;
+        background-color: aliceblue;
+    }
+    .contnet {
+        display: flex;
+        flex-direction: column;
+        flex-wrap: nowrap;
+        align-items: center;
+    }
+    .upload_file {
+        display: flex;
+        flex-direction: column;
+        margin-top: 10px;
+    }
+    .upload_btn {
+
+        border: none;
+        border-radius: 5px;
+        background-color: #5c5cdf;
+        font-size: 16px;
+        color: white;
+        font-weight: 400;
+        cursor: pointer;
+        width: 70px;
+        height: 35px;
+    }
+    .upload_btn:hover {
+            border: none;
+            border-radius: 10px;
+            background-color: #7f7ff2;
+            font-size: 16px;
+            color: white;
+            font-weight: 400;
+            cursor: pointer;
+            box-shadow: 0px 0px 0px 1px #848181;
+        }
+
+    .div-with-copy-paste {
+      width: 340px;
+      height: 200px;
+      background-color: #f2f2f2;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      padding: 20px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+      position: relative;
+    }
+
+    .input-text {
+      width: 340px;
+      /* height: 200px; */
+      background-color: #fffdfd;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+      position: left;
+      margin-top: 5px;
+      margin-bottom: 5px;
+    }
+
+    .copy-button {
+      /* position: absolute;
+      top: 10px;
+      right: 10px; */
+      background-color: #5085cf;
+      color: white;
+      padding: 8px 8px;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    .copy-button:hover {
+      background-color: #45a049;
+    }
+
+    ::placeholder {
+      color: rgb(197, 196, 196);
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+
+    </style>
+
+
+</head>
+
+
+<body>
+  <!-- <h1 class="title-style">GhostWriter <a href="http://127.0.0.1:7861/">
+    <img src="../img/popup.png" alt="logo" width="25" height="25" title="点击进入编辑页面"></a></h1>
+  <div class="contnet"> -->
+    <iframe src="http://127.0.0.1:7863/" style="height: 550px"></iframe>
+    <!-- <div class="upload_file">
+      <div class="div-with-copy-paste" id="myDiv">
+        <img id="copyButton" src="../img/copy.png" alt="copy" width="10" height="10" title="复制">
+        <div id="session" style="margin-top: 20px"> </div>
+      </div>
+
+        <input id="uploadFile" type="text" name="myFile" class="input-text" placeholder="输入问题和Qwen讨论本页面吧！" />
+        <button id="uploadFileBtn" class="upload_btn" type="button">submit</button>
+      </div> -->
+  </div>
+  <!-- <p>点击以下按钮体验快捷交互！</p>
+
+  <button id="fetchButton" class="copy-button" title="总结本页">summarize</button>
+  <button id="fetchButton1" class="copy-button" title="新颖观点">idea</button>
+  <button id="fetchButton2" class="copy-button" title="取个标题">title</button>
+
+  <div id="content">
+
+  </div> -->
+
+</body>
+</html>

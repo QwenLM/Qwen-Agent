@@ -1,0 +1,197 @@
+#warning {background-color: #FFCCCB}
+.rec {
+    font-size: 16px !important;
+    text-align:left}
+.title {
+    font-size: 30px !important;
+    text-align:center}
+.desc {
+    font-size: 16px !important;
+    text-align:center}
+
+.div_tmp {
+    background-color: white;
+    height: 190px;
+    border-radius: 5px
+}
+
+.div_rec {
+    background-color: white;
+    height: 300px;
+    border-radius: 5px
+}
+
+.md_tmp {
+    background-color: white;
+    height: calc(100dvh - 380px);
+    border-radius: 5px
+
+}
+
+.add_scrollbar {
+    overflow-y: scroll;
+}
+
+.content {
+    height: calc(100% - 50px); /* 设置内容高度为容器高度减去文本框高度 */
+    overflow-y: scroll; /* 添加滚动条 */
+  }
+
+
+
+
+.custom-checkbox {
+appearance: none;
+-webkit-appearance: none;
+-moz-appearance: none;
+width: 10px;
+height: 10px;
+border-radius: 50%;
+border: 2px solid #ccc;
+outline: none;
+cursor: pointer;
+}
+
+.custom-checkbox:checked {
+background-color: rgb(100, 239, 144);
+}
+
+.dark svg {
+    fill: white;
+}
+
+.dark a {
+    color: white !important;
+}
+
+.textbox_default textarea {
+    height: calc(100dvh - 200px);
+}
+
+.textbox_default_output textarea {
+    height: calc(100dvh - 200px);
+}
+
+.textbox textarea {
+    height: calc(100dvh - 200px);
+}
+
+.textbox_logits textarea {
+    height: calc(100dvh - 200px);
+}
+
+.textbox_logits_notebook textarea {
+    height: calc(100dvh - 200px);
+}
+
+.textbox_default textarea,
+.textbox_default_output textarea,
+.textbox_logits textarea,
+.textbox_logits_notebook textarea,
+.textbox textarea
+{
+    font-size: 16px !important;
+    color: #46464A !important;
+}
+
+.dark textarea {
+    color: #efefef !important;
+}
+
+@media screen and (max-width: 711px) {
+    .textbox_default textarea {
+        height: calc(100dvh - 271px);
+    }
+
+    div .default-token-counter {
+        top: calc( 0.5 * (100dvh - 245px) ) !important;
+    }
+}
+
+/* Hide the gradio footer*/
+footer {
+    display: none !important;
+}
+
+button {
+    font-size: 14px !important;
+}
+
+.file-saver {
+  position: fixed !important;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%); /* center horizontally */
+  max-width: 500px;
+  background-color: var(--input-background-fill);
+  border: 2px solid black !important;
+  z-index: 1000;
+}
+
+.dark .file-saver {
+  border: 2px solid white !important;
+}
+
+.checkboxgroup-table label {
+    background: none !important;
+    padding: 0 !important;
+    border: 0 !important;
+}
+
+.checkboxgroup-table div {
+    display: grid !important;
+}
+
+.markdown ul ol {
+    font-size: 100% !important;
+}
+
+.pretty_scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.pretty_scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.pretty_scrollbar::-webkit-scrollbar-thumb,
+.pretty_scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #c5c5d2;
+}
+
+.dark .pretty_scrollbar::-webkit-scrollbar-thumb,
+.dark .pretty_scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #374151;
+}
+
+.pretty_scrollbar::-webkit-resizer {
+  background: #c5c5d2;
+}
+
+.dark .pretty_scrollbar::-webkit-resizer {
+  background: #374151;
+}
+
+audio {
+  max-width: 100%;
+}
+
+.token-counter {
+  position: absolute !important;
+  top: calc( 0.5 * (100dvh - 215px) ) !important;
+  right: 2px;
+  z-index: 100;
+  background: var(--input-background-fill) !important;
+  min-height: 0 !important;
+}
+
+.default-token-counter {
+  top: calc( 0.5 * (100dvh - 255px) ) !important;
+}
+
+.token-counter span {
+  padding: 1px;
+  box-shadow: 0 0 0 0.3em rgba(192,192,192,0.15), inset 0 0 0.6em rgba(192,192,192,0.075);
+  border: 2px solid rgba(192,192,192,0.4) !important;
+  border-radius: 0.4em;
+}

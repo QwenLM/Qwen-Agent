@@ -1,0 +1,14 @@
+fastapi
+gradio==3.41.1
+html2text
+jieba
+json5
+jsonlines
+langchain
+openai
+pdf2image
+pypdf
+tiktoken
+unstructured
+uvicorn
+wordcloud
