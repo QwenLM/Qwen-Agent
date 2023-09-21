@@ -1,7 +1,6 @@
 import requests
-from jieba import analyse
-
 import tiktoken
+from jieba import analyse
 
 
 def read_file(path):
