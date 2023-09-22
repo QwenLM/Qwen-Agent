@@ -7,8 +7,8 @@ import subprocess
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--openai_api_base', type=str, default='http://127.0.0.1:7905/v1')
-    parser.add_argument('--openai_api_key', type=str, default='none')
+    parser.add_argument('--model_server', type=str, default='http://127.0.0.1:7905/v1')
+    parser.add_argument('--model_key', type=str, default='none')
     args = parser.parse_args()
     return args
 
@@ -18,8 +18,8 @@ if __name__ == '__main__':
 
     # update openai_api
     openai_api = {
-        'openai_api_base': args.openai_api_base,
-        'openai_api_key': args.openai_api_key
+        'openai_api_base': args.model_server,
+        'openai_api_key': args.model_key
     }
     with open('qwen_agent/configs/config_openai.json', 'w') as file:
         json.dump(openai_api, file)

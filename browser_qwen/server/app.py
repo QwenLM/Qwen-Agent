@@ -366,9 +366,9 @@ with gr.Blocks(css=css, theme='soft') as demo:
             with gr.Row():
                 with gr.Column(scale=0.05, min_width=0):
                     chat_clr_bt = gr.Button('🧹')  # NOQA
-                with gr.Column(scale=0.1, min_width=0):
-                    plug_bt = gr.Checkbox(label='CI')
-                with gr.Column(scale=0.74):
+                with gr.Column(scale=0.16, min_width=0):
+                    plug_bt = gr.Checkbox(label='Code Interpreter')
+                with gr.Column(scale=0.68):
                     chat_txt = gr.Textbox(show_label=False, placeholder='Chat with Qwen...', container=False)  # NOQA
                 with gr.Column(scale=0.05, min_width=0):
                     chat_smt_bt = gr.Button('⏎')  # NOQA
