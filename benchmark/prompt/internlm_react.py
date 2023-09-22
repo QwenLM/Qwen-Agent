@@ -76,6 +76,12 @@ class InternLMReAct(ReAct):
         if '<|im_end|>' in self.query and planning_prompt.endswith('<eoh>\n<|Bot|>:'):
             planning_prompt = planning_prompt[: -len('<eoh>\n<|Bot|>:')]
 
+        if '<|im_end|>' in self.query:
+            planning_prompt = planning_prompt.replace('<|im_end|>\n<|im_start|>assistant\n', '<eoh>\n<|Bot|>:').replace('Observation:', '<eoa>\n<|System|>:Response:').replace('\nAction Input', '\nActionInput').replace('code_interpreter', 'PythonInterpreter')
+            assert planning_prompt.endswith('Thought:')
+            planning_prompt = planning_prompt[: -len('Thought:')] + '<TOKENS_UNUSED_2>\n<|Bot|>:'
+
+        self.prompt = planning_prompt
         return planning_prompt
 
     def _build_tools_text(self):
@@ -83,14 +89,6 @@ class InternLMReAct(ReAct):
 
     def _build_tools_name_text(self):
         return list(INTERNLM_TOOL.keys())
-
-    def postprocess_prompt(self):
-        if '<|im_end|>' in self.query:
-            self.prompt = self.prompt.replace('<|im_end|>\n<|im_start|>assistant\n', '<eoh>\n<|Bot|>:').replace('Observation:', '<eoa>\n<|System|>:Response:').replace('\nAction Input', '\nActionInput').replace('code_interpreter', 'PythonInterpreter')
-            assert self.prompt.endswith('Thought:')
-            self.prompt = self.prompt[: -len('Thought:')] + '<TOKENS_UNUSED_2>\n<|Bot|>:'
-
-        return self.prompt
 
     def build_observation(self, observation):
         return f'<eoa>\n<|System|>:Response:{observation}\n<TOKENS_UNUSED_2>\n<|Bot|>:'

@@ -75,9 +75,6 @@ class ReAct(object):
     def _build_tools_name_text(self):
         return 'code_interpreter'
 
-    def postprocess_prompt(self):
-        return self.prompt
-
     def build_observation(self, observation):
         return f'\nObservation: {observation}\nThought:'
 

@@ -8,11 +8,11 @@ class LlamaReAct(ReAct):
     def build_prompt(self):
         planning_prompt = super().build_prompt()
         planning_prompt = '[INST] ' + planning_prompt + ' [/INST]'
-        return planning_prompt
 
-    def postprocess_prompt(self):
         if '<|im_end|>' in self.query:
-            self.prompt = self.prompt.replace('<|im_end|>\n<|im_start|>assistant', ' [/INST] ')
-            assert self.prompt.endswith(' [/INST]')
-            self.prompt = self.prompt[: -len(' [/INST]')]
-        return self.prompt
+            planning_prompt = planning_prompt.replace('<|im_end|>\n<|im_start|>assistant', ' [/INST] ')
+            assert planning_prompt.endswith(' [/INST]')
+            planning_prompt = planning_prompt[: -len(' [/INST]')]
+
+        self.prompt = planning_prompt
+        return planning_prompt

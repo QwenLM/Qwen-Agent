@@ -10,3 +10,9 @@ qwen_agent/llm/gpt.py
 qwen_agent/llm/tools.py
 workspace/*
 qwen_agent/configs/config_openai.json
+
+benchmark/log/*
+benchmark/output_data/*
+benchmark/upload_file/*
+benchmark/upload_file_clean/*
+benchmark/eval_data/

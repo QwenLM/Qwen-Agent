@@ -11,10 +11,11 @@ import time
 import traceback
 import uuid
 
-import json5
 import matplotlib
 import PIL.Image
 from jupyter_client import BlockingKernelClient
+
+from utils.code_utils import extract_code
 
 WORK_DIR = os.getenv('CODE_INTERPRETER_WORK_DIR', '/tmp/workspace')
 
@@ -39,7 +40,7 @@ def fix_matplotlib_cjk_font_issue():
             os.path.join(matplotlib.matplotlib_fname(), os.path.pardir)),
         'fonts', 'ttf', 'simhei.ttf')
     if not os.path.exists(local_ttf):
-        logging.warning('Missing font file `simhei.ttf` for matplotlib.')
+        logging.warning(f'Missing font file `{local_ttf}` for matplotlib in . It may cause some error when using matplotlib.')
 
 
 def start_kernel(pid):
@@ -88,20 +89,6 @@ def start_kernel(pid):
     kc.start_channels()
     kc.wait_for_ready()
     return kc
-
-
-def extract_code(text):
-    # Match triple backtick blocks first
-    triple_match = re.search(r'```[^\n]*\n(.+?)```', text, re.DOTALL)
-    if triple_match:
-        text = triple_match.group(1)
-    else:
-        try:
-            text = json5.loads(text)['code']
-        except Exception:
-            pass
-    # If no code blocks found, return original text
-    return text
 
 
 def escape_ansi(line):

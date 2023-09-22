@@ -44,6 +44,7 @@ class QwenReAct(ReAct):
             assert prompt.endswith(f'\n{im_start}assistant\n{im_end}')
 
         prompt = prompt[: -len(f'{im_end}')]
+        self.prompt = prompt
         return prompt
 
     def _build_tools_text(self):

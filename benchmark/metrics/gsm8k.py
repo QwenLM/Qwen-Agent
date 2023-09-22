@@ -1,13 +1,10 @@
 import logging
 import os
 import re
-import sys
 
 import numpy as np
-from data_utils import load_jsonl, save_jsonl
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                             os.path.pardir)))
+from utils.data_utils import load_jsonl, save_jsonl
 
 INVALID_ANS = '[invalid]'
 

@@ -3,8 +3,8 @@ from models.base import HFModel
 
 
 class LLM(HFModel):
-    def __init__(self, model_name):
-        super().__init__(model_name=model_name)
+    def __init__(self, model_path):
+        super().__init__(model_path)
 
     def generate(self, input_text, stop_words=[], max_new_tokens=512):
         if isinstance(input_text, str):

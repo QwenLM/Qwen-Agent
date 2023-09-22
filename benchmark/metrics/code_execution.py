@@ -1,21 +1,16 @@
 import logging
 import os
-import sys
 
 import func_timeout
-from code_interpreter import extract_code
-from code_utils import replace_upload_fname
-from data_utils import load_jsonl, save_jsonl
+from config import get_react_parser
 from func_timeout import func_set_timeout
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                             os.path.pardir)))
-
+from utils.code_utils import extract_code, replace_upload_fname
+from utils.data_utils import load_jsonl, save_jsonl
 
 pre_load = """
 import os
 if 'upload_file' not in os.getcwd():
-    os.chdir("./workspace/upload_file/")
+    os.chdir("./upload_file/")
 
 import seaborn as sns
 
@@ -36,15 +31,15 @@ import math
 tags_config = {
     'ci_plot': {
         'timelimit': True,
-        'count_split_case': True,
+        'extract_first_code': True,
     },
     'ci_math_code': {
         'timelimit': True,
-        'count_split_case': False,
+        'extract_first_code': False,
     },
     'ci_open_questions': {
         'timelimit': False,
-        'count_split_case': True,
+        'extract_first_code': True,
     }
 }
 
@@ -82,51 +77,47 @@ def postprocess_code(gen_code, line):
     return gen_code
 
 
-def get_action_input_code(text, extract_first_code=False, internlm_flag=False):
-    start_flag = '\nAction Input:' if not internlm_flag else '\nActionInput:'
-    end_flag = '\nObservation:' if not internlm_flag else '<eoa>'
-    text += '\n'
+def get_action_input_code(text, model_name='qwen-14b-chat', extract_first_code=False):
     action_input_list = []
     tmp = text
+    react_parser = get_react_parser(model_name)
     while True:
-        start = tmp.find(start_flag)
-        if start == -1:
+        action_input = react_parser.get_first_action_input(tmp)
+        if not action_input:
             break
-        end = tmp.find(end_flag)
-        action_input = tmp[start+len(start_flag):end].strip()
         action_input_list.append(action_input)
-        if end == -1 or extract_first_code:
+        tmp = tmp.split(action_input)[1]
+        if not tmp or extract_first_code:
             break
-        tmp = tmp[end+len(end_flag):]
 
     code = ''
     for action_input in action_input_list:
-        code = code + '#concat\n' + extract_code(action_input).replace('/mnt/data/', '').replace('/path/to/', '') + '\n\n'
+        code = code + '# concat\n' + extract_code(action_input) + '\n'
     return code
 
 
-def eval_code_execution_rate(output_fname, tag='all_ci', timelimit=False, count_split_case=False, internlm_flag=False):
+def eval_code_execution_rate(output_fname, tag='all_ci', model_name='qwen-14b-chat', timelimit=False, extract_first_code=False):
     data_list = load_jsonl(output_fname)
     pip_package = []
 
     for line_id, line in enumerate(data_list):
         line['idx'] = line_id
         tags_list = line['tags'].split(',')
-        if tag not in tags_list or 'negative' in line['task']:
+        if tag not in tags_list:
             continue
 
         # update args
-        for tag in tags_list:
-            if tag != 'all_ci':
-                timelimit = tags_config[tag]['timelimit']
-                count_split_case = tags_config[tag]['count_split_case']
+        for cur_tag in tags_list:
+            if cur_tag != 'all_ci':
+                timelimit = tags_config[cur_tag]['timelimit']
+                extract_first_code = tags_config[cur_tag]['extract_first_code']
 
         line['executable_code'] = False
         line['missing_code'] = False
         line['code_error_info'] = ''
 
         # get Action Input code from response
-        gen_code = get_action_input_code(line['gen'], extract_first_code=count_split_case, internlm_flag=internlm_flag)
+        gen_code = get_action_input_code(line['gen'], model_name=model_name, extract_first_code=extract_first_code)
 
         if not gen_code:
             line['missing_code'] = True
@@ -162,7 +153,7 @@ def eval_code_execution_rate(output_fname, tag='all_ci', timelimit=False, count_
                 break
 
         # double check
-        observation = extract_first_observation(line['gen'], internlm_flag=internlm_flag)
+        observation = get_react_parser(model_name).get_first_observation(line['gen'])
         if line['executable_code'] and ('error:' in observation):
             logging.warning('The code executes correctly, but it has an error in IPython!')
             logging.warning(f'Code:\n{gen_code}')
@@ -185,47 +176,12 @@ def eval_code_execution_rate(output_fname, tag='all_ci', timelimit=False, count_
     return data_list
 
 
-def count_error_in_observation(data_list, internlm_flag=False):
-    missing_code, error_code, right_code = 0, 0, 0
-    for line in data_list:
-        gen = line['gen']
-        gen_code = get_action_input_code(gen, extract_first_code=True, internlm_flag=internlm_flag)
-        if not gen_code:
-            missing_code += 1
-            continue
-        else:
-            observation = extract_first_observation(gen, internlm_flag=internlm_flag)
-            if 'error:' in observation:
-                error_code += 1
-            else:
-                right_code += 1
-
-    assert (missing_code + error_code + right_code) == len(data_list)
-    return missing_code, error_code, right_code
-
-
-def extract_first_observation(text, internlm_flag=False):
-    observation = ''
-
-    start_flag = '\nObservation:' if not internlm_flag else '<|System|>:Response:'
-    end_flag = '\nThought:' if not internlm_flag else '<TOKENS_UNUSED_2>\n<|Bot|>:'
-
-    i = text.find(start_flag)
-    if i != -1:
-        j = text.find(end_flag, i)
-        if j != -1:
-            observation = text[i+len(start_flag):j].strip()
-        else:
-            observation = text[i+len(start_flag):].strip()
-    return observation
-
-
 def log_result(data_list, verbose=True):
     if verbose:
         logging.info('*'*60)
         logging.info('{:^60}'.format('Detail'))
         logging.info('*'*60)
-        for line_id, line in enumerate(data_list, start=1):
+        for line_id, line in enumerate(data_list):
             logging.info(f'Question {line_id}'.center(60, '='))
             logging.info(line['query'])
 
