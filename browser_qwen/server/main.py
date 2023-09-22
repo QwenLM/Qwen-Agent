@@ -13,9 +13,9 @@ from fastapi.staticfiles import StaticFiles
 
 sys.path.insert(
     0,
-    str(Path(__file__).absolute().parent.parent.parent.parent))  # NOQA
+    str(Path(__file__).absolute().parent.parent.parent))  # NOQA
 
-from qwen_agent.configs import config_ghostwriter  # NOQA
+from qwen_agent.configs import config_browserqwen  # NOQA
 from qwen_agent.agents.actions import Simple  # NOQA
 from qwen_agent.agents.tools.parse_doc import parse_pdf_pypdf, parse_html_bs  # NOQA
 from qwen_agent.utils.util import save_text_to_file  # NOQA
@@ -23,13 +23,11 @@ from qwen_agent.agents.schema import Record  # NOQA
 
 app = FastAPI()
 
-# 设置允许的跨域来源
 origins = [
     'http://127.0.0.1:7864',
     'http://localhost:7864',
 ]
 
-# 添加CORS中间件
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -38,25 +36,25 @@ app.add_middleware(
     allow_headers=['*'],
 )
 
-app.mount('/static', StaticFiles(directory=config_ghostwriter.code_interpreter_ws), name='static')
+app.mount('/static', StaticFiles(directory=config_browserqwen.code_interpreter_ws), name='static')
 
-if config_ghostwriter.llm.startswith('gpt'):
+if config_browserqwen.llm.startswith('gpt'):
     module = 'qwen_agent.llm.gpt'
-    llm = importlib.import_module(module).GPT(config_ghostwriter.llm)
-elif config_ghostwriter.llm.startswith('Qwen'):
+    llm = importlib.import_module(module).GPT(config_browserqwen.llm)
+elif config_browserqwen.llm.startswith('Qwen'):
     module = 'qwen_agent.llm.qwen'
-    llm = importlib.import_module(module).Qwen(config_ghostwriter.llm)
+    llm = importlib.import_module(module).Qwen(config_browserqwen.llm)
 else:
     llm = None
 
 
-if not os.path.exists(config_ghostwriter.cache_root):
-    os.makedirs(config_ghostwriter.cache_root)
+if not os.path.exists(config_browserqwen.cache_root):
+    os.makedirs(config_browserqwen.cache_root)
 
 
 def update_pop_url(data, cache_file_popup_url):
     new_line = {'url': data['url']}
-    # 更新
+
     with jsonlines.open(cache_file_popup_url, mode='w') as writer:
         writer.write(new_line)
 
@@ -89,28 +87,28 @@ def cache_data(data, cache_file):
             writer.write(new_record)
 
         if is_local_path(data['url']):
-            from urllib.parse import urlparse
+            from urllib.parse import urlparse, unquote
             parsed_url = urlparse(data['url'])
             print('parsed_url: ', parsed_url)
-            pdf_content = parse_pdf_pypdf(parsed_url.path, 'local', pre_gen_question=config_ghostwriter.pre_gen_question)
+            pdf_content = parse_pdf_pypdf(unquote(parsed_url.path), 'local', pre_gen_question=config_browserqwen.pre_gen_question)
         else:
             print('Parsing the online PDF. Please be patient...')
             parsed_url = data['url']
-            pdf_content = parse_pdf_pypdf(parsed_url, 'online', pre_gen_question=config_ghostwriter.pre_gen_question)
+            pdf_content = parse_pdf_pypdf(parsed_url, 'online', pre_gen_question=config_browserqwen.pre_gen_question)
 
         data['content'] = pdf_content
-        data['type'] = 'pdf'  # 处理pdf
-        if config_ghostwriter.prompt_lan == 'CN':
+        data['type'] = 'pdf'  # pdf
+        if config_browserqwen.prompt_lan == 'CN':
             cacheprompt = '参考资料是一篇论文的首页，请提取出一句话作为标题。'
-        elif config_ghostwriter.prompt_lan == 'EN':
+        elif config_browserqwen.prompt_lan == 'EN':
             cacheprompt = 'The reference material is the first page of a paper. Please extract one sentence as the title'
         extract = get_title(pdf_content[0]['page_content'], cacheprompt=cacheprompt)
     else:
         if data['content'] and data['type'] == 'html':
             try:
-                tmp_html_file = os.path.join(config_ghostwriter.cache_root, 'tmp.html')
+                tmp_html_file = os.path.join(config_browserqwen.cache_root, 'tmp.html')
                 save_text_to_file(tmp_html_file, data['content'])
-                data['content'] = parse_html_bs(tmp_html_file, pre_gen_question=config_ghostwriter.pre_gen_question)
+                data['content'] = parse_html_bs(tmp_html_file, pre_gen_question=config_browserqwen.pre_gen_question)
             except Exception as ex:
                 print(ex)
             extract = data['content'][0]['metadata']['title']
@@ -123,7 +121,7 @@ def cache_data(data, cache_file):
         for line in jsonlines.open(cache_file):
             if line['url'] != data['url']:
                 lines.append(line)
-    lines.append(new_record.to_dict())  # 追加cache
+    lines.append(new_record.to_dict())  # cache
     with jsonlines.open(cache_file, mode='w') as writer:
         for new_line in lines:
             writer.write(new_line)
@@ -154,8 +152,8 @@ async def web_listening(request: Request):
     data = await request.json()
     msg_type = data['task']
 
-    cache_file_popup_url = os.path.join(config_ghostwriter.cache_root, config_ghostwriter.url_file)
-    cache_file = os.path.join(config_ghostwriter.cache_root, config_ghostwriter.browser_cache_file)
+    cache_file_popup_url = os.path.join(config_browserqwen.cache_root, config_browserqwen.url_file)
+    cache_file = os.path.join(config_browserqwen.cache_root, config_browserqwen.browser_cache_file)
 
     if msg_type == 'change_checkbox':
         rsp = change_checkbox_state(data['ckid'], cache_file)
@@ -168,4 +166,4 @@ async def web_listening(request: Request):
 
 
 if __name__ == '__main__':
-    uvicorn.run(app='main:app', host=config_ghostwriter.fast_api_host, port=config_ghostwriter.fast_api_port, reload=True)
+    uvicorn.run(app='main:app', host=config_browserqwen.fast_api_host, port=config_browserqwen.fast_api_port, reload=True)

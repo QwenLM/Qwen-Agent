@@ -8,5 +8,5 @@ __pycache__
 
 qwen_agent/llm/gpt.py
 qwen_agent/llm/tools.py
-qwen_agent/demo/ghostwriter/GhostwriterCache/*
 workspace/*
+qwen_agent/configs/config_openai.json

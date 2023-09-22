@@ -10,7 +10,6 @@ import subprocess
 import sys
 import time
 import traceback
-# import urllib.request
 import uuid
 from pathlib import Path
 
@@ -23,10 +22,10 @@ sys.path.insert(
     0,
     str(Path(__file__).absolute().parent.parent.parent.parent))  # NOQA
 
-from qwen_agent.configs import config_ghostwriter  # NOQA
+from qwen_agent.configs import config_browserqwen  # NOQA
 
 
-WORK_DIR = os.getenv('CODE_INTERPRETER_WORK_DIR', config_ghostwriter.code_interpreter_ws)
+WORK_DIR = os.getenv('CODE_INTERPRETER_WORK_DIR', config_browserqwen.code_interpreter_ws)
 
 LAUNCH_KERNEL_PY = """
 from ipykernel import kernelapp as app
@@ -47,7 +46,7 @@ _KERNEL_CLIENTS = {}
 
 def use_alternative_fonts(filename):
     try:
-        candi_ttf = 'static/AlibabaPuHuiTi-3-45-Light.ttf'  # the relative path of the run_server.py runtime
+        candi_ttf = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'AlibabaPuHuiTi-3-45-Light.ttf')
         shutil.copy(candi_ttf, filename)
         print(f'Using {candi_ttf}')
     except Exception as ex:
@@ -55,7 +54,6 @@ def use_alternative_fonts(filename):
 
 
 def fix_matplotlib_cjk_font_issue():
-    # remote_ttf = ('https://github.com/StellarCN/scp_zh/raw/master/fonts/SimHei.ttf')
     local_ttf = os.path.join(
         os.path.abspath(
             os.path.join(matplotlib.matplotlib_fname(), os.path.pardir)),
@@ -127,9 +125,7 @@ def extract_code(text):
         text = triple_match.group(1)
     else:
         try:
-            print('here')
             text = json5.loads(text)['code']
-            print(text)
         except Exception:
             pass
     # If no code blocks found, return original text
@@ -150,7 +146,7 @@ def publish_image_to_web(image_base64: str):
     bytes_io = io.BytesIO(png_bytes)
     PIL.Image.open(bytes_io).save(local_image_file, 'png')
 
-    image_url = f'{config_ghostwriter.fast_api_figure_url}/{image_file}'
+    image_url = f'{config_browserqwen.fast_api_figure_url}/{image_file}'
     return image_url
 
 
@@ -222,13 +218,17 @@ def _code_interpreter(code: str, timeout):
                     finished = True
             elif msg_type == 'execute_result':
                 text = msg['content']['data'].get('text/plain', '')
+                if 'image/png' in msg['content']['data']:
+                    image_b64 = msg['content']['data']['image/png']
+                    image_url = publish_image_to_web(image_b64)
+                    image_idx += 1
+                    image = '![fig-%03d](%s)' % (image_idx, image_url)
             elif msg_type == 'display_data':
                 if 'image/png' in msg['content']['data']:
                     image_b64 = msg['content']['data']['image/png']
                     image_url = publish_image_to_web(image_b64)
                     image_idx += 1
                     image = '![fig-%03d](%s)' % (image_idx, image_url)
-                    # image = '![fig-%03d](data:image/jpeg;base64,%s)' % (image_idx, image_b64)
                 else:
                     text = msg['content']['data'].get('text/plain', '')
             elif msg_type == 'stream':

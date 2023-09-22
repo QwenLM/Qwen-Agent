@@ -1,12 +1,11 @@
 """
 固定整体流程：
- Step1: Similarity Search: 从参考资料中检索相关部分（段落）
+ Step1: Similarity Search
 
  Step2: outline
  Step3: expand
     - 每expand一章节, 触发决策是否调用plugin(画图, code interpreter, 运行代码, browser)
 
-Note: Step2&3 也可以planning, 暂时固定
 """
 import json
 import re
@@ -80,7 +79,7 @@ def is_roman_numeral(s):
 
 
 class WriteFromZero:
-    def __init__(self, llm=None, task='ghostwriter', stream=False, auto_agent=False):
+    def __init__(self, llm=None, task='browserqwen', stream=False, auto_agent=False):
         self.llm = llm
         self.stream = stream
         self.task = task

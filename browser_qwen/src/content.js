@@ -6,17 +6,6 @@ function getPageTextContent() {
 }
 
 function cache_browser(){
-  // const article = document.querySelector('article');
-  // if (article) {
-  //   const text = article.textContent;
-  //   chrome.runtime.sendMessage({ data: text , close: true , flag: 'open_tab_and_cache_from_content', type: 'html'});
-  // }
-  // else{
-  //   const body = document.querySelector('body');
-  //   const text = body.innerHTML;
-  //   console.log(text);
-  //   chrome.runtime.sendMessage({ data: text , close: true , flag: 'open_tab_and_cache_from_content', type: 'html'});
-  // }
   const body = document.querySelector('html');
   const text = body.innerHTML;
   console.log(text);
@@ -94,15 +83,3 @@ document.addEventListener('mousemove', (e) => {
 document.addEventListener('mouseup', () => {
   isDragging = false;
 });
-
-chrome.runtime.onMessage.addListener(
-  function(request, sender, sendMessage) {
-    if (request.flag == "get_page_from_pop"){
-      const article = document.querySelector('article');
-      const body = document.querySelector('body');
-      const text = article.textContent;
-      sendMessage(text);
-    }
-      else
-          sendMessage("BAD");
-  });

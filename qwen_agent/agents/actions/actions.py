@@ -1,5 +1,5 @@
 action_list = {
-    'ghostwriter': {
+    'browserqwen': {
         'summarize': 'summarize the main content of reference materials',
         'outline': 'write outline',
         'expand': 'expand text'

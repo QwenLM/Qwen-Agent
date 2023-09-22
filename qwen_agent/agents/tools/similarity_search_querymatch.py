@@ -23,7 +23,6 @@ class SSQueryMatch:
         return RefMaterial(url=doc['url'], text=res).to_dict()
 
     def filter_section(self, page, wordlist):
-        # 按照段落匹配关键词，只要存在重复词，则加入候选集
         text = page['related_questions']
         res = ''
         for x in wordlist:

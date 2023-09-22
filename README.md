@@ -1,7 +1,7 @@
 # Qwen-Agent
 [中文](./README_CN.md) ｜ English
 
-Qwen-Agent is a code library based on LLM that integrates components such as plugin usage, planning generation, and action execution. At present, we have implemented a Google Extension ```GhostWriter``` to facilitate your knowledge integration and content editing work. The features of ghostwriter include:
+Qwen-Agent is a code library based on LLM that integrates components such as plugin usage, planning generation, and action execution. At present, we have implemented a Google Extension ```BrowserQwen``` to facilitate your knowledge integration and content editing work. The features of BrowserQwen include:
 
 - It can record your webpage browsing content with your permission, and use Qwen (abbr. Tongyi Qianwen) as an analysis assistant to assist you in completing editing work based on the browsing content. Through it, you can quickly complete tedious tasks such as understanding web content, organizing browsing content, and writing new articles.
 - Supporting the analysis of open PDF documents (Online or local). You can open PDF documents in a browser and quickly talk about them with Qwen.
@@ -44,7 +44,7 @@ Qwen-Agent is a code library based on LLM that integrates components such as plu
     </figure>
 </div>
 
-# How to use Ghostwriter
+# How to use BrowserQwen
 
 ## Quick Start
 ```
@@ -54,7 +54,7 @@ pip install -r requirements.txt
 ```
 
 ## Configuration
-- Setting necessary parameters in ```configs/config_ghostwriter. py```, commonly used parameters are as follows:
+- Setting necessary parameters in ```configs/config_browserqwen. py```, commonly used parameters are as follows:
     - llm: The large model. Now supporting OpenAI API format, default to ```Qwen-7B-Chat```
     - MAX_TOKEN：The maximum number of tokens for reference materials, default to ```5000```
     - fast_api_host、app_host、app_in_browser_host：The address and port of the backend service, default to ```127.0.0.1```
@@ -65,11 +65,10 @@ pip install -r requirements.txt
 ```
 python openai_api.py --server-port 8003
 ```
-- After deploying Qwen, modify ```openai.api_base``` in ```agent/llm/qwen.py``` to the corresponding address and port, default to "http://localhost:8003/v1"
+- After deploying Qwen, modify ```openai.api_base``` in ```agent/llm/qwen.py``` to the corresponding address and port, default to ```http://127.0.0.1:7905/v1```
 
 ### Start the Backend Services of Google Extension and Editing Workstation:
 ```
-cd qwen_agent/ghostwriter/server
 python run_server.py
 ```
 - Pressing ```Ctrl+C``` can close the service
@@ -78,8 +77,8 @@ python run_server.py
 
 ### Upload to Google Extension
 - Entering [Google Extension](chrome://extensions/)
-- Finding file ```ghostwriter``` in ```Qwen-Agent/qwen_agent/```, uploading and enabling
-- Clicking on the Google Chrome Extensions icon in the top right corner of Google Chrome to pin ghostwriter in the toolbar
+- Finding file ```browser_qwen```, uploading and enabling
+- Clicking on the Google Chrome Extensions icon in the top right corner of Google Chrome to pin BrowserQwen in the toolbar
 
 ### Usage Tips
 - When you find browsing web content useful, click the ```Add to Qwen's Reading List``` button in the upper right corner of the screen, and Qwen will analyze this page in the background. (Considering user privacy, user must first click on the button to authorize Qwen before reading this page)
@@ -103,5 +102,5 @@ python run_server.py
 - qwen_agent
     - agents: The implementation of general methods for planning/tools/actions/memory
     - llm: Defining the interface for accessing LLM, currently providing OpenAI format access interface for Qwen-7B
-    - ghostwriter: The implementation of ghostwriter, including google extension configuration, front-end interface, and backend processing logic
     - configs: Storing the configuration files where you can modify local service ports and other configurations
+- browser_qwen: The implementation of BrowserQwen, including google extension configuration, front-end interface, and backend processing logic

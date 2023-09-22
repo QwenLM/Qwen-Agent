@@ -76,18 +76,8 @@ background-color: rgb(100, 239, 144);
     height: calc(100dvh - 200px);
 }
 
-.textbox_logits textarea {
-    height: calc(100dvh - 200px);
-}
-
-.textbox_logits_notebook textarea {
-    height: calc(100dvh - 200px);
-}
-
 .textbox_default textarea,
 .textbox_default_output textarea,
-.textbox_logits textarea,
-.textbox_logits_notebook textarea,
 .textbox textarea
 {
     font-size: 16px !important;
@@ -115,65 +105,6 @@ footer {
 
 button {
     font-size: 14px !important;
-}
-
-.file-saver {
-  position: fixed !important;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%); /* center horizontally */
-  max-width: 500px;
-  background-color: var(--input-background-fill);
-  border: 2px solid black !important;
-  z-index: 1000;
-}
-
-.dark .file-saver {
-  border: 2px solid white !important;
-}
-
-.checkboxgroup-table label {
-    background: none !important;
-    padding: 0 !important;
-    border: 0 !important;
-}
-
-.checkboxgroup-table div {
-    display: grid !important;
-}
-
-.markdown ul ol {
-    font-size: 100% !important;
-}
-
-.pretty_scrollbar::-webkit-scrollbar {
-  width: 5px;
-}
-
-.pretty_scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.pretty_scrollbar::-webkit-scrollbar-thumb,
-.pretty_scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #c5c5d2;
-}
-
-.dark .pretty_scrollbar::-webkit-scrollbar-thumb,
-.dark .pretty_scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #374151;
-}
-
-.pretty_scrollbar::-webkit-resizer {
-  background: #c5c5d2;
-}
-
-.dark .pretty_scrollbar::-webkit-resizer {
-  background: #374151;
-}
-
-audio {
-  max-width: 100%;
 }
 
 .token-counter {

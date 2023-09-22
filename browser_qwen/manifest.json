@@ -1,5 +1,5 @@
 {
-    "name": "GhostWriter",
+    "name": "BrowserQwen",
     "description" : "An Extension Driven by LLM",
     "version": "1.0",
     "manifest_version": 3,
@@ -11,7 +11,7 @@
     "action": {
         "default_popup": "src/popup.html",
         "default_icon": "img/popup.png",
-        "default_title": "GhostWriter"
+        "default_title": "BrowserQwen"
     },
     "permissions": [
         "tabs",

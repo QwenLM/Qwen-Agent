@@ -9,35 +9,33 @@ import jsonlines
 
 sys.path.insert(
     0,
-    str(Path(__file__).absolute().parent.parent.parent.parent))  # NOQA
+    str(Path(__file__).absolute().parent.parent.parent))  # NOQA
 
 from qwen_agent.agents.actions import Simple  # NOQA
-from qwen_agent.configs.config_ghostwriter import cache_root  # NOQA
-from qwen_agent.configs import config_ghostwriter  # NOQA
-from qwen_agent.agents.tools.similarity_search import SimilaritySearch  # NOQA
+from qwen_agent.configs import config_browserqwen  # NOQA
 from qwen_agent.agents.memory import Memory  # NOQA
 
-if config_ghostwriter.llm.startswith('gpt'):
+if config_browserqwen.llm.startswith('gpt'):
     module = 'qwen_agent.llm.gpt'
-    llm = importlib.import_module(module).GPT(config_ghostwriter.llm)
-elif config_ghostwriter.llm.startswith('Qwen'):
+    llm = importlib.import_module(module).GPT(config_browserqwen.llm)
+elif config_browserqwen.llm.startswith('Qwen'):
     module = 'qwen_agent.llm.qwen'
-    llm = importlib.import_module(module).Qwen(config_ghostwriter.llm)
+    llm = importlib.import_module(module).Qwen(config_browserqwen.llm)
 else:
     llm = None
 
-mem = Memory(config_ghostwriter.similarity_search, config_ghostwriter.similarity_search_type)
+mem = Memory(config_browserqwen.similarity_search, config_browserqwen.similarity_search_type)
 
-if not os.path.exists(cache_root):
-    os.makedirs(cache_root)
-cache_file = os.path.join(cache_root, config_ghostwriter.browser_cache_file)
-cache_file_popup_url = os.path.join(cache_root, config_ghostwriter.url_file)
+if not os.path.exists(config_browserqwen.cache_root):
+    os.makedirs(config_browserqwen.cache_root)
+cache_file = os.path.join(config_browserqwen.cache_root, config_browserqwen.browser_cache_file)
+cache_file_popup_url = os.path.join(config_browserqwen.cache_root, config_browserqwen.url_file)
 
 page_url = []
 
-with open(Path(__file__).resolve().parent / 'css/main.css', 'r') as f:
+with open(Path(__file__).resolve().parent.parent / 'css/main.css', 'r') as f:
     css = f.read()
-with open(Path(__file__).resolve().parent / 'js/main.js', 'r') as f:
+with open(Path(__file__).resolve().parent.parent / 'js/main.js', 'r') as f:
     js = f.read()
 
 
@@ -48,16 +46,6 @@ def add_text(history, text):
 
 def rm_text(history):
     history = history[:-1] + [(history[-1][0], None)]
-    return history, gr.update(value='', interactive=False)
-
-
-def add_text_shortcut(history, text):
-    key_word = {
-        'summarize': '总结以上内容',
-        'idea': '请根据以上内容，提出三个有新意的观点',
-        'title': '请给以上内容取一个吸睛的标题'
-    }
-    history = history + [(key_word[text], None)]
     return history, gr.update(value='', interactive=False)
 
 
@@ -89,12 +77,12 @@ def bot(history):
     if not now_page:
         gr.Info("This page has not yet been added to the Qwen's reading list!")
 
-    _ref_list = mem.get(history[-1][0], [now_page], llm=llm, stream=False, max_token=config_ghostwriter.MAX_TOKEN)
+    _ref_list = mem.get(history[-1][0], [now_page], llm=llm, stream=False, max_token=config_browserqwen.MAX_TOKEN)
     if _ref_list:
         _ref = '\n'.join(json.dumps(x, ensure_ascii=False) for x in _ref_list)
     else:
         _ref = ''
-    print(_ref)
+    # print(_ref)
     agent = Simple(stream=True, llm=llm)
     history[-1][1] = ''
     response = agent.run(_ref, history)
@@ -155,7 +143,7 @@ with gr.Blocks(css=css, theme='soft') as demo:
                          elem_id='chatbot',
                          height=480,
                          avatar_images=(None, (os.path.join(
-                             os.path.dirname(__file__), 'static/logo.png'))))
+                             Path(__file__).resolve().parent.parent, 'img/logo.png'))))
     with gr.Row():
         with gr.Column(scale=0.06, min_width=0):
             clr_bt = gr.Button('🧹')
@@ -188,4 +176,4 @@ with gr.Blocks(css=css, theme='soft') as demo:
 
     demo.load(set_page_url).then(load_history_session, chatbot, chatbot)
 
-demo.queue().launch(server_name=config_ghostwriter.app_in_browser_host, server_port=config_ghostwriter.app_in_browser_port)
+demo.queue().launch(server_name=config_browserqwen.app_in_browser_host, server_port=config_browserqwen.app_in_browser_port)

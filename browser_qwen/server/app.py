@@ -11,42 +11,42 @@ import jsonlines
 
 sys.path.insert(
     0,
-    str(Path(__file__).absolute().parent.parent.parent.parent))  # NOQA
+    str(Path(__file__).absolute().parent.parent.parent))  # NOQA
 
 from qwen_agent.agents.actions.plugin import Plugin, format_answer  # NOQA
 from qwen_agent.agents.tools.tools import tools_list  # NOQA
 from qwen_agent.utils.util import get_last_one_line_context, save_text_to_file, count_tokens, get_html_content  # NOQA
-from qwen_agent.agents.actions import ContinueWriting, Simple, ToT, WriteFromZero  # NOQA
-from qwen_agent.configs import config_ghostwriter  # NOQA
+from qwen_agent.agents.actions import ContinueWriting, Simple, WriteFromZero  # NOQA
+from qwen_agent.configs import config_browserqwen  # NOQA
 from qwen_agent.agents.memory import Memory  # NOQA
 
-if not os.path.exists(config_ghostwriter.cache_root):
-    os.makedirs(config_ghostwriter.cache_root)
-if not os.path.exists(config_ghostwriter.download_root):
-    os.makedirs(config_ghostwriter.download_root)
-if not os.path.exists(config_ghostwriter.code_interpreter_ws):
-    os.makedirs(config_ghostwriter.code_interpreter_ws)
+if not os.path.exists(config_browserqwen.cache_root):
+    os.makedirs(config_browserqwen.cache_root)
+if not os.path.exists(config_browserqwen.download_root):
+    os.makedirs(config_browserqwen.download_root)
+if not os.path.exists(config_browserqwen.code_interpreter_ws):
+    os.makedirs(config_browserqwen.code_interpreter_ws)
 
-if config_ghostwriter.llm.startswith('gpt'):
+if config_browserqwen.llm.startswith('gpt'):
     module = 'qwen_agent.llm.gpt'
-    llm = importlib.import_module(module).GPT(config_ghostwriter.llm)
-elif config_ghostwriter.llm.startswith('Qwen'):
+    llm = importlib.import_module(module).GPT(config_browserqwen.llm)
+elif config_browserqwen.llm.startswith('Qwen'):
     module = 'qwen_agent.llm.qwen'
-    llm = importlib.import_module(module).Qwen(config_ghostwriter.llm)
+    llm = importlib.import_module(module).Qwen(config_browserqwen.llm)
 else:
     llm = None
 
-mem = Memory(config_ghostwriter.similarity_search, config_ghostwriter.similarity_search_type)
+mem = Memory(config_browserqwen.similarity_search, config_browserqwen.similarity_search_type)
 
 app_global_para = {
     'time': [str(datetime.date.today()), str(datetime.date.today())],
-    'cache_file': os.path.join(config_ghostwriter.cache_root, config_ghostwriter.browser_cache_file),
+    'cache_file': os.path.join(config_browserqwen.cache_root, config_browserqwen.browser_cache_file),
     'use_ci_flag': False
 }
 
-with open(Path(__file__).resolve().parent / 'css/main.css', 'r') as f:
+with open(Path(__file__).resolve().parent.parent / 'css/main.css', 'r') as f:
     css = f.read()
-with open(Path(__file__).resolve().parent / 'js/main.js', 'r') as f:
+with open(Path(__file__).resolve().parent.parent / 'js/main.js', 'r') as f:
     js = f.read()
 
 
@@ -88,11 +88,11 @@ def update_rec_list(flag):
                 agent = Simple(llm=llm, stream=False)
                 page_number = len(line['raw'])
                 index = random.randint(0, page_number-1)
-                if config_ghostwriter.prompt_lan == 'CN':
+                if config_browserqwen.prompt_lan == 'CN':
                     topicprompt = '请提出一个有新意的吸引人的话题'
-                elif config_ghostwriter.prompt_lan == 'EN':
+                elif config_browserqwen.prompt_lan == 'EN':
                     topicprompt = 'Please propose a new and attractive topic'
-                rec = agent.run(line['raw'][index]['page_content'], topicprompt, prompt_lan=config_ghostwriter.prompt_lan)
+                rec = agent.run(line['raw'][index]['page_content'], topicprompt, prompt_lan=config_browserqwen.prompt_lan)
                 assert isinstance(rec, str)
                 rec_list.append(rec)
                 line['topic'] = rec
@@ -116,6 +116,7 @@ def update_app_global_para(date1, date2):
     # 更新全局变量
     app_global_para['time'][0] = date1
     app_global_para['time'][1] = date2
+    app_global_para['use_ci_flag'] = False
 
 
 def update_browser_list():
@@ -151,7 +152,7 @@ def download_text(text):
     now = datetime.datetime.now()
     current_time = now.strftime('%Y-%m-%d_%H-%M-%S')
     filename = f'file_{current_time}.md'
-    rsp = save_text_to_file(os.path.join(config_ghostwriter.download_root, filename), text)
+    rsp = save_text_to_file(os.path.join(config_browserqwen.download_root, filename), text)
     if rsp == 'SUCCESS':
         raise gr.Info('Saved')
     else:
@@ -180,14 +181,14 @@ def add_url_manu(url, date):
 def bot(history):
     if app_global_para['use_ci_flag']:  # use code interpreter
         agent = Plugin(llm=llm, list_of_plugin_info=tools_list[:1])
-        response = agent.run(history[-1][0]+', 必须使用code_interpreter工具', history=[])
+        response = agent.run(history[-1][0]+', use code_interpreter', history=[])
     else:
         lines = []
         for line in jsonlines.open(app_global_para['cache_file']):
             if (app_global_para['time'][0] <= line['time'] <= app_global_para['time'][1]) and line['checked']:
                 lines.append(line)
         if lines:
-            _ref_list = mem.get(history[-1][0], lines, llm=llm, stream=True, max_token=config_ghostwriter.MAX_TOKEN)
+            _ref_list = mem.get(history[-1][0], lines, llm=llm, stream=True, max_token=config_browserqwen.MAX_TOKEN)
             _ref = '\n'.join(json.dumps(x, ensure_ascii=False) for x in _ref_list)
         else:
             _ref = ''
@@ -204,14 +205,14 @@ def bot(history):
 def generate(context):
     sp_query = get_last_one_line_context(context)
 
-    if config_ghostwriter.code_flag in sp_query:  # router to code interpreter
-        sp_query = sp_query.split(config_ghostwriter.code_flag)[-1]
+    if config_browserqwen.code_flag in sp_query:  # router to code interpreter
+        sp_query = sp_query.split(config_browserqwen.code_flag)[-1]
         history = []
         agent = Plugin(llm=llm, list_of_plugin_info=tools_list[:1])
         response = agent.run(sp_query+', 必须使用code_interpreter工具', history=history)
         yield response
-    elif config_ghostwriter.plugin_flag in sp_query:  # router to plugin
-        sp_query = sp_query.split(config_ghostwriter.plugin_flag)[-1]
+    elif config_browserqwen.plugin_flag in sp_query:  # router to plugin
+        sp_query = sp_query.split(config_browserqwen.plugin_flag)[-1]
         history = []
         agent = Plugin(llm=llm, list_of_plugin_info=tools_list)
         response = agent.run(sp_query, history=history)
@@ -223,16 +224,16 @@ def generate(context):
             if (app_global_para['time'][0] <= line['time'] <= app_global_para['time'][1]) and line['checked']:
                 lines.append(line)
         if lines:
-            if config_ghostwriter.similarity_search:
+            if config_browserqwen.similarity_search:
                 res += '\n========================= \n'
                 yield res
                 res += '> Search for relevant information: \n'
                 yield res
             sp_query_no_title = sp_query
-            if config_ghostwriter.title_flag in sp_query:  # 输入为标题
-                sp_query_no_title = sp_query.split(config_ghostwriter.title_flag)[-1]
+            if config_browserqwen.title_flag in sp_query:  # /title
+                sp_query_no_title = sp_query.split(config_browserqwen.title_flag)[-1]
 
-            _ref_list = mem.get(sp_query_no_title, lines, llm=llm, stream=True, max_token=config_ghostwriter.MAX_TOKEN)
+            _ref_list = mem.get(sp_query_no_title, lines, llm=llm, stream=True, max_token=config_browserqwen.MAX_TOKEN)
             _ref = '\n'.join(json.dumps(x, ensure_ascii=False) for x in _ref_list)
             res += _ref
             yield res
@@ -241,17 +242,16 @@ def generate(context):
             _ref = ''
             gr.Warning('No reference materials selected, Qwen will answer directly')
 
-        if config_ghostwriter.title_flag in sp_query:  # 输入为标题
-            sp_query = sp_query.split(config_ghostwriter.title_flag)[-1]
-            agent = WriteFromZero(llm=llm, stream=True, auto_agent=config_ghostwriter.auto_agent)
+        if config_browserqwen.title_flag in sp_query:  # /title
+            sp_query = sp_query.split(config_browserqwen.title_flag)[-1]
+            agent = WriteFromZero(llm=llm, stream=True, auto_agent=config_browserqwen.auto_agent)
         else:
             res += '\n========================= \n'
             res += '> Writing Text: \n'
             yield res
             agent = ContinueWriting(llm=llm, stream=True)
 
-        # agent = ToT()
-        response = agent.run(_ref, context, prompt_lan=config_ghostwriter.prompt_lan)
+        response = agent.run(_ref, context, prompt_lan=config_browserqwen.prompt_lan)
         for chunk in response:
             res += chunk
             yield res
@@ -263,10 +263,12 @@ def format_generate(edit, context):
     yield res
     if '> Writing Text: ' in context:
         text = context.split('> Writing Text: ')[-1].strip()
+        res += '\n'
         res += text
         yield res
     elif 'Final Answer' in context:
         response = format_answer(context)
+        res += '\n'
         res += response
         yield res
     else:
@@ -275,9 +277,9 @@ def format_generate(edit, context):
 
 
 with gr.Blocks(css=css, theme='soft') as demo:
-    title = gr.Markdown('Qwen Agent: GhostWriter', elem_classes='title')
+    title = gr.Markdown('Qwen Agent: BrowserQwen', elem_classes='title')
     desc = gr.Markdown(
-        'This is the editing workstation of GhostWriter, where Qwen has collected the pages you added to the list . You can use Qwen to assist you in completing your creative work!',
+        'This is the editing workstation of BrowserQwen, where Qwen has collected the browsing history. Qwen can assist you in completing your creative work!',
         elem_classes='desc')
 
     with gr.Row():
@@ -285,8 +287,8 @@ with gr.Blocks(css=css, theme='soft') as demo:
             rec = gr.Markdown('Browsing History', elem_classes='rec')
             with gr.Row():
                 with gr.Column(scale=0.3, min_width=0):
-                    date1 = gr.Dropdown([str(datetime.date.today()-datetime.timedelta(days=i)) for i in range(config_ghostwriter.max_days)], value=str(datetime.date.today()), label='Start Date')  # NOQA
-                    date2 = gr.Dropdown([str(datetime.date.today()-datetime.timedelta(days=i)) for i in range(config_ghostwriter.max_days)], value=str(datetime.date.today()), label='End Date')  # NOQA
+                    date1 = gr.Dropdown([str(datetime.date.today()-datetime.timedelta(days=i)) for i in range(config_browserqwen.max_days)], value=str(datetime.date.today()), label='Start Date')  # NOQA
+                    date2 = gr.Dropdown([str(datetime.date.today()-datetime.timedelta(days=i)) for i in range(config_browserqwen.max_days)], value=str(datetime.date.today()), label='End Date')  # NOQA
                 with gr.Column(scale=0.7, min_width=0):
                     browser_list = gr.HTML(value='', label='browser_list', elem_classes=['div_tmp', 'add_scrollbar'])
 
@@ -357,10 +359,10 @@ with gr.Blocks(css=css, theme='soft') as demo:
 
             chatbot = gr.Chatbot([],
                                  elem_id='chatbot',
-                                 height=1000,
+                                 height=680,
                                  show_copy_button=True,
                                  avatar_images=(None, (os.path.join(
-                                     os.path.dirname(__file__), 'static/logo.png'))))
+                                     Path(__file__).resolve().parent.parent, 'img/logo.png'))))
             with gr.Row():
                 with gr.Column(scale=0.05, min_width=0):
                     chat_clr_bt = gr.Button('🧹')  # NOQA
@@ -404,4 +406,4 @@ with gr.Blocks(css=css, theme='soft') as demo:
     demo.load(update_app_global_para, [date1, date2], None).then(update_browser_list, None, browser_list).then(lambda: None, None, None, _js=f'() => {{{js}}}')
     # .then(update_rec_list, gr.Textbox('load', visible=False), rec_list, queue=False)
 
-demo.queue().launch(server_name=config_ghostwriter.app_host, server_port=config_ghostwriter.app_port)
+demo.queue().launch(server_name=config_browserqwen.app_host, server_port=config_browserqwen.app_port)

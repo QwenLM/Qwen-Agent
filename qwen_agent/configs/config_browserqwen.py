@@ -2,7 +2,7 @@ import os
 
 """ ===== global setting ===== """
 # the path of browser infomation
-work_space_root = os.path.expanduser('~/GhostWriterWorkspace/')
+work_space_root = os.path.expanduser('~/BrowserQwenWorkspace/')
 cache_root = os.path.join(work_space_root, 'BrowserCache/')
 download_root = os.path.join(work_space_root, 'Download/')
 browser_cache_file = 'browse.jsonl'

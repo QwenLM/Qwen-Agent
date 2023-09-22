@@ -1,9 +1,15 @@
+import json
+from pathlib import Path
+
 import openai
 
 from qwen_agent.llm.base import LLMBase
 
-openai.api_base = 'http://127.0.0.1:7905/v1'
-openai.api_key = 'none'
+with open(Path(__file__).resolve().parent.parent / 'configs/config_openai.json') as file:
+    openai_cfg = json.load(file)
+
+openai.api_base = openai_cfg['openai_api_base']
+openai.api_key = openai_cfg['openai_api_key']
 
 
 class Qwen(LLMBase):

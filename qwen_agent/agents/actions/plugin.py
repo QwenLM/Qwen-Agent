@@ -104,7 +104,7 @@ def format_answer(text):
             rsp += obs
         return rsp
     elif 'image_gen' in text:
-        # 获取FA中的图片url
+        # get url of FA
         # img_url = URLExtract().find_urls(text.split("Final Answer:")[-1].strip())
         img_url = extract_urls(text.split('Final Answer:')[-1].strip())
         print(img_url)
@@ -219,9 +219,6 @@ def parse_latest_plugin_call(text):
 #   即使原本是 JSON 输出，也请 json.dumps(..., ensure_ascii=False) 成字符串。
 #
 def call_plugin(plugin_name: str, plugin_args: str) -> str:
-    #
-    # 请开发者自行完善这部分内容。这里的参考实现仅是 demo 用途，非生产用途。
-    #
     if plugin_name == 'code_interpreter':
         return code_interpreter(plugin_args)
     elif plugin_name == 'google_search':
