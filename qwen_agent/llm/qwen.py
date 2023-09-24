@@ -1,11 +1,12 @@
 import json
-from pathlib import Path
+import os
 
 import openai
 
+from qwen_agent.configs import config_browserqwen
 from qwen_agent.llm.base import LLMBase
 
-with open(Path(__file__).resolve().parent.parent / 'configs/config_openai.json') as file:
+with open(os.path.join(config_browserqwen.work_space_root, 'config_openai.json')) as file:
     openai_cfg = json.load(file)
 
 openai.api_base = openai_cfg['openai_api_base']
@@ -43,3 +44,16 @@ def qwen_chat_no_stream(query, stream=False, stop_words=[]):
                                             stream=False,
                                             stop_words=stop_words)
     return response.choices[0].message.content
+
+
+def qwen_chat_func(messages, functions=None):
+    # print(messages)
+    if functions:
+        response = openai.ChatCompletion.create(
+            model='Qwen', messages=messages, functions=functions
+        )
+    else:
+        response = openai.ChatCompletion.create(model='Qwen', messages=messages)
+    # print(response)
+    # print(response.choices[0].message.content)
+    return response.choices[0].message

@@ -1,11 +1,13 @@
 # Qwen-Agent
 [中文](./README_CN.md) ｜ English
 
-Qwen-Agent is a code library based on Qwen (abbr. Tongyi Qianwen) that integrates components such as plugin usage, planning generation, and action execution. At present, we have implemented a Google Extension ```BrowserQwen``` to facilitate your knowledge integration and content editing work. The features of BrowserQwen include:
+Qwen-Agent is a code library based on Qwen (abbr. Tongyi Qianwen) that integrates components such as plugin usage, planning generation, and memory. At present, we have implemented a Google Extension ```BrowserQwen``` to facilitate your knowledge integration and content editing work. The features of BrowserQwen include:
 
 - Integrate Qwen into the Google Extension, supporting discussion of Webpages and PDF documents (online or local) with Qwen in the browser.
 - Qwen can record your webpage browsing history and PDFs with your permission, and assist you in completing editing work. Through it, you can quickly complete tedious tasks such as understanding web content, organizing browsing history, and writing new articles.
-- Supporting plugin calls, and currently integrating plugins such as Code Interpreter and Google Search.
+- Supporting plugin calls, and currently integrating plugins such as Code Interpreter, and supporting uploading files for data analysis.
+
+The models currently supported are Qwen-7B-Chat-v1.1 (excluding the version without v1.1) and Qwen-14B-Chat.
 
 # Demonstration
 ## Q&A in Browser Interactive Interface
@@ -44,6 +46,32 @@ Qwen-Agent is a code library based on Qwen (abbr. Tongyi Qianwen) that integrate
     </figure>
 </div>
 
+### The Process of Writing Articles based on Browsed Webpages and PDFs
+<div style="display:flex;">
+<figure>
+    <video controls width="100%" height="auto">
+        <source src="https://qianwen-res.oss-cn-beijing.aliyuncs.com/assets/qwen_agent/showcase_write_article_based_on_webpages_and_pdfs.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+    </video>
+</figure>
+
+### Extract Information and draw Figures by Code Interpreter
+<figure>
+    <video controls width="100%" height="auto">
+        <source src="https://qianwen-res.oss-cn-beijing.aliyuncs.com/assets/qwen_agent/showcase_chat_with_docs_and_code_interpreter.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+    </video>
+</figure>
+
+### Multi-turn Chat with Code Interpreter
+<figure>
+    <video controls width="100%" height="auto">
+        <source src="https://qianwen-res.oss-cn-beijing.aliyuncs.com/assets/qwen_agent/showcase_code_interpreter_multi_turn_chat.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+    </video>
+</figure>
+</div>
+
 # How to use BrowserQwen
 
 ## Quick Start
@@ -66,6 +94,10 @@ python run_server.py --model_server http://127.0.0.1:7905/v1
 ```
 - model_server is the address of Qwen's OpenAI API Interface, default to ```http://127.0.0.1:7905/v1```
 - Pressing ```Ctrl+C``` can close the service
+- Other optional parameters:
+    - prompt_language: Language of built-in prompts, optional ```['CN', 'EN']```, default to ```'CN'```
+    - llm: The large model. Now supporting OpenAI API format, default to ```Qwen```
+    - max_ref_token: The maximum number of tokens for reference materials, default to ```4000```. If LLM supports longer tokens, this value can be expanded.
 
 
 ### Upload to Google Extension
@@ -96,11 +128,10 @@ python run_server.py --model_server http://127.0.0.1:7905/v1
     - agents: The implementation of general methods for planning/tools/actions/memory
     - llm: Defining the interface for accessing LLM, currently providing OpenAI format access interface for Qwen-7B
     - configs: Storing the configuration files where you can modify local service ports and other configurations
-- browser_qwen: The implementation of BrowserQwen, including google extension configuration, front-end interface, and backend processing logic
+- browser_qwen: The implementation of BrowserQwen, including google extension configuration and front-end interface.
+- qwen_server: The implementation of backend processing logic for BrowserQwen
 
 ## Configuration
-This library supports custom parameters. Setting necessary parameters in ```configs/config_browserqwen.py```, commonly used parameters are as follows:
-- llm: The large model. Now supporting OpenAI API format, default to ```Qwen-7B-Chat```.
-- MAX_TOKEN：The maximum number of tokens for reference materials, default to ```4000```. If LLM supports longer tokens, this value can be expanded.
-- fast_api_host、app_host、app_in_browser_host：The address of the backend service, default to ```127.0.0.1```
-- Note: After modifying the configuration file or code, the service need to be restarted to take effect.
+This library supports custom parameters. Setting necessary parameters in ```qwen_agent/configs/config_browserqwen.py```. After modifying the configuration file or code, the service need to be restarted to take effect.
+
+This project is not intended to be an official product, rather it serves as a proof-of-concept project that highlights the capabilities of Qwen.

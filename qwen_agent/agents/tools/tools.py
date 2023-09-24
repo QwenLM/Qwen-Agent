@@ -2,27 +2,15 @@ tools_list = [
         {
             'name_for_human': '代码解释器',
             'name_for_model': 'code_interpreter',
-            'description_for_model': '代码解释器，可用于执行Python代码。',
-            'parameters': [{'name': 'code', 'type': 'string', 'description': '待执行的代码'}],
-            'args_format': 'code'
-        },
-        {
-            'name_for_human': '谷歌搜索',
-            'name_for_model': 'google_search',
-            'description_for_model': '谷歌搜索是一个通用搜索引擎，可用于访问互联网、查询百科知识、了解时事新闻等。',
-            'parameters': [
-                {
-                    'name': 'search_query',
-                    'description': '搜索关键词或短语',
-                    'required': True,
-                    'schema': {'type': 'string'},
-                }
-            ],
+            'description_for_model': '代码解释器，可用于执行Python代码。'
+            + ' Format the arguments as a JSON object.',
+            'parameters': [{'name': 'code', 'type': 'string', 'description': '待执行的代码'}]
         },
         {
             'name_for_human': '文生图',
             'name_for_model': 'image_gen',
-            'description_for_model': '文生图是一个AI绘画（图像生成）服务，输入文本描述，返回根据文本作画得到的图片的URL',
+            'description_for_model': '文生图是一个AI绘画（图像生成）服务，输入文本描述，返回根据文本作画得到的图片的URL。'
+            + ' Format the arguments as a JSON object.',
             'parameters': [
                 {
                     'name': 'prompt',
@@ -31,5 +19,5 @@ tools_list = [
                     'schema': {'type': 'string'},
                 }
             ],
-        }
+        },
     ]

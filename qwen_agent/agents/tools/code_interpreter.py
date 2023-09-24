@@ -1,4 +1,5 @@
 import asyncio
+import atexit
 import base64
 import io
 import json
@@ -6,6 +7,7 @@ import os
 import queue
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import time
@@ -24,7 +26,6 @@ sys.path.insert(
 
 from qwen_agent.configs import config_browserqwen  # NOQA
 
-
 WORK_DIR = os.getenv('CODE_INTERPRETER_WORK_DIR', config_browserqwen.code_interpreter_ws)
 
 LAUNCH_KERNEL_PY = """
@@ -34,6 +35,17 @@ app.launch_new_instance()
 
 _KERNEL_CLIENTS = {}
 
+
+def _kill_kernels():
+    for v in _KERNEL_CLIENTS.values():
+        v.shutdown()
+    for k in list(_KERNEL_CLIENTS.keys()):
+        del _KERNEL_CLIENTS[k]
+
+
+atexit.register(_kill_kernels)
+signal.signal(signal.SIGTERM, _kill_kernels)
+signal.signal(signal.SIGINT, _kill_kernels)
 
 # Run this fix before jupyter starts if matplotlib cannot render CJK fonts.
 # And we need to additionally run the following lines in the jupyter notebook.
@@ -93,7 +105,7 @@ def start_kernel(pid):
         '--matplotlib=inline',
         '--quiet',
     ],
-                                      cwd=WORK_DIR)
+        cwd=WORK_DIR)
     print(f"INFO: kernel process's PID = {kernel_process.pid}")
 
     # Wait for kernel connection file to be written

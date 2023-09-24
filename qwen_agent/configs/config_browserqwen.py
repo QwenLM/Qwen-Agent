@@ -1,14 +1,15 @@
 import os
+from pathlib import Path
 
 """ ===== global setting ===== """
 # the path of browser infomation
-work_space_root = os.path.expanduser('~/BrowserQwenWorkspace/')
-cache_root = os.path.join(work_space_root, 'BrowserCache/')
-download_root = os.path.join(work_space_root, 'Download/')
+work_space_root = os.path.join(Path(__file__).resolve().parent.parent.parent, 'workspace/')
+cache_root = os.path.join(work_space_root, 'browser_cache/')
+download_root = os.path.join(work_space_root, 'download/')
 browser_cache_file = 'browse.jsonl'
 url_file = 'popup_url.jsonl'
 # the path of workspace of code interpreter
-code_interpreter_ws = os.path.join(work_space_root, 'WorkSpace/')
+code_interpreter_ws = os.path.join(work_space_root, 'ci_workspace/')
 
 MAX_TOKEN = 4000  # the max token number of reference material
 llm = 'Qwen-7B-Chat'  # ['Qwen-7B-Chat', 'gpt-4'] - the llm for using

@@ -9,7 +9,6 @@ __pycache__
 qwen_agent/llm/gpt.py
 qwen_agent/llm/tools.py
 workspace/*
-qwen_agent/configs/config_openai.json
 
 benchmark/log/*
 benchmark/output_data/*

@@ -34,12 +34,13 @@ button.style.right = '30px';
 button.textContent = "Add to Qwen's Reading List";
 button.style.fontFamily = 'Arial, sans-serif';
 button.style.fontSize = '14px';
-button.style.width = '120px';
+button.style.width = '140px';
 button.style.height = '60px';
 button.style.backgroundColor = '#695DE8';
 button.style.color = 'white';
 button.style.borderRadius = '5px';
 button.style.border = '0px';
+button.style.whiteSpace = 'pre-wrap';
 button.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.2)';
 
 // 将按钮添加到悬浮框中

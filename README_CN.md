@@ -1,12 +1,40 @@
 # Qwen-Agent
 中文 ｜ [English](./README.md)
 
-Qwen-Agent是基于通义千问（Qwen），将插件使用、规划生成、动作执行等组件集合起来的一个代码库。目前我们实现了一个浏览器扩展程序BrowserQwen，便捷的辅助您实现网页&PDF理解、知识整合与内容编辑工作。BrowserQwen的特点包括：
+Qwen-Agent是基于通义千问（Qwen），将插件使用、规划生成、记忆等组件集合起来的一个代码库。目前我们实现了一个浏览器扩展程序BrowserQwen，便捷的辅助您实现网页&PDF理解、知识整合与内容编辑工作。BrowserQwen的特点包括：
 - 将Qwen集成到浏览器扩展程序，支持在浏览器中和Qwen讨论打开的Web页面和PDF文档(在线文档或本地文档)。
 - 在您允许的前提下，Qwen将记录您浏览过的网页&PDFs素材，辅助您依据浏览内容完成编辑工作。通过它，您可以快速完成多网页内容理解、浏览内容整理、新文章撰写等繁琐的工作。
-- 支持插件调用，目前已集成Code Interpreter、搜索等插件。
+- 支持插件调用，目前已集成Code Interpreter等插件，支持上传文件进行数据分析。
+
+目前支持的型号有Qwen-7B-Chat-v1.1（不包括没有v1.1的版本）和Qwen-14B-Chat。
 
 # 用例演示
+### 根据浏览过的网页、PDFs素材进行长文创作
+<div style="display:flex;">
+<figure>
+    <video controls width="100%" height="auto">
+        <source src="https://qianwen-res.oss-cn-beijing.aliyuncs.com/assets/qwen_agent/showcase_write_article_based_on_webpages_and_pdfs.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+    </video>
+</figure>
+
+### 提取浏览内容、利用代码解释器画图
+<figure>
+    <video controls width="100%" height="auto">
+        <source src="https://qianwen-res.oss-cn-beijing.aliyuncs.com/assets/qwen_agent/showcase_chat_with_docs_and_code_interpreter.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+    </video>
+</figure>
+
+### 上传文件、多轮对话利用代码解释器分析数据
+<figure>
+    <video controls width="100%" height="auto">
+        <source src="https://qianwen-res.oss-cn-beijing.aliyuncs.com/assets/qwen_agent/showcase_code_interpreter_multi_turn_chat.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+    </video>
+</figure>
+</div>
+
 ## 浏览器交互界面问答
 
 <div style="display:flex;">
@@ -64,6 +92,10 @@ python run_server.py --model_server http://127.0.0.1:7905/v1
 ```
 - ```model_server```参数是上面启动的Qwen服务的地址，默认为```http://127.0.0.1:7905/v1```，依据实际需求更改
 - ```Ctrl+C```可以关闭服务
+- 其余可选参数：
+    - prompt_language: 内置prompt的语言，可选```['CN', 'EN']```, 默认```'CN'```
+    - llm: 使用的大模型，支持OpenAI API格式，默认```Qwen```
+    - max_ref_token: 限制参考资料的最大token数，默认```4000```，如果LLM支持较长的Token，可以扩大该数值
 
 ### 上传浏览器扩展程序
 - 进入[谷歌扩展程序](chrome://extensions/)界面
@@ -93,12 +125,11 @@ python run_server.py --model_server http://127.0.0.1:7905/v1
     - agents: 存放planning/tools/action/memory等通用的方法实现
     - llm: 定义访问大模型的接口，目前提供了Qwen的OpenAI格式访问接口
     - configs：存放配置文件，可以在这里修改本地服务端口等配置
-- browser_qwen: 存放BrowserQwen的实现，包括谷歌扩展配置、前端界面和后台处理逻辑
+- browser_qwen: 存放BrowserQwen的实现，包括谷歌扩展配置和前端实现
+- qwen_server: 存放BrowserQwen的后端实现
 
 
 ## 参数定制
-该库支持自定义参数，必要参数在```qwen_agent/configs/config_browserqwen.py```中设置，常用参数如下：
-- llm：使用的大模型，支持OpenAI API格式，默认使用```Qwen-7B-Chat```
-- MAX_TOKEN：限制参考资料的最大token数，默认```4000```，如果LLM支持较长的Token，可以扩大该数值
-- fast_api_host、app_host、app_in_browser_host：后台服务的地址，默认均为本地```127.0.0.1```
-- 注意：修改配置文件或代码后需要重启服务才能起效
+该库支持自定义参数，可以在```qwen_agent/configs/config_browserqwen.py```中设置。注意修改配置文件或代码后需要重启服务才能起效。
+
+该项目非官方产品，而是作为一个概念验证项目，突出Qwen的能力。

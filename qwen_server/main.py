@@ -13,13 +13,17 @@ from fastapi.staticfiles import StaticFiles
 
 sys.path.insert(
     0,
-    str(Path(__file__).absolute().parent.parent.parent))  # NOQA
+    str(Path(__file__).absolute().parent.parent))  # NOQA
 
 from qwen_agent.configs import config_browserqwen  # NOQA
 from qwen_agent.agents.actions import Simple  # NOQA
 from qwen_agent.agents.tools.parse_doc import parse_pdf_pypdf, parse_html_bs  # NOQA
 from qwen_agent.utils.util import save_text_to_file  # NOQA
 from qwen_agent.agents.schema import Record  # NOQA
+
+prompt_lan = sys.argv[1]
+llm_name = sys.argv[2]
+max_ref_token = int(sys.argv[3])
 
 app = FastAPI()
 
@@ -38,15 +42,14 @@ app.add_middleware(
 
 app.mount('/static', StaticFiles(directory=config_browserqwen.code_interpreter_ws), name='static')
 
-if config_browserqwen.llm.startswith('gpt'):
+if llm_name.startswith('gpt'):
     module = 'qwen_agent.llm.gpt'
-    llm = importlib.import_module(module).GPT(config_browserqwen.llm)
-elif config_browserqwen.llm.startswith('Qwen'):
+    llm = importlib.import_module(module).GPT(llm_name)
+elif llm_name.startswith('Qwen'):
     module = 'qwen_agent.llm.qwen'
-    llm = importlib.import_module(module).Qwen(config_browserqwen.llm)
+    llm = importlib.import_module(module).Qwen(llm_name)
 else:
     llm = None
-
 
 if not os.path.exists(config_browserqwen.cache_root):
     os.makedirs(config_browserqwen.cache_root)
@@ -98,9 +101,9 @@ def cache_data(data, cache_file):
 
         data['content'] = pdf_content
         data['type'] = 'pdf'  # pdf
-        if config_browserqwen.prompt_lan == 'CN':
+        if prompt_lan == 'CN':
             cacheprompt = '参考资料是一篇论文的首页，请提取出一句话作为标题。'
-        elif config_browserqwen.prompt_lan == 'EN':
+        elif prompt_lan == 'EN':
             cacheprompt = 'The reference material is the first page of a paper. Please extract one sentence as the title'
         extract = get_title(pdf_content[0]['page_content'], cacheprompt=cacheprompt)
     else:

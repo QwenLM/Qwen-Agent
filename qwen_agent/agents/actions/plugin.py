@@ -6,7 +6,6 @@ from qwen_agent.agents.actions.base import Action
 from qwen_agent.llm.qwen import qwen_chat_no_stream  # NOQA
 from qwen_agent.agents.tools.code_interpreter import code_interpreter  # NOQA
 from qwen_agent.agents.tools.image_gen import image_gen  # NOQA
-from qwen_agent.agents.tools.google_search import google_search  # NOQA
 from qwen_agent.agents.tools.code_interpreter import extract_code  # NOQA
 
 # 将一个插件的关键信息拼接成一段文本的模版。
@@ -105,11 +104,22 @@ def format_answer(text):
         return rsp
     elif 'image_gen' in text:
         # get url of FA
-        # img_url = URLExtract().find_urls(text.split("Final Answer:")[-1].strip())
-        img_url = extract_urls(text.split('Final Answer:')[-1].strip())
-        print(img_url)
+        # img_urls = URLExtract().find_urls(text.split("Final Answer:")[-1].strip())
+        obs = text.split('Observation:')[-1].split('Final Answer')[0].strip()
+        img_urls = []
+        if obs:
+            print(obs)
+            try:
+                obs = json.loads(obs)
+                img_urls.append(obs['image_url'])
+            except Exception as ex:
+                print(ex)
+                img_urls = []
+        if not img_urls:
+            img_urls = extract_urls(text.split('Final Answer:')[-1].strip())
+        print(img_urls)
         rsp = ''
-        for x in img_url:
+        for x in img_urls:
             rsp += '\n![picture]('+x.strip()+')'
         return rsp
     else:
@@ -221,8 +231,6 @@ def parse_latest_plugin_call(text):
 def call_plugin(plugin_name: str, plugin_args: str) -> str:
     if plugin_name == 'code_interpreter':
         return code_interpreter(plugin_args)
-    elif plugin_name == 'google_search':
-        return google_search(plugin_args)
     elif plugin_name == 'image_gen':
         return image_gen(plugin_args)
     else:
@@ -245,19 +253,6 @@ class Plugin(Action):
 
 def test():
     tools = [
-        {
-            'name_for_human': '谷歌搜索',
-            'name_for_model': 'google_search',
-            'description_for_model': '谷歌搜索是一个通用搜索引擎，可用于访问互联网、查询百科知识、了解时事新闻等。',
-            'parameters': [
-                {
-                    'name': 'search_query',
-                    'description': '搜索关键词或短语',
-                    'required': True,
-                    'schema': {'type': 'string'},
-                }
-            ],
-        },
         {
             'name_for_human': '文生图',
             'name_for_model': 'image_gen',

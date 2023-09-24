@@ -1,5 +1,5 @@
 """
-ToT:    From the initial state to the final goal, there are n rounds of generation in between, with each round recorded as
+Vote:    From the initial state to the final goal, there are n rounds of generation in between, with each round recorded as
         one thought, and n thoughts form the final path
 Step1:  Generate k thoughts
 Step2:  Evaluate whether the thoughts are beneficial for achieving goals, only choose positive thoughts
@@ -10,7 +10,7 @@ from qwen_agent.agents.actions import ContinueWriting, EvalCorr
 from qwen_agent.utils.util import get_last_one_line_context
 
 
-class ToT:
+class Vote:
     def __init__(self, llm=None, steps=1, choices=3):
         self.llm = llm
         self.steps = steps

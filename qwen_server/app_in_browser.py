@@ -9,33 +9,44 @@ import jsonlines
 
 sys.path.insert(
     0,
-    str(Path(__file__).absolute().parent.parent.parent))  # NOQA
+    str(Path(__file__).absolute().parent.parent))  # NOQA
 
 from qwen_agent.agents.actions import Simple  # NOQA
 from qwen_agent.configs import config_browserqwen  # NOQA
 from qwen_agent.agents.memory import Memory  # NOQA
 
-if config_browserqwen.llm.startswith('gpt'):
+prompt_lan = sys.argv[1]
+llm_name = sys.argv[2]
+max_ref_token = int(sys.argv[3])
+
+if llm_name.startswith('gpt'):
     module = 'qwen_agent.llm.gpt'
-    llm = importlib.import_module(module).GPT(config_browserqwen.llm)
-elif config_browserqwen.llm.startswith('Qwen'):
+    llm = importlib.import_module(module).GPT(llm_name)
+elif llm_name.startswith('Qwen'):
     module = 'qwen_agent.llm.qwen'
-    llm = importlib.import_module(module).Qwen(config_browserqwen.llm)
+    llm = importlib.import_module(module).Qwen(llm_name)
 else:
     llm = None
 
 mem = Memory(config_browserqwen.similarity_search, config_browserqwen.similarity_search_type)
 
+if not os.path.exists(config_browserqwen.work_space_root):
+    os.makedirs(config_browserqwen.work_space_root)
 if not os.path.exists(config_browserqwen.cache_root):
     os.makedirs(config_browserqwen.cache_root)
+if not os.path.exists(config_browserqwen.download_root):
+    os.makedirs(config_browserqwen.download_root)
+if not os.path.exists(config_browserqwen.code_interpreter_ws):
+    os.makedirs(config_browserqwen.code_interpreter_ws)
+
 cache_file = os.path.join(config_browserqwen.cache_root, config_browserqwen.browser_cache_file)
 cache_file_popup_url = os.path.join(config_browserqwen.cache_root, config_browserqwen.url_file)
 
 page_url = []
 
-with open(Path(__file__).resolve().parent.parent / 'css/main.css', 'r') as f:
+with open(Path(__file__).resolve().parent / 'css/main.css', 'r') as f:
     css = f.read()
-with open(Path(__file__).resolve().parent.parent / 'js/main.js', 'r') as f:
+with open(Path(__file__).resolve().parent / 'js/main.js', 'r') as f:
     js = f.read()
 
 
@@ -77,7 +88,7 @@ def bot(history):
     if not now_page:
         gr.Info("This page has not yet been added to the Qwen's reading list!")
 
-    _ref_list = mem.get(history[-1][0], [now_page], llm=llm, stream=False, max_token=config_browserqwen.MAX_TOKEN)
+    _ref_list = mem.get(history[-1][0], [now_page], llm=llm, stream=False, max_token=max_ref_token)
     if _ref_list:
         _ref = '\n'.join(json.dumps(x, ensure_ascii=False) for x in _ref_list)
     else:
@@ -85,7 +96,7 @@ def bot(history):
     # print(_ref)
     agent = Simple(stream=True, llm=llm)
     history[-1][1] = ''
-    response = agent.run(_ref, history)
+    response = agent.run(_ref, history, prompt_lan=prompt_lan)
 
     for chunk in response:
         history[-1][1] += chunk
@@ -143,7 +154,7 @@ with gr.Blocks(css=css, theme='soft') as demo:
                          elem_id='chatbot',
                          height=480,
                          avatar_images=(None, (os.path.join(
-                             Path(__file__).resolve().parent.parent, 'img/logo.png'))))
+                             Path(__file__).resolve().parent, 'img/logo.png'))))
     with gr.Row():
         with gr.Column(scale=0.06, min_width=0):
             clr_bt = gr.Button('🧹')
