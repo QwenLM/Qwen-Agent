@@ -75,24 +75,25 @@ def set_page_url():
 
 
 def bot(history):
+    now_page = None
+    _ref = ''
     if not os.path.exists(cache_file):
         gr.Info("Please add this page to Qwen's Reading List first!")
-        yield history
-
-    now_page = None
-    for line in jsonlines.open(cache_file):
-        if line['url'] == page_url[-1]:
-            now_page = line
-            break
-
-    if not now_page:
-        gr.Info("This page has not yet been added to the Qwen's reading list!")
-
-    _ref_list = mem.get(history[-1][0], [now_page], llm=llm, stream=False, max_token=max_ref_token)
-    if _ref_list:
-        _ref = '\n'.join(json.dumps(x, ensure_ascii=False) for x in _ref_list)
     else:
-        _ref = ''
+        for line in jsonlines.open(cache_file):
+            if line['url'] == page_url[-1]:
+                now_page = line
+
+        if not now_page:
+            gr.Info("This page has not yet been added to the Qwen's reading list!")
+        elif now_page['raw'] == '':
+            gr.Info('Qwen is analyzing, parsing PDF takes some time...')
+        else:
+            _ref_list = mem.get(history[-1][0], [now_page], llm=llm, stream=False, max_token=max_ref_token)
+            if _ref_list:
+                _ref = '\n'.join(json.dumps(x, ensure_ascii=False) for x in _ref_list)
+            else:
+                _ref = ''
     # print(_ref)
     agent = Simple(stream=True, llm=llm)
     history[-1][1] = ''
@@ -103,16 +104,17 @@ def bot(history):
         yield history
 
     # save history
-    now_page['session'] = history
-    lines = []
-    for line in jsonlines.open(cache_file):
-        if line['url'] != page_url[-1]:
-            lines.append(line)
+    if now_page:
+        now_page['session'] = history
+        lines = []
+        for line in jsonlines.open(cache_file):
+            if line['url'] != page_url[-1]:
+                lines.append(line)
 
-    lines.append(now_page)
-    with jsonlines.open(cache_file, mode='w') as writer:
-        for new_line in lines:
-            writer.write(new_line)
+        lines.append(now_page)
+        with jsonlines.open(cache_file, mode='w') as writer:
+            for new_line in lines:
+                writer.write(new_line)
 
 
 def load_history_session(history):
@@ -126,7 +128,7 @@ def load_history_session(history):
     if not now_page:
         gr.Info("Please add this page to Qwen's Reading List first!")
         return []
-    if not now_page['raw']:
+    if now_page['raw'] == '':
         gr.Info('Qwen is analyzing, parsing PDF takes some time...')
         return []
     return now_page['session']
@@ -156,34 +158,34 @@ with gr.Blocks(css=css, theme='soft') as demo:
                          avatar_images=(None, (os.path.join(
                              Path(__file__).resolve().parent, 'img/logo.png'))))
     with gr.Row():
-        with gr.Column(scale=0.06, min_width=0):
-            clr_bt = gr.Button('🧹')
-        with gr.Column(scale=0.74):
+        with gr.Column(scale=0.7):
             txt = gr.Textbox(show_label=False,
                              placeholder='Chat with Qwen...',
                              container=False)
-        with gr.Column(scale=0.06, min_width=0):
-            smt_bt = gr.Button('⏎')
-        with gr.Column(scale=0.06, min_width=0):
-            stop_bt = gr.Button('🚫')
-        with gr.Column(scale=0.06, min_width=0):
-            re_bt = gr.Button('🔄')
+        # with gr.Column(scale=0.06, min_width=0):
+        #     smt_bt = gr.Button('⏎')
+        with gr.Column(scale=0.1, min_width=0):
+            clr_bt = gr.Button('🧹', elem_classes='bt_small_font')
+        with gr.Column(scale=0.1, min_width=0):
+            stop_bt = gr.Button('🚫', elem_classes='bt_small_font')
+        with gr.Column(scale=0.1, min_width=0):
+            re_bt = gr.Button('🔁', elem_classes='bt_small_font')
 
     txt_msg = txt.submit(add_text, [chatbot, txt], [chatbot, txt],
                          queue=False).then(bot, chatbot, chatbot)
     txt_msg.then(lambda: gr.update(interactive=True), None, [txt], queue=False)
 
-    txt_msg_bt = smt_bt.click(add_text, [chatbot, txt], [chatbot, txt],
-                              queue=False).then(bot, chatbot, chatbot)
-    txt_msg_bt.then(lambda: gr.update(interactive=True),
-                    None, [txt],
-                    queue=False)
+    # txt_msg_bt = smt_bt.click(add_text, [chatbot, txt], [chatbot, txt],
+    #                           queue=False).then(bot, chatbot, chatbot)
+    # txt_msg_bt.then(lambda: gr.update(interactive=True),
+    #                 None, [txt],
+    #                 queue=False)
 
     clr_bt.click(clear_session, None, chatbot, queue=False)
     re_txt_msg = re_bt.click(rm_text, [chatbot], [chatbot, txt], queue=False).then(bot, chatbot, chatbot)
     re_txt_msg.then(lambda: gr.update(interactive=True), None, [txt], queue=False)
 
-    stop_bt.click(None, None, None, cancels=[txt_msg, txt_msg_bt, re_txt_msg], queue=False)
+    stop_bt.click(None, None, None, cancels=[txt_msg, re_txt_msg], queue=False)
 
     demo.load(set_page_url).then(load_history_session, chatbot, chatbot)
 

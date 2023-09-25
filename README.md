@@ -122,6 +122,10 @@ python run_server.py --model_server http://127.0.0.1:7905/v1
             - /plug + content: Qwen enables plugin and select appropriate plugin to generate reply
     - Chat: Interactive area. Qwen generates replies based on given reference materials. Selecting Code Interpreter will enable the code interpreter plugin
 
+- Note: About PDF Documents
+    - When adding online PDF to Qwen's reading list, it may take a long time for Qwen's preprocessing due to network reasons. Please be patient. It is recommended to first download and then open it as a local PDF in the browser.
+    - First time processing online PDF requires downloading nltk_data, which may fail to install due to network issues. It is recommended to download it yourself and place it in the user's root directory
+
 # Code structure
 
 - qwen_agent

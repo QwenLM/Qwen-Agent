@@ -134,6 +134,8 @@ def cache_data(data, cache_file):
 
 
 def change_checkbox_state(text, cache_file):
+    if not os.path.exists(cache_file):
+        return {'result': 'no file'}
     lines = []
     for line in jsonlines.open(cache_file):
         if line['url'] == text[3:]:

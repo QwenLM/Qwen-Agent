@@ -78,12 +78,17 @@ def chat_clear():
 
 
 def chat_clear_last():
+    print(app_global_para['last_turn_msg_id'][::-1])
+    print(app_global_para['messages'])
     for index in app_global_para['last_turn_msg_id'][::-1]:
         del app_global_para['messages'][index]
     app_global_para['last_turn_msg_id'] = []
 
 
 def add_file(file):
+    if not app_global_para['use_ci_flag']:
+        gr.Warning('Upload failed, please check Code Interpreter first!')
+        return '', ''
     output_filepath = config_browserqwen.code_interpreter_ws
     if '/' in file.name:
         fn = file.name.split('/')[-1]
@@ -516,39 +521,42 @@ with gr.Blocks(css=css, theme='soft') as demo:
                                  avatar_images=(None, (os.path.join(
                                      Path(__file__).resolve().parent, 'img/logo.png'))))
             with gr.Row():
-                with gr.Column(scale=0.05, min_width=0):
-                    chat_clr_bt = gr.Button('🧹')  # NOQA
                 with gr.Column(scale=0.16, min_width=0):
                     plug_bt = gr.Checkbox(label='Code Interpreter')
                 with gr.Column(scale=0.02, min_width=0):
                     show_path_md = gr.HTML('')
                 # with gr.Column(scale=0.03, min_width=0):
                 #     show_path_bt = gr.Button('✖️', visible=False)  # NOQA
-                with gr.Column(scale=0.6):
+                with gr.Column(scale=0.65):
                     chat_txt = gr.Textbox(show_label=False, placeholder='Chat with Qwen...', container=False)  # NOQA
+                # with gr.Column(scale=0.05, min_width=0):
+                #     chat_smt_bt = gr.Button('⏎')  # NOQA
                 with gr.Column(scale=0.05, min_width=0):
-                    chat_smt_bt = gr.Button('⏎')  # NOQA
-                with gr.Column(scale=0.05, min_width=0):
-                    chat_stop_bt = gr.Button('🚫')  # NOQA
-                with gr.Column(scale=0.05, min_width=0):
-                    chat_re_bt = gr.Button('🔄')  # NOQA
+                    chat_clr_bt = gr.Button('Clear')  # NOQA
 
                 with gr.Column(scale=0.05, min_width=0):
-                    file_btn = gr.UploadButton('📁', file_types=['file'])  # NOQA
+                    chat_stop_bt = gr.Button('Stop')  # NOQA
+                with gr.Column(scale=0.05, min_width=0):
+                    chat_re_bt = gr.Button('Again')  # NOQA
+
+                with gr.Column(scale=0.05, min_width=0):
+                    file_btn = gr.UploadButton('Upload', file_types=['file'])  # NOQA
 
             hidden_file_path = gr.Textbox(visible=False)
 
             txt_msg = chat_txt.submit(add_text, [chatbot, chat_txt], [chatbot, chat_txt], queue=False).then(bot, [chatbot, hidden_file_path], chatbot)
             txt_msg.then(lambda: gr.update(interactive=True), None, [chat_txt], queue=False)
-            txt_msg_bt = chat_smt_bt.click(add_text, [chatbot, chat_txt], [chatbot, chat_txt], queue=False).then(bot, chatbot, chatbot)
-            txt_msg_bt.then(lambda: gr.update(interactive=True), None, [chat_txt], queue=False)
+
+            # txt_msg_bt = chat_smt_bt.click(add_text, [chatbot, chat_txt], [chatbot, chat_txt], queue=False).then(bot, chatbot, chatbot)
+            # txt_msg_bt.then(lambda: gr.update(interactive=True), None, [chat_txt], queue=False)
+            # (None, None, None, cancels=[txt_msg], queue=False).then
             re_txt_msg = chat_re_bt.click(rm_text, [chatbot], [chatbot, chat_txt], queue=False).then(chat_clear_last, None, None).then(bot, [chatbot, hidden_file_path], chatbot)
             re_txt_msg.then(lambda: gr.update(interactive=True), None, [chat_txt], queue=False)
 
             file_msg = file_btn.upload(add_file, [file_btn], [show_path_md, hidden_file_path], queue=False)
             chat_clr_bt.click(chat_clear, None, [chatbot, hidden_file_path, show_path_md], queue=False)
             # re_bt.click(re_bot, chatbot, chatbot)
-            chat_stop_bt.click(None, None, None, cancels=[txt_msg, txt_msg_bt, re_txt_msg], queue=False)
+            chat_stop_bt.click(chat_clear_last, None, None, cancels=[txt_msg, re_txt_msg], queue=False)
 
             # show_path_bt.click(lambda x:[None, gr.update(visible=False)], hidden_file_path, [show_path_md,show_path_bt])
 

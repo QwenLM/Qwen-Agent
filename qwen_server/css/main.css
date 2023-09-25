@@ -10,19 +10,25 @@
     text-align:center}
 
 .div_tmp {
-    background-color: white;
     height: 190px;
     border-radius: 5px
 }
 
 .div_rec {
-    background-color: white;
     height: 300px;
     border-radius: 5px
 }
 
+.bt_small_font{
+    font-size: 6px;
+}
+
+.bt_small{
+    width: 30px;
+}
+
+
 .md_tmp {
-    background-color: white;
     height: calc(100dvh - 380px);
     border-radius: 5px
 

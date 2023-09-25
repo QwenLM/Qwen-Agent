@@ -119,6 +119,9 @@ python run_server.py --model_server http://127.0.0.1:7905/v1
             - /plug + 内容：Qwen启用plug-in，选择合适的插件生成回复
     - Chat：交互区，Qwen根据给定的参考资料，生成回复；勾选Code Interpreter后启用代码解释器插件
 
+- Note：关于PDF文档
+    - 将在线PDF加入Qwen阅读列表时，可能由于网络等原因导致Qwen预处理时间较长，请耐心等待。建议优先下载后当作本地PDF再浏览器打开。
+    - 首次处理在线PDF需要下载nltk_data，可能由于网络问题安装失败，建议可以自行下载后放置于用户根目录下
 
 # 代码结构
 - qwen_agent
