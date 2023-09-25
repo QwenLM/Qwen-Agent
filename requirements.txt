@@ -8,10 +8,15 @@ json5
 jsonlines
 jupyter>=1.0.0
 langchain
+matplotlib
+numpy
 openai
+pandas
 pdf2image
 pydantic>=2.3.0
 pypdf
+seaborn
+sympy
 tiktoken
 unstructured
 uvicorn>=0.23.2

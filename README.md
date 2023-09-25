@@ -1,141 +1,253 @@
 # Qwen-Agent
+
 [中文](./README_CN.md) ｜ English
 
-Qwen-Agent is a code library based on Qwen (abbr. Tongyi Qianwen) that integrates components such as plugin usage, planning generation, and memory. At present, we have implemented a Google Extension ```BrowserQwen``` to facilitate your knowledge integration and content editing work. The features of BrowserQwen include:
+Qwen-Agent is a code repository based on the open-source model Qwen, which combines components such as tool usage, planning generation, and memory. Currently, we have developed a Chrome browser extension called BrowserQwen, which facilitates the understanding, knowledge integration, and rich-text content writing of web pages and PDF documents. Here are the features of BrowserQwen:
 
-- Integrate Qwen into the Google Extension, supporting discussion of Webpages and PDF documents (online or local) with Qwen in the browser.
-- Qwen can record your webpage browsing history and PDFs with your permission, and assist you in completing editing work. Through it, you can quickly complete tedious tasks such as understanding web content, organizing browsing history, and writing new articles.
-- Supporting plugin calls, and currently integrating plugins such as Code Interpreter, and supporting uploading files for data analysis.
+- Integrates Qwen into the browser extension, allowing discussions with Qwen in the browser to talk about the content of the current web page or PDF document.
+- With your permission, BrowserQwen records the web pages and PDF materials you have browsed to help you complete writing tasks based on your browsing content. Through BrowserQwen, you can quickly understand multiple web page contents, organize browsing content, and write new articles, eliminating tedious work.
+- Supports plugin usage and currently has integrated plugins such as Code Interpreter, which helps math problem solving, data visualization, etc.
 
-The models currently supported are Qwen-7B-Chat-v1.1 (excluding the version without v1.1) and Qwen-14B-Chat.
+Currently, we support two models: Qwen-14B-Chat (recommended) and Qwen-7B-Chat. For the Qwen-7B-Chat model, please use the version pulled from the official HuggingFace respository after September 25, 2023, as both the code and model weights have changed.
 
-# Demonstration
-## Q&A in Browser Interactive Interface
+# Use Case Demonstration
 
-<div style="display:flex;">
-    <figure style="width:45%;">
-        <img src="assets/screenshot-pdf-qa.png" alt="paper-attention-qa">
-        <figcaption style="text-align:center;">Question Answering over a PDF</figcaption>
-    </figure>
-    <figure style="width:45%;">
-        <img src="assets/screenshot-web-qa.png" alt="paper-attention-qa">
-        <figcaption style="text-align:center;">Question Answering over a Webpage</figcaption>
-    </figure>
-</div>
+## Workstation - Editor Mode
 
-## Editing Workstation
-<div style="display:flex;">
-    <figure>
-        <img src="assets/screenshot-writing.png" alt="paper-attention-qa">
-        <figcaption style="text-align:center;">Writing Articles based on Browsed Webpages and PDFs</figcaption>
-    </figure>
-    <figure>
-        <img src="assets/screenshot-editor-movie.png" alt="paper-attention-qa">
-        <figcaption style="text-align:center;">Calling Plugins to Assist in Writing</figcaption>
-    </figure>
-</div>
+**Long article creation based on browsed web pages and PDFs**
 
-<div style="display:flex;">
-    <figure>
-        <img src="assets/screenshot-multi-web-qa.png" alt="paper-attention-qa">
-        <figcaption style="text-align:center;">Question Answering over Multiple Webpages</figcaption>
-    </figure>
-    <figure>
-        <img src="assets/screenshot-ci.png" alt="paper-attention-qa">
-        <figcaption style="text-align:center;">Ask Qwen to draw Figures by Code Interpreter</figcaption>
-    </figure>
-</div>
-
-### The Process of Writing Articles based on Browsed Webpages and PDFs
-<div style="display:flex;">
 <figure>
-    <video controls width="100%" height="auto">
-        <source src="https://qianwen-res.oss-cn-beijing.aliyuncs.com/assets/qwen_agent/showcase_write_article_based_on_webpages_and_pdfs.mp4" type="video/mp4">
-    Your browser does not support the video tag.
-    </video>
+    <img src="assets/screenshot-writing.png">
 </figure>
 
-### Extract Information and draw Figures by Code Interpreter
+**Calling plugins to assist rich text creation**
+
 <figure>
-    <video controls width="100%" height="auto">
-        <source src="https://qianwen-res.oss-cn-beijing.aliyuncs.com/assets/qwen_agent/showcase_chat_with_docs_and_code_interpreter.mp4" type="video/mp4">
-    Your browser does not support the video tag.
-    </video>
+    <img src="assets/screenshot-editor-movie.png">
 </figure>
 
-### Multi-turn Chat with Code Interpreter
-<figure>
-    <video controls width="100%" height="auto">
-        <source src="https://qianwen-res.oss-cn-beijing.aliyuncs.com/assets/qwen_agent/showcase_code_interpreter_multi_turn_chat.mp4" type="video/mp4">
-    Your browser does not support the video tag.
-    </video>
+## Workstation - Chat Mode
+
+**Multi-webpage QA**
+
+<figure >
+    <img src="assets/screenshot-multi-web-qa.png">
 </figure>
-</div>
 
-# How to use BrowserQwen
+**Drawing data charts using the code interpreter**
 
-## Quick Start
+<figure>
+    <img src="assets/screenshot-ci.png">
+</figure>
+
+## Browser Assistant
+
+**Web page QA**
+
+<figure>
+    <img src="assets/screenshot-web-qa.png">
+</figure>
+
+**PDF document QA**
+
+<figure>
+    <img src="assets/screenshot-pdf-qa.png">
+</figure>
+
+# BrowserQwen User Guide
+
+Supported platforms: MacOS, Linux. Windows support is not yet implemented.
+
+## Step 1. Deploy Model Service
+
+Follow the instruction provided by the Qwen project to deploy a model service compatible with the OpenAI API:
 ```
+# Install dependencies
+git clone git@github.com:QwenLM/Qwen.git
+cd Qwen
+pip install -r requirements.txt
+pip install fastapi uvicorn openai pydantic>=2.3.0 sse_starlette
+
+# Start the model service, specify the model version with the -c argument
+python openai_api.py --server-name 127.0.0.1 --server-port 7905 -c QWen/QWen-14B-Chat
+```
+
+We recommend using the QWen-14B-Chat model. If you want to use the Qwen-7B-Chat model, make sure you are using a version pulled from the official HuggingFace repository after September 25, 2023, as both the code and model weights have changed.
+
+## Step 2. Deploy Local Database Service
+
+On your local machine (the machine where you can open the Chrome browser), deploy a database service to manage your browsing history and conversation history:
+
+```
+# Install dependencies
 git clone https://github.com/QwenLM/Qwen-Agent.git
 cd Qwen-Agent
 pip install -r requirements.txt
+
+# Start the database service, specify the model service you deployed in Step 1 with the --model_server parameter
+python run_server.py --model_server http://127.0.0.1:7905/v1 --workstation_port 7864
 ```
 
-## Start Service
-### Start Qwen: Refer to the OpenAI API deployment method in [Qwen-7B](https://github.com/QwenLM/Qwen-7B/blob/main/README.md#api):
+Now you can access [http://127.0.0.1:7864/](http://127.0.0.1:7864/) to use the Workstation's Editor mode and Chat mode.
+For tips on using the Workstation, refer to the text instructions on the Workstation page.
 
-```
-python openai_api.py --server-port 7905
-```
+## Step 3. Install Browser Assistant
 
-### Start the Backend Services of Google Extension and Editing Workstation:
-```
-python run_server.py --model_server http://127.0.0.1:7905/v1
-```
-- model_server is the address of Qwen's OpenAI API Interface, default to ```http://127.0.0.1:7905/v1```
-- Pressing ```Ctrl+C``` can close the service
-- Other optional parameters:
-    - prompt_language: Language of built-in prompts, optional ```['CN', 'EN']```, default to ```'CN'```
-    - llm: The large model. Now supporting OpenAI API format, default to ```Qwen```
-    - max_ref_token: The maximum number of tokens for reference materials, default to ```4000```. If LLM supports longer tokens, this value can be expanded.
+Install the BrowserQwen Chrome extension:
 
+- Open the Chrome browser and enter `chrome://extensions/` in the address bar, then press Enter.
+- Click on `Load unpacked` and upload the `browser_qwen` directory from this project, then enable the extension.
+- Click the extension icon in the top right corner of the Chrome browser to pin BrowserQwen to the toolbar.
 
-### Upload to Google Extension
-- Entering [Google Extension](chrome://extensions/)
-- Finding file ```browser_qwen```, uploading and enabling
-- Clicking on the Google Chrome Extensions icon in the top right corner of Google Chrome to pin BrowserQwen in the toolbar
+Note that after installing the Chrome extension, you need to refresh the page for the extension to take effect.
 
-### Usage Tips
-- When you find browsing web content useful, click the ```Add to Qwen's Reading List``` button in the upper right corner of the screen, and Qwen will analyze this page in the background. (Considering user privacy, user must first click on the button to authorize Qwen before reading this page)
-- Clicking on the Qwen icon in the upper right corner to communicate with Qwen on the current browsing page.
-- Accessing the default address```http://127.0.0.1:7864/``` to work on the editing workstation and Qwen will assist you with editing based on browsing records.
+When you want Qwen to read the content of the current webpage:
 
-- The editing workstation mainly consists of three areas:
-    - Browsing History:
-        - Start Date/End Date: Selecting the browsed materials for the desired time period, including the start and end dates
-        - The browsed materials list: supporting the selection or removal of specific browsing content
-    - Editor: In the editing area, you can directly input content or special instructions, and then click the ```Continue``` button to have Qwen assist in completing the editing work:
-        - After inputting the content, directly click the ```Continue``` button: Qwen will begin to continue writing based on the browsing information
-        - Using special instructions:
-            - /title + content: Qwen enables the built-in planning process and writes a complete manuscript
-            - /code + content: Qwen enables the code interpreter plugin, writes and runs Python code, and generates replies
-            - /plug + content: Qwen enables plugin and select appropriate plugin to generate reply
-    - Chat: Interactive area. Qwen generates replies based on given reference materials. Selecting Code Interpreter will enable the code interpreter plugin
+- Click the `Add to Qwen's Reading List` button on the screen to authorize Qwen to analyze the page in the background.
+- Click the Qwen icon in the browser's top right corner to start interacting with Qwen about the current page's content.
 
-- Note: About PDF Documents
-    - When adding online PDF to Qwen's reading list, it may take a long time for Qwen's preprocessing due to network reasons. Please be patient. It is recommended to first download and then open it as a local PDF in the browser.
-    - First time processing online PDF requires downloading nltk_data, which may fail to install due to network issues. It is recommended to download it yourself and place it in the user's root directory
+Note: Reading PDF documents is an experimental feature and may not be stable. When adding an online PDF to Qwen's reading list, it may take a while for Qwen to preprocess it due to network issues or downloading NLTK dependencies. It is recommended to first download the PDF locally and then open it in the browser.
 
-# Code structure
+## Video Tutorials
 
-- qwen_agent
-    - agents: The implementation of general methods for planning/tools/actions/memory
-    - llm: Defining the interface for accessing LLM, currently providing OpenAI format access interface for Qwen-7B
-    - configs: Storing the configuration files where you can modify local service ports and other configurations
-- browser_qwen: The implementation of BrowserQwen, including google extension configuration and front-end interface.
-- qwen_server: The implementation of backend processing logic for BrowserQwen
+You can watch the following showcase videos to learn about the basic operations of BrowserQwen:
 
-## Configuration
-This library supports custom parameters. Setting necessary parameters in ```qwen_agent/configs/config_browserqwen.py```. After modifying the configuration file or code, the service need to be restarted to take effect.
+- Long-form writing based on visited webpages and PDFs [video](https://qianwen-res.oss-cn-beijing.aliyuncs.com/assets/qwen_agent/showcase_write_article_based_on_webpages_and_pdfs.mp4)
+- Drawing a plot using code interpreter based on the given information [video](https://qianwen-res.oss-cn-beijing.aliyuncs.com/assets/qwen_agent/showcase_chat_with_docs_and_code_interpreter.mp4)
+- Uploading files, multi-turn conversation, and data analysis using code interpreter [video](https://qianwen-res.oss-cn-beijing.aliyuncs.com/assets/qwen_agent/showcase_code_interpreter_multi_turn_chat.mp4)
 
-This project is not intended to be an official product, rather it serves as a proof-of-concept project that highlights the capabilities of Qwen.
+# Evaluation Benchmark
+
+We have also open-sourced a benchmark for evaluating the performance of a model in writing Python code and using Code Interpreter for mathematical problem solving, data analysis, and other general tasks. The benchmark can be found in the [benchmark](benchmark/README.md) directory. The current evaluation results are as follows:
+
+<table>
+    <tr>
+        <th colspan="4" align="center">Executable Rate of Generated Code (%)</th>
+    </tr>
+    <tr>
+        <th align="center">Model</th><th align="center">Math↑</th><th align="center">Visualization↑</th><th align="center">General↑</th>
+    </tr>
+    <tr>
+        <td>GPT-4</td><td align="center">91.9</td><td align="center">85.9</td><td align="center">82.8</td>
+    </tr>
+    <tr>
+        <td>GPT-3.5</td><td align="center">89.2</td><td align="center">65.0</td><td align="center">74.1</td>
+    </tr>
+    <tr>
+        <td>LLaMA2-7B-Chat</td>
+        <td align="center">41.9</td>
+        <td align="center">33.1</td>
+        <td align="center">24.1 </td>
+    </tr>
+    <tr>
+        <td>LLaMA2-13B-Chat</td>
+        <td align="center">50.0</td>
+        <td align="center">40.5</td>
+        <td align="center">48.3 </td>
+    </tr>
+    <tr>
+        <td>CodeLLaMA-7B-Instruct</td>
+        <td align="center">85.1</td>
+        <td align="center">54.0</td>
+        <td align="center">70.7 </td>
+    </tr>
+    <tr>
+        <td>CodeLLaMA-13B-Instruct</td>
+        <td align="center">93.2</td>
+        <td align="center">55.8</td>
+        <td align="center">74.1 </td>
+    </tr>
+    <tr>
+        <td>InternLM-7B-Chat-v1.1</td>
+        <td align="center">78.4</td>
+        <td align="center">44.2</td>
+        <td align="center">62.1 </td>
+    </tr>
+    <tr>
+        <td>InternLM-20B-Chat</td>
+        <td align="center">70.3</td>
+        <td align="center">44.2</td>
+        <td align="center">65.5 </td>
+    </tr>
+    <tr>
+        <td>Qwen-7B-Chat</td>
+        <td align="center">82.4</td>
+        <td align="center">64.4</td>
+        <td align="center">67.2 </td>
+    </tr>
+    <tr>
+        <td>Qwen-14B-Chat</td>
+        <td align="center">89.2</td>
+        <td align="center">84.1</td>
+        <td align="center">65.5</td>
+    </tr>
+</table>
+
+<table>
+    <tr>
+        <th colspan="4" align="center">Accuracy of Code Execution Results (%)</th>
+    </tr>
+    <tr>
+        <th align="center">Model</th><th align="center">Math↑</th><th align="center">Visualization-Hard↑</th><th align="center">Visualization-Easy↑</th>
+    </tr>
+    <tr>
+        <td>GPT-4</td><td align="center">82.8</td><td align="center">66.7</td><td align="center">60.8</td>
+    </tr>
+    <tr>
+        <td>GPT-3.5</td><td align="center">47.3</td><td align="center">33.3</td><td align="center">55.7</td>
+    </tr>
+    <tr>
+        <td>LLaMA2-7B-Chat</td>
+        <td align="center">3.9</td>
+        <td align="center">14.3</td>
+        <td align="center">39.2 </td>
+    </tr>
+    <tr>
+        <td>LLaMA2-13B-Chat</td>
+        <td align="center">8.3</td>
+        <td align="center">8.3</td>
+        <td align="center">40.5 </td>
+    </tr>
+    <tr>
+        <td>CodeLLaMA-7B-Instruct</td>
+        <td align="center">14.3</td>
+        <td align="center">26.2</td>
+        <td align="center">60.8 </td>
+    </tr>
+    <tr>
+        <td>CodeLLaMA-13B-Instruct</td>
+        <td align="center">28.2</td>
+        <td align="center">27.4</td>
+        <td align="center">62.0 </td>
+    </tr>
+    <tr>
+        <td>InternLM-7B-Chat-v1.1</td>
+        <td align="center">28.5</td>
+        <td align="center">4.8</td>
+        <td align="center">40.5 </td>
+    </tr>
+    <tr>
+        <td>InternLM-20B-Chat</td>
+        <td align="center">34.6</td>
+        <td align="center">21.4</td>
+        <td align="center">45.6 </td>
+    </tr>
+    <tr>
+        <td>Qwen-7B-Chat</td>
+        <td align="center">41.9</td>
+        <td align="center">40.5</td>
+        <td align="center">54.4 </td>
+    </tr>
+    <tr>
+        <td>Qwen-14B-Chat</td>
+        <td align="center">58.4</td>
+        <td align="center">53.6</td>
+        <td align="center">59.5</td>
+    </tr>
+</table>
+
+Qwen-7B-Chat refers to the version updated after September 25, 2023.
+
+# Disclaimer
+
+This project is not intended to be an official product, rather it serves as a proof-of-concept project that highlights the capabilities of the Qwen series models.
