@@ -26,12 +26,14 @@ from qwen_agent.agents.schema import Record  # NOQA
 prompt_lan = sys.argv[1]
 llm_name = sys.argv[2]
 max_ref_token = int(sys.argv[3])
+workstation_port = int(sys.argv[4])
+
 
 app = FastAPI()
 
 origins = [
-    'http://127.0.0.1:7864',
-    'http://localhost:7864',
+    'http://127.0.0.1:'+str(workstation_port),
+    'http://localhost:'+str(workstation_port),
 ]
 
 app.add_middleware(

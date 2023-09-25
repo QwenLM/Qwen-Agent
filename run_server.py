@@ -43,7 +43,7 @@ if __name__ == '__main__':
         json.dump(openai_api, file)
 
     servers = {}
-    servers['database'] = subprocess.Popen([sys.executable, os.path.join(os.getcwd(), 'qwen_server/main.py'), args.prompt_language, args.llm, str(args.max_ref_token)])
+    servers['database'] = subprocess.Popen([sys.executable, os.path.join(os.getcwd(), 'qwen_server/main.py'), args.prompt_language, args.llm, str(args.max_ref_token), str(args.workstation_port)])
     servers['workstation'] = subprocess.Popen([sys.executable, os.path.join(os.getcwd(), 'qwen_server/app.py'), args.prompt_language, args.llm, str(args.max_ref_token), str(args.workstation_port)])
     servers['browser'] = subprocess.Popen([sys.executable, os.path.join(os.getcwd(), 'qwen_server/app_in_browser.py'), args.prompt_language, args.llm, str(args.max_ref_token)])
 
