@@ -2,7 +2,7 @@
 
 中文 ｜ [English](./README.md)
 
-Qwen-Agent是一个基于开源模型通义千问（Qwen）的代码库，它将工具使用、规划生成、记忆等组件集合在一起。目前，我们已经开发了一个名为BrowserQwen的浏览器扩展程序，它能够方便地辅助您进行网页和PDF文档的理解、知识整合和富文本内容编辑工作。以下是BrowserQwen的特点：
+Qwen-Agent是一个基于开源模型通义千问（[Qwen](https://github.com/QwenLM/Qwen)）的代码库，用于将工具使用、规划生成、记忆等组件集合在一起。目前，我们已经开发了一个名为BrowserQwen的浏览器扩展程序，它能够方便地辅助您进行网页和PDF文档的理解、知识整合和富文本内容编辑工作。以下是BrowserQwen的特点：
 
 - 将Qwen集成到浏览器扩展程序中，支持在浏览器中与Qwen进行讨论，聊一聊当前Web页面、PDF文档的内容。
 
@@ -10,9 +10,11 @@ Qwen-Agent是一个基于开源模型通义千问（Qwen）的代码库，它将
 
 - 支持插件调用，目前已经集成了代码解释器（Code Interpreter）等插件，代码解释器能够支持上传文件进行数据分析等功能。
 
-目前，我们支持两种模型：Qwen-14B-Chat（推荐）和Qwen-7B-Chat。对于Qwen-7B-Chat模型，请使用2023年9月25日之后从官方Github和HuggingFace重新拉取的版本，因为代码和模型权重都发生了变化。
+目前，我们支持两种模型：Qwen-14B-Chat（推荐）和Qwen-7B-Chat。对于Qwen-7B-Chat模型，请使用2023年9月25日之后从官方HuggingFace重新拉取的版本，因为代码和模型权重都发生了变化。
 
 # 用例演示
+
+如果您更喜欢观看视频，而不是效果截图，可以参见[视频演示](#视频演示)。
 
 ## 工作台 - 创作模式
 
@@ -97,7 +99,7 @@ python run_server.py --model_server http://{MODEL_SERVER_IP}:7905/v1 --workstati
 
 现在您可以访问 [http://127.0.0.1:7864/](http://127.0.0.1:7864/) 来使用工作台（Workstation）的创作模式（Editor模式）和对话模式（Chat模式）了。
 
-关于工作台的使用技巧，请参见工作台页面的文字说明、或观看[视频教学](#视频教学)。
+关于工作台的使用技巧，请参见工作台页面的文字说明、或观看[视频演示](#视频演示)。
 
 ## Step 3. 安装浏览器助手
 
@@ -116,7 +118,7 @@ python run_server.py --model_server http://{MODEL_SERVER_IP}:7905/v1 --workstati
 
 注：阅读PDF文档为实验功能，尚不稳定。将在线PDF加入Qwen的阅读列表时，可能会因为网络问题、下载NLTK依赖等因素导致Qwen预处理时间较长，请耐心等待。建议先下载为本地PDF后，再在浏览器中打开本地PDF。
 
-## 视频教学
+## 视频演示
 
 可查看以下几个演示视频，了解BrowserQwen的基本操作：
 

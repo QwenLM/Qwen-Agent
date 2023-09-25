@@ -2,7 +2,7 @@
 
 [中文](./README_CN.md) ｜ English
 
-Qwen-Agent is a code repository based on the open-source model Qwen, which combines components such as tool usage, planning generation, and memory. Currently, we have developed a Chrome browser extension called BrowserQwen, which facilitates the understanding, knowledge integration, and rich-text content writing of web pages and PDF documents. Here are the features of BrowserQwen:
+Qwen-Agent is a code repository based on the open-source model [Qwen](https://github.com/QwenLM/Qwen), which combines components such as tool usage, planning generation, and memory. Currently, we have developed a Chrome browser extension called BrowserQwen, which facilitates the understanding, knowledge integration, and rich-text content writing of web pages and PDF documents. Here are the features of BrowserQwen:
 
 - Integrates Qwen into the browser extension, allowing discussions with Qwen in the browser to talk about the content of the current web page or PDF document.
 - With your permission, BrowserQwen records the web pages and PDF materials you have browsed to help you complete writing tasks based on your browsing content. Through BrowserQwen, you can quickly understand multiple web page contents, organize browsing content, and write new articles, eliminating tedious work.
@@ -11,6 +11,8 @@ Qwen-Agent is a code repository based on the open-source model Qwen, which combi
 Currently, we support two models: Qwen-14B-Chat (recommended) and Qwen-7B-Chat. For the Qwen-7B-Chat model, please use the version pulled from the official HuggingFace respository after September 25, 2023, as both the code and model weights have changed.
 
 # Use Case Demonstration
+
+If you prefer watching videos instead of screenshots, you can refer to the [video demonstration](#video-demonstration).
 
 ## Workstation - Editor Mode
 
@@ -96,7 +98,7 @@ python run_server.py --model_server http://{MODEL_SERVER_IP}:7905/v1 --workstati
 
 Now you can access [http://127.0.0.1:7864/](http://127.0.0.1:7864/) to use the Workstation's Editor mode and Chat mode.
 
-For tips on using the Workstation, please refer to the instructions on the Workstation page or watch the [video tutorial](#video-tutorials).
+For tips on using the Workstation, please refer to the instructions on the Workstation page or watch the [video demonstration](#video-demonstration).
 
 ## Step 3. Install Browser Assistant
 
@@ -115,7 +117,7 @@ When you want Qwen to read the content of the current webpage:
 
 Note: Reading PDF documents is an experimental feature and may not be stable. When adding an online PDF to Qwen's reading list, it may take a while for Qwen to preprocess it due to network issues or downloading NLTK dependencies. It is recommended to first download the PDF locally and then open it in the browser.
 
-## Video Tutorials
+## Video Demonstration
 
 You can watch the following showcase videos to learn about the basic operations of BrowserQwen:
 
