@@ -72,7 +72,9 @@ pip install -r requirements.txt
 pip install fastapi uvicorn openai pydantic>=2.3.0 sse_starlette
 
 # 启动模型服务，通过 -c 参数指定模型版本
-python openai_api.py --server-name 127.0.0.1 --server-port 7905 -c QWen/QWen-14B-Chat
+# - 指定 --server-name 0.0.0.0 将允许其他机器访问您的模型服务
+# - 指定 --server-name 127.0.0.1 则只允许部署模型的机器自身访问该模型服务
+python openai_api.py --server-name 0.0.0.0 --server-port 7905 -c QWen/QWen-14B-Chat
 ```
 
 我们推荐使用QWen-14B-Chat模型。如果您想使用Qwen-7B-Chat模型，请确保使用的是2023年9月25日之后从官方HuggingFace重新拉取的版本，因为代码和模型权重都发生了变化。
@@ -88,19 +90,21 @@ cd Qwen-Agent
 pip install -r requirements.txt
 
 # 启动数据库服务，通过 --model_server 参数指定您在 Step 1 里部署好的模型服务
-python run_server.py --model_server http://127.0.0.1:7905/v1 --workstation_port 7864
+# - 若 Step 1 的机器 IP 为 123.45.67.89，则可指定 --model_server http://123.45.67.89:7905/v1
+# - 若 Step 1 和 Step 2 是同一台机器，则可指定 --model_server http://127.0.0.1:7905/v1
+python run_server.py --model_server http://{MODEL_SERVER_IP}:7905/v1 --workstation_port 7864
 ```
 
-现在您可以访问 [http://127.0.0.1:7864/](http://127.0.0.1:7864/) 来使用Workstation的Editor模式和Chat模式了。
+现在您可以访问 [http://127.0.0.1:7864/](http://127.0.0.1:7864/) 来使用工作台（Workstation）的创作模式（Editor模式）和对话模式（Chat模式）了。
 
-关于Workstation的使用技巧，请参见Workstation页面的文字说明。
+关于工作台的使用技巧，请参见工作台页面的文字说明、或观看[视频教学](#视频教学)。
 
 ## Step 3. 安装浏览器助手
 
 安装BrowserQwen的Chrome插件（又称Chrome扩展程序）：
 
 1. 打开Chrome浏览器，在浏览器的地址栏中输入 `chrome://extensions/` 并按下回车键；
-2. 点击 `加载已解压的扩展程序`，上传本项目下的 `browser_qwen` 目录并启用；
+2. 确保右上角的 `开发者模式` 处于打开状态，之后点击 `加载已解压的扩展程序` 上传本项目下的 `browser_qwen` 目录并启用；
 3. 单击谷歌浏览器右上角```扩展程序```图标，将BrowserQwen固定在工具栏。
 
 注意，安装Chrome插件后，需要刷新页面，插件才能生效。

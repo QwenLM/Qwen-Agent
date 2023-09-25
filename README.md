@@ -68,8 +68,10 @@ cd Qwen
 pip install -r requirements.txt
 pip install fastapi uvicorn openai pydantic>=2.3.0 sse_starlette
 
-# Start the model service, specify the model version with the -c argument
-python openai_api.py --server-name 127.0.0.1 --server-port 7905 -c QWen/QWen-14B-Chat
+# Start the model service, specifying the model version with the -c parameter.
+# --server-name 0.0.0.0 allows other machines to access your service.
+# --server-name 127.0.0.1 only allows the machine deploying the model to access the service.
+python openai_api.py --server-name 0.0.0.0 --server-port 7905 -c QWen/QWen-14B-Chat
 ```
 
 We recommend using the QWen-14B-Chat model. If you want to use the Qwen-7B-Chat model, make sure you are using a version pulled from the official HuggingFace repository after September 25, 2023, as both the code and model weights have changed.
@@ -84,19 +86,24 @@ git clone https://github.com/QwenLM/Qwen-Agent.git
 cd Qwen-Agent
 pip install -r requirements.txt
 
-# Start the database service, specify the model service you deployed in Step 1 with the --model_server parameter
-python run_server.py --model_server http://127.0.0.1:7905/v1 --workstation_port 7864
+# Start the database service, specifying the model service deployed in Step 1 with --model_server.
+# If the IP address of the machine in Step 1 is 123.45.67.89,
+#     you can specify --model_server http://123.45.67.89:7905/v1
+# If Step 1 and Step 2 are on the same machine,
+#     you can specify --model_server http://127.0.0.1:7905/v1
+python run_server.py --model_server http://{MODEL_SERVER_IP}:7905/v1 --workstation_port 7864
 ```
 
 Now you can access [http://127.0.0.1:7864/](http://127.0.0.1:7864/) to use the Workstation's Editor mode and Chat mode.
-For tips on using the Workstation, refer to the text instructions on the Workstation page.
+
+For tips on using the Workstation, please refer to the instructions on the Workstation page or watch the [video tutorial](#video-tutorials).
 
 ## Step 3. Install Browser Assistant
 
 Install the BrowserQwen Chrome extension:
 
 - Open the Chrome browser and enter `chrome://extensions/` in the address bar, then press Enter.
-- Click on `Load unpacked` and upload the `browser_qwen` directory from this project, then enable the extension.
+- Make sure that the `Developer mode` in the top right corner is turned on, then click on `Load unpacked` to upload the `browser_qwen` directory from this project and enable it.
 - Click the extension icon in the top right corner of the Chrome browser to pin BrowserQwen to the toolbar.
 
 Note that after installing the Chrome extension, you need to refresh the page for the extension to take effect.
