@@ -23,7 +23,7 @@ similarity_search_type = 'keyword'  # ['keyword', 'querymatch', 'llm']
 """ ===== main.py setting ===== """
 # the host and port of main.py
 fast_api_host = '127.0.0.1'
-fast_api_port = 8000
+fast_api_port = 7866
 fast_api_figure_url = 'http://'+fast_api_host+':'+str(fast_api_port)+'/static'
 
 pre_gen_question = False  # [True, False] - pre gen qustion for each block
@@ -31,7 +31,6 @@ pre_gen_question = False  # [True, False] - pre gen qustion for each block
 """ ===== app.py setting (editing workstation) ===== """
 # the host and port of editing workstation
 app_host = '127.0.0.1'
-app_port = 7864
 
 max_days = 7  # the number of days for displaying
 auto_agent = False  # [True, False] - automatic using plug-in after wrinting every section

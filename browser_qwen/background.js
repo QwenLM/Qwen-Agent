@@ -1,5 +1,5 @@
 function send_data(msg){
-  fetch("http://127.0.0.1:8000/endpoint", {
+  fetch("http://127.0.0.1:7866/endpoint", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

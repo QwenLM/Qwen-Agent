@@ -15,6 +15,7 @@ def parse_args():
     parser.add_argument('-lan', '--prompt_language', type=str, default='CN', choices=['EN', 'CN'], help='the language of built-in prompt')
     parser.add_argument('-llm', '--llm', type=str, default='Qwen', choices=['Qwen'])
     parser.add_argument('-t', '--max_ref_token', type=int, default=4000, help='the max token number of reference material')
+    parser.add_argument('-w', '--workstation_port', type=int, default=7864, help='the port of editing workstation')
 
     args = parser.parse_args()
 
@@ -43,7 +44,7 @@ if __name__ == '__main__':
 
     servers = {}
     servers['database'] = subprocess.Popen([sys.executable, os.path.join(os.getcwd(), 'qwen_server/main.py'), args.prompt_language, args.llm, str(args.max_ref_token)])
-    servers['workstation'] = subprocess.Popen([sys.executable, os.path.join(os.getcwd(), 'qwen_server/app.py'), args.prompt_language, args.llm, str(args.max_ref_token)])
+    servers['workstation'] = subprocess.Popen([sys.executable, os.path.join(os.getcwd(), 'qwen_server/app.py'), args.prompt_language, args.llm, str(args.max_ref_token), str(args.workstation_port)])
     servers['browser'] = subprocess.Popen([sys.executable, os.path.join(os.getcwd(), 'qwen_server/app_in_browser.py'), args.prompt_language, args.llm, str(args.max_ref_token)])
 
     def signal_handler(sig, frame):

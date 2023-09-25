@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 import jsonlines
+import requests
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -80,6 +81,12 @@ def get_title(text, cacheprompt=''):
     return extract
 
 
+def download_pdf(url, save_path):
+    response = requests.get(url)
+    with open(save_path, 'wb') as file:
+        file.write(response.content)
+
+
 def cache_data(data, cache_file):
     extract = ''  # extract a title for display
     print('Begin cache...')
@@ -89,7 +96,6 @@ def cache_data(data, cache_file):
                             extract='', topic='', checked=False, session=[]).to_dict()
         with jsonlines.open(cache_file, mode='a') as writer:
             writer.write(new_record)
-
         if is_local_path(data['url']):
             from urllib.parse import urlparse, unquote
             parsed_url = urlparse(data['url'])
@@ -108,21 +114,32 @@ def cache_data(data, cache_file):
                         writer.write(new_line)
                 return 'failed'
         else:
-            print('Parsing the online PDF. Please be patient...')
-            parsed_url = data['url']
             try:
-                pdf_content = parse_pdf_pypdf(parsed_url, 'online', pre_gen_question=config_browserqwen.pre_gen_question)
+                # download pdf
+                print('Trying to download online PDF. Please be patient...')
+                new_path = os.path.join(config_browserqwen.cache_root, data['url'].split('/')[-1])
+                download_pdf(data['url'], new_path)
+                print('Download successful')
+                print('new path', new_path)
+                pdf_content = parse_pdf_pypdf(new_path, 'local', pre_gen_question=config_browserqwen.pre_gen_question)
             except Exception as ex:
+                print('Download failed')
                 print(ex)
-                lines = []
-                if os.path.exists(cache_file):
-                    for line in jsonlines.open(cache_file):
-                        if line['url'] != data['url']:
-                            lines.append(line)
-                with jsonlines.open(cache_file, mode='w') as writer:
-                    for new_line in lines:
-                        writer.write(new_line)
-                return 'failed'
+                print('Directly parsing the online PDF. Please be patient...')
+                parsed_url = data['url']
+                try:
+                    pdf_content = parse_pdf_pypdf(parsed_url, 'online', pre_gen_question=config_browserqwen.pre_gen_question)
+                except Exception as ex:
+                    print(ex)
+                    lines = []
+                    if os.path.exists(cache_file):
+                        for line in jsonlines.open(cache_file):
+                            if line['url'] != data['url']:
+                                lines.append(line)
+                    with jsonlines.open(cache_file, mode='w') as writer:
+                        for new_line in lines:
+                            writer.write(new_line)
+                    return 'failed'
 
         data['content'] = pdf_content
         data['type'] = 'pdf'  # pdf
@@ -133,6 +150,10 @@ def cache_data(data, cache_file):
         extract = get_title(pdf_content[0]['page_content'], cacheprompt=cacheprompt)
     else:
         if data['content'] and data['type'] == 'html':
+            new_record = Record(url=data['url'], time='', type=data['type'], raw='', extract='', topic='', checked=False, session=[]).to_dict()
+            with jsonlines.open(cache_file, mode='a') as writer:
+                writer.write(new_record)
+
             try:
                 tmp_html_file = os.path.join(config_browserqwen.cache_root, 'tmp.html')
                 save_text_to_file(tmp_html_file, data['content'])

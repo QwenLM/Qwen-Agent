@@ -13,6 +13,7 @@ numpy
 openai
 pandas
 pdf2image
+pdfminer-six
 pydantic>=2.3.0
 pypdf
 seaborn

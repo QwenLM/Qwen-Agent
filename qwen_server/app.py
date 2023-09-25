@@ -25,6 +25,7 @@ from qwen_agent.llm.qwen import qwen_chat_func  # NOQA
 prompt_lan = sys.argv[1]
 llm_name = sys.argv[2]
 max_ref_token = int(sys.argv[3])
+workstation_port = int(sys.argv[4])
 
 if not os.path.exists(config_browserqwen.work_space_root):
     os.makedirs(config_browserqwen.work_space_root)
@@ -68,8 +69,13 @@ def add_text(history, text):
 
 
 def rm_text(history):
-    history = history[:-1] + [(history[-1][0], None)]
-    return history, gr.update(value='', interactive=False)
+    if not history:
+        gr.Warning('No input content!')
+    elif not history[-1][1]:
+        return history, gr.update(value='', interactive=False)
+    else:
+        history = history[:-1] + [(history[-1][0], None)]
+        return history, gr.update(value='', interactive=False)
 
 
 def chat_clear():
@@ -86,9 +92,6 @@ def chat_clear_last():
 
 
 def add_file(file):
-    if not app_global_para['use_ci_flag']:
-        gr.Warning('Upload failed, please check Code Interpreter first!')
-        return '', ''
     output_filepath = config_browserqwen.code_interpreter_ws
     if '/' in file.name:
         fn = file.name.split('/')[-1]
@@ -101,6 +104,11 @@ def add_file(file):
     path_show = '<p></p><p>File</p>'  # NOQA
     app_global_para['is_first_upload'] = True
     return path_show, new_path
+
+
+def check_file():
+    if not app_global_para['use_ci_flag']:
+        gr.Warning('Select the Code Interpreter to analyze the file!')
 
 
 def read_records(file, times=None):
@@ -217,96 +225,99 @@ def add_url_manu(url, date):
 
 
 def bot(history, upload_file):
-    history[-1][1] = ''
-    if app_global_para['use_ci_flag']:  # use code interpreter
-        prompt_upload_file = ''
-        if upload_file and app_global_para['is_first_upload']:
-            if prompt_lan == 'EN':
-                prompt_upload_file = f'[Upload file {upload_file}] '
-            elif prompt_lan == 'CN':
-                prompt_upload_file = f'[上传文件{upload_file}] '
-            app_global_para['is_first_upload'] = False
-        history[-1][0] = prompt_upload_file+history[-1][0]
-        message = {
-            'role': 'user', 'content': history[-1][0]
-        }
-        app_global_para['last_turn_msg_id'].append(len(app_global_para['messages']))
-        app_global_para['messages'].append(message)
-        while True:
-            print(app_global_para['messages'])
-            rsp = qwen_chat_func(app_global_para['messages'], tools_list[:1])
-            if rsp['function_call']:
-                history[-1][1] += rsp['content'].strip() + '\n'
-                yield history
-                history[-1][1] += 'Action: '+rsp['function_call']['name'].strip() + '\n'
-                yield history
-                history[-1][1] += 'Action Input:\n'+rsp['function_call']['arguments'] + '\n'
-                yield history
-                bot_msg = {
-                    'role': 'assistant',
-                    'content': rsp['content'],
-                    'function_call': {
-                        'name': rsp['function_call']['name'],
-                        'arguments': rsp['function_call']['arguments'],
-                    }
-                }
-                app_global_para['last_turn_msg_id'].append(len(app_global_para['messages']))
-                app_global_para['messages'].append(bot_msg)
-
-                obs = call_plugin(rsp['function_call']['name'], rsp['function_call']['arguments'])
-                func_msg = {
-                    'role': 'function',
-                    'name': rsp['function_call']['name'],
-                    'content': obs,
-                }
-                history[-1][1] += ('Observation: ' + obs + '\n')
-                yield history
-                app_global_para['last_turn_msg_id'].append(len(app_global_para['messages']))
-                app_global_para['messages'].append(func_msg)
-            else:
-                bot_msg = {
-                    'role': 'assistant',
-                    'content': rsp['content'],
-                }
-                history[-1][1] += rsp['content']
-                yield history
-                app_global_para['last_turn_msg_id'].append(len(app_global_para['messages']))
-                app_global_para['messages'].append(bot_msg)
-                break
+    if not history:
+        yield history
     else:
-        lines = []
-        if not os.path.exists(app_global_para['cache_file']):
-            _ref = ''
+        history[-1][1] = ''
+        if app_global_para['use_ci_flag']:  # use code interpreter
+            prompt_upload_file = ''
+            if upload_file and app_global_para['is_first_upload']:
+                if prompt_lan == 'EN':
+                    prompt_upload_file = f'[Upload file {upload_file}] '
+                elif prompt_lan == 'CN':
+                    prompt_upload_file = f'[上传文件{upload_file}] '
+                app_global_para['is_first_upload'] = False
+            history[-1][0] = prompt_upload_file+history[-1][0]
+            message = {
+                'role': 'user', 'content': history[-1][0]
+            }
+            app_global_para['last_turn_msg_id'].append(len(app_global_para['messages']))
+            app_global_para['messages'].append(message)
+            while True:
+                print(app_global_para['messages'])
+                rsp = qwen_chat_func(app_global_para['messages'], tools_list[:1])
+                if rsp['function_call']:
+                    history[-1][1] += rsp['content'].strip() + '\n'
+                    yield history
+                    history[-1][1] += 'Action: '+rsp['function_call']['name'].strip() + '\n'
+                    yield history
+                    history[-1][1] += 'Action Input:\n'+rsp['function_call']['arguments'] + '\n'
+                    yield history
+                    bot_msg = {
+                        'role': 'assistant',
+                        'content': rsp['content'],
+                        'function_call': {
+                            'name': rsp['function_call']['name'],
+                            'arguments': rsp['function_call']['arguments'],
+                        }
+                    }
+                    app_global_para['last_turn_msg_id'].append(len(app_global_para['messages']))
+                    app_global_para['messages'].append(bot_msg)
+
+                    obs = call_plugin(rsp['function_call']['name'], rsp['function_call']['arguments'])
+                    func_msg = {
+                        'role': 'function',
+                        'name': rsp['function_call']['name'],
+                        'content': obs,
+                    }
+                    history[-1][1] += ('Observation: ' + obs + '\n')
+                    yield history
+                    app_global_para['last_turn_msg_id'].append(len(app_global_para['messages']))
+                    app_global_para['messages'].append(func_msg)
+                else:
+                    bot_msg = {
+                        'role': 'assistant',
+                        'content': rsp['content'],
+                    }
+                    history[-1][1] += rsp['content']
+                    yield history
+                    app_global_para['last_turn_msg_id'].append(len(app_global_para['messages']))
+                    app_global_para['messages'].append(bot_msg)
+                    break
         else:
-            for line in jsonlines.open(app_global_para['cache_file']):
-                if (app_global_para['time'][0] <= line['time'] <= app_global_para['time'][1]) and line['checked']:
-                    lines.append(line)
-            if lines:
-                _ref_list = mem.get(history[-1][0], lines, llm=llm, stream=True, max_token=max_ref_token)
-                _ref = '\n'.join(json.dumps(x, ensure_ascii=False) for x in _ref_list)
-            else:
+            lines = []
+            if not os.path.exists(app_global_para['cache_file']):
                 _ref = ''
-                gr.Warning('No reference materials selected, Qwen will answer directly')
+            else:
+                for line in jsonlines.open(app_global_para['cache_file']):
+                    if (app_global_para['time'][0] <= line['time'] <= app_global_para['time'][1]) and line['checked']:
+                        lines.append(line)
+                if lines:
+                    _ref_list = mem.get(history[-1][0], lines, llm=llm, stream=True, max_token=max_ref_token)
+                    _ref = '\n'.join(json.dumps(x, ensure_ascii=False) for x in _ref_list)
+                else:
+                    _ref = ''
+                    gr.Warning('No reference materials selected, Qwen will answer directly')
 
-        agent = Simple(llm=llm, stream=True)
-        response = agent.run(_ref, history)
+            agent = Simple(llm=llm, stream=True)
+            response = agent.run(_ref, history)
 
-        for chunk in response:
-            history[-1][1] += chunk
-            yield history
+            for chunk in response:
+                history[-1][1] += chunk
+                yield history
 
-        # append message
-        message = {
-            'role': 'user', 'content': history[-1][0]
-        }
-        app_global_para['last_turn_msg_id'].append(len(app_global_para['messages']))
-        app_global_para['messages'].append(message)
+            # append message
+            message = {
+                'role': 'user', 'content': history[-1][0]
+            }
+            app_global_para['last_turn_msg_id'].append(len(app_global_para['messages']))
+            app_global_para['messages'].append(message)
 
-        message = {
-            'role': 'assistant', 'content': history[-1][1]
-        }
-        app_global_para['last_turn_msg_id'].append(len(app_global_para['messages']))
-        app_global_para['messages'].append(message)
+            message = {
+                'role': 'assistant', 'content': history[-1][1]
+            }
+            app_global_para['last_turn_msg_id'].append(len(app_global_para['messages']))
+            app_global_para['messages'].append(message)
 
 
 def func_call(query, functions):
@@ -535,6 +546,8 @@ with gr.Blocks(css=css, theme='soft') as demo:
                                  avatar_images=(None, (os.path.join(
                                      Path(__file__).resolve().parent, 'img/logo.png'))))
             with gr.Row():
+                with gr.Column(scale=0.05, min_width=0):
+                    file_btn = gr.UploadButton('Upload', file_types=['file'])  # NOQA
                 with gr.Column(scale=0.16, min_width=0):
                     plug_bt = gr.Checkbox(label='Code Interpreter')
                 with gr.Column(scale=0.02, min_width=0):
@@ -553,9 +566,6 @@ with gr.Blocks(css=css, theme='soft') as demo:
                 with gr.Column(scale=0.05, min_width=0):
                     chat_re_bt = gr.Button('Again')  # NOQA
 
-                with gr.Column(scale=0.05, min_width=0):
-                    file_btn = gr.UploadButton('Upload', file_types=['file'])  # NOQA
-
             hidden_file_path = gr.Textbox(visible=False)
 
             txt_msg = chat_txt.submit(add_text, [chatbot, chat_txt], [chatbot, chat_txt], queue=False).then(bot, [chatbot, hidden_file_path], chatbot)
@@ -567,7 +577,8 @@ with gr.Blocks(css=css, theme='soft') as demo:
             re_txt_msg = chat_re_bt.click(rm_text, [chatbot], [chatbot, chat_txt], queue=False).then(chat_clear_last, None, None).then(bot, [chatbot, hidden_file_path], chatbot)
             re_txt_msg.then(lambda: gr.update(interactive=True), None, [chat_txt], queue=False)
 
-            file_msg = file_btn.upload(add_file, [file_btn], [show_path_md, hidden_file_path], queue=False)
+            file_msg = file_btn.upload(add_file, [file_btn], [show_path_md, hidden_file_path], queue=False).then(check_file, None, None)
+
             chat_clr_bt.click(chat_clear, None, [chatbot, hidden_file_path, show_path_md], queue=False)
             # re_bt.click(re_bot, chatbot, chatbot)
             chat_stop_bt.click(chat_clear_last, None, None, cancels=[txt_msg, re_txt_msg], queue=False)
@@ -587,4 +598,4 @@ with gr.Blocks(css=css, theme='soft') as demo:
     demo.load(update_app_global_para, [date1, date2], None).then(update_browser_list, None, browser_list).then(lambda: None, None, None, _js=f'() => {{{js}}}').then(chat_clear, None, [chatbot, hidden_file_path, show_path_md])
     # .then(update_rec_list, gr.Textbox('load', visible=False), rec_list, queue=False)
 
-demo.queue().launch(server_name=config_browserqwen.app_host, server_port=config_browserqwen.app_port)
+demo.queue().launch(server_name=config_browserqwen.app_host, server_port=workstation_port)

@@ -56,8 +56,13 @@ def add_text(history, text):
 
 
 def rm_text(history):
-    history = history[:-1] + [(history[-1][0], None)]
-    return history, gr.update(value='', interactive=False)
+    if not history:
+        gr.Warning('No input content!')
+    elif not history[-1][1]:
+        return history, gr.update(value='', interactive=False)
+    else:
+        history = history[:-1] + [(history[-1][0], None)]
+        return history, gr.update(value='', interactive=False)
 
 
 def add_file(history, file):
@@ -75,46 +80,49 @@ def set_page_url():
 
 
 def bot(history):
-    now_page = None
-    _ref = ''
-    if not os.path.exists(cache_file):
-        gr.Info("Please add this page to Qwen's Reading List first!")
-    else:
-        for line in jsonlines.open(cache_file):
-            if line['url'] == page_url[-1]:
-                now_page = line
-
-        if not now_page:
-            gr.Info("This page has not yet been added to the Qwen's reading list!")
-        elif now_page['raw'] == '':
-            gr.Info('Qwen is analyzing, parsing PDF takes some time...')
-        else:
-            _ref_list = mem.get(history[-1][0], [now_page], llm=llm, stream=False, max_token=max_ref_token)
-            if _ref_list:
-                _ref = '\n'.join(json.dumps(x, ensure_ascii=False) for x in _ref_list)
-            else:
-                _ref = ''
-    # print(_ref)
-    agent = Simple(stream=True, llm=llm)
-    history[-1][1] = ''
-    response = agent.run(_ref, history, prompt_lan=prompt_lan)
-
-    for chunk in response:
-        history[-1][1] += chunk
+    if not history:
         yield history
+    else:
+        now_page = None
+        _ref = ''
+        if not os.path.exists(cache_file):
+            gr.Info("Please add this page to Qwen's Reading List first!")
+        else:
+            for line in jsonlines.open(cache_file):
+                if line['url'] == page_url[-1]:
+                    now_page = line
 
-    # save history
-    if now_page:
-        now_page['session'] = history
-        lines = []
-        for line in jsonlines.open(cache_file):
-            if line['url'] != page_url[-1]:
-                lines.append(line)
+            if not now_page:
+                gr.Info("This page has not yet been added to the Qwen's reading list!")
+            elif now_page['raw'] == '':
+                gr.Info('Please wait, Qwen is analyzing this page...')
+            else:
+                _ref_list = mem.get(history[-1][0], [now_page], llm=llm, stream=False, max_token=max_ref_token)
+                if _ref_list:
+                    _ref = '\n'.join(json.dumps(x, ensure_ascii=False) for x in _ref_list)
+                else:
+                    _ref = ''
+        # print(_ref)
+        agent = Simple(stream=True, llm=llm)
+        history[-1][1] = ''
+        response = agent.run(_ref, history, prompt_lan=prompt_lan)
 
-        lines.append(now_page)
-        with jsonlines.open(cache_file, mode='w') as writer:
-            for new_line in lines:
-                writer.write(new_line)
+        for chunk in response:
+            history[-1][1] += chunk
+            yield history
+
+        # save history
+        if now_page:
+            now_page['session'] = history
+            lines = []
+            for line in jsonlines.open(cache_file):
+                if line['url'] != page_url[-1]:
+                    lines.append(line)
+
+            lines.append(now_page)
+            with jsonlines.open(cache_file, mode='w') as writer:
+                for new_line in lines:
+                    writer.write(new_line)
 
 
 def load_history_session(history):
@@ -129,12 +137,14 @@ def load_history_session(history):
         gr.Info("Please add this page to Qwen's Reading List first!")
         return []
     if now_page['raw'] == '':
-        gr.Info('Qwen is analyzing, parsing PDF takes some time...')
+        gr.Info('Please wait, Qwen is analyzing this page...')
         return []
     return now_page['session']
 
 
 def clear_session():
+    if not os.path.exists(cache_file):
+        return None
     now_page = None
     lines = []
     for line in jsonlines.open(cache_file):
@@ -142,6 +152,8 @@ def clear_session():
             now_page = line
         else:
             lines.append(line)
+    if not now_page:
+        return None
     now_page['session'] = []
     lines.append(now_page)
     with jsonlines.open(cache_file, mode='w') as writer:
