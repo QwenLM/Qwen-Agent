@@ -1,5 +1,6 @@
 import datetime
 import importlib
+import multiprocessing
 import os
 import sys
 from pathlib import Path
@@ -93,11 +94,35 @@ def cache_data(data, cache_file):
             from urllib.parse import urlparse, unquote
             parsed_url = urlparse(data['url'])
             print('parsed_url: ', parsed_url)
-            pdf_content = parse_pdf_pypdf(unquote(parsed_url.path), 'local', pre_gen_question=config_browserqwen.pre_gen_question)
+            try:
+                pdf_content = parse_pdf_pypdf(unquote(parsed_url.path), 'local', pre_gen_question=config_browserqwen.pre_gen_question)
+            except Exception as ex:
+                print(ex)
+                lines = []
+                if os.path.exists(cache_file):
+                    for line in jsonlines.open(cache_file):
+                        if line['url'] != data['url']:
+                            lines.append(line)
+                with jsonlines.open(cache_file, mode='w') as writer:
+                    for new_line in lines:
+                        writer.write(new_line)
+                return 'failed'
         else:
             print('Parsing the online PDF. Please be patient...')
             parsed_url = data['url']
-            pdf_content = parse_pdf_pypdf(parsed_url, 'online', pre_gen_question=config_browserqwen.pre_gen_question)
+            try:
+                pdf_content = parse_pdf_pypdf(parsed_url, 'online', pre_gen_question=config_browserqwen.pre_gen_question)
+            except Exception as ex:
+                print(ex)
+                lines = []
+                if os.path.exists(cache_file):
+                    for line in jsonlines.open(cache_file):
+                        if line['url'] != data['url']:
+                            lines.append(line)
+                with jsonlines.open(cache_file, mode='w') as writer:
+                    for new_line in lines:
+                        writer.write(new_line)
+                return 'failed'
 
         data['content'] = pdf_content
         data['type'] = 'pdf'  # pdf
@@ -163,7 +188,10 @@ async def web_listening(request: Request):
     if msg_type == 'change_checkbox':
         rsp = change_checkbox_state(data['ckid'], cache_file)
     elif msg_type == 'cache':
-        rsp = cache_data(data, cache_file)
+        cache_obj = multiprocessing.Process(target=cache_data, args=(data, cache_file))
+        cache_obj.start()
+        # rsp = cache_data(data, cache_file)
+        rsp = 'caching'
     elif msg_type == 'pop_url':
         rsp = update_pop_url(data, cache_file_popup_url)
 

@@ -510,6 +510,20 @@ with gr.Blocks(css=css, theme='soft') as demo:
         # layout_bt.click(layout_to_right,
         #                 edit_area, [text_out_area, md_out_area],
         #                 queue=False)
+        gr.Markdown('''
+    ### Usage Tips:
+    - Browsing History:
+        - Start Date/End Date: Selecting the browsed materials for the desired time period, including the start and end dates
+        - The browsed materials list: supporting the selection or removal of specific browsing content
+    - Editor: In the editing area, you can directly input content or special instructions, and then click the ```Continue``` button to have Qwen assist in completing the editing work:
+        - After inputting the content, directly click the ```Continue``` button: Qwen will begin to continue writing based on the browsing information
+        - Using special instructions:
+            - /title + content: Qwen enables the built-in planning process and writes a complete manuscript
+            - /code + content: Qwen enables the code interpreter plugin, writes and runs Python code, and generates replies
+            - /plug + content: Qwen enables plugin and select appropriate plugin to generate reply
+    - Chat: Interactive area. Qwen generates replies based on given reference materials. Selecting Code Interpreter will enable the code interpreter plugin
+
+        ''')
 
     with gr.Tab('Chat', elem_id='chat-tab'):
         with gr.Column():

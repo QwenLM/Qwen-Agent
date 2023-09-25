@@ -111,7 +111,7 @@ python run_server.py --model_server http://127.0.0.1:7905/v1
 - Accessing the default address```http://127.0.0.1:7864/``` to work on the editing workstation and Qwen will assist you with editing based on browsing records.
 
 - The editing workstation mainly consists of three areas:
-    - Browser List:
+    - Browsing History:
         - Start Date/End Date: Selecting the browsed materials for the desired time period, including the start and end dates
         - The browsed materials list: supporting the selection or removal of specific browsing content
     - Editor: In the editing area, you can directly input content or special instructions, and then click the ```Continue``` button to have Qwen assist in completing the editing work:
