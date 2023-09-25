@@ -4,8 +4,8 @@ import logging
 import os
 from parser import ReActParser
 
+import prettytable
 import tqdm
-
 from code_interpreter import code_interpreter
 from config import (get_model, get_react_parser, get_react_prompt,
                     model_path_map)
@@ -26,6 +26,20 @@ WORK_DIR = os.getenv('CODE_INTERPRETER_WORK_DIR', '/tmp/workspace')
 os.makedirs(WORK_DIR, exist_ok=True)
 os.system(f'cp -r upload_file_clean {WORK_DIR}/upload_file')
 os.system('cp -r upload_file_clean ./upload_file')
+
+
+global_eval_result = {
+    'code_executability': {
+        'math': None,
+        'visualization': None,
+        'general': None,
+    },
+    'code_correctness': {
+        'math': None,
+        'visualization-hard': None,
+        'visualization-easy': None,
+    }
+}
 
 
 def llm_with_plugin(args, query, item=None, exec_limit=3):
@@ -93,7 +107,7 @@ def call_plugin(plugin_name, plugin_args_list, clear=False):
 
 def process_code_interpreter(item, writer):
     query = item['query']
-    exec_limit = 3 if 'ci_plot' in item['tags'] else 1
+    exec_limit = 3 if 'visualization' in item['tags'] else 1
     response = llm_with_plugin(args=args, query=query, item=item, exec_limit=exec_limit)
     item['gen'] = response
 
@@ -119,31 +133,49 @@ def sequential_processing(args, data_list, process_func, writer):
 
 process_func_map = {
     'gsm8k': process_gsm8k,
-    'ci_plot': process_code_interpreter
+    'visualization': process_code_interpreter
 }
 
 
-def eval_metrics(args, test_set):
+def gather_eval_result(model_name):
+    for metric in global_eval_result:
+        logging.info(metric)
+        table = prettytable.PrettyTable()
+        table.field_names = ['model'] + list(global_eval_result[metric].keys())
+        row_data = [model_name]
+        for item in global_eval_result[metric].values():
+            item = str(item) if not item else str(round(item, 2))
+            row_data.append(item)
+        table.add_row(row_data)
+        logging.info('\n' + str(table))
+
+
+def eval_metrics(args, test_set, full_output_fname):
     # metrics
-    assert os.path.exists(args.output_fname), f'Not Found File {args.output_fname}.'
-    inference_res = load_jsonl(args.output_fname)
+    assert os.path.exists(full_output_fname), f'Not Found File {full_output_fname}.'
+    inference_res = load_jsonl(full_output_fname)
     assert len(inference_res) == len(test_set), f'There are still {len(test_set)-len(inference_res)} cases left.'
 
-    abs_output_fname = os.path.join(os.path.dirname(os.path.abspath(__file__)), args.output_fname)
+    abs_output_fname = os.path.join(os.path.dirname(os.path.abspath(__file__)), full_output_fname)
     if args.task == 'gsm8k':
-        eval_gsm8k_acc(abs_output_fname)
+        math_code_correctness = eval_gsm8k_acc(abs_output_fname)
+        global_eval_result['code_correctness'].update(math_code_correctness)
     else:
-        eval_code_execution_rate(abs_output_fname, args.task, args.model)
-        if args.task in ['all_ci', 'ci_plot'] and not args.eval_code_exec_only:
-            eval_visualization_acc(abs_output_fname, args.model)
+        code_executability = eval_code_execution_rate(abs_output_fname, args.task, args.model)
+        global_eval_result['code_executability'].update(code_executability)
+        if args.task in ['all_ci', 'visualization'] and not args.eval_code_exec_only:
+            visualization_code_correctness = eval_visualization_acc(abs_output_fname, args.model)
+            global_eval_result['code_correctness'].update(visualization_code_correctness)
 
 
 def main(args):
-    args.output_fname = os.path.join(args.output_path, (args.output_fname or f'{args.task}_{args.model}_res.jsonl'))
+    current_dir = os.getcwd()
+    os.makedirs(args.output_path, exist_ok=True)
+    full_output_fname = os.path.join(args.output_path, (args.output_fname or f'{args.task}_{args.model}_res.jsonl'))
 
-    if not os.path.exists(args.output_fname):
-        with open(args.output_fname, 'w'):
-            logging.info(f'Create file {args.output_fname} done.')
+    if not os.path.exists(full_output_fname):
+        with open(full_output_fname, 'w'):
+            logging.info(f'Create file {full_output_fname} done.')
 
     # build data
     if args.task == 'gsm8k':
@@ -155,30 +187,31 @@ def main(args):
     logging.info(f'Test set: {len(test_set)}')
 
     if args.eval_only:
-        eval_metrics(args, test_set)
-        return
+        eval_metrics(args, test_set, full_output_fname)
+    else:
+        key = 'question' if args.task == 'gsm8k' else 'query'
+        cache_question = [item[key] for item in load_jsonl(full_output_fname)] if not args.force else []
+        data_list = [item for item in test_set if item[key] not in cache_question]
+        logging.info(f'Left cases: {len(data_list)}')
 
-    key = 'question' if args.task == 'gsm8k' else 'query'
-    cache_question = [item[key] for item in load_jsonl(args.output_fname)] if not args.force else []
-    data_list = [item for item in test_set if item[key] not in cache_question]
-    logging.info(f'Left cases: {len(data_list)}')
+        # inference
+        writer_mode = 'w' if args.force else 'a'
+        f_output = open(full_output_fname, writer_mode, encoding='utf-8')
+        process_func = process_func_map.get(args.task, process_code_interpreter)
+        sequential_processing(args, data_list, process_func, f_output)
+        f_output.close()
 
-    # inference
-    writer_mode = 'w' if args.force else 'a'
-    f_output = open(args.output_fname, writer_mode, encoding='utf-8')
-    process_func = process_func_map.get(args.task, process_code_interpreter)
-    sequential_processing(args, data_list, process_func, f_output)
-    f_output.close()
+        # evaluate
+        if not args.gen_exec_only:
+            eval_metrics(args, test_set, full_output_fname)
 
-    # evaluate
-    if not args.gen_exec_only:
-        eval_metrics(args, test_set)
+    os.chdir(current_dir)
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, default='qwen-14b-chat', choices=list(model_path_map.keys()))
-    parser.add_argument('--task', type=str, default='gsm8k', choices=['gsm8k', 'all_ci', 'ci_plot', 'ci_math_code', 'ci_open_questions'])
+    parser.add_argument('--task', type=str, default='all', choices=['all', 'gsm8k', 'all_ci', 'visualization', 'math', 'general'])
     parser.add_argument('--output-path', type=str, default='output_data')
     parser.add_argument('--input-path', type=str, default='eval_data')
     parser.add_argument('-o', '--output-fname', type=str, default='')
@@ -198,4 +231,10 @@ if __name__ == '__main__':
         args.llm = get_model(args.model)
         logging.info(f'Init {args.model} done.')
 
-    main(args)
+    if args.task == 'all':
+        for key in ['all_ci', 'gsm8k']:
+            args.task = key
+            main(args)
+    else:
+        main(args)
+    gather_eval_result(args.model)

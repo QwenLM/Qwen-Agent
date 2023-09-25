@@ -63,7 +63,7 @@ In terms of code correctness, we calculate accuracy rates for `Math` and `Visual
         <td align="center">65.5 </td>
     </tr>
     <tr>
-        <td>Qwen-7B-Chat-v1.1</td>
+        <td>Qwen-7B-Chat</td>
         <td align="center">82.4</td>
         <td align="center">64.4</td>
         <td align="center">67.2 </td>
@@ -126,7 +126,7 @@ In terms of code correctness, we calculate accuracy rates for `Math` and `Visual
         <td align="center">45.6 </td>
     </tr>
     <tr>
-        <td>Qwen-7B-Chat-v1.1</td>
+        <td>Qwen-7B-Chat</td>
         <td align="center">41.9</td>
         <td align="center">40.5</td>
         <td align="center">54.4 </td>
@@ -151,8 +151,9 @@ pip install -r requirements.txt
 ```
 
 ### Dataset Download
+*The dataset is coming soon...*
 ```shell
-wget <data_url>
+mkdir eval_data
 mv eval_code_interpreter_v1.jsonl eval_data/
 ```
 
@@ -160,13 +161,12 @@ mv eval_code_interpreter_v1.jsonl eval_data/
 To reproduce the comprehensive results of benchmark, you can run the following script:
 
 ```Shell
-python inference_and_execute.py --task all_ci --model {model_name}
-python inference_and_execute.py --task gsm8k --model {model_name}
+python inference_and_execute.py --model {model_name}
 ```
 
 {model_name}:
 - qwen-14b-chat
-- qwen-7b-chat-1.1
+- qwen-7b-chat
 - qwen-1.8b-chat
 - qwen-7b-chat
 - llama-2-7b-chat
@@ -199,9 +199,9 @@ python inference_and_execute.py --task {task_name} --model {model_name}
 
 {task_name}:
 - `all_ci`: All tasks including Math / Visualization / General problem-solving
-- `ci_plot`: Visualization task
-- `ci_math_code`: Math task
-- `ci_open_quesitions`: General problem-solving task
+- `visualization`: Visualization task
+- `math`: Math task
+- `general`: General problem-solving task
 
 
 #### Code Correctness Rate
@@ -210,15 +210,15 @@ python inference_and_execute.py --task {task_name} --model {model_name}
 ```
 
 {task_name}:
-- `ci_plot`: Visualization task
+- `visualization`: Visualization task
 - `gsm8k`: Math task
 
 
 ## Configuration
 The inference_and_exec.py file contains the following configurable options:
 
-- `--model`: The model to test which can be one of `qwen-14b-chat`, `qwen-7b-chat-1.1`, `qwen-1.8b-chat`, `qwen-7b-chat`, `llama-2-7b-chat`, `llama-2-13b-chat`, `codellama-7b-instruct`, `codellama-13b-instruct`, `internlm-7b-chat-1.1`, `internlm-20b-chat`.
-- `--task`: The test task which can be one of `gsm8k`, `all_ci`, `ci_plot`, `ci_math_code`, `ci_open_questions`.
+- `--model`: The model to test which can be one of `qwen-14b-chat`, `qwen-7b-chat`, `qwen-1.8b-chat`, `qwen-7b-chat`, `llama-2-7b-chat`, `llama-2-13b-chat`, `codellama-7b-instruct`, `codellama-13b-instruct`, `internlm-7b-chat-1.1`, `internlm-20b-chat`.
+- `--task`: The test task which can be one of `all`, `all_ci`, `visualization`, `math`, `general`, `gsm8k`.
 - `--output-path`: The path for saving evaluation result.
 - `--input-path`: The path for placing evaluation data.
 - `--output-fname`: The file name for evaluation result.

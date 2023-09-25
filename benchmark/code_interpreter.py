@@ -14,7 +14,6 @@ import uuid
 import matplotlib
 import PIL.Image
 from jupyter_client import BlockingKernelClient
-
 from utils.code_utils import extract_code
 
 WORK_DIR = os.getenv('CODE_INTERPRETER_WORK_DIR', '/tmp/workspace')
@@ -40,7 +39,7 @@ def fix_matplotlib_cjk_font_issue():
             os.path.join(matplotlib.matplotlib_fname(), os.path.pardir)),
         'fonts', 'ttf', 'simhei.ttf')
     if not os.path.exists(local_ttf):
-        logging.warning(f'Missing font file `{local_ttf}` for matplotlib in . It may cause some error when using matplotlib.')
+        logging.warning(f'Missing font file `{local_ttf}` for matplotlib. It may cause some error when using matplotlib.')
 
 
 def start_kernel(pid):

@@ -3,7 +3,6 @@ import os
 import re
 
 import numpy as np
-
 from utils.data_utils import load_jsonl, save_jsonl
 
 INVALID_ANS = '[invalid]'
@@ -47,3 +46,5 @@ def eval_gsm8k_acc(output_fname):
     error_data_list = [item for item in data_list if not item['acc']]
     error_data_output_fname = os.path.splitext(output_fname)[0] + '_gsm8k_error.jsonl'
     save_jsonl(error_data_list, error_data_output_fname)
+
+    return {'math': np.mean(acc_res)*100}

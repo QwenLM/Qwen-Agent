@@ -29,18 +29,24 @@ import math
 
 
 tags_config = {
-    'ci_plot': {
+    'visualization': {
         'timelimit': True,
         'extract_first_code': True,
     },
-    'ci_math_code': {
+    'math': {
         'timelimit': True,
         'extract_first_code': False,
     },
-    'ci_open_questions': {
+    'general': {
         'timelimit': False,
         'extract_first_code': True,
     }
+}
+
+code_executability = {
+    'math': None,
+    'visualization': None,
+    'general': None
 }
 
 
@@ -173,7 +179,7 @@ def eval_code_execution_rate(output_fname, tag='all_ci', model_name='qwen-14b-ch
 
     log_result(data_list)
 
-    return data_list
+    return code_executability
 
 
 def log_result(data_list, verbose=True):
@@ -218,6 +224,9 @@ def log_result(data_list, verbose=True):
         logging.info('Execution Rate: {:.2f}'.format(executable_code_count/all_count*100))
         logging.info('Non-executable rate: {:.2f}'.format((all_count-missing_code_count-executable_code_count)/all_count*100))
         logging.info('Missing code rate: {:.2f}'.format(missing_code_count/all_count*100))
+
+        if key != 'all_ci':
+            code_executability[key] = executable_code_count/all_count*100
 
         if verbose:
             logging.info('Error List: ')

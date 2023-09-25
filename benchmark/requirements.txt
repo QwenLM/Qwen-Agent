@@ -4,6 +4,7 @@ json5
 matplotlib
 numpy
 pandas
+PrettyTable
 scipy
 seaborn
 sympy

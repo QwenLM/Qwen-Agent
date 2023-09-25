@@ -3,7 +3,6 @@ import os
 import re
 
 import torch
-
 from config import get_model, get_react_parser
 from utils.data_utils import load_jsonl, save_jsonl
 
@@ -17,6 +16,11 @@ EVAL_VISUAL_PROMPT_ZH = """请判断图片是否与下面的[问题]一致，如
 EVAL_VISUAL_PROMPT_EN = """Please judge whether the image is consistent with the [Question] below, if it is consistent then reply "right", if not then reply "wrong".
 [Question]: {query}
 """
+
+visualization_code_correctness = {
+    'visualization-hard': None,
+    'visualization-easy': None,
+}
 
 
 def qwen_vl_inference(qwen_vl, imgs=[], prompt=''):
@@ -79,7 +83,7 @@ def eval_visualization_acc(output_fname, model_name):
 
     data_list = load_jsonl(output_fname)
     for item in data_list:
-        if 'ci_plot' not in item['tags']:
+        if 'visualization' not in item['tags']:
             continue
 
         item['vis_acc'] = False
@@ -106,10 +110,15 @@ def eval_visualization_acc(output_fname, model_name):
     logging.info('*'*60)
     logging.info('{:^60}'.format('Visualization Acc.'))
     logging.info('*'*60)
-    logging.info('zero action count={}, zero action right count={}, zero action acc={:.2f}'.format(zero_action, zero_action_right, zero_action_right/zero_action*100))
-    logging.info('one action count={}, one action right count={}, one action acc={:.2f}'.format(one_action, one_action_right, one_action_right/one_action*100))
+    logging.info('Visualization-Hard count={}, Visualization-Hard right count={}, Visualization-Hard acc={:.2f}'.format(zero_action, zero_action_right, zero_action_right/zero_action*100))
+    logging.info('Visualization-Easy count={}, Visualization-Easy right count={}, Visualization-Easy acc={:.2f}'.format(one_action, one_action_right, one_action_right/one_action*100))
     logging.info('all count={}, all right={}, all acc={:.2f}'.format(zero_action+one_action, zero_action_right+one_action_right, (zero_action_right+one_action_right)/(zero_action+one_action)*100))
 
-    error_data_list = [item for item in data_list if 'ci_plot' in item['tags'] and not item['vis_acc']]
+    visualization_code_correctness['visualization-hard'] = zero_action_right/zero_action*100
+    visualization_code_correctness['visualization-easy'] = one_action_right/one_action*100
+
+    error_data_list = [item for item in data_list if 'visualization' in item['tags'] and not item['vis_acc']]
     error_data_output_fname = os.path.splitext(output_fname)[0] + '_vis_error.jsonl'
     save_jsonl(error_data_list, error_data_output_fname)
+
+    return visualization_code_correctness

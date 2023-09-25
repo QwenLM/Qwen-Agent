@@ -24,7 +24,6 @@ model_map = {
 
 model_type_map = {
     'qwen-14b-chat': 'qwen',
-    'qwen-7b-chat-1.1': 'qwen',
     'qwen-1.8b-chat': 'qwen',
     'qwen-7b-chat': 'qwen',
     'llama-2-7b-chat': 'llama',
@@ -39,9 +38,8 @@ model_type_map = {
 
 model_path_map = {
     'qwen-14b-chat': 'Qwen/Qwen-14B-Chat',
-    'qwen-7b-chat-1.1': 'Qwen/Qwen-7B-Chat-1.1/',
-    'qwen-1.8b-chat': 'Qwen/Qwen-1.8B-chat',
     'qwen-7b-chat': 'Qwen/Qwen-7B-Chat',
+    'qwen-1.8b-chat': 'Qwen/Qwen-1.8B-chat',
     'llama-2-7b-chat': 'meta-llama/Llama-2-7b-chat-hf',
     'llama-2-13b-chat': 'meta-llama/Llama-2-13b-chat-hf',
     'codellama-7b-instruct': 'codellama/CodeLlama-7b-Instruct-hf',
