@@ -29,8 +29,9 @@ floatingBox.style.zIndex = '9999';
 // 创建按钮
 const button = document.createElement('button');
 button.style.position = 'fixed';
-button.style.bottom = '630px';
+button.style.top = '30px';
 button.style.right = '30px';
+button.style.zIndex = "9999";
 button.textContent = "Add to Qwen's Reading List";
 button.style.fontFamily = 'Arial, sans-serif';
 button.style.fontSize = '14px';
@@ -49,15 +50,8 @@ floatingBox.appendChild(button);
 // 将悬浮框添加到页面中
 document.body.appendChild(button);
 
-// 按钮点击事件
-button.addEventListener('click', () => {
-  var result = confirm("Sure to Ask Qwen to Remember this Page?");
-  if (result) {
-    cache_browser()
-  }
-});
-
 let isDragging = false;
+var isMouseReleased = false;
 let initialX;
 let initialY;
 
@@ -74,13 +68,28 @@ document.addEventListener('mousemove', (e) => {
     const dx = e.clientX - initialX;
     const dy = e.clientY - initialY;
     button.style.right = `${parseFloat(button.style.right) - dx}px`;
-    button.style.bottom = `${parseFloat(button.style.bottom) - dy}px`;
+    button.style.top = `${parseFloat(button.style.top) + dy}px`;
     initialX = e.clientX;
     initialY = e.clientY;
+    isMouseReleased = true;
   }
 });
 
 // 鼠标释放事件
-document.addEventListener('mouseup', () => {
+document.addEventListener('mouseup', (e) => {
   isDragging = false;
+
+});
+
+// 按钮点击事件
+button.addEventListener('click', (e) => {
+  if (isMouseReleased) {
+    isMouseReleased = false;
+    e.stopPropagation();
+  } else {
+    var result = confirm("Are you sure to ask Qwen to remember this page?");
+    if (result) {
+      cache_browser()
+    }
+  }
 });

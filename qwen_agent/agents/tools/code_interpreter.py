@@ -54,11 +54,12 @@ signal.signal(signal.SIGINT, _kill_kernels)
 #   plt.rcParams['font.sans-serif'] = ['SimHei']
 #   plt.rcParams['axes.unicode_minus'] = False
 #   ````
+ali_font_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'AlibabaPuHuiTi-3-45-Light.ttf')
 
 
 def use_alternative_fonts(filename):
     try:
-        candi_ttf = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'AlibabaPuHuiTi-3-45-Light.ttf')
+        candi_ttf = ali_font_path
         shutil.copy(candi_ttf, filename)
         print(f'Using {candi_ttf}')
     except Exception as ex:
@@ -82,7 +83,7 @@ def fix_matplotlib_cjk_font_issue():
 
 
 def start_kernel(pid):
-    fix_matplotlib_cjk_font_issue()
+    # fix_matplotlib_cjk_font_issue()
 
     connection_file = os.path.join(WORK_DIR,
                                    f'kernel_connection_file_{pid}.json')
@@ -181,14 +182,18 @@ sns.set_theme()
 
 import matplotlib
 import matplotlib.pyplot as plt
-plt.rcParams['font.sans-serif'] = ['SimHei']
-plt.rcParams['axes.unicode_minus'] = False
+from matplotlib.font_manager import FontProperties
+font_path = '{font_path}'
+font_prop = FontProperties(fname=font_path)
+plt.rcParams["font.family"] = font_prop.get_name()
 
 import numpy as np
 import pandas as pd
 
 from sympy import Eq, symbols, solve
-"""
+""".format(font_path=ali_font_path)
+# plt.rcParams['font.sans-serif'] = ['SimHei']
+# plt.rcParams['axes.unicode_minus'] = False
 
 
 def code_interpreter(action_input: str, timeout=30):
@@ -197,8 +202,9 @@ def code_interpreter(action_input: str, timeout=30):
     for line in code.split('\n'):
         fixed_code.append(line)
         if line.startswith('sns.set_theme('):
-            fixed_code.append('plt.rcParams["font.sans-serif"] = ["SimHei"]')
-            fixed_code.append('plt.rcParams["axes.unicode_minus"] = False')
+            # fixed_code.append('plt.rcParams["font.sans-serif"] = ["SimHei"]')
+            # fixed_code.append('plt.rcParams["axes.unicode_minus"] = False')
+            fixed_code.append('plt.rcParams["font.family"] = font_prop.get_name()')
     fixed_code = '\n'.join(fixed_code)
     return _code_interpreter(fixed_code, timeout)
 
