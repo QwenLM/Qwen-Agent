@@ -8,8 +8,6 @@ Qwen-Agent is a code repository based on the open-source model [Qwen](https://gi
 - With your permission, BrowserQwen records the web pages and PDF materials you have browsed to help you complete writing tasks based on your browsing content. Through BrowserQwen, you can quickly understand multiple web page contents, organize browsing content, and write new articles, eliminating tedious work.
 - Supports plugin usage and currently has integrated plugins such as Code Interpreter, which helps math problem solving, data visualization, etc.
 
-Currently, we support two models: Qwen-14B-Chat (recommended) and Qwen-7B-Chat. For the Qwen-7B-Chat model, please use the version pulled from the official HuggingFace repository after September 25, 2023, as both the code and model weights have changed.
-
 # Use Case Demonstration
 
 If you prefer watching videos instead of screenshots, you can refer to the [video demonstration](#video-demonstration).
@@ -58,7 +56,7 @@ If you prefer watching videos instead of screenshots, you can refer to the [vide
 
 # BrowserQwen User Guide
 
-Supported platforms: MacOS, Linux. Windows support is not yet implemented.
+Supported platforms: MacOS, Linux, WSL2 on Windows. Native Windows support (non-WSL) may be functional, but has not been tested.
 
 ## Step 1. Deploy Model Service
 
@@ -76,7 +74,14 @@ pip install fastapi uvicorn openai pydantic>=2.3.0 sse_starlette
 python openai_api.py --server-name 0.0.0.0 --server-port 7905 -c QWen/QWen-14B-Chat
 ```
 
-We recommend using the QWen-14B-Chat model. If you want to use the Qwen-7B-Chat model, make sure you are using a version pulled from the official HuggingFace repository after September 25, 2023, as both the code and model weights have changed.
+Currently, we can specify the -c argument with the following models, ordered in increasing GPU memory consumption:
+
+- [`Qwen/Qwen-7B-Chat-Int4`](https://huggingface.co/Qwen/Qwen-7B-Chat-Int4)
+- [`Qwen/Qwen-7B-Chat`](https://huggingface.co/Qwen/Qwen-7B-Chat-Int4)
+- [`Qwen/Qwen-14B-Chat-Int4`](https://huggingface.co/Qwen/Qwen-14B-Chat-Int4)
+- [`Qwen/Qwen-14B-Chat`](https://huggingface.co/Qwen/Qwen-14B-Chat)
+
+For the 7B models, please use the versions pulled from the official HuggingFace repository after September 25, 2023, as both the code and model weights have changed.
 
 ## Step 2. Deploy Local Database Service
 

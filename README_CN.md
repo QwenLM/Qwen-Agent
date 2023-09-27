@@ -10,8 +10,6 @@ Qwen-Agent是一个基于开源模型通义千问（[Qwen](https://github.com/Qw
 
 - 支持插件调用，目前已经集成了代码解释器（Code Interpreter）等插件，代码解释器能够支持上传文件进行数据分析等功能。
 
-目前，我们支持两种模型：Qwen-14B-Chat（推荐）和Qwen-7B-Chat。对于Qwen-7B-Chat模型，请使用2023年9月25日之后从官方HuggingFace重新拉取的版本，因为代码和模型权重都发生了变化。
-
 # 用例演示
 
 如果您更喜欢观看视频，而不是效果截图，可以参见[视频演示](#视频演示)。
@@ -60,7 +58,7 @@ Qwen-Agent是一个基于开源模型通义千问（[Qwen](https://github.com/Qw
 
 # BrowserQwen 使用说明
 
-支持环境：MacOS，Linux。尚未实现对Windows的支持。
+支持环境：MacOS，Linux，WSL2 on Windows。原生Windows（非WSL）可能能运行，但尚未经过官方测试。
 
 ## Step 1. 部署模型服务
 
@@ -79,7 +77,15 @@ pip install fastapi uvicorn openai pydantic>=2.3.0 sse_starlette
 python openai_api.py --server-name 0.0.0.0 --server-port 7905 -c QWen/QWen-14B-Chat
 ```
 
-我们推荐使用QWen-14B-Chat模型。如果您想使用Qwen-7B-Chat模型，请确保使用的是2023年9月25日之后从官方HuggingFace重新拉取的版本，因为代码和模型权重都发生了变化。
+目前，我们支持指定-c参数为以下模型，按照GPU显存开销从小到大排序：
+
+- [`Qwen/Qwen-7B-Chat-Int4`](https://huggingface.co/Qwen/Qwen-7B-Chat-Int4)
+- [`Qwen/Qwen-7B-Chat`](https://huggingface.co/Qwen/Qwen-7B-Chat-Int4)
+- [`Qwen/Qwen-14B-Chat-Int4`](https://huggingface.co/Qwen/Qwen-14B-Chat-Int4)
+- [`Qwen/Qwen-14B-Chat`](https://huggingface.co/Qwen/Qwen-14B-Chat)
+
+对于7B模型，请使用2023年9月25日之后从官方HuggingFace重新拉取的版本，因为代码和模型权重都发生了变化。
+
 
 ## Step 2. 部署本地数据库服务
 
