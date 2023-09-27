@@ -2,11 +2,13 @@
 
 [中文](./README_CN.md) ｜ English
 
-Qwen-Agent is a code repository based on the open-source model [Qwen](https://github.com/QwenLM/Qwen), which combines components such as tool usage, planning generation, and memory. Currently, we have developed a Chrome browser extension called BrowserQwen, which facilitates the understanding, knowledge integration, and rich-text content writing of web pages and PDF documents. Here are the features of BrowserQwen:
+![](https://qianwen-res.oss-cn-beijing.aliyuncs.com/assets/qwen_agent/main_showcase.gif)
 
-- Integrates Qwen into the browser extension, allowing discussions with Qwen in the browser to talk about the content of the current web page or PDF document.
-- With your permission, BrowserQwen records the web pages and PDF materials you have browsed to help you complete writing tasks based on your browsing content. Through BrowserQwen, you can quickly understand multiple web page contents, organize browsing content, and write new articles, eliminating tedious work.
-- Supports plugin usage and currently has integrated plugins such as Code Interpreter, which helps math problem solving, data visualization, etc.
+Qwen-Agent is a framework for harnessesing the tool usage, planning, and memory capabilities of the open-source language model [Qwen](https://github.com/QwenLM/Qwen).
+Building upon Qwen-Agent, we have developed a **Chrome browser extension** called BrowserQwen, which has key features such as:
+- Discuss with Qwen about the current web page or PDF document.
+- BrowserQwen records the web pages and PDF materials that you have browsed, with your permission. It helps you quickly understand the contents of multiple pages, summarize your browsing content, and eliminate tedious writing tasks.
+- Supports plugin intergration, including **Code Interpreter** for math problem solving and data visualization.
 
 # Use Case Demonstration
 
@@ -66,7 +68,7 @@ Follow the instruction provided by the Qwen project to deploy a model service co
 git clone git@github.com:QwenLM/Qwen.git
 cd Qwen
 pip install -r requirements.txt
-pip install fastapi uvicorn openai pydantic>=2.3.0 sse_starlette
+pip install fastapi uvicorn openai "pydantic>=2.3.0" sse_starlette
 
 # Start the model service, specifying the model version with the -c parameter.
 # --server-name 0.0.0.0 allows other machines to access your service.

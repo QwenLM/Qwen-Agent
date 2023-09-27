@@ -2,13 +2,14 @@
 
 中文 ｜ [English](./README.md)
 
-Qwen-Agent是一个基于开源模型通义千问（[Qwen](https://github.com/QwenLM/Qwen)）的代码库，用于将工具使用、规划生成、记忆等组件集合在一起。目前，我们已经开发了一个名为BrowserQwen的浏览器扩展程序，它能够方便地辅助您进行网页和PDF文档的理解、知识整合和富文本内容编辑工作。以下是BrowserQwen的特点：
+![](https://qianwen-res.oss-cn-beijing.aliyuncs.com/assets/qwen_agent/main_showcase.gif)
 
-- 将Qwen集成到浏览器扩展程序中，支持在浏览器中与Qwen进行讨论，聊一聊当前Web页面、PDF文档的内容。
+Qwen-Agent是一个代码框架，用于发掘开源通义千问模型（[Qwen](https://github.com/QwenLM/Qwen)）的工具使用、规划、记忆能力。
+在Qwen-Agent的基础上，我们开发了一个名为BrowserQwen的**Chrome浏览器扩展**，它具有以下主要功能：
 
-- 在您允许的前提下，BrowserQwen将记录您浏览过的网页和PDF素材，以帮助您根据浏览内容完成编辑工作。通过BrowserQwen，您可以快速完成多网页内容的理解、浏览内容的整理和新文章的撰写等繁琐工作。
-
-- 支持插件调用，目前已经集成了代码解释器（Code Interpreter）等插件，代码解释器能够支持上传文件进行数据分析等功能。
+- 与Qwen讨论当前网页或PDF文档的内容。
+- 在获得您的授权后，BrowserQwen会记录您浏览过的网页和PDF材料，以帮助您快速了解多个页面的内容，总结您浏览过的内容，并减少繁琐的文字工作。
+- 集成各种插件，包括可用于数学问题求解、数据分析与可视化、处理文件等的**代码解释器**（**Code Interpreter**）。
 
 # 用例演示
 
@@ -69,7 +70,7 @@ Qwen-Agent是一个基于开源模型通义千问（[Qwen](https://github.com/Qw
 git clone git@github.com:QwenLM/Qwen.git
 cd Qwen
 pip install -r requirements.txt
-pip install fastapi uvicorn openai pydantic>=2.3.0 sse_starlette
+pip install fastapi uvicorn openai "pydantic>=2.3.0" sse_starlette
 
 # 启动模型服务，通过 -c 参数指定模型版本
 # - 指定 --server-name 0.0.0.0 将允许其他机器访问您的模型服务
