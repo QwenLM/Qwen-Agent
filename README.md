@@ -8,7 +8,7 @@ Qwen-Agent is a code repository based on the open-source model [Qwen](https://gi
 - With your permission, BrowserQwen records the web pages and PDF materials you have browsed to help you complete writing tasks based on your browsing content. Through BrowserQwen, you can quickly understand multiple web page contents, organize browsing content, and write new articles, eliminating tedious work.
 - Supports plugin usage and currently has integrated plugins such as Code Interpreter, which helps math problem solving, data visualization, etc.
 
-Currently, we support two models: Qwen-14B-Chat (recommended) and Qwen-7B-Chat. For the Qwen-7B-Chat model, please use the version pulled from the official HuggingFace respository after September 25, 2023, as both the code and model weights have changed.
+Currently, we support two models: Qwen-14B-Chat (recommended) and Qwen-7B-Chat. For the Qwen-7B-Chat model, please use the version pulled from the official HuggingFace repository after September 25, 2023, as both the code and model weights have changed.
 
 # Use Case Demonstration
 
