@@ -151,8 +151,10 @@ pip install -r requirements.txt
 ```
 
 ### Dataset Download
-*The dataset is coming soon...*
 ```shell
+cd benchmark
+wget https://qianwen-res.oss-cn-beijing.aliyuncs.com/assets/qwen_agent/benchmark_code_interpreter_data.zip
+unzip benchmark_code_interpreter_data.zip
 mkdir eval_data
 mv eval_code_interpreter_v1.jsonl eval_data/
 ```
@@ -179,7 +181,7 @@ python inference_and_execute.py --model {model_name}
 The benchmark will run the test cases and generate the performance results. The results will be saved in the `output_data` directory.
 
 **Notes**:
-Please install `simhei.ttf` font for proper display in matplotlib when evaluating visualization task. You can do this by running the following code snippet:
+Please install `simhei.ttf` font for proper display in matplotlib when evaluating visualization task. You can do this by preparing `simhei.ttf` (which can be found on any Windows PC) and then running the following code snippet:
 ```python
 import os
 import matplotlib
