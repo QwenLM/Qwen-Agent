@@ -59,21 +59,13 @@ Qwen-Agent是一个代码框架，用于发掘开源通义千问模型（[Qwen](
 
 支持环境：MacOS，Linux，WSL2 on Windows。原生Windows（非WSL）可能能运行，但尚未经过官方测试。
 
-目前，我们支持两种访问Qwen的方式：
-- 阿里云官方提供的DashScope API接口
-- 本地部署Qwen
+## 第一步 - 部署模型服务
 
-## Step 1. 部署模型服务
-### 使用DashScope API接口
-配置 DASHSCOPE_API_KEY 环境变量，或跳过该步骤
-```
-export DASHSCOPE_API_KEY=YOUR_DASHSCOPE_API_KEY
-```
+***如果您正在使用阿里云提供的[DashScope](https://help.aliyun.com/zh/dashscope/developer-reference/quick-start)服务来访问Qwen系列模型，可以跳过这一步，直接到第二步。***
 
-### 使用本地Qwen
-参考[Qwen项目](https://github.com/QwenLM/Qwen/blob/main/README_CN.md#api)，部署一个兼容OpenAI API的模型服务：
+但如果您不想使用DashScope，而是希望自己部署一个模型服务。那么可以参考[Qwen项目](https://github.com/QwenLM/Qwen/blob/main/README_CN.md#api)，部署一个兼容OpenAI API的模型服务：
 
-```
+```bash
 # 安装依赖
 git clone git@github.com:QwenLM/Qwen.git
 cd Qwen
@@ -95,27 +87,36 @@ python openai_api.py --server-name 0.0.0.0 --server-port 7905 -c QWen/QWen-14B-C
 
 对于7B模型，请使用2023年9月25日之后从官方HuggingFace重新拉取的版本，因为代码和模型权重都发生了变化。
 
+## 第二步 - 部署本地数据库服务
 
-## Step 2. 部署本地数据库服务
+在这一步，您需要在您的本地机器上（即您可以打开Chrome浏览器的那台机器），部署维护个人浏览历史、对话历史的数据库服务。
 
-在您的本地机器上（即您可以打开Chrome浏览器的那台机器），部署维护个人浏览历史、对话历史的数据库服务：
+首次启动数据库服务前，请记得安装相关的依赖：
 
-```
+```bash
 # 安装依赖
 git clone https://github.com/QwenLM/Qwen-Agent.git
 cd Qwen-Agent
 pip install -r requirements.txt
 ```
 
-### 使用DashScope API接口
-```
-# 启动数据库服务，通过 --llm 参数指定DashScope模型, 默认'qwen-turbo'，可选['qwen-plus', 'qwen-turbo', 'qwen-14b-chat', 'qwen-7b-chat']
-# 若 Step 1 未配置 DASHSCOPE_API_KEY 环境变量，通过 --api_key YOUR_DASHSCOPE_API_KEY 传入
-python run_server.py --workstation_port 7864 --api_key YOUR_DASHSCOPE_API_KEY --llm qwen-turbo
+如果跳过了第一步、因为您打算使用DashScope提供的模型服务的话，请执行以下命令启动数据库服务：
+
+```bash
+# 启动数据库服务，通过 --llm 参数指定您希望通过DashScope使用的具体模型
+# 参数 --llm 可以是如下之一，按资源消耗从小到大排序：
+#   - qwen-7b-chat （与开源的Qwen-7B-Chat相同模型）
+#   - qwen-14b-chat （与开源的Qwen-14B-Chat相同模型）
+#   - qwen-turbo
+#   - qwen-plus
+# 您需要将YOUR_DASHSCOPE_API_KEY替换为您的真实API-KEY。
+export DASHSCOPE_API_KEY=YOUR_DASHSCOPE_API_KEY
+python run_server.py --model_server dashscope --llm qwen-7b-chat --workstation_port 7864
 ```
 
-### 使用本地Qwen
-```
+如果您没有在使用DashScope、而是参考第一步部署了自己的模型服务的话，请执行以下命令：
+
+```bash
 # 启动数据库服务，通过 --model_server 参数指定您在 Step 1 里部署好的模型服务
 # - 若 Step 1 的机器 IP 为 123.45.67.89，则可指定 --model_server http://123.45.67.89:7905/v1
 # - 若 Step 1 和 Step 2 是同一台机器，则可指定 --model_server http://127.0.0.1:7905/v1
