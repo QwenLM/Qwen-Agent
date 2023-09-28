@@ -1,28 +1,53 @@
-import json
 import os
 
+import dashscope
 import openai
+from dashscope import Generation
 
-from qwen_agent.configs import config_browserqwen
 from qwen_agent.llm.base import LLMBase
-
-with open(os.path.join(config_browserqwen.work_space_root, 'config_openai.json')) as file:
-    openai_cfg = json.load(file)
-
-openai.api_base = openai_cfg['openai_api_base']
-openai.api_key = openai_cfg['openai_api_key']
 
 
 class Qwen(LLMBase):
-    def __init__(self, model='Qwen-7B-Chat'):
-        super().__init__(model=model)
+    def __init__(self, model='qwen', api_key='', model_server=''):
+        super().__init__(model=model, api_key=api_key)
+
+        self.model_server = model_server
+        self.source = ''
+
+        if self.model_server.startswith('http'):
+            openai.api_base = self.model_server
+            openai.api_key = 'none'
+            self.source = 'local'
+        elif self.model_server.startswith('dashscope'):
+            dashscope.api_key = os.getenv('DASHSCOPE_API_KEY', default=self.api_key)
+            if not dashscope.api_key:
+                print('There is no DASHSCOPE_API_KEY!')
+            self.source = 'dashscope'
+
+    def chat(self, query, stream=False, messages=[], stop_words=[]):
+
+        if self.source == 'dashscope':
+            if dashscope.api_key:  # use dashscope interface
+                print('Now using dashscope api')
+                self.gen = Generation()
+                return super().chat_dashscope(query, stream=stream, messages=messages, stop_words=stop_words)
+            else:
+                print('There is no DASHSCOPE_API_KEY!')
+                return 'Failed! There is no DASHSCOPE_API_KEY!'
+        else:  # use locally deployed qwen
+            print('Now using locally deployed qwen')
+            return super().chat(query, stream=stream, messages=messages)
+
+
+"""
+The following functions only support local Qwen services by default
+"""
 
 
 def qwen_chat(query, stream=True):
     if stream:
-        # 使用流式回复的请求
         print('begin: stream')
-        for chunk in openai.ChatCompletion.create(model='Qwen-7B-Chat',
+        for chunk in openai.ChatCompletion.create(model='Qwen',
                                                   messages=[{
                                                       'role': 'user',
                                                       'content': query
@@ -33,27 +58,31 @@ def qwen_chat(query, stream=True):
                 yield chunk.choices[0].delta.content
 
 
-def qwen_chat_no_stream(query, stream=False, stop_words=[]):
+def qwen_chat_no_stream(query, messages=[], stream=False):
     print('begin: no stream')
-
-    response = openai.ChatCompletion.create(model='Qwen-7B-Chat',
-                                            messages=[{
-                                                'role': 'user',
-                                                'content': query
-                                            }],
-                                            stream=False,
-                                            stop_words=stop_words)
+    if messages:
+        response = openai.ChatCompletion.create(model='Qwen',
+                                                messages=messages,
+                                                stream=False)
+    else:
+        response = openai.ChatCompletion.create(model='Qwen',
+                                                messages=[{
+                                                    'role': 'user',
+                                                    'content': query
+                                                }],
+                                                stream=False)
     return response.choices[0].message.content
 
 
 def qwen_chat_func(messages, functions=None):
-    # print(messages)
     if functions:
         response = openai.ChatCompletion.create(
             model='Qwen', messages=messages, functions=functions
         )
     else:
         response = openai.ChatCompletion.create(model='Qwen', messages=messages)
-    # print(response)
-    # print(response.choices[0].message.content)
     return response.choices[0].message
+
+
+def qwen_chat_func_dashscope(messages, functions=None):
+    pass

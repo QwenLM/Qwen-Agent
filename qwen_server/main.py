@@ -27,7 +27,8 @@ prompt_lan = sys.argv[1]
 llm_name = sys.argv[2]
 max_ref_token = int(sys.argv[3])
 workstation_port = int(sys.argv[4])
-
+model_server = sys.argv[5]
+api_key = sys.argv[6]
 
 app = FastAPI()
 
@@ -49,11 +50,12 @@ app.mount('/static', StaticFiles(directory=config_browserqwen.code_interpreter_w
 if llm_name.startswith('gpt'):
     module = 'qwen_agent.llm.gpt'
     llm = importlib.import_module(module).GPT(llm_name)
-elif llm_name.startswith('Qwen'):
+elif llm_name.startswith('Qwen') or llm_name.startswith('qwen'):
     module = 'qwen_agent.llm.qwen'
-    llm = importlib.import_module(module).Qwen(llm_name)
+    llm = importlib.import_module(module).Qwen(llm_name, model_server=model_server, api_key=api_key)
 else:
     llm = None
+    print('Will use local Qwen Interface')
 
 if not os.path.exists(config_browserqwen.cache_root):
     os.makedirs(config_browserqwen.cache_root)

@@ -14,18 +14,25 @@ sys.path.insert(
     0,
     str(Path(__file__).absolute().parent.parent))  # NOQA
 
-from qwen_agent.agents.actions.plugin import format_answer, call_plugin  # NOQA
-from qwen_agent.agents.tools.tools import tools_list  # NOQA
-from qwen_agent.utils.util import get_last_one_line_context, save_text_to_file, count_tokens, get_html_content  # NOQA
-from qwen_agent.agents.actions import ContinueWriting, Simple, WriteFromZero  # NOQA
+from qwen_agent.agents.tools.tools import tools_list, call_plugin  # NOQA
+from qwen_agent.utils.util import get_last_one_line_context, save_text_to_file, count_tokens, get_html_content, format_answer  # NOQA
+from qwen_agent.agents.actions import ContinueWriting, Simple, WriteFromZero, ReAct  # NOQA
 from qwen_agent.configs import config_browserqwen  # NOQA
 from qwen_agent.agents.memory import Memory  # NOQA
 from qwen_agent.llm.qwen import qwen_chat_func  # NOQA
+from qwen_agent.agents.actions.func_call import func_call  # NOQA
 
 prompt_lan = sys.argv[1]
 llm_name = sys.argv[2]
 max_ref_token = int(sys.argv[3])
 workstation_port = int(sys.argv[4])
+model_server = sys.argv[5]
+api_key = sys.argv[6]
+
+if model_server.startswith('http'):
+    source = 'local'
+elif model_server.startswith('dashscope'):
+    source = 'dashscope'
 
 if not os.path.exists(config_browserqwen.work_space_root):
     os.makedirs(config_browserqwen.work_space_root)
@@ -39,11 +46,12 @@ if not os.path.exists(config_browserqwen.code_interpreter_ws):
 if llm_name.startswith('gpt'):
     module = 'qwen_agent.llm.gpt'
     llm = importlib.import_module(module).GPT(llm_name)
-elif llm_name.startswith('Qwen'):
+elif llm_name.startswith('Qwen') or llm_name.startswith('qwen'):
     module = 'qwen_agent.llm.qwen'
-    llm = importlib.import_module(module).Qwen(llm_name)
+    llm = importlib.import_module(module).Qwen(llm_name, model_server=model_server, api_key=api_key)
 else:
     llm = None
+    print('Will use local Qwen Interface')
 
 mem = Memory(config_browserqwen.similarity_search, config_browserqwen.similarity_search_type)
 
@@ -84,8 +92,8 @@ def chat_clear():
 
 
 def chat_clear_last():
-    print(app_global_para['last_turn_msg_id'][::-1])
-    print(app_global_para['messages'])
+    # print(app_global_para['last_turn_msg_id'][::-1])
+    # print(app_global_para['messages'])
     for index in app_global_para['last_turn_msg_id'][::-1]:
         del app_global_para['messages'][index]
     app_global_para['last_turn_msg_id'] = []
@@ -121,7 +129,6 @@ def read_records(file, times=None):
 
 
 def update_rec_list(flag):
-    # 更新推荐列表
     rec_list = []
     if not os.path.exists(app_global_para['cache_file']):
         return 'No browsing records'
@@ -159,7 +166,6 @@ def update_rec_list(flag):
 
 
 def update_app_global_para(date1, date2):
-    # 更新全局变量
     app_global_para['time'][0] = date1
     app_global_para['time'][1] = date2
     app_global_para['use_ci_flag'] = False
@@ -238,52 +244,75 @@ def bot(history, upload_file):
                     prompt_upload_file = f'[上传文件{upload_file}] '
                 app_global_para['is_first_upload'] = False
             history[-1][0] = prompt_upload_file+history[-1][0]
-            message = {
-                'role': 'user', 'content': history[-1][0]
-            }
-            app_global_para['last_turn_msg_id'].append(len(app_global_para['messages']))
-            app_global_para['messages'].append(message)
-            while True:
-                print(app_global_para['messages'])
-                rsp = qwen_chat_func(app_global_para['messages'], tools_list[:1])
-                if rsp['function_call']:
-                    history[-1][1] += rsp['content'].strip() + '\n'
-                    yield history
-                    history[-1][1] += 'Action: '+rsp['function_call']['name'].strip() + '\n'
-                    yield history
-                    history[-1][1] += 'Action Input:\n'+rsp['function_call']['arguments'] + '\n'
-                    yield history
-                    bot_msg = {
-                        'role': 'assistant',
-                        'content': rsp['content'],
-                        'function_call': {
-                            'name': rsp['function_call']['name'],
-                            'arguments': rsp['function_call']['arguments'],
+            if source == 'local':  # using func call interface
+                message = {
+                    'role': 'user', 'content': history[-1][0]
+                }
+                app_global_para['last_turn_msg_id'].append(len(app_global_para['messages']))
+                app_global_para['messages'].append(message)
+                while True:
+                    print(app_global_para['messages'])
+                    functions = [x for x in tools_list if x['name_for_model'] == 'code_interpreter']
+                    rsp = qwen_chat_func(app_global_para['messages'], functions)
+                    if rsp['function_call']:
+                        history[-1][1] += rsp['content'].strip() + '\n'
+                        yield history
+                        history[-1][1] += 'Action: '+rsp['function_call']['name'].strip() + '\n'
+                        yield history
+                        history[-1][1] += 'Action Input:\n'+rsp['function_call']['arguments'] + '\n'
+                        yield history
+                        bot_msg = {
+                            'role': 'assistant',
+                            'content': rsp['content'],
+                            'function_call': {
+                                'name': rsp['function_call']['name'],
+                                'arguments': rsp['function_call']['arguments'],
+                            }
                         }
-                    }
-                    app_global_para['last_turn_msg_id'].append(len(app_global_para['messages']))
-                    app_global_para['messages'].append(bot_msg)
+                        app_global_para['last_turn_msg_id'].append(len(app_global_para['messages']))
+                        app_global_para['messages'].append(bot_msg)
 
-                    obs = call_plugin(rsp['function_call']['name'], rsp['function_call']['arguments'])
-                    func_msg = {
-                        'role': 'function',
-                        'name': rsp['function_call']['name'],
-                        'content': obs,
-                    }
-                    history[-1][1] += ('Observation: ' + obs + '\n')
-                    yield history
-                    app_global_para['last_turn_msg_id'].append(len(app_global_para['messages']))
-                    app_global_para['messages'].append(func_msg)
-                else:
-                    bot_msg = {
-                        'role': 'assistant',
-                        'content': rsp['content'],
-                    }
-                    history[-1][1] += rsp['content']
-                    yield history
-                    app_global_para['last_turn_msg_id'].append(len(app_global_para['messages']))
-                    app_global_para['messages'].append(bot_msg)
-                    break
+                        obs = call_plugin(rsp['function_call']['name'], rsp['function_call']['arguments'])
+                        func_msg = {
+                            'role': 'function',
+                            'name': rsp['function_call']['name'],
+                            'content': obs,
+                        }
+                        history[-1][1] += ('Observation: ' + obs + '\n')
+                        yield history
+                        app_global_para['last_turn_msg_id'].append(len(app_global_para['messages']))
+                        app_global_para['messages'].append(func_msg)
+                    else:
+                        bot_msg = {
+                            'role': 'assistant',
+                            'content': rsp['content'],
+                        }
+                        history[-1][1] += rsp['content']
+                        yield history
+                        app_global_para['last_turn_msg_id'].append(len(app_global_para['messages']))
+                        app_global_para['messages'].append(bot_msg)
+                        break
+            elif source == 'dashscope':  # using dashscope interface:
+                print(app_global_para['messages'])
+                functions = [x for x in tools_list if x['name_for_model'] == 'code_interpreter']
+                agent = ReAct(llm=llm, list_of_plugin_info=functions, source=source)
+                response = agent.run(history[-1][0], messages=app_global_para['messages'])
+                if 'Action' not in response:
+                    response = response.split('Final Answer:')[-1]
+                history[-1][1] = response
+                yield history
+
+                message = {
+                    'role': 'user', 'content': history[-1][0]
+                }
+                app_global_para['last_turn_msg_id'].append(len(app_global_para['messages']))
+                app_global_para['messages'].append(message)
+                rsp_message = {
+                    'role': 'assistant', 'content': history[-1][1]
+                }
+                app_global_para['last_turn_msg_id'].append(len(app_global_para['messages']))
+                app_global_para['messages'].append(rsp_message)
+
         else:
             lines = []
             if not os.path.exists(app_global_para['cache_file']):
@@ -320,72 +349,34 @@ def bot(history, upload_file):
             app_global_para['messages'].append(message)
 
 
-def func_call(query, functions):
-    messages = []
-    messages.append({
-            'role': 'user', 'content': query
-        })
-    while True:
-        rsp = qwen_chat_func(messages, functions)
-        if rsp['function_call']:
-            yield rsp['content'].strip() + '\n'
-            yield 'Action: '+rsp['function_call']['name'].strip() + '\n'
-            yield 'Action Input:\n'+rsp['function_call']['arguments'] + '\n'
-            bot_msg = {
-                'role': 'assistant',
-                'content': rsp['content'],
-                'function_call': {
-                    'name': rsp['function_call']['name'],
-                    'arguments': rsp['function_call']['arguments'],
-                }
-            }
-            messages.append(bot_msg)
-
-            obs = call_plugin(rsp['function_call']['name'], rsp['function_call']['arguments'])
-            func_msg = {
-                'role': 'function',
-                'name': rsp['function_call']['name'],
-                'content': obs,
-            }
-            yield 'Observation: ' + obs + '\n'
-            messages.append(func_msg)
-        else:
-            bot_msg = {
-                'role': 'assistant',
-                'content': rsp['content'],
-            }
-            yield 'Final Answer: ' + rsp['content']
-            messages.append(bot_msg)
-            break
-
-
 def generate(context):
     sp_query = get_last_one_line_context(context)
     res = ''
     if config_browserqwen.code_flag in sp_query:  # router to code interpreter
         sp_query = sp_query.split(config_browserqwen.code_flag)[-1]
         sp_query += ', 必须使用code_interpreter工具'
-        functions = tools_list[:1]
-        response = func_call(sp_query, functions)
-        for chunk in response:
-            res += chunk
-            yield res
-
-        # history = []
-        # agent = Plugin(llm=llm, list_of_plugin_info=tools_list[:1])
-        # response = agent.run(sp_query+', 必须使用code_interpreter工具', history=history)
-        # yield response
+        functions = [x for x in tools_list if x['name_for_model'] == 'code_interpreter']
+        if source == 'local':  # using func call interface
+            response = func_call(sp_query, functions)
+            for chunk in response:
+                res += chunk
+                yield res
+        elif source == 'dashscope':  # using dashscope interface
+            agent = ReAct(llm=llm, list_of_plugin_info=functions, source=source)
+            response = agent.run(sp_query, messages=[])
+            yield response
     elif config_browserqwen.plugin_flag in sp_query:  # router to plugin
         sp_query = sp_query.split(config_browserqwen.plugin_flag)[-1]
         functions = tools_list
-        response = func_call(sp_query, functions)
-        for chunk in response:
-            res += chunk
-            yield res
-        # history = []
-        # agent = Plugin(llm=llm, list_of_plugin_info=tools_list)
-        # response = agent.run(sp_query, history=history)
-        # yield response
+        if source == 'local':  # using func call interface
+            response = func_call(sp_query, functions)
+            for chunk in response:
+                res += chunk
+                yield res
+        elif source == 'dashscope':  # using dashscope interface
+            agent = ReAct(llm=llm, list_of_plugin_info=functions, source=source)
+            response = agent.run(sp_query, messages=[])
+            yield response
     else:  # router to continue writing
         lines = []
         for line in jsonlines.open(app_global_para['cache_file']):

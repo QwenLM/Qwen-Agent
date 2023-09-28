@@ -18,15 +18,18 @@ from qwen_agent.agents.memory import Memory  # NOQA
 prompt_lan = sys.argv[1]
 llm_name = sys.argv[2]
 max_ref_token = int(sys.argv[3])
+model_server = sys.argv[4]
+api_key = sys.argv[5]
 
 if llm_name.startswith('gpt'):
     module = 'qwen_agent.llm.gpt'
     llm = importlib.import_module(module).GPT(llm_name)
-elif llm_name.startswith('Qwen'):
+elif llm_name.startswith('Qwen') or llm_name.startswith('qwen'):
     module = 'qwen_agent.llm.qwen'
-    llm = importlib.import_module(module).Qwen(llm_name)
+    llm = importlib.import_module(module).Qwen(llm_name, model_server=model_server, api_key=api_key)
 else:
     llm = None
+    print('Will use local Qwen Interface')
 
 mem = Memory(config_browserqwen.similarity_search, config_browserqwen.similarity_search_type)
 

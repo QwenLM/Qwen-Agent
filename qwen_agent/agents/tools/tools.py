@@ -1,3 +1,6 @@
+from qwen_agent.agents.tools.code_interpreter import code_interpreter  # NOQA
+from qwen_agent.agents.tools.image_gen import image_gen  # NOQA
+
 tools_list = [
         {
             'name_for_human': '代码解释器',
@@ -21,3 +24,12 @@ tools_list = [
             ],
         },
     ]
+
+
+def call_plugin(plugin_name: str, plugin_args: str) -> str:
+    if plugin_name == 'code_interpreter':
+        return code_interpreter(plugin_args)
+    elif plugin_name == 'image_gen':
+        return image_gen(plugin_args)
+    else:
+        raise NotImplementedError

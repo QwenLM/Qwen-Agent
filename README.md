@@ -58,8 +58,19 @@ If you prefer watching videos instead of screenshots, you can refer to the [vide
 
 Supported platforms: MacOS, Linux, WSL2 on Windows. Native Windows support (non-WSL) may be functional, but has not been tested.
 
-## Step 1. Deploy Model Service
+Currently, we support two methods to access Qwen:
+- Using The DashScope API interface officially provided by Alibaba Cloud
+- Deploying Qwen locally
 
+## Step 1. Deploying Model Service
+
+### Using DashScope API Interface
+Setting environment variable DASHSCOPE_API_KEY, or skipping this step
+```
+export DASHSCOPE_API_KEY=YOUR_DASHSCOPE_API_KEY
+```
+
+### Using local Qwen
 Follow the instruction provided by the Qwen project to deploy a model service compatible with the OpenAI API:
 ```
 # Install dependencies
@@ -83,7 +94,7 @@ Currently, we can specify the -c argument with the following models, ordered in 
 
 For the 7B models, please use the versions pulled from the official HuggingFace repository after September 25, 2023, as both the code and model weights have changed.
 
-## Step 2. Deploy Local Database Service
+## Step 2. Deploying Local Database Service
 
 On your local machine (the machine where you can open the Chrome browser), deploy a database service to manage your browsing history and conversation history:
 
@@ -92,7 +103,18 @@ On your local machine (the machine where you can open the Chrome browser), deplo
 git clone https://github.com/QwenLM/Qwen-Agent.git
 cd Qwen-Agent
 pip install -r requirements.txt
+```
 
+### Using DashScope API Interface
+```
+# Start the database service, specifying the model on DashScope by --llm, default to 'qwen-turbo', optional ['qwen-plus', 'qwen-turbo', 'qwen-14b-chat', 'qwen-7b-chat'].
+# If the environment variable DASHSCOPE_API_KEY is not set, using --api_key YOUR_DASHSCOPE_API_KEY to input it.
+python run_server.py --workstation_port 7864 --api_key YOUR_DASHSCOPE_API_KEY --llm qwen-turbo
+```
+
+
+### Using local Qwen
+```
 # Start the database service, specifying the model service deployed in Step 1 with --model_server.
 # If the IP address of the machine in Step 1 is 123.45.67.89,
 #     you can specify --model_server http://123.45.67.89:7905/v1

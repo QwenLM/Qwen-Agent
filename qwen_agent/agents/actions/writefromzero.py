@@ -1,20 +1,9 @@
-"""
-固定整体流程：
- Step1: Similarity Search
-
- Step2: outline
- Step3: expand
-    - 每expand一章节, 触发决策是否调用plugin(画图, code interpreter, 运行代码, browser)
-
-"""
 import json
 import re
 
-from qwen_agent.agents.actions import Expand, Outline, Plugin, Simple
+from qwen_agent.agents.actions import Expand, Outline, Simple
 from qwen_agent.agents.actions.actions import get_action_list
 from qwen_agent.agents.planning.plan import Plan, default_plan
-
-from qwen_agent.agents.tools.tools import tools_list  # NOQA
 
 PROMPT_REACT_CUSTOM_EN = """Answer the following questions as best you can. You have access to the following tools:
 
@@ -111,7 +100,6 @@ class WriteFromZero:
             yield default_plan
             res_plans = json.loads(default_plan)
 
-        # 依次执行plan
         summ = ''
         outline = ''
         for plan_id, plan in res_plans.items():
@@ -139,17 +127,12 @@ class WriteFromZero:
             elif plan == 'expand':
                 yield '\n========================= \n'
                 yield '> Writing Text: \n'
-                outline_list_all = outline.split('\n')  # 只提取一级标题涉及的行
+                outline_list_all = outline.split('\n')
                 outline_list = []
                 for x in outline_list_all:
                     if is_roman_numeral(x):
                         outline_list.append(x)
 
-                if self.auto_agent:
-                    if prompt_lan == 'CN':
-                        plug_agent = Plugin(llm=self.llm, stream=False, list_of_plugin_info=tools_list, prompt=PROMPT_REACT_CUSTOM_CN)
-                    elif prompt_lan == 'EN':
-                        plug_agent = Plugin(llm=self.llm, stream=False, list_of_plugin_info=tools_list, prompt=PROMPT_REACT_CUSTOM_EN)
                 otl_num = len(outline_list)
                 for i, v in enumerate(outline_list):
                     yield '\n# '
@@ -164,14 +147,5 @@ class WriteFromZero:
                     for trunk in res_exp:
                         text += trunk
                         yield trunk
-                    if self.auto_agent:
-                        yield '\n> In selecting plugins...\n'
-                        res_plug = plug_agent.run(text)
-                        if not plug_agent.stream and 'Action:' not in res_plug:
-                            yield '\n> No plugins required\n'
-                            continue
-                        else:
-                            for trunk in res_plug:
-                                yield trunk
             else:
                 pass

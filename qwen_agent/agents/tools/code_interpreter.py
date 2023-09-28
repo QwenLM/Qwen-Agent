@@ -15,10 +15,11 @@ import traceback
 import uuid
 from pathlib import Path
 
-import json5
 import matplotlib
 import PIL.Image
 from jupyter_client import BlockingKernelClient
+
+from qwen_agent.utils.util import extract_code
 
 sys.path.insert(
     0,
@@ -129,20 +130,6 @@ def start_kernel(pid):
     kc.start_channels()
     kc.wait_for_ready()
     return kc
-
-
-def extract_code(text):
-    # Match triple backtick blocks first
-    triple_match = re.search(r'```[^\n]*\n(.+?)```', text, re.DOTALL)
-    if triple_match:
-        text = triple_match.group(1)
-    else:
-        try:
-            text = json5.loads(text)['code']
-        except Exception:
-            pass
-    # If no code blocks found, return original text
-    return text
 
 
 def escape_ansi(line):

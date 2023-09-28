@@ -22,7 +22,7 @@ class Memory:
 
         if _ref_list[0]['text'] == []:
             _ref_list = self.get_top(records)
-        # 限制token number
+        # token number
         new_ref_list = []
         single_max_token = int(max_token/len(_ref_list))
         for _ref in _ref_list:

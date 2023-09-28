@@ -39,8 +39,8 @@
 }
 
 .content {
-    height: calc(100% - 50px); /* 设置内容高度为容器高度减去文本框高度 */
-    overflow-y: scroll; /* 添加滚动条 */
+    height: calc(100% - 50px);
+    overflow-y: scroll;
   }
 
 

@@ -59,8 +59,18 @@ Qwen-Agent是一个代码框架，用于发掘开源通义千问模型（[Qwen](
 
 支持环境：MacOS，Linux，WSL2 on Windows。原生Windows（非WSL）可能能运行，但尚未经过官方测试。
 
-## Step 1. 部署模型服务
+目前，我们支持两种访问Qwen的方式：
+- 阿里云官方提供的DashScope API接口
+- 本地部署Qwen
 
+## Step 1. 部署模型服务
+### 使用DashScope API接口
+配置 DASHSCOPE_API_KEY 环境变量，或跳过该步骤
+```
+export DASHSCOPE_API_KEY=YOUR_DASHSCOPE_API_KEY
+```
+
+### 使用本地Qwen
 参考[Qwen项目](https://github.com/QwenLM/Qwen/blob/main/README_CN.md#api)，部署一个兼容OpenAI API的模型服务：
 
 ```
@@ -95,7 +105,17 @@ python openai_api.py --server-name 0.0.0.0 --server-port 7905 -c QWen/QWen-14B-C
 git clone https://github.com/QwenLM/Qwen-Agent.git
 cd Qwen-Agent
 pip install -r requirements.txt
+```
 
+### 使用DashScope API接口
+```
+# 启动数据库服务，通过 --llm 参数指定DashScope模型, 默认'qwen-turbo'，可选['qwen-plus', 'qwen-turbo', 'qwen-14b-chat', 'qwen-7b-chat']
+# 若 Step 1 未配置 DASHSCOPE_API_KEY 环境变量，通过 --api_key YOUR_DASHSCOPE_API_KEY 传入
+python run_server.py --workstation_port 7864 --api_key YOUR_DASHSCOPE_API_KEY --llm qwen-turbo
+```
+
+### 使用本地Qwen
+```
 # 启动数据库服务，通过 --model_server 参数指定您在 Step 1 里部署好的模型服务
 # - 若 Step 1 的机器 IP 为 123.45.67.89，则可指定 --model_server http://123.45.67.89:7905/v1
 # - 若 Step 1 和 Step 2 是同一台机器，则可指定 --model_server http://127.0.0.1:7905/v1

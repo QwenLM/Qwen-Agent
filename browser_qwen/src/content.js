@@ -1,5 +1,4 @@
 
-// 获取页面的文本内容
 function getPageTextContent() {
   var textContent = document.body.textContent;
   return textContent;
@@ -13,7 +12,6 @@ function cache_browser(){
 
 }
 
-// 创建悬浮框
 const floatingBox = document.createElement('div');
 floatingBox.style.position = 'fixed';
 floatingBox.style.bottom = '650px';
@@ -26,7 +24,6 @@ floatingBox.style.borderRadius = '5px';
 floatingBox.style.padding = '10px';
 floatingBox.style.zIndex = '9999';
 
-// 创建按钮
 const button = document.createElement('button');
 button.style.position = 'fixed';
 button.style.top = '30px';
@@ -44,10 +41,8 @@ button.style.border = '0px';
 button.style.whiteSpace = 'pre-wrap';
 button.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.2)';
 
-// 将按钮添加到悬浮框中
 floatingBox.appendChild(button);
 
-// 将悬浮框添加到页面中
 document.body.appendChild(button);
 
 let isDragging = false;
@@ -55,14 +50,12 @@ var isMouseReleased = false;
 let initialX;
 let initialY;
 
-// 鼠标按下事件
 button.addEventListener('mousedown', (e) => {
   isDragging = true;
   initialX = e.clientX;
   initialY = e.clientY;
 });
 
-// 鼠标移动事件
 document.addEventListener('mousemove', (e) => {
   if (isDragging) {
     const dx = e.clientX - initialX;
@@ -75,13 +68,11 @@ document.addEventListener('mousemove', (e) => {
   }
 });
 
-// 鼠标释放事件
 document.addEventListener('mouseup', (e) => {
   isDragging = false;
 
 });
 
-// 按钮点击事件
 button.addEventListener('click', (e) => {
   if (isMouseReleased) {
     isMouseReleased = false;

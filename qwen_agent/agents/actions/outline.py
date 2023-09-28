@@ -9,8 +9,6 @@ PROMPT_TEMPLATE_CN = """
 
 为了完成以上写作任务，请先列出大纲。回复只需包含大纲。大纲的一级标题全部以罗马数字计数。只依据给定的参考资料来写，不要引入其余知识。
 """
-# 回复语言和写作标题保持一致。如果写作标题含有多种语言，则用中文回复。
-# 请注意一级标题使用# 开头，二级标题使用## 开头，依次类推
 
 PROMPT_TEMPLATE_EN = """
 You are a writing assistant. Your task is to complete writing article based on reference materials.
