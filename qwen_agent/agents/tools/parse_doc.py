@@ -1,3 +1,5 @@
+import re
+
 import html2text
 
 from qwen_agent.agents.actions import Simple
@@ -35,6 +37,10 @@ def parse_html(htmltext):
     return html2text.html2text(htmltext)
 
 
+def replace_multiple_newlines(s):
+    return re.sub('\n+', '\n', s)
+
+
 def parse_html_bs(path, pre_gen_question=False):
     from langchain.document_loaders import BSHTMLLoader
     loader = BSHTMLLoader(path)
@@ -44,8 +50,8 @@ def parse_html_bs(path, pre_gen_question=False):
         res = []
         for page in pages:
             print(len(page.page_content.split(' ')))
-            res.append({'page_content': page.page_content, 'metadata': page.metadata, 'related_questions': gen_q(page.page_content)})
+            res.append({'page_content': replace_multiple_newlines(page.page_content), 'metadata': page.metadata, 'related_questions': gen_q(page.page_content)})
     else:
-        res = [{'page_content': page.page_content, 'metadata': page.metadata} for page in pages]
+        res = [{'page_content': replace_multiple_newlines(page.page_content), 'metadata': page.metadata} for page in pages]
 
     return res

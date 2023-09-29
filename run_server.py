@@ -14,7 +14,7 @@ def parse_args():
     parser.add_argument('-l', '--llm', type=str, default='qwen-turbo', choices=['qwen-plus', 'qwen-turbo', 'qwen-14b-chat', 'qwen-7b-chat'])
 
     parser.add_argument('-lan', '--prompt_language', type=str, default='CN', choices=['EN', 'CN'], help='the language of built-in prompt')
-    parser.add_argument('-t', '--max_ref_token', type=int, default=4000, help='the max token number of reference material')
+    parser.add_argument('-t', '--max_ref_token', type=int, default=3000, help='the max token number of reference material')
     parser.add_argument('-w', '--workstation_port', type=int, default=7864, help='the port of editing workstation')
 
     args = parser.parse_args()

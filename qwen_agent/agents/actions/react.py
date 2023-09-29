@@ -51,10 +51,13 @@ class ReAct(Action):
         })
 
         text = ''
-        while True:
+        max_turn = 5
+        while True and max_turn > 0:
+            max_turn -= 1
             if self.source == 'dashscope':
                 output = self.llm.chat('', messages=new_messages, stream=False, stop_words=react_stop_words)
-
+            # print(new_messages)
+            # print(output)
             action, action_input, output = self.parse_latest_plugin_call(output)
             if action:
                 observation = call_plugin(action, action_input)
