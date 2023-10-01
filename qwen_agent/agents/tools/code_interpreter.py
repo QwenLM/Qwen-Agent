@@ -1,6 +1,7 @@
 import asyncio
 import atexit
 import base64
+import glob
 import io
 import json
 import os
@@ -14,78 +15,31 @@ import time
 import traceback
 import uuid
 from pathlib import Path
+from typing import Dict, Optional
 
 import matplotlib
 import PIL.Image
 from jupyter_client import BlockingKernelClient
-
-from qwen_agent.utils.util import extract_code
 
 sys.path.insert(
     0,
     str(Path(__file__).absolute().parent.parent.parent.parent))  # NOQA
 
 from qwen_agent.configs import config_browserqwen  # NOQA
+from qwen_agent.utils.util import extract_code  # NOQA
 
 WORK_DIR = os.getenv('CODE_INTERPRETER_WORK_DIR', config_browserqwen.code_interpreter_ws)
-
 LAUNCH_KERNEL_PY = """
 from ipykernel import kernelapp as app
 app.launch_new_instance()
 """
+INIT_CODE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'code_interpreter_init_kernel.py')
+ALIB_FONT_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'AlibabaPuHuiTi-3-45-Light.ttf')
 
-_KERNEL_CLIENTS = {}
-
-
-def _kill_kernels():
-    for v in _KERNEL_CLIENTS.values():
-        v.shutdown()
-    for k in list(_KERNEL_CLIENTS.keys()):
-        del _KERNEL_CLIENTS[k]
+_KERNEL_CLIENTS: Dict[int, BlockingKernelClient] = {}
 
 
-atexit.register(_kill_kernels)
-signal.signal(signal.SIGTERM, _kill_kernels)
-signal.signal(signal.SIGINT, _kill_kernels)
-
-# Run this fix before jupyter starts if matplotlib cannot render CJK fonts.
-# And we need to additionally run the following lines in the jupyter notebook.
-#   ```python
-#   import matplotlib.pyplot as plt
-#   plt.rcParams['font.sans-serif'] = ['SimHei']
-#   plt.rcParams['axes.unicode_minus'] = False
-#   ````
-ali_font_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'AlibabaPuHuiTi-3-45-Light.ttf')
-
-
-def use_alternative_fonts(filename):
-    try:
-        candi_ttf = ali_font_path
-        shutil.copy(candi_ttf, filename)
-        print(f'Using {candi_ttf}')
-    except Exception as ex:
-        print(ex)
-
-
-def fix_matplotlib_cjk_font_issue():
-    local_ttf = os.path.join(
-        os.path.abspath(
-            os.path.join(matplotlib.matplotlib_fname(), os.path.pardir)),
-        'fonts', 'ttf', 'simhei.ttf')
-    if not os.path.exists(local_ttf):
-        try:
-            use_alternative_fonts(local_ttf)
-        except Exception as ex:
-            print(ex)
-
-        font_list_cache = os.path.join(matplotlib.get_cachedir(),
-                                       'fontlist-*.json')
-        os.system(f'rm -f {font_list_cache}')
-
-
-def start_kernel(pid):
-    # fix_matplotlib_cjk_font_issue()
-
+def _start_kernel(pid) -> BlockingKernelClient:
     connection_file = os.path.join(WORK_DIR,
                                    f'kernel_connection_file_{pid}.json')
     launch_kernel_script = os.path.join(WORK_DIR, f'launch_kernel_{pid}.py')
@@ -132,13 +86,20 @@ def start_kernel(pid):
     return kc
 
 
-def escape_ansi(line):
-    ansi_escape = re.compile(r'(?:\x1B[@-_]|[\x80-\x9F])[0-?]*[ -/]*[@-~]')
-    return ansi_escape.sub('', line)
+def _kill_kernels():
+    for v in _KERNEL_CLIENTS.values():
+        v.shutdown()
+    for k in list(_KERNEL_CLIENTS.keys()):
+        del _KERNEL_CLIENTS[k]
 
 
-def publish_image_to_web(image_base64: str):
-    image_file = str(uuid.uuid4()) + '.png'
+atexit.register(_kill_kernels)
+signal.signal(signal.SIGTERM, _kill_kernels)
+signal.signal(signal.SIGINT, _kill_kernels)
+
+
+def _serve_image(image_base64: str) -> str:
+    image_file = f'{uuid.uuid4()}.png'
     local_image_file = os.path.join(WORK_DIR, image_file)
 
     png_bytes = base64.b64decode(image_base64)
@@ -150,62 +111,12 @@ def publish_image_to_web(image_base64: str):
     return image_url
 
 
-START_CODE = """
-import signal
-def _m6_code_interpreter_timeout_handler(signum, frame):
-    raise TimeoutError("M6_CODE_INTERPRETER_TIMEOUT")
-signal.signal(signal.SIGALRM, _m6_code_interpreter_timeout_handler)
-
-def input(*args, **kwargs):
-    raise NotImplementedError('Python input() function is disabled.')
-
-import os
-import math
-import re
-import json
-
-import seaborn as sns
-sns.set_theme()
-
-import matplotlib
-import matplotlib.pyplot as plt
-from matplotlib.font_manager import FontProperties
-font_path = '{font_path}'
-font_prop = FontProperties(fname=font_path)
-plt.rcParams["font.family"] = font_prop.get_name()
-
-import numpy as np
-import pandas as pd
-
-from sympy import Eq, symbols, solve
-""".format(font_path=ali_font_path)
-# plt.rcParams['font.sans-serif'] = ['SimHei']
-# plt.rcParams['axes.unicode_minus'] = False
+def _escape_ansi(line: str) -> str:
+    ansi_escape = re.compile(r'(?:\x1B[@-_]|[\x80-\x9F])[0-?]*[ -/]*[@-~]')
+    return ansi_escape.sub('', line)
 
 
-def code_interpreter(action_input: str, timeout=30):
-    code = extract_code(action_input)
-    fixed_code = []
-    for line in code.split('\n'):
-        fixed_code.append(line)
-        if line.startswith('sns.set_theme('):
-            # fixed_code.append('plt.rcParams["font.sans-serif"] = ["SimHei"]')
-            # fixed_code.append('plt.rcParams["axes.unicode_minus"] = False')
-            fixed_code.append('plt.rcParams["font.family"] = font_prop.get_name()')
-    fixed_code = '\n'.join(fixed_code)
-    return _code_interpreter(fixed_code, timeout)
-
-
-def _code_interpreter(code: str, timeout):
-    if not code.strip():
-        return ''
-    if timeout:
-        code = f'signal.alarm({timeout})\n{code}'
-    pid = os.getpid()
-    if pid not in _KERNEL_CLIENTS:
-        _KERNEL_CLIENTS[pid] = start_kernel(pid)
-        _code_interpreter(START_CODE, timeout=None)
-    kc = _KERNEL_CLIENTS[pid]
+def _execute_code(kc: BlockingKernelClient, code: str) -> str:
     kc.wait_for_ready()
     kc.execute(code)
     result = ''
@@ -225,13 +136,13 @@ def _code_interpreter(code: str, timeout):
                 text = msg['content']['data'].get('text/plain', '')
                 if 'image/png' in msg['content']['data']:
                     image_b64 = msg['content']['data']['image/png']
-                    image_url = publish_image_to_web(image_b64)
+                    image_url = _serve_image(image_b64)
                     image_idx += 1
                     image = '![fig-%03d](%s)' % (image_idx, image_url)
             elif msg_type == 'display_data':
                 if 'image/png' in msg['content']['data']:
                     image_b64 = msg['content']['data']['image/png']
-                    image_url = publish_image_to_web(image_b64)
+                    image_url = _serve_image(image_b64)
                     image_idx += 1
                     image = '![fig-%03d](%s)' % (image_idx, image_url)
                 else:
@@ -240,11 +151,11 @@ def _code_interpreter(code: str, timeout):
                 msg_type = msg['content']['name']  # stdout, stderr
                 text = msg['content']['text']
             elif msg_type == 'error':
-                text = escape_ansi('\n'.join(msg['content']['traceback']))
+                text = _escape_ansi('\n'.join(msg['content']['traceback']))
                 if 'M6_CODE_INTERPRETER_TIMEOUT' in text:
-                    text = f'Timeout. No response after {timeout} seconds.'
+                    text = 'Timeout: Code execution exceeded the time limit.'
         except queue.Empty:
-            text = f'Timeout. No response after {timeout} seconds.'
+            text = 'Timeout: Code execution exceeded the time limit.'
             finished = True
         except Exception:
             text = 'The code interpreter encountered an unexpected error.'
@@ -257,12 +168,65 @@ def _code_interpreter(code: str, timeout):
         if finished:
             break
     result = result.lstrip('\n')
-    if timeout:
-        _code_interpreter('signal.alarm(0)', timeout=None)
     return result
 
 
-def get_multiline_input(hint):
+def fix_matplotlib_cjk_font_issue():
+    ttf_name = os.path.basename(ALIB_FONT_FILE)
+    local_ttf = os.path.join(
+        os.path.abspath(
+            os.path.join(matplotlib.matplotlib_fname(), os.path.pardir)),
+        'fonts', 'ttf', ttf_name)
+    if not os.path.exists(local_ttf):
+        try:
+            shutil.copy(ALIB_FONT_FILE, local_ttf)
+            font_list_cache = os.path.join(matplotlib.get_cachedir(),
+                                           'fontlist-*.json')
+            for cache_file in glob.glob(font_list_cache):
+                with open(cache_file) as fin:
+                    cache_content = fin.read()
+                if ttf_name not in cache_content:
+                    os.remove(cache_file)
+        except Exception as ex:
+            print(ex)
+
+
+def code_interpreter(action_input: str, timeout: Optional[int] = 30) -> str:
+    code = extract_code(action_input)
+
+    if not code.strip():
+        return ''
+
+    pid: int = os.getpid()
+    if pid in _KERNEL_CLIENTS:
+        kc = _KERNEL_CLIENTS[pid]
+    else:
+        fix_matplotlib_cjk_font_issue()
+        kc = _start_kernel(pid)
+        with open(INIT_CODE_FILE) as fin:
+            start_code = fin.read()
+            start_code = start_code.replace('{{M6_FONT_PATH}}', ALIB_FONT_FILE)
+        _execute_code(kc, start_code)
+        _KERNEL_CLIENTS[pid] = kc
+
+    if timeout:
+        code = f'_M6CountdownTimer.start({timeout})\n{code}'
+
+    fixed_code = []
+    for line in code.split('\n'):
+        fixed_code.append(line)
+        if line.startswith('sns.set_theme('):
+            fixed_code.append('plt.rcParams["font.family"] = _m6_font_prop.get_name()')
+    fixed_code = '\n'.join(fixed_code)
+    result = _execute_code(kc, fixed_code)
+
+    if timeout:
+        _execute_code(kc, '_M6CountdownTimer.cancel()')
+
+    return result
+
+
+def _get_multiline_input(hint: str) -> str:
     print(hint)
     print('// Press ENTER to make a new line. Press CTRL-D to end input.')
     lines = []
@@ -281,4 +245,4 @@ def get_multiline_input(hint):
 
 if __name__ == '__main__':
     while True:
-        print(code_interpreter(get_multiline_input('Enter python code:')))
+        print(code_interpreter(_get_multiline_input('Enter python code:')))

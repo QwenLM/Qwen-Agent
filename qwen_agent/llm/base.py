@@ -9,7 +9,7 @@ class LLMBase:
         self.model = model
         self.memory = None
         self.gen = None
-        self.api_key = api_key
+        self.api_key = api_key.strip()
 
     def chat(self, query, stream=False, messages=[]):
         if stream:

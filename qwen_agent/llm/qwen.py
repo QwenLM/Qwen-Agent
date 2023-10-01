@@ -19,7 +19,7 @@ class Qwen(LLMBase):
             openai.api_key = 'none'
             self.source = 'local'
         elif self.model_server.startswith('dashscope'):
-            dashscope.api_key = os.getenv('DASHSCOPE_API_KEY', default=self.api_key)
+            dashscope.api_key = self.api_key or os.getenv('DASHSCOPE_API_KEY', default='')
             if not dashscope.api_key:
                 print('There is no DASHSCOPE_API_KEY!')
             self.source = 'dashscope'

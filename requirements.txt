@@ -15,6 +15,7 @@ openai
 pandas
 pdf2image
 pdfminer-six
+pillow
 pydantic>=2.3.0
 pypdf
 seaborn
