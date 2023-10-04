@@ -34,15 +34,6 @@ if model_server.startswith('http'):
 elif model_server.startswith('dashscope'):
     source = 'dashscope'
 
-if not os.path.exists(config_browserqwen.work_space_root):
-    os.makedirs(config_browserqwen.work_space_root)
-if not os.path.exists(config_browserqwen.cache_root):
-    os.makedirs(config_browserqwen.cache_root)
-if not os.path.exists(config_browserqwen.download_root):
-    os.makedirs(config_browserqwen.download_root)
-if not os.path.exists(config_browserqwen.code_interpreter_ws):
-    os.makedirs(config_browserqwen.code_interpreter_ws)
-
 if llm_name.startswith('gpt'):
     module = 'qwen_agent.llm.gpt'
     llm = importlib.import_module(module).GPT(llm_name)

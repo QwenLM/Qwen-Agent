@@ -33,15 +33,6 @@ else:
 
 mem = Memory(config_browserqwen.similarity_search, config_browserqwen.similarity_search_type)
 
-if not os.path.exists(config_browserqwen.work_space_root):
-    os.makedirs(config_browserqwen.work_space_root)
-if not os.path.exists(config_browserqwen.cache_root):
-    os.makedirs(config_browserqwen.cache_root)
-if not os.path.exists(config_browserqwen.download_root):
-    os.makedirs(config_browserqwen.download_root)
-if not os.path.exists(config_browserqwen.code_interpreter_ws):
-    os.makedirs(config_browserqwen.code_interpreter_ws)
-
 cache_file = os.path.join(config_browserqwen.cache_root, config_browserqwen.browser_cache_file)
 cache_file_popup_url = os.path.join(config_browserqwen.cache_root, config_browserqwen.url_file)
 

@@ -57,9 +57,6 @@ else:
     llm = None
     print('Will use local Qwen Interface')
 
-if not os.path.exists(config_browserqwen.cache_root):
-    os.makedirs(config_browserqwen.cache_root)
-
 
 def update_pop_url(data, cache_file_popup_url):
     new_line = {'url': data['url']}
@@ -218,6 +215,7 @@ async def web_listening(request: Request):
         # rsp = cache_data(data, cache_file)
         rsp = 'caching'
     elif msg_type == 'pop_url':
+        # What a misleading name! pop_url actually means add_url. pop is referring to the pop_up ui.
         rsp = update_pop_url(data, cache_file_popup_url)
 
     return JSONResponse(content=rsp)
