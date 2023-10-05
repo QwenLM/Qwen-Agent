@@ -2,6 +2,7 @@ import json
 
 from qwen_agent.agents.schema import RefMaterial
 from qwen_agent.llm.qwen import qwen_chat_no_stream
+from qwen_agent.utils.util import print_traceback
 
 PROMPT_TEMPLATE = """
 Given reference materials and questions, please determine if the reference materials and questions are relevant
@@ -62,8 +63,8 @@ class SSLLM:
             try:
                 fa = json.loads(fa)
                 answer = fa['res']
-            except Exception as ex:
-                print(ex)
+            except Exception:
+                print_traceback()
                 answer = fa
             if answer == 'related' or answer == '相关':
                 print(res)

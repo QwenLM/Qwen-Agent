@@ -1,19 +1,25 @@
 import json
 import re
+import sys
+import traceback
 
 import json5
 import requests
+import tiktoken
 from jieba import analyse
 
-import tiktoken
+
+def print_traceback():
+    print(''.join(traceback.format_exception(*sys.exc_info())))
 
 
 def save_text_to_file(path, text):
     try:
-        with open(path, 'w') as fp:
+        with open(path, 'w', encoding='utf-8') as fp:
             fp.write(text)
         return 'SUCCESS'
     except Exception as ex:
+        print_traceback()
         return ex
 
 
@@ -126,8 +132,8 @@ def format_answer(text):
             try:
                 obs = json.loads(obs)
                 img_urls.append(obs['image_url'])
-            except Exception as ex:
-                print(ex)
+            except Exception:
+                print_traceback()
                 img_urls = []
         if not img_urls:
             img_urls = extract_urls(text.split('Final Answer:')[-1].strip())

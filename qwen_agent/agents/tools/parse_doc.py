@@ -43,7 +43,7 @@ def replace_multiple_newlines(s):
 
 def parse_html_bs(path, pre_gen_question=False):
     from langchain.document_loaders import BSHTMLLoader
-    loader = BSHTMLLoader(path)
+    loader = BSHTMLLoader(path, open_encoding='utf-8')
     pages = loader.load_and_split()
 
     if pre_gen_question:

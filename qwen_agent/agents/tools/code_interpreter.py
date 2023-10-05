@@ -26,7 +26,7 @@ sys.path.insert(
     str(Path(__file__).absolute().parent.parent.parent.parent))  # NOQA
 
 from qwen_agent.configs import config_browserqwen  # NOQA
-from qwen_agent.utils.util import extract_code  # NOQA
+from qwen_agent.utils.util import extract_code, print_traceback  # NOQA
 
 WORK_DIR = os.getenv('CODE_INTERPRETER_WORK_DIR', config_browserqwen.code_interpreter_ws)
 LAUNCH_KERNEL_PY = """
@@ -187,8 +187,8 @@ def fix_matplotlib_cjk_font_issue():
                     cache_content = fin.read()
                 if ttf_name not in cache_content:
                     os.remove(cache_file)
-        except Exception as ex:
-            print(ex)
+        except Exception:
+            print_traceback()
 
 
 def code_interpreter(action_input: str, timeout: Optional[int] = 30) -> str:
