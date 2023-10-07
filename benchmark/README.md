@@ -167,10 +167,9 @@ python inference_and_execute.py --model {model_name}
 ```
 
 {model_name}:
-- qwen-14b-chat
-- qwen-7b-chat
 - qwen-1.8b-chat
 - qwen-7b-chat
+- qwen-14b-chat
 - llama-2-7b-chat
 - llama-2-13b-chat
 - codellama-7b-instruct
