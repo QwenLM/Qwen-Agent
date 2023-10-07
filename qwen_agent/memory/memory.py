@@ -1,7 +1,7 @@
 from typing import List
 
-from qwen_agent.agents.schema import RefMaterial
-from qwen_agent.agents.tools.similarity_search import SimilaritySearch
+from qwen_agent.schema import RefMaterial
+from qwen_agent.tools.similarity_search import SimilaritySearch
 from qwen_agent.utils.util import count_tokens
 
 

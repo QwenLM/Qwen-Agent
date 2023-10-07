@@ -1,19 +1,19 @@
 import importlib
 
-from qwen_agent.agents.tools import SimilaritySearchType
+from qwen_agent.tools import SimilaritySearchType
 
 
 class SimilaritySearch:
     def __init__(self, type='keyword', llm=None, stream=False):
         self.type = type
         if type == SimilaritySearchType.KeyWord.value:
-            module = 'qwen_agent.agents.tools.similarity_search_keyword'
+            module = 'qwen_agent.tools.similarity_search_keyword'
             run_func = importlib.import_module(module).SSKeyWord(llm, stream).run
         elif type == SimilaritySearchType.QueryMatch.value:
-            module = 'qwen_agent.agents.tools.similarity_search_querymatch'
+            module = 'qwen_agent.tools.similarity_search_querymatch'
             run_func = importlib.import_module(module).SSQueryMatch(llm, stream).run
         elif type == SimilaritySearchType.LLM.value:
-            module = 'qwen_agent.agents.tools.similarity_search_llm'
+            module = 'qwen_agent.tools.similarity_search_llm'
             run_func = importlib.import_module(module).SSLLM(llm).run
         else:
             raise NotImplementedError

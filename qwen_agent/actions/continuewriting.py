@@ -1,4 +1,4 @@
-from qwen_agent.agents.actions.base import Action
+from qwen_agent.actions.base import Action
 
 PROMPT_TEMPLATE_CN = """
 你是一个写作助手，请依据参考资料，根据给定的前置文本续写合适的内容。

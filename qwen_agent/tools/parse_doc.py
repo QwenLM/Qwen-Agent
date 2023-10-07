@@ -2,7 +2,7 @@ import re
 
 import html2text
 
-from qwen_agent.agents.actions import Simple
+from qwen_agent.actions import Simple
 
 
 def gen_q(text):

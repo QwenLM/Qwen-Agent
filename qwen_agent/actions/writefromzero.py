@@ -1,9 +1,9 @@
 import json
 import re
 
-from qwen_agent.agents.actions import Expand, Outline, Simple
-from qwen_agent.agents.actions.actions import get_action_list
-from qwen_agent.agents.planning.plan import Plan, default_plan
+from qwen_agent.actions import Expand, Outline, Simple
+from qwen_agent.actions.actions import get_action_list
+from qwen_agent.planning.plan import Plan, default_plan
 from qwen_agent.utils.util import print_traceback
 
 PROMPT_REACT_CUSTOM_EN = """Answer the following questions as best you can. You have access to the following tools:

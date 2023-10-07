@@ -25,7 +25,7 @@ sys.path.insert(
     0,
     str(Path(__file__).absolute().parent.parent.parent.parent))  # NOQA
 
-from qwen_agent.configs import config_browserqwen  # NOQA
+from qwen_server import config_browserqwen  # NOQA
 from qwen_agent.utils.util import extract_code, print_traceback  # NOQA
 
 WORK_DIR = os.getenv('CODE_INTERPRETER_WORK_DIR', config_browserqwen.code_interpreter_ws)
@@ -107,7 +107,14 @@ def _serve_image(image_base64: str) -> str:
     bytes_io = io.BytesIO(png_bytes)
     PIL.Image.open(bytes_io).save(local_image_file, 'png')
 
-    image_url = f'{config_browserqwen.fast_api_figure_url}/{image_file}'
+    if os.path.exists(config_browserqwen.address_file):
+        with open(config_browserqwen.address_file) as f:
+            data = json.load(f)
+        figure_url = 'http://' + data['address'] + ':' + str(config_browserqwen.fast_api_port) + '/static'
+    else:
+        figure_url = config_browserqwen.fast_api_figure_url
+    print(figure_url)
+    image_url = f'{figure_url}/{image_file}'
     return image_url
 
 

@@ -6,7 +6,7 @@ Step2:  Evaluate whether the thoughts are beneficial for achieving goals, only c
 """
 import json
 
-from qwen_agent.agents.actions import ContinueWriting, EvalCorr
+from qwen_agent.actions import ContinueWriting, EvalCorr
 from qwen_agent.utils.util import get_last_one_line_context
 
 

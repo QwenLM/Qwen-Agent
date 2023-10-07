@@ -10,17 +10,17 @@ from pathlib import Path
 import gradio as gr
 import jsonlines
 
+import config_browserqwen
+
 sys.path.insert(
     0,
     str(Path(__file__).absolute().parent.parent))  # NOQA
 
-from qwen_agent.agents.tools.tools import tools_list, call_plugin  # NOQA
+from qwen_agent.tools.tools import tools_list, call_plugin  # NOQA
 from qwen_agent.utils.util import get_last_one_line_context, save_text_to_file, count_tokens, get_html_content, format_answer  # NOQA
-from qwen_agent.agents.actions import ContinueWriting, Simple, WriteFromZero, ReAct  # NOQA
-from qwen_agent.configs import config_browserqwen  # NOQA
-from qwen_agent.agents.memory import Memory  # NOQA
-from qwen_agent.llm.qwen import qwen_chat_func  # NOQA
-from qwen_agent.agents.actions.func_call import func_call  # NOQA
+from qwen_agent.actions import ContinueWriting, Simple, WriteFromZero, ReAct  # NOQA
+from qwen_agent.memory import Memory  # NOQA
+from qwen_agent.actions.func_call import func_call  # NOQA
 
 prompt_lan = sys.argv[1]
 llm_name = sys.argv[2]
@@ -28,6 +28,7 @@ max_ref_token = int(sys.argv[3])
 workstation_port = int(sys.argv[4])
 model_server = sys.argv[5]
 api_key = sys.argv[6]
+server_host = sys.argv[7]
 
 if model_server.startswith('http'):
     source = 'local'
@@ -41,8 +42,7 @@ elif llm_name.startswith('Qwen') or llm_name.startswith('qwen'):
     module = 'qwen_agent.llm.qwen'
     llm = importlib.import_module(module).Qwen(llm_name, model_server=model_server, api_key=api_key)
 else:
-    llm = None
-    print('Will use local Qwen Interface')
+    raise NotImplementedError
 
 mem = Memory(config_browserqwen.similarity_search, config_browserqwen.similarity_search_type)
 
@@ -244,7 +244,7 @@ def bot(history, upload_file):
                 while True:
                     print(app_global_para['messages'])
                     functions = [x for x in tools_list if x['name_for_model'] == 'code_interpreter']
-                    rsp = qwen_chat_func(app_global_para['messages'], functions)
+                    rsp = llm.qwen_chat_func(app_global_para['messages'], functions)
                     if rsp['function_call']:
                         history[-1][1] += rsp['content'].strip() + '\n'
                         yield history
@@ -348,7 +348,7 @@ def generate(context):
         sp_query += ', 必须使用code_interpreter工具'
         functions = [x for x in tools_list if x['name_for_model'] == 'code_interpreter']
         if source == 'local':  # using func call interface
-            response = func_call(sp_query, functions)
+            response = func_call(sp_query, functions, llm)
             for chunk in response:
                 res += chunk
                 yield res
@@ -360,7 +360,7 @@ def generate(context):
         sp_query = sp_query.split(config_browserqwen.plugin_flag)[-1]
         functions = tools_list
         if source == 'local':  # using func call interface
-            response = func_call(sp_query, functions)
+            response = func_call(sp_query, functions, llm)
             for chunk in response:
                 res += chunk
                 yield res
@@ -437,8 +437,10 @@ with gr.Blocks(css=css, theme='soft') as demo:
             rec = gr.Markdown('Browsing History', elem_classes='rec')
             with gr.Row():
                 with gr.Column(scale=0.3, min_width=0):
-                    date1 = gr.Dropdown([str(datetime.date.today()-datetime.timedelta(days=i)) for i in range(config_browserqwen.max_days)], value=str(datetime.date.today()), label='Start Date')  # NOQA
-                    date2 = gr.Dropdown([str(datetime.date.today()-datetime.timedelta(days=i)) for i in range(config_browserqwen.max_days)], value=str(datetime.date.today()), label='End Date')  # NOQA
+                    date1 = gr.Dropdown([str(datetime.date.today()-datetime.timedelta(days=i)) for i in range(
+                        config_browserqwen.max_days)], value=str(datetime.date.today()), label='Start Date')  # NOQA
+                    date2 = gr.Dropdown([str(datetime.date.today()-datetime.timedelta(days=i)) for i in range(
+                        config_browserqwen.max_days)], value=str(datetime.date.today()), label='End Date')  # NOQA
                 with gr.Column(scale=0.7, min_width=0):
                     browser_list = gr.HTML(value='', label='browser_list', elem_classes=['div_tmp', 'add_scrollbar'])
 
@@ -468,7 +470,7 @@ with gr.Blocks(css=css, theme='soft') as demo:
                 #     layout_bt = gr.Button('👉', variant='primary')
 
             with gr.Column():
-                cmd_erea = gr.Textbox(lines=10, max_lines=10, label="Qwen's Inner Thought", elem_id='cmd')
+                cmd_area = gr.Textbox(lines=10, max_lines=10, label="Qwen's Inner Thought", elem_id='cmd')
                 with gr.Tab('Markdown'):
                     # md_out_bt = gr.Button('Render')
                     md_out_area = gr.Markdown(elem_classes=[
@@ -490,14 +492,14 @@ with gr.Blocks(css=css, theme='soft') as demo:
         # br_input_bt.click(add_url_manu, br_input, None).then(update_browser_list, None, browser_list).then(lambda: None, None, None, _js=f'() => {{{js}}}')
         # .then(update_rec_list, gr.Textbox('update', visible=False), rec_list)
         # clk_ctn_bt = ctn_bt.click(qwen_ctn, edit_area, edit_area)
-        clk_ctn_bt = ctn_bt.click(generate, edit_area, cmd_erea)
-        clk_ctn_bt.then(format_generate, [edit_area, cmd_erea], edit_area)
+        clk_ctn_bt = ctn_bt.click(generate, edit_area, cmd_area)
+        clk_ctn_bt.then(format_generate, [edit_area, cmd_area], edit_area)
 
         edit_area_change = edit_area.change(layout_to_right, edit_area, [text_out_area, md_out_area])
         # edit_area_change.then(count_token, edit_area, token_count)
 
         stop_bt.click(lambda: None, cancels=[clk_ctn_bt], queue=False)
-        clr_bt.click(lambda: [None, None, None], None, [edit_area, cmd_erea, md_out_area], queue=False)
+        clr_bt.click(lambda: [None, None, None], None, [edit_area, cmd_area, md_out_area], queue=False)
         dld_bt.click(download_text, edit_area, None)
 
         # layout_bt.click(layout_to_right,
@@ -580,4 +582,4 @@ with gr.Blocks(css=css, theme='soft') as demo:
     demo.load(update_app_global_para, [date1, date2], None).then(update_browser_list, None, browser_list).then(lambda: None, None, None, _js=f'() => {{{js}}}').then(chat_clear, None, [chatbot, hidden_file_path, show_path_md])
     # .then(update_rec_list, gr.Textbox('load', visible=False), rec_list, queue=False)
 
-demo.queue().launch(server_name=config_browserqwen.app_host, server_port=workstation_port)
+demo.queue().launch(server_name=server_host, server_port=workstation_port)

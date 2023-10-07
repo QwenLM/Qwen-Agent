@@ -1,5 +1,4 @@
-from qwen_agent.agents.schema import Message
-from qwen_agent.llm.qwen import qwen_chat, qwen_chat_no_stream
+from qwen_agent.schema import Message
 
 
 class Action:
@@ -8,12 +7,7 @@ class Action:
         self.stream = stream
 
     def _run(self, prompt, messages=None):
-        if self.llm:
-            return self.llm.chat(prompt, messages=messages, stream=self.stream)
-        elif self.stream:
-            return qwen_chat(prompt)
-        else:
-            return qwen_chat_no_stream(prompt)
+        return self.llm.chat(prompt, messages=messages, stream=self.stream)
 
     def _get_history(self, user_request):
         history = ''

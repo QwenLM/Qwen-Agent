@@ -1,4 +1,4 @@
-from qwen_agent.agents.actions.base import Action
+from qwen_agent.actions.base import Action
 
 PROMPT_TEMPLATE_CN = """
 你是一个写作助手，任务是充分理解参考资料，从而完成写作。

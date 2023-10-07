@@ -1,4 +1,4 @@
-from qwen_agent.agents.actions.base import Action
+from qwen_agent.actions.base import Action
 
 PROMPT_TEMPLATE_CN = """
 判断下列续写内容中，谁和前置文本最相关

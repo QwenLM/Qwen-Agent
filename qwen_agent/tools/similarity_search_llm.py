@@ -1,7 +1,6 @@
 import json
 
-from qwen_agent.agents.schema import RefMaterial
-from qwen_agent.llm.qwen import qwen_chat_no_stream
+from qwen_agent.schema import RefMaterial
 from qwen_agent.utils.util import print_traceback
 
 PROMPT_TEMPLATE = """
@@ -53,10 +52,9 @@ class SSLLM:
             ref_doc=text,
             user_request=query,
         )
-        if self.llm:
-            res = self.llm.chat(prompt, stream=False)
-        else:
-            res = qwen_chat_no_stream(prompt)
+
+        res = self.llm.chat(prompt, stream=False)
+
         print(res)
         if 'Final Answer:' in res:
             fa = res.split('Final Answer:')[-1].strip()

@@ -1,4 +1,3 @@
-from qwen_agent.llm.qwen import qwen_chat, qwen_chat_no_stream
 
 PROMPT_TEMPLATE = """
 你是一个写作助手，擅长阅读参考资料，来完成用户需求。
@@ -44,7 +43,5 @@ class Plan:
         )
         if self.llm:
             return self.llm.chat(prompt, messages=messages, stream=self.stream)
-        elif self.stream:
-            return qwen_chat(prompt)
         else:
-            return qwen_chat_no_stream(prompt)
+            raise NotImplementedError

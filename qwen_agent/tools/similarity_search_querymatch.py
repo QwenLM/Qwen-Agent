@@ -1,4 +1,4 @@
-from qwen_agent.agents.schema import RefMaterial
+from qwen_agent.schema import RefMaterial
 from qwen_agent.utils.util import get_key_word
 
 

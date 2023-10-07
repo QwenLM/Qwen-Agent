@@ -1,4 +1,4 @@
-from qwen_agent.agents.actions.base import Action
+from qwen_agent.actions.base import Action
 
 PROMPT_TEMPLATE_CN = """
 你是一个写作助手，请依据参考资料，充分理解参考资料内容，组织出满足用户需求的条理清晰的回复。如果用户需求中没有指定回复语言，则回复语言必须与用户需求的语言保持一致。

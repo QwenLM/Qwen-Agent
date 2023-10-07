@@ -3,7 +3,7 @@ from pathlib import Path
 
 """ ===== global setting ===== """
 # the path of browser infomation
-work_space_root = os.path.join(Path(__file__).resolve().parent.parent.parent, 'workspace/')
+work_space_root = os.path.join(Path(__file__).parent.parent, 'workspace/')
 cache_root = os.path.join(work_space_root, 'browser_cache/')
 download_root = os.path.join(work_space_root, 'download/')
 browser_cache_file = 'browse.jsonl'
@@ -21,16 +21,16 @@ similarity_search_type = 'keyword'  # ['keyword', 'querymatch', 'llm']
 
 
 """ ===== main.py setting ===== """
-# the host and port of main.py
-fast_api_host = '127.0.0.1'
+# the port of main.py
 fast_api_port = 7866
-fast_api_figure_url = 'http://'+fast_api_host+':'+str(fast_api_port)+'/static'
+
+figure_host = '127.0.0.1'
+fast_api_figure_url = 'http://'+figure_host+':'+str(fast_api_port)+'/static'
+address_file = os.path.join(work_space_root, 'address_file.json')
 
 pre_gen_question = False  # [True, False] - pre gen qustion for each block
 
 """ ===== app.py setting (editing workstation) ===== """
-# the host and port of editing workstation
-app_host = '127.0.0.1'
 
 max_days = 7  # the number of days for displaying
 auto_agent = False  # [True, False] - automatic using plug-in after wrinting every section
@@ -42,5 +42,4 @@ title_flag = '/title'  # writing a full article with planning
 
 
 """ ===== app_in_browser.py setting (browser interactive interfaces) ===== """
-app_in_browser_host = '127.0.0.1'
 app_in_browser_port = 7863

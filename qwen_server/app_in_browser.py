@@ -7,19 +7,21 @@ from pathlib import Path
 import gradio as gr
 import jsonlines
 
+import config_browserqwen
+
 sys.path.insert(
     0,
     str(Path(__file__).absolute().parent.parent))  # NOQA
 
-from qwen_agent.agents.actions import Simple  # NOQA
-from qwen_agent.configs import config_browserqwen  # NOQA
-from qwen_agent.agents.memory import Memory  # NOQA
+from qwen_agent.actions import Simple  # NOQA
+from qwen_agent.memory import Memory  # NOQA
 
 prompt_lan = sys.argv[1]
 llm_name = sys.argv[2]
 max_ref_token = int(sys.argv[3])
 model_server = sys.argv[4]
 api_key = sys.argv[5]
+server_host = sys.argv[6]
 
 if llm_name.startswith('gpt'):
     module = 'qwen_agent.llm.gpt'
@@ -28,8 +30,7 @@ elif llm_name.startswith('Qwen') or llm_name.startswith('qwen'):
     module = 'qwen_agent.llm.qwen'
     llm = importlib.import_module(module).Qwen(llm_name, model_server=model_server, api_key=api_key)
 else:
-    llm = None
-    print('Will use local Qwen Interface')
+    raise NotImplementedError
 
 mem = Memory(config_browserqwen.similarity_search, config_browserqwen.similarity_search_type)
 
@@ -88,7 +89,7 @@ def bot(history):
 
             if not now_page:
                 gr.Info("This page has not yet been added to the Qwen's reading list!")
-            elif now_page['raw'] == '':
+            elif not now_page['raw']:
                 gr.Info('Please wait, Qwen is analyzing this page...')
             else:
                 _ref_list = mem.get(history[-1][0], [now_page], llm=llm, stream=False, max_token=max_ref_token)
@@ -130,7 +131,7 @@ def load_history_session(history):
     if not now_page:
         gr.Info("Please add this page to Qwen's Reading List first!")
         return []
-    if now_page['raw'] == '':
+    if not now_page['raw']:
         gr.Info('Please wait, Qwen is analyzing this page...')
         return []
     return now_page['session']
@@ -195,4 +196,4 @@ with gr.Blocks(css=css, theme='soft') as demo:
 
     demo.load(set_page_url).then(load_history_session, chatbot, chatbot)
 
-demo.queue().launch(server_name=config_browserqwen.app_in_browser_host, server_port=config_browserqwen.app_in_browser_port)
+demo.queue().launch(server_name=server_host, server_port=config_browserqwen.app_in_browser_port)

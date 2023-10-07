@@ -1,5 +1,5 @@
-from qwen_agent.agents.tools.code_interpreter import code_interpreter  # NOQA
-from qwen_agent.agents.tools.image_gen import image_gen  # NOQA
+from qwen_agent.tools.code_interpreter import code_interpreter  # NOQA
+from qwen_agent.tools.image_gen import image_gen  # NOQA
 
 tools_list = [
         {

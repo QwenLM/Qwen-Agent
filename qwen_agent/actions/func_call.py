@@ -1,14 +1,12 @@
-from qwen_agent.llm.qwen import qwen_chat_func  # NOQA
-from qwen_agent.agents.tools.tools import call_plugin  # NOQA
+from qwen_agent.tools.tools import call_plugin  # NOQA
 
 
-def func_call(query, functions):
-    messages = []
-    messages.append({
-            'role': 'user', 'content': query
-        })
+def func_call(query, functions, llm):
+    messages = [{
+        'role': 'user', 'content': query
+    }]
     while True:
-        rsp = qwen_chat_func(messages, functions)
+        rsp = llm.qwen_chat_func(messages, functions)
         if rsp['function_call']:
             yield rsp['content'].strip() + '\n'
             yield 'Action: '+rsp['function_call']['name'].strip() + '\n'

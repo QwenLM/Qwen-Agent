@@ -13,15 +13,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+import config_browserqwen
+
 sys.path.insert(
     0,
     str(Path(__file__).absolute().parent.parent))  # NOQA
 
-from qwen_agent.configs import config_browserqwen  # NOQA
-from qwen_agent.agents.actions import Simple  # NOQA
-from qwen_agent.agents.tools.parse_doc import parse_pdf_pypdf, parse_html_bs  # NOQA
+from qwen_agent.actions import Simple  # NOQA
+from qwen_agent.tools.parse_doc import parse_pdf_pypdf, parse_html_bs  # NOQA
 from qwen_agent.utils.util import save_text_to_file  # NOQA
-from qwen_agent.agents.schema import Record  # NOQA
+from qwen_agent.schema import Record  # NOQA
 
 prompt_lan = sys.argv[1]
 llm_name = sys.argv[2]
@@ -29,12 +30,14 @@ max_ref_token = int(sys.argv[3])
 workstation_port = int(sys.argv[4])
 model_server = sys.argv[5]
 api_key = sys.argv[6]
+server_host = sys.argv[7]
 
 app = FastAPI()
 
 origins = [
     'http://127.0.0.1:'+str(workstation_port),
     'http://localhost:'+str(workstation_port),
+    'http://0.0.0.0:'+str(workstation_port),
 ]
 
 app.add_middleware(
@@ -54,8 +57,7 @@ elif llm_name.startswith('Qwen') or llm_name.startswith('qwen'):
     module = 'qwen_agent.llm.qwen'
     llm = importlib.import_module(module).Qwen(llm_name, model_server=model_server, api_key=api_key)
 else:
-    llm = None
-    print('Will use local Qwen Interface')
+    raise NotImplementedError
 
 
 def update_pop_url(data, cache_file_popup_url):
@@ -93,7 +95,7 @@ def cache_data(data, cache_file):
     print('Begin cache...')
     if data['url'][-4:] in ['.pdf', '.PDF']:
         # generate one processing record
-        new_record = Record(url=data['url'], time='', type=data['type'], raw='',
+        new_record = Record(url=data['url'], time='', type=data['type'], raw=[],
                             extract='', topic='', checked=False, session=[]).to_dict()
         with jsonlines.open(cache_file, mode='a') as writer:
             writer.write(new_record)
@@ -151,7 +153,7 @@ def cache_data(data, cache_file):
         extract = get_title(pdf_content[0]['page_content'], cacheprompt=cacheprompt)
     else:
         if data['content'] and data['type'] == 'html':
-            new_record = Record(url=data['url'], time='', type=data['type'], raw='', extract='', topic='', checked=False, session=[]).to_dict()
+            new_record = Record(url=data['url'], time='', type=data['type'], raw=[], extract='', topic='', checked=False, session=[]).to_dict()
             with jsonlines.open(cache_file, mode='a') as writer:
                 writer.write(new_record)
 
@@ -199,6 +201,17 @@ def change_checkbox_state(text, cache_file):
     return {'result': 'changed'}
 
 
+def update_addr_for_figure(address):
+    new_line = {'address': address}
+
+    with jsonlines.open(config_browserqwen.address_file, mode='w') as writer:
+        writer.write(new_line)
+
+    response = 'Update Address'
+    print('Update Address')
+    return response
+
+
 @app.post('/endpoint')
 async def web_listening(request: Request):
     data = await request.json()
@@ -217,9 +230,11 @@ async def web_listening(request: Request):
     elif msg_type == 'pop_url':
         # What a misleading name! pop_url actually means add_url. pop is referring to the pop_up ui.
         rsp = update_pop_url(data, cache_file_popup_url)
+    elif msg_type == 'set_addr':
+        rsp = update_addr_for_figure(data['addr'])
 
     return JSONResponse(content=rsp)
 
 
 if __name__ == '__main__':
-    uvicorn.run(app='main:app', host=config_browserqwen.fast_api_host, port=config_browserqwen.fast_api_port, reload=True)
+    uvicorn.run(app='main:app', host=server_host, port=config_browserqwen.fast_api_port, reload=True)

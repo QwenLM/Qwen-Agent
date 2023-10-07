@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BrowserQwen</title>
-  <script src="popup.js"></script>
+<!--  <script src="popup.js"></script>-->
   <style>
     .title-style {
       margin-top: 10px;
@@ -66,8 +66,8 @@
     }
 
     .input-text {
-      width: 340px;
-      /* height: 200px; */
+      width: 300px;
+      /* height: 100px; */
       background-color: #fffdfd;
       border: 1px solid #ccc;
       border-radius: 10px;
@@ -104,11 +104,18 @@
       border: none;
     }
     </style>
+
 </head>
 
 
 <body>
-    <iframe src="http://127.0.0.1:7863/" style="height: 550px"></iframe>
+<!--    <iframe src=$popup_url style="height: 550px"></iframe>-->
+<div id="iframe_area" style="height: 570px"></div>
 
+<h3>Customize Address:</h3>
+<input type="text" id="addr" name="addr" class="input-text">
+<button id="set_addr" class="upload_btn">Change</button>
+
+<script src="popup.js"></script>
 </body>
 </html>

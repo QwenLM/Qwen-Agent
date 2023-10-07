@@ -1,8 +1,8 @@
 import json
 
-from qwen_agent.agents.actions.base import Action
+from qwen_agent.actions.base import Action
 
-from qwen_agent.agents.tools.tools import call_plugin  # NOQA
+from qwen_agent.tools.tools import call_plugin  # NOQA
 
 TOOL_DESC = """{name_for_model}: Call this tool to interact with the {name_for_human} API. What is the {name_for_human} API useful for? {description_for_model} Parameters: {parameters}"""
 
