@@ -21,7 +21,7 @@ sys.path.insert(
 
 from qwen_agent.actions import Simple  # NOQA
 from qwen_agent.tools.parse_doc import parse_pdf_pypdf, parse_html_bs  # NOQA
-from qwen_agent.utils.util import save_text_to_file  # NOQA
+from qwen_agent.utils.util import print_traceback, save_text_to_file  # NOQA
 from qwen_agent.schema import Record  # NOQA
 
 prompt_lan = sys.argv[1]
@@ -94,58 +94,42 @@ def cache_data(data, cache_file):
     extract = ''  # extract a title for display
     print('Begin cache...')
     if data['url'][-4:] in ['.pdf', '.PDF']:
+        date1 = datetime.datetime.now()
+
         # generate one processing record
         new_record = Record(url=data['url'], time='', type=data['type'], raw=[],
                             extract='', topic='', checked=False, session=[]).to_dict()
         with jsonlines.open(cache_file, mode='a') as writer:
             writer.write(new_record)
+
+        # deal pdf path
         if is_local_path(data['url']):
             from urllib.parse import urlparse, unquote
             parsed_url = urlparse(data['url'])
             print('parsed_url: ', parsed_url)
-            try:
-                pdf_content = parse_pdf_pypdf(unquote(parsed_url.path), 'local', pre_gen_question=config_browserqwen.pre_gen_question)
-            except Exception as ex:
-                print(ex)
-                lines = []
-                if os.path.exists(cache_file):
-                    for line in jsonlines.open(cache_file):
-                        if line['url'] != data['url']:
-                            lines.append(line)
-                with jsonlines.open(cache_file, mode='w') as writer:
-                    for new_line in lines:
-                        writer.write(new_line)
-                return 'failed'
+            pdf_path = unquote(parsed_url.path)
         else:
-            try:
-                # download pdf
-                print('Trying to download online PDF. Please be patient...')
-                new_path = os.path.join(config_browserqwen.cache_root, data['url'].split('/')[-1])
-                download_pdf(data['url'], new_path)
-                print('Download successful')
-                print('new path', new_path)
-                pdf_content = parse_pdf_pypdf(new_path, 'local', pre_gen_question=config_browserqwen.pre_gen_question)
-            except Exception as ex:
-                print('Download failed')
-                print(ex)
-                print('Directly parsing the online PDF. Please be patient...')
-                parsed_url = data['url']
-                try:
-                    pdf_content = parse_pdf_pypdf(parsed_url, 'online', pre_gen_question=config_browserqwen.pre_gen_question)
-                except Exception as ex:
-                    print(ex)
-                    lines = []
-                    if os.path.exists(cache_file):
-                        for line in jsonlines.open(cache_file):
-                            if line['url'] != data['url']:
-                                lines.append(line)
-                    with jsonlines.open(cache_file, mode='w') as writer:
-                        for new_line in lines:
-                            writer.write(new_line)
-                    return 'failed'
+            pdf_path = data['url']
 
+        try:
+            pdf_content = parse_pdf_pypdf(pdf_path, pre_gen_question=config_browserqwen.pre_gen_question)
+        except Exception:
+            print_traceback()
+            # del the processing record
+            lines = []
+            if os.path.exists(cache_file):
+                for line in jsonlines.open(cache_file):
+                    if line['url'] != data['url']:
+                        lines.append(line)
+            with jsonlines.open(cache_file, mode='w') as writer:
+                for new_line in lines:
+                    writer.write(new_line)
+            return 'failed'
+
+        date2 = datetime.datetime.now()
+        print('parse pdf time: ', date2 - date1)
         data['content'] = pdf_content
-        data['type'] = 'pdf'  # pdf
+        data['type'] = 'pdf'
         if prompt_lan == 'CN':
             cacheprompt = '参考资料是一篇论文的首页，请提取出一句话作为标题。'
         elif prompt_lan == 'EN':

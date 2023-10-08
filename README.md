@@ -143,7 +143,7 @@ When you want Qwen to read the content of the current webpage:
 - Click the `Add to Qwen's Reading List` button on the screen to authorize Qwen to analyze the page in the background.
 - Click the Qwen icon in the browser's top right corner to start interacting with Qwen about the current page's content.
 
-Note: Reading PDF documents is an experimental feature and may not be stable. When adding an online PDF to Qwen's reading list, it may take a while for Qwen to preprocess it due to network issues or downloading NLTK dependencies. It is recommended to first download the PDF locally and then open it in the browser.
+Note: Reading PDF documents is an experimental feature and may not be stable. When adding an online PDF to Qwen's reading list, it may take a while for Qwen to preprocess it due to network issues. It is recommended to first download the PDF locally and then open it in the browser.
 
 ## Video Demonstration
 

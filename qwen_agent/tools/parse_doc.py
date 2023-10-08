@@ -12,14 +12,9 @@ def gen_q(text):
     return res
 
 
-def parse_pdf_pypdf(path, ftype, pre_gen_question=False):
-    from langchain.document_loaders import PyPDFLoader, OnlinePDFLoader
-    if ftype == 'local':
-        loader = PyPDFLoader(path)
-    else:
-        loader = OnlinePDFLoader(path)
-        # data = loader.load()
-        # print(data)
+def parse_pdf_pypdf(path, pre_gen_question=False):
+    from langchain.document_loaders import PyPDFLoader
+    loader = PyPDFLoader(path)
     pages = loader.load_and_split()
     # print(pages)
     if pre_gen_question:
