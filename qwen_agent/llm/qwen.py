@@ -129,6 +129,8 @@ class Qwen(LLMBase):
 
     def chat_dashscope_no_stream(self, query, messages=None, stop_words=None):
         print('begin: no stream in dashscope')
+        if not stop_words:
+            stop_words = []
         if messages:
             response = self.gen.call(
                 self.model,
@@ -153,6 +155,8 @@ class Qwen(LLMBase):
 
     def qwen_chat_func(self, messages, functions=None):
         print('begin: no stream in qwen_chat_func')
+        if not functions:
+            functions = []
         if functions:
             response = openai.ChatCompletion.create(
                 model='Qwen', messages=messages, functions=functions
