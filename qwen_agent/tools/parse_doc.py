@@ -32,8 +32,12 @@ def parse_html(htmltext):
     return html2text.html2text(htmltext)
 
 
-def replace_multiple_newlines(s):
-    return re.sub('\n+', '\n', s)
+def pre_process_html(s):
+    # replace multiple newlines
+    s = re.sub('\n+', '\n', s)
+    # replace special string
+    s = s.replace('Add to Qwen\'s Reading List', '')
+    return s
 
 
 def parse_html_bs(path, pre_gen_question=False):
@@ -45,8 +49,8 @@ def parse_html_bs(path, pre_gen_question=False):
         res = []
         for page in pages:
             print(len(page.page_content.split(' ')))
-            res.append({'page_content': replace_multiple_newlines(page.page_content), 'metadata': page.metadata, 'related_questions': gen_q(page.page_content)})
+            res.append({'page_content': pre_process_html(page.page_content), 'metadata': page.metadata, 'related_questions': gen_q(page.page_content)})
     else:
-        res = [{'page_content': replace_multiple_newlines(page.page_content), 'metadata': page.metadata} for page in pages]
+        res = [{'page_content': pre_process_html(page.page_content), 'metadata': page.metadata} for page in pages]
 
     return res

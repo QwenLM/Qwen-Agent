@@ -145,8 +145,8 @@ def cache_data(data, cache_file):
                 tmp_html_file = os.path.join(config_browserqwen.cache_root, 'tmp.html')
                 save_text_to_file(tmp_html_file, data['content'])
                 data['content'] = parse_html_bs(tmp_html_file, pre_gen_question=config_browserqwen.pre_gen_question)
-            except Exception as ex:
-                print(ex)
+            except Exception:
+                print_traceback()
             extract = data['content'][0]['metadata']['title']
 
     today = datetime.date.today()

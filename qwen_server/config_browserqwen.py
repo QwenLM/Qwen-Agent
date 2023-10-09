@@ -17,7 +17,7 @@ prompt_lan = 'EN'  # ['CN', 'EN'] - the language of built-in prompt
 
 # using similarity search on reference material before answer
 similarity_search = True  # [True, False]
-similarity_search_type = 'keyword'  # ['keyword', 'querymatch', 'llm']
+similarity_search_type = 'jaccard'  # ['keyword', 'querymatch', 'llm', 'jaccard']
 
 
 """ ===== main.py setting ===== """

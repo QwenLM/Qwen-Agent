@@ -15,6 +15,9 @@ class SimilaritySearch:
         elif type == SimilaritySearchType.LLM.value:
             module = 'qwen_agent.tools.similarity_search_llm'
             run_func = importlib.import_module(module).SSLLM(llm).run
+        elif type == SimilaritySearchType.Jaccard.value:
+            module = 'qwen_agent.tools.similarity_search_jaccard'
+            run_func = importlib.import_module(module).SSJaccard(llm, stream).run
         else:
             raise NotImplementedError
         self.run_func = run_func

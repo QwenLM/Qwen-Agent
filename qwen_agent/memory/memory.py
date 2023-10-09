@@ -18,9 +18,11 @@ class Memory:
             search_agent = SimilaritySearch(type=self.ss_type, llm=llm, stream=stream)
             _ref_list = []
             for record in records:
-                _ref_list.append(search_agent.run(record, query))
+                now_ref_list = search_agent.run(record, query)
+                if now_ref_list['text']:
+                    _ref_list.append(now_ref_list)
 
-        if _ref_list[0]['text'] == []:
+        if not _ref_list:
             _ref_list = self.get_top(records)
         # token number
         new_ref_list = []

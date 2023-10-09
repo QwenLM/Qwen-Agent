@@ -3,10 +3,12 @@ import re
 import sys
 import traceback
 
+import jieba
 import json5
 import requests
-import tiktoken
 from jieba import analyse
+
+import tiktoken
 
 
 def print_traceback():
@@ -43,12 +45,23 @@ def send_msg(url, msg):
     return requests.post(url, params=msg)
 
 
+def get_split_word(text):
+    text = text.lower()
+    _wordlist = jieba.lcut(text.strip())
+    wordlist = []
+    for x in _wordlist:
+        if x not in [' ', '  ', '\t', '\n', '\\', 'is', 'are', 'what', 'how', '的', '吗', '是', '了', '怎么', '如何', '什么', '？', '?', '!']:
+            wordlist.append(x)
+    # print('wordlist: ', wordlist)
+    return wordlist
+
+
 def get_key_word(text):
-    # _wordlist = jieba.lcut(text.strip())
+    text = text.lower()
     _wordlist = analyse.extract_tags(text)
     wordlist = []
     for x in _wordlist:
-        if x not in [' ', '  ', '\t', '\n', '\\', 'is', 'are', '的', '吗', '是', '了', '怎么', '如何', '什么', '？', '?', '!']:
+        if x not in [' ', '  ', '\t', '\n', '\\', 'is', 'are', 'what', 'how', '的', '吗', '是', '了', '怎么', '如何', '什么', '？', '?', '!']:
             wordlist.append(x)
     print('wordlist: ', wordlist)
     return wordlist
