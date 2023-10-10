@@ -23,7 +23,7 @@ from jupyter_client import BlockingKernelClient
 
 sys.path.insert(
     0,
-    str(Path(__file__).absolute().parent.parent.parent.parent))  # NOQA
+    str(Path(__file__).absolute().parent.parent.parent))  # NOQA
 
 from qwen_server import config_browserqwen  # NOQA
 from qwen_agent.utils.util import extract_code, print_traceback  # NOQA
@@ -33,8 +33,8 @@ LAUNCH_KERNEL_PY = """
 from ipykernel import kernelapp as app
 app.launch_new_instance()
 """
-INIT_CODE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'code_interpreter_init_kernel.py')
-ALIB_FONT_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'AlibabaPuHuiTi-3-45-Light.ttf')
+INIT_CODE_FILE = str(Path(__file__).absolute().parent / 'code_interpreter_init_kernel.py')
+ALIB_FONT_FILE = str(Path(__file__).absolute().parent / 'AlibabaPuHuiTi-3-45-Light.ttf')
 
 _KERNEL_CLIENTS: Dict[int, BlockingKernelClient] = {}
 
@@ -212,8 +212,8 @@ def code_interpreter(action_input: str, timeout: Optional[int] = 30) -> str:
         kc = _start_kernel(pid)
         with open(INIT_CODE_FILE) as fin:
             start_code = fin.read()
-            start_code = start_code.replace('{{M6_FONT_PATH}}', ALIB_FONT_FILE)
-        _execute_code(kc, start_code)
+            start_code = start_code.replace('{{M6_FONT_PATH}}', repr(ALIB_FONT_FILE)[1:-1])
+        print(_execute_code(kc, start_code))
         _KERNEL_CLIENTS[pid] = kc
 
     if timeout:

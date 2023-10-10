@@ -21,7 +21,10 @@ def _m6_timout_handler(_signum=None, _frame=None):
     raise TimeoutError('M6_CODE_INTERPRETER_TIMEOUT')
 
 
-signal.signal(signal.SIGALRM, _m6_timout_handler)
+try:
+    signal.signal(signal.SIGALRM, _m6_timout_handler)
+except AttributeError:  # windows
+    pass
 
 
 class _M6CountdownTimer:

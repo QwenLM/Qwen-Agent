@@ -92,10 +92,7 @@ def chat_clear_last():
 
 def add_file(file):
     output_filepath = config_browserqwen.code_interpreter_ws
-    if '/' in file.name:
-        fn = file.name.split('/')[-1]
-    elif '\\\\' in file.name:
-        fn = file.name.split('\\\\')[-1]
+    fn = os.path.basename(file.name)
     new_path = os.path.join(output_filepath, fn)
     if os.path.exists(new_path):
         os.remove(new_path)
@@ -229,10 +226,12 @@ def bot(history, upload_file):
         if app_global_para['use_ci_flag']:  # use code interpreter
             prompt_upload_file = ''
             if upload_file and app_global_para['is_first_upload']:
+                workspace_dir = config_browserqwen.code_interpreter_ws
+                file_relpath = os.path.relpath(path=upload_file, start=workspace_dir)
                 if prompt_lan == 'EN':
-                    prompt_upload_file = f'[Upload file {upload_file}] '
+                    prompt_upload_file = f'[Upload file {file_relpath}]'
                 elif prompt_lan == 'CN':
-                    prompt_upload_file = f'[上传文件{upload_file}] '
+                    prompt_upload_file = f'[上传文件{file_relpath}]'
                 app_global_para['is_first_upload'] = False
             history[-1][0] = prompt_upload_file+history[-1][0]
             if source == 'local':  # using func call interface
