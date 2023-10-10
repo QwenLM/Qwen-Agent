@@ -2,8 +2,10 @@ import datetime
 import importlib
 import multiprocessing
 import os
+import re
 import sys
 from pathlib import Path
+from urllib.parse import unquote, urlparse
 
 import jsonlines
 import requests
@@ -90,6 +92,32 @@ def download_pdf(url, save_path):
         file.write(response.content)
 
 
+def sanitize_chrome_file_path(file_path: str) -> str:
+    # For Linux and macOS.
+    if os.path.exists(file_path):
+        return file_path
+
+    # For native Windows, drop the leading '/' in '/C:/'
+    win_path = file_path
+    if win_path.startswith('/'):
+        win_path = win_path[1:]
+    if os.path.exists(win_path):
+        return win_path
+
+    # For Windows + WSL.
+    if re.match(r'^[A-Za-z]:/', win_path):
+        wsl_path = f'/mnt/{win_path[0].lower()}/{win_path[3:]}'
+        if os.path.exists(wsl_path):
+            return wsl_path
+
+    # For native Windows, replace / with \.
+    win_path = win_path.replace('/', '\\')
+    if os.path.exists(win_path):
+        return win_path
+
+    return file_path
+
+
 def cache_data(data, cache_file):
     extract = ''  # extract a title for display
     print('Begin cache...')
@@ -104,10 +132,10 @@ def cache_data(data, cache_file):
 
         # deal pdf path
         if is_local_path(data['url']):
-            from urllib.parse import urlparse, unquote
             parsed_url = urlparse(data['url'])
             print('parsed_url: ', parsed_url)
             pdf_path = unquote(parsed_url.path)
+            pdf_path = sanitize_chrome_file_path(pdf_path)
         else:
             pdf_path = data['url']
 

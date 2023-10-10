@@ -57,7 +57,7 @@ Qwen-Agent是一个代码框架，用于发掘开源通义千问模型（[Qwen](
 
 # BrowserQwen 使用说明
 
-支持环境：MacOS，Linux，WSL2 on Windows。原生Windows（非WSL）可能能运行，但尚未经过官方测试。
+支持环境：MacOS，Linux，Windows。
 
 ## 第一步 - 部署模型服务
 
@@ -141,8 +141,6 @@ python run_server.py --model_server http://{MODEL_SERVER_IP}:7905/v1 --workstati
 
 1. 请先点击屏幕上的 `Add to Qwen's Reading List` 按钮，以授权Qwen在后台分析本页面。
 2. 再单击浏览器右上角扩展程序栏的Qwen图标，便可以和Qwen交流当前页面的内容了。
-
-注：阅读PDF文档为实验功能，尚不稳定。将在线PDF加入Qwen的阅读列表时，可能会因为网络问题等因素导致Qwen预处理时间较长，请耐心等待。建议先下载为本地PDF后，再在浏览器中打开本地PDF。
 
 ## 视频演示
 
