@@ -12,7 +12,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', '--model_server', type=str, default='dashscope')
     parser.add_argument('-k', '--api_key', type=str, default='')
-    parser.add_argument('-l', '--llm', type=str, default='qwen-plus',
+    parser.add_argument('-l', '--llm', type=str, default='qwen-turbo',
                         choices=['qwen-plus', 'qwen-turbo', 'qwen-14b-chat', 'qwen-7b-chat'])
     parser.add_argument('-s', '--server_host', type=str, default='127.0.0.1')
     parser.add_argument('-lan', '--prompt_language', type=str, default='CN', choices=['EN', 'CN'],
