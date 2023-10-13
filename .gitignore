@@ -8,7 +8,6 @@ __pycache__
 
 qwen_agent/llm/gpt.py
 qwen_agent/llm/tools.py
-qwen_agent/tools/doc/*
 workspace/*
 
 benchmark/log/*
@@ -17,3 +16,5 @@ benchmark/upload_file/*
 benchmark/upload_file_clean/*
 benchmark/eval_data/
 Qwen-Agent
+
+docqa/*

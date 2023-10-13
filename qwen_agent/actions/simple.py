@@ -8,6 +8,7 @@ PROMPT_TEMPLATE_CN = """
 #用户需求：
 {user_request}
 
+#助手回复：
 """
 
 PROMPT_TEMPLATE_EN = """
@@ -20,6 +21,7 @@ If the response language is not specified in the user requirements, the response
 # User Requirements:
 {user_request}
 
+# Assistant Response:
 """
 
 PROMPT_TEMPLATE_WITH_HISTORY_CN = """
@@ -36,6 +38,7 @@ PROMPT_TEMPLATE_WITH_HISTORY_CN = """
 #用户需求：
 {user_request}
 
+#助手回复：
 """
 
 PROMPT_TEMPLATE_WITH_HISTORY_EN = """
@@ -54,6 +57,7 @@ The historical dialogue starts with ``` and ends with ```. If the user needs to 
 # User Requirements:
 {user_request}
 
+# Assistant Response:
 """
 
 
@@ -61,12 +65,14 @@ class Simple(Action):
     def __init__(self, llm=None, stream=False):
         super().__init__(llm=llm, stream=stream)
 
-    def run(self, ref_doc, user_request, messages=None, prompt_lan='CN'):
+    def run(self, ref_doc, user_request, messages=None, prompt_lan='CN', input_max_token=6000):
         history = ''
         query = user_request
         if isinstance(user_request, list):  # history
-            history = self._get_history(user_request[:-1])
+            # Todo: consider history
+            # history = self._get_history(user_request[:-1], ref_doc + user_request[-1][0], input_max_token)
             query = user_request[-1][0]
+        prompt = query
         if history:
             if prompt_lan == 'CN':
                 prompt = PROMPT_TEMPLATE_WITH_HISTORY_CN.format(
@@ -91,4 +97,5 @@ class Simple(Action):
                     ref_doc=ref_doc,
                     user_request=query,
                 )
+        # print(prompt)
         return self._run(prompt, messages=messages)

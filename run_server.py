@@ -12,12 +12,12 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', '--model_server', type=str, default='dashscope')
     parser.add_argument('-k', '--api_key', type=str, default='')
-    parser.add_argument('-l', '--llm', type=str, default='qwen-turbo',
+    parser.add_argument('-l', '--llm', type=str, default='qwen-plus',
                         choices=['qwen-plus', 'qwen-turbo', 'qwen-14b-chat', 'qwen-7b-chat'])
     parser.add_argument('-s', '--server_host', type=str, default='127.0.0.1')
     parser.add_argument('-lan', '--prompt_language', type=str, default='CN', choices=['EN', 'CN'],
                         help='the language of built-in prompt')  # TODO: auto detect based on query and ref
-    parser.add_argument('-t', '--max_ref_token', type=int, default=3000,
+    parser.add_argument('-t', '--max_ref_token', type=int, default=4000,
                         help='the max token number of reference material')
     parser.add_argument('-w', '--workstation_port', type=int, default=7864,
                         help='the port of editing workstation')

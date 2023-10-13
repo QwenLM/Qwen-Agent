@@ -10,7 +10,7 @@ class Memory:
         self.open_ss = open_ss
         self.ss_type = ss_type
 
-    def get(self, query: str, records: list, llm=None, stream=False, max_token=5000) -> List[RefMaterial]:
+    def get(self, query: str, records: list, llm=None, stream=False, max_token=4000) -> List[RefMaterial]:
 
         if not self.open_ss:
             _ref_list = self.get_top(records)
@@ -48,7 +48,7 @@ class Memory:
 
         return new_ref_list
 
-    def get_top(self, records: list, k=3):
+    def get_top(self, records: list, k=6):
         _ref_list = []
         for record in records:
             raw = record['raw']
