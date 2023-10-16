@@ -7,7 +7,7 @@ class Action:
         self.llm = llm
         self.stream = stream
 
-    def _run(self, prompt, messages=None):
+    def _run(self, prompt=None, messages=None):
         return self.llm.chat(prompt, messages=messages, stream=self.stream)
 
     def _get_history(self, user_request, other_text, input_max_token=6000):

@@ -23,21 +23,27 @@ document.addEventListener('DOMContentLoaded', function() {
       chrome.runtime.sendMessage({ data: currentUrl , close: true , flag: 'open_popup_and_send_url_from_popup'});
 
     });
-    var popup_url='';
-    chrome.storage.local.get(['database_host'], function(result) {
-        if (result.database_host) {
-            console.log('database_host currently is ' + result.database_host);
-            popup_url = "http://"+result.database_host+":7863/";
-        } else {
-            popup_url = "http://127.0.0.1:7863/";
-        }
-        var iframe = document.createElement('iframe');
-        iframe.src = popup_url;
-        iframe.height = '570px';
-        var iframe_area = document.getElementById('iframe_area')
-        iframe_area.appendChild(iframe);
+    setTimeout(function() {
+//        console.log('This message will be logged after 0.5 second');
+        var popup_url='';
+        chrome.storage.local.get(['database_host'], function(result) {
+            if (result.database_host) {
+                console.log('database_host currently is ' + result.database_host);
+                popup_url = "http://"+result.database_host+":7863/";
+            } else {
+                popup_url = "http://127.0.0.1:7863/";
+            }
+            var iframe = document.createElement('iframe');
+            iframe.src = popup_url;
+            iframe.height = '570px';
+//            iframe.sandbox = 'allow-same-origin allow-scripts';
+//            iframe.allow = "geolocation *;";
+            var iframe_area = document.getElementById('iframe_area')
+            iframe_area.appendChild(iframe);
 
-    });
+        });
+    }, 500);
+
 //    fetch('../config_host.json')
 //      .then(response => response.json())
 //      .then(data => {

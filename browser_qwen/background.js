@@ -17,7 +17,7 @@ function send_data(msg){
         })
           .then((response) => response.json())
           .then((data) => {
-            console.log(data.result)
+            console.log(data.result);
           });
      });
 }

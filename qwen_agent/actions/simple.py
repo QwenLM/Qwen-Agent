@@ -1,7 +1,8 @@
 from qwen_agent.actions.base import Action
+from qwen_agent.utils.util import count_tokens
 
 PROMPT_TEMPLATE_CN = """
-你是一个写作助手，请依据参考资料，充分理解参考资料内容，组织出满足用户需求的条理清晰的回复。如果用户需求中没有指定回复语言，则回复语言必须与用户需求的语言保持一致。
+你是一个写作助手，请依据参考资料，组织出满足用户需求的条理清晰的回复。不要编造参考资料中不存在的内容。如果用户需求中没有指定回复语言，则回复语言必须与用户需求的语言保持一致。
 #参考资料：
 {ref_doc}
 
@@ -60,12 +61,28 @@ The historical dialogue starts with ``` and ends with ```. If the user needs to 
 # Assistant Response:
 """
 
+PROMPT_TEMPLATE_FIRST_MESSAGE_CONCAT_REF = """
+给定下列参考资料，请充分理解参考资料内容，组织出满足用户提问的条理清晰的回复。不要编造参考资料中不存在的信息。
+#参考资料：
+{ref_doc}
+
+请记住以上信息。
+"""
+
 
 class Simple(Action):
     def __init__(self, llm=None, stream=False):
         super().__init__(llm=llm, stream=stream)
 
     def run(self, ref_doc, user_request, messages=None, prompt_lan='CN', input_max_token=6000):
+        use_message = False
+        if use_message:
+            # debug
+            return self.run_in_message(ref_doc, user_request, messages, prompt_lan, input_max_token)
+        else:
+            return self.run_in_one_turn_prompt(ref_doc, user_request, messages, prompt_lan, input_max_token)
+
+    def run_in_one_turn_prompt(self, ref_doc, user_request, messages=None, prompt_lan='CN', input_max_token=6000):
         history = ''
         query = user_request
         if isinstance(user_request, list):  # history
@@ -74,7 +91,7 @@ class Simple(Action):
             query = user_request[-1][0]
         prompt = query
         if history:
-            if prompt_lan == 'CN':
+            if prompt_lan == 'CN':  # testing
                 prompt = PROMPT_TEMPLATE_WITH_HISTORY_CN.format(
                     ref_doc=ref_doc,
                     history=history,
@@ -97,5 +114,60 @@ class Simple(Action):
                     ref_doc=ref_doc,
                     user_request=query,
                 )
-        # print(prompt)
+
+        # with open('long_prompt.txt', 'w') as f:
+        #     f.write(prompt)
+
         return self._run(prompt, messages=messages)
+
+    def run_in_message(self, ref_doc, user_request, messages=None, prompt_lan='CN', input_max_token=6000):
+        if not messages:
+            messages = [{
+                'role': 'user',
+                'content': PROMPT_TEMPLATE_FIRST_MESSAGE_CONCAT_REF.format(ref_doc=ref_doc),
+            }, {
+                'role': 'assistant',
+                'content': '好的，我已经记住以上信息。有什么我能帮你回答的问题吗？',
+            }]
+            if isinstance(user_request, list):  # history
+                history = self.get_history(user_request[:-1], ref_doc + user_request[-1][0], input_max_token)
+                query = user_request[-1][0]
+                messages += history
+                messages.append({
+                    'role': 'user',
+                    'content': '先查看前面的参考资料, ' + query
+                })
+            else:
+                messages.append({
+                    'role': 'user',
+                    'content': '先查看前面的参考资料, ' + user_request
+                })
+        with open('long_prompt.txt', 'w') as f:
+            f.write(str(messages))
+
+        return self._run(messages=messages)
+
+    def get_history(self, user_request, other_text, input_max_token=6000):
+        history = []
+        other_len = count_tokens(other_text)
+        print(other_len)
+        valid_token_num = input_max_token - 100 - other_len
+        for x in user_request[::-1]:
+            now_history = [
+                {
+                    'role': 'user',
+                    'content': x[0],
+                }, {
+                    'role': 'assistant',
+                    'content': x[1],
+                }
+            ]
+
+            now_token = count_tokens(x[0] + x[1])
+            if now_token <= valid_token_num:
+                valid_token_num -= now_token
+                history = now_history + history
+            else:
+                break
+            break  # only adding one turn history
+        return history

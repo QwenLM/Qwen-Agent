@@ -26,7 +26,7 @@ class Qwen(LLMBase):
                 print('There is no DASHSCOPE_API_KEY!')
             self.source = 'dashscope'
 
-    def chat(self, query, stream=False, messages=None, stop_words=None):
+    def chat(self, query=None, stream=False, messages=None, stop_words=None):
 
         if self.source == 'dashscope':
             if dashscope.api_key:  # use dashscope interface
@@ -86,6 +86,7 @@ class Qwen(LLMBase):
                 messages=messages,
                 result_format='message',  # set the result to be "message" format.
                 stream=True,
+                top_p=0.8
             )
         else:
             response = self.gen.call(
@@ -96,6 +97,7 @@ class Qwen(LLMBase):
                         }],
                 result_format='message',  # set the result to be "message" format.
                 stream=True,
+                top_p=0.8
             )
         last_len = 0
         delay_len = 5
@@ -138,7 +140,7 @@ class Qwen(LLMBase):
                 result_format='message',  # set the result to be "message" format.
                 stream=False,
                 stop_words=[{'stop_str': word, 'mode': 'include'} for word in stop_words],
-                top_p=0.5
+                top_p=0.8
             )
         else:
             response = self.gen.call(
@@ -150,8 +152,16 @@ class Qwen(LLMBase):
                 result_format='message',  # set the result to be "message" format.
                 stream=False,
                 stop_words=[{'stop_str': word, 'mode': 'include'} for word in stop_words],
+                top_p=0.8
             )
-        return response.output.choices[0].message.content
+        # print(response)
+        if response.status_code == HTTPStatus.OK:
+            return response.output.choices[0].message.content
+        else:
+            err = 'Error code: %s, error message: %s' % (
+                response.code, response.message
+            )
+            return err
 
     def qwen_chat_func(self, messages, functions=None):
         print('begin: no stream in qwen_chat_func')

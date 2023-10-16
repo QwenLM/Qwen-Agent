@@ -37,7 +37,7 @@ mem = Memory(config_browserqwen.similarity_search, config_browserqwen.similarity
 cache_file = os.path.join(config_browserqwen.cache_root, config_browserqwen.browser_cache_file)
 cache_file_popup_url = os.path.join(config_browserqwen.cache_root, config_browserqwen.url_file)
 
-page_url = []
+PAGE_URL = []
 
 with open(Path(__file__).resolve().parent / 'css/main.css', 'r') as f:
     css = f.read()
@@ -70,11 +70,12 @@ def set_page_url():
     assert os.path.exists(cache_file_popup_url)
     for line in jsonlines.open(cache_file_popup_url):
         lines.append(line)
-    page_url.append(lines[-1]['url'])
-    print('now page url is: ', page_url[-1])
+    PAGE_URL.append(lines[-1]['url'])
+    print('now page url is: ', PAGE_URL[-1])
 
 
 def bot(history):
+    set_page_url()
     if not history:
         yield history
     else:
@@ -84,7 +85,7 @@ def bot(history):
             gr.Info("Please add this page to Qwen's Reading List first!")
         else:
             for line in jsonlines.open(cache_file):
-                if line['url'] == page_url[-1]:
+                if line['url'] == PAGE_URL[-1]:
                     now_page = line
 
             if not now_page:
@@ -111,7 +112,7 @@ def bot(history):
             now_page['session'] = history
             lines = []
             for line in jsonlines.open(cache_file):
-                if line['url'] != page_url[-1]:
+                if line['url'] != PAGE_URL[-1]:
                     lines.append(line)
 
             lines.append(now_page)
@@ -126,7 +127,7 @@ def load_history_session(history):
         gr.Info("Please add this page to Qwen's Reading List first!")
         return []
     for line in jsonlines.open(cache_file):
-        if line['url'] == page_url[-1]:
+        if line['url'] == PAGE_URL[-1]:
             now_page = line
     if not now_page:
         gr.Info("Please add this page to Qwen's Reading List first!")
@@ -143,7 +144,7 @@ def clear_session():
     now_page = None
     lines = []
     for line in jsonlines.open(cache_file):
-        if line['url'] == page_url[-1]:
+        if line['url'] == PAGE_URL[-1]:
             now_page = line
         else:
             lines.append(line)
@@ -165,17 +166,17 @@ with gr.Blocks(css=css, theme='soft') as demo:
                          avatar_images=(None, (os.path.join(
                              Path(__file__).resolve().parent, 'img/logo.png'))))
     with gr.Row():
-        with gr.Column(scale=0.7):
+        with gr.Column(scale=7):
             txt = gr.Textbox(show_label=False,
                              placeholder='Chat with Qwen...',
                              container=False)
         # with gr.Column(scale=0.06, min_width=0):
         #     smt_bt = gr.Button('⏎')
-        with gr.Column(scale=0.1, min_width=0):
+        with gr.Column(scale=1, min_width=0):
             clr_bt = gr.Button('🧹', elem_classes='bt_small_font')
-        with gr.Column(scale=0.1, min_width=0):
+        with gr.Column(scale=1, min_width=0):
             stop_bt = gr.Button('🚫', elem_classes='bt_small_font')
-        with gr.Column(scale=0.1, min_width=0):
+        with gr.Column(scale=1, min_width=0):
             re_bt = gr.Button('🔁', elem_classes='bt_small_font')
 
     txt_msg = txt.submit(add_text, [chatbot, txt], [chatbot, txt],

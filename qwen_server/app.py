@@ -529,24 +529,24 @@ with gr.Blocks(css=css, theme='soft') as demo:
                                  avatar_images=(None, (os.path.join(
                                      Path(__file__).resolve().parent, 'img/logo.png'))))
             with gr.Row():
-                with gr.Column(scale=0.05, min_width=0):
+                with gr.Column(scale=1, min_width=0):
                     file_btn = gr.UploadButton('Upload', file_types=['file'])  # NOQA
-                with gr.Column(scale=0.16, min_width=0):
+                with gr.Column(scale=3, min_width=0):
                     plug_bt = gr.Checkbox(label='Code Interpreter')
-                with gr.Column(scale=0.02, min_width=0):
+                with gr.Column(scale=1, min_width=0):
                     show_path_md = gr.HTML('')
                 # with gr.Column(scale=0.03, min_width=0):
                 #     show_path_bt = gr.Button('✖️', visible=False)  # NOQA
-                with gr.Column(scale=0.65):
+                with gr.Column(scale=13):
                     chat_txt = gr.Textbox(show_label=False, placeholder='Chat with Qwen...', container=False)  # NOQA
                 # with gr.Column(scale=0.05, min_width=0):
                 #     chat_smt_bt = gr.Button('⏎')  # NOQA
-                with gr.Column(scale=0.05, min_width=0):
+                with gr.Column(scale=1, min_width=0):
                     chat_clr_bt = gr.Button('Clear')  # NOQA
 
-                with gr.Column(scale=0.05, min_width=0):
+                with gr.Column(scale=1, min_width=0):
                     chat_stop_bt = gr.Button('Stop')  # NOQA
-                with gr.Column(scale=0.05, min_width=0):
+                with gr.Column(scale=1, min_width=0):
                     chat_re_bt = gr.Button('Again')  # NOQA
 
             hidden_file_path = gr.Textbox(visible=False)
