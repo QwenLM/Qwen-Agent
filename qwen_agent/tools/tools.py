@@ -6,7 +6,7 @@ tools_list = [
             'name_for_human': '代码解释器',
             'name_for_model': 'code_interpreter',
             'description_for_model': '代码解释器，可用于执行Python代码。'
-            + ' Format the arguments as a JSON object.',
+            + ' Enclose the code within triple backticks (`) at the beginning and end of the code.',
             'parameters': [{'name': 'code', 'type': 'string', 'description': '待执行的代码'}]
         },
         {
