@@ -178,7 +178,7 @@ def _execute_code(kc: BlockingKernelClient, code: str) -> str:
     return result
 
 
-def fix_matplotlib_cjk_font_issue():
+def _fix_matplotlib_cjk_font_issue():
     ttf_name = os.path.basename(ALIB_FONT_FILE)
     local_ttf = os.path.join(
         os.path.abspath(
@@ -208,7 +208,7 @@ def code_interpreter(action_input: str, timeout: Optional[int] = 30) -> str:
     if pid in _KERNEL_CLIENTS:
         kc = _KERNEL_CLIENTS[pid]
     else:
-        fix_matplotlib_cjk_font_issue()
+        _fix_matplotlib_cjk_font_issue()
         kc = _start_kernel(pid)
         with open(INIT_CODE_FILE) as fin:
             start_code = fin.read()

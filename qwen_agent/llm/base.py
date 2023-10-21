@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from typing import Dict, Iterator, List, Optional
 
 
 class LLMBase:
@@ -8,26 +9,16 @@ class LLMBase:
         self.memory = None
         self.api_key = api_key.strip()
 
-    def chat(self, query, stream=False, messages=None):
+    def chat(self, query: str, stream: bool = False, messages: List[Dict] = None, stop: Optional[List[str]] = None):
         if stream:
-            return self.chat_stream(query, messages)
+            return self._chat_stream(query, messages, stop=stop)
         else:
-            return self.chat_no_stream(query, messages)
+            return self._chat_no_stream(query, messages, stop=stop)
 
     @abstractmethod
-    def chat_stream(self, query, messages=None):
-        """
-        :param query: str
-        :param messages: List[dict]
-        :return: str
-        """
+    def _chat_stream(self, query: str, messages=None, stop=None) -> Iterator[str]:
         raise NotImplementedError
 
     @abstractmethod
-    def chat_no_stream(self, query, messages=None):
-        """
-        :param query: str
-        :param messages: List[dict]
-        :return: Iterator[str]
-        """
+    def _chat_no_stream(self, query, messages=None, stop=None) -> str:
         raise NotImplementedError

@@ -26,41 +26,43 @@ class Qwen(LLMBase):
                 print('There is no DASHSCOPE_API_KEY!')
             self.source = 'dashscope'
 
-    def chat(self, query=None, stream=False, messages=None, stop_words=None):
+    def chat(self, query=None, stream=False, messages=None, stop=None):
 
         if self.source == 'dashscope':
             if dashscope.api_key:  # use dashscope interface
                 print('Now using dashscope api')
                 self.gen = Generation()
-                return self.chat_dashscope(query, stream=stream, messages=messages, stop_words=stop_words)
+                return self._chat_dashscope(query, stream=stream, messages=messages, stop=stop)
             else:
                 print('There is no DASHSCOPE_API_KEY!')
                 return 'Failed! There is no DASHSCOPE_API_KEY!'
         else:  # use locally deployed qwen
             print('Now using locally deployed qwen')
-            return super().chat(query, stream=stream, messages=messages)
+            return super().chat(query, stream=stream, messages=messages, stop=stop)
 
-    def chat_stream(self, query, messages=None):
+    def _chat_stream(self, query, messages=None, stop=None):
         print('begin: stream in qwen')
         if messages:
-            response = openai.ChatCompletion.create(model=self.model, messages=messages, stream=True)
+            response = openai.ChatCompletion.create(model=self.model, messages=messages, stop=stop, stream=True)
         else:
             response = openai.ChatCompletion.create(model=self.model,
                                                     messages=[{
                                                         'role': 'user',
                                                         'content': query
                                                     }],
+                                                    stop=stop,
                                                     stream=True)
         for chunk in response:
             if hasattr(chunk.choices[0].delta, 'content'):
                 print(chunk.choices[0].delta.content, end='', flush=True)
                 yield chunk.choices[0].delta.content
 
-    def chat_no_stream(self, query, messages=None):
+    def _chat_no_stream(self, query, messages=None, stop=None):
         print('begin: no stream in qwen')
         if messages:
             response = openai.ChatCompletion.create(model=self.model,
                                                     messages=messages,
+                                                    stop=stop,
                                                     stream=False)
         else:
             response = openai.ChatCompletion.create(model=self.model,
@@ -68,23 +70,27 @@ class Qwen(LLMBase):
                                                         'role': 'user',
                                                         'content': query
                                                     }],
+                                                    stop=stop,
                                                     stream=False)
         print(response.choices[0].message.content)
         return response.choices[0].message.content
 
-    def chat_dashscope(self, query, stream=False, messages=None, stop_words=None):
+    def _chat_dashscope(self, query, stream=False, messages=None, stop=None):
         if stream:
-            return self.chat_dashscope_stream(query, messages)
+            return self._chat_dashscope_stream(query, messages, stop=stop)
         else:
-            return self.chat_dashscope_no_stream(query, messages, stop_words=stop_words)
+            return self._chat_dashscope_no_stream(query, messages, stop=stop)
 
-    def chat_dashscope_stream(self, query, messages=None):
+    def _chat_dashscope_stream(self, query, messages=None, stop=None):
         # print(query)
+        if not stop:
+            stop = []
         if messages:
             response = self.gen.call(
                 self.model,
                 messages=messages,
                 result_format='message',  # set the result to be "message" format.
+                stop_words=[{'stop_str': word, 'mode': 'exclude'} for word in stop],
                 stream=True,
                 top_p=0.8
             )
@@ -96,6 +102,7 @@ class Qwen(LLMBase):
                             'content': query
                         }],
                 result_format='message',  # set the result to be "message" format.
+                stop_words=[{'stop_str': word, 'mode': 'exclude'} for word in stop],
                 stream=True,
                 top_p=0.8
             )
@@ -129,17 +136,17 @@ class Qwen(LLMBase):
         if text and (in_delay == 1 or last_len != len(text)):
             yield text[last_len:]
 
-    def chat_dashscope_no_stream(self, query, messages=None, stop_words=None):
+    def _chat_dashscope_no_stream(self, query, messages=None, stop=None):
         print('begin: no stream in dashscope')
-        if not stop_words:
-            stop_words = []
+        if not stop:
+            stop = []
         if messages:
             response = self.gen.call(
                 self.model,
                 messages=messages,
                 result_format='message',  # set the result to be "message" format.
                 stream=False,
-                stop_words=[{'stop_str': word, 'mode': 'include'} for word in stop_words],
+                stop_words=[{'stop_str': word, 'mode': 'exclude'} for word in stop],
                 top_p=0.8
             )
         else:
@@ -151,7 +158,7 @@ class Qwen(LLMBase):
                         }],
                 result_format='message',  # set the result to be "message" format.
                 stream=False,
-                stop_words=[{'stop_str': word, 'mode': 'include'} for word in stop_words],
+                stop_words=[{'stop_str': word, 'mode': 'exclude'} for word in stop],
                 top_p=0.8
             )
         # print(response)
@@ -169,8 +176,8 @@ class Qwen(LLMBase):
             functions = []
         if functions:
             response = openai.ChatCompletion.create(
-                model='Qwen', messages=messages, functions=functions
+                model=self.model, messages=messages, functions=functions
             )
         else:
-            response = openai.ChatCompletion.create(model='Qwen', messages=messages)
+            response = openai.ChatCompletion.create(model=self.model, messages=messages)
         return response.choices[0].message
