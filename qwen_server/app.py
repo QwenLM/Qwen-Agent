@@ -285,7 +285,7 @@ def bot(history, upload_file):
             elif source == 'dashscope':  # using dashscope interface:
                 print(app_global_para['messages'])
                 functions = [x for x in tools_list if x['name_for_model'] == 'code_interpreter']
-                agent = ReAct(llm=llm, list_of_plugin_info=functions, source=source)
+                agent = ReAct(llm=llm, list_of_plugin_info=functions)
                 response = agent.run(history[-1][0], messages=app_global_para['messages'])
                 if 'Action' not in response:
                     response = response.split('Final Answer:')[-1]
@@ -352,7 +352,7 @@ def generate(context):
                 res += chunk
                 yield res
         elif source == 'dashscope':  # using dashscope interface
-            agent = ReAct(llm=llm, list_of_plugin_info=functions, source=source)
+            agent = ReAct(llm=llm, list_of_plugin_info=functions)
             response = agent.run(sp_query, messages=[])
             yield response
     elif config_browserqwen.plugin_flag in sp_query:  # router to plugin
@@ -364,7 +364,7 @@ def generate(context):
                 res += chunk
                 yield res
         elif source == 'dashscope':  # using dashscope interface
-            agent = ReAct(llm=llm, list_of_plugin_info=functions, source=source)
+            agent = ReAct(llm=llm, list_of_plugin_info=functions)
             response = agent.run(sp_query, messages=[])
             yield response
     else:  # router to continue writing

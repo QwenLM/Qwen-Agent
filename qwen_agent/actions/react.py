@@ -27,15 +27,11 @@ Question: {query}"""
 
 
 class ReAct(Action):
-    def __init__(self, llm=None, stream=False, list_of_plugin_info=[], prompt='default', source='dashscope'):
+    def __init__(self, llm=None, stream=False, list_of_plugin_info=None):
         super().__init__(llm=llm, stream=stream)
+        self.list_of_plugin_info = list_of_plugin_info or []
 
-        self.list_of_plugin_info = list_of_plugin_info
-        self.history = []
-        self.prompt = prompt
-        self.source = source
-
-    def run(self, user_request, history=[], ref_doc=None, messages=None):
+    def run(self, user_request, messages=None):
         prompt = self.build_input_text(user_request)
         rsp = self.run_with_tools(prompt, messages)
 
@@ -55,8 +51,6 @@ class ReAct(Action):
         while True and max_turn > 0:
             max_turn -= 1
             output = self.llm.chat('', messages=new_messages, stream=False, stop=react_stop_words)
-            # print(new_messages)
-            # print(output)
             action, action_input, output = self.parse_latest_plugin_call(output)
             if action:
                 observation = call_plugin(action, action_input)
