@@ -1,16 +1,14 @@
-from qwen_agent.tools.tools import call_plugin  # NOQA
+from qwen_agent.tools.tools import call_plugin
 
 
 def func_call(query, functions, llm):
-    messages = [{
-        'role': 'user', 'content': query
-    }]
+    messages = [{'role': 'user', 'content': query}]
     while True:
         rsp = llm.qwen_chat_func(messages, functions)
         if rsp['function_call']:
             yield rsp['content'].strip() + '\n'
-            yield 'Action: '+rsp['function_call']['name'].strip() + '\n'
-            yield 'Action Input:\n'+rsp['function_call']['arguments'] + '\n'
+            yield 'Action: ' + rsp['function_call']['name'].strip() + '\n'
+            yield 'Action Input:\n' + rsp['function_call']['arguments'] + '\n'
             bot_msg = {
                 'role': 'assistant',
                 'content': rsp['content'],
@@ -21,7 +19,8 @@ def func_call(query, functions, llm):
             }
             messages.append(bot_msg)
 
-            obs = call_plugin(rsp['function_call']['name'], rsp['function_call']['arguments'])
+            obs = call_plugin(rsp['function_call']['name'],
+                              rsp['function_call']['arguments'])
             func_msg = {
                 'role': 'function',
                 'name': rsp['function_call']['name'],

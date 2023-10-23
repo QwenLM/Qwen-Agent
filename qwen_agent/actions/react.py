@@ -1,8 +1,7 @@
 import json
 
 from qwen_agent.actions.base import Action
-
-from qwen_agent.tools.tools import call_plugin  # NOQA
+from qwen_agent.tools.tools import call_plugin
 
 TOOL_DESC = """{name_for_model}: Call this tool to interact with the {name_for_human} API. What is the {name_for_human} API useful for? {description_for_model} Parameters: {parameters}"""
 
@@ -27,6 +26,7 @@ Question: {query}"""
 
 
 class ReAct(Action):
+
     def __init__(self, llm=None, stream=False, list_of_plugin_info=None):
         super().__init__(llm=llm, stream=stream)
         self.list_of_plugin_info = list_of_plugin_info or []
@@ -42,16 +42,18 @@ class ReAct(Action):
 
         new_messages = []
         new_messages.extend(messages)
-        new_messages.append({
-            'role': 'user', 'content': prompt
-        })
+        new_messages.append({'role': 'user', 'content': prompt})
 
         text = ''
         max_turn = 5
         while True and max_turn > 0:
             max_turn -= 1
-            output = self.llm.chat('', messages=new_messages, stream=False, stop=react_stop_words)
-            action, action_input, output = self.parse_latest_plugin_call(output)
+            output = self.llm.chat('',
+                                   messages=new_messages,
+                                   stream=False,
+                                   stop=react_stop_words)
+            action, action_input, output = self.parse_latest_plugin_call(
+                output)
             if action:
                 observation = call_plugin(action, action_input)
                 print(observation)
@@ -88,13 +90,14 @@ class ReAct(Action):
                     name_for_model=info['name_for_model'],
                     name_for_human=info['name_for_human'],
                     description_for_model=info['description_for_model'],
-                    parameters=json.dumps(
-                        info['parameters'], ensure_ascii=False),
-                )
-            )
+                    parameters=json.dumps(info['parameters'],
+                                          ensure_ascii=False),
+                ))
             tool_names.append(info['name_for_model'])
         tool_descs = '\n\n'.join(tool_descs)
         tool_names = ','.join(tool_names)
 
-        prompt = PROMPT_REACT.format(tool_descs=tool_descs, tool_names=tool_names, query=query)
+        prompt = PROMPT_REACT.format(tool_descs=tool_descs,
+                                     tool_names=tool_names,
+                                     query=query)
         return prompt

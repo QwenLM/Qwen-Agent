@@ -2,7 +2,8 @@ from qwen_agent.schema import RefMaterial
 from qwen_agent.utils.util import get_split_word
 
 
-class SSJaccard:
+class SimilaritySearch:
+
     def __init__(self, llm=None, stream=False):
         self.llm = llm
         self.stream = stream
