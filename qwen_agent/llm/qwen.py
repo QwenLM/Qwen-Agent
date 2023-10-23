@@ -18,7 +18,7 @@ class Qwen(LLMBase):
 
         if self.model_server.startswith('http'):
             openai.api_base = self.model_server
-            openai.api_key = 'none'
+            openai.api_key = self.api_key
             self.source = 'local'
         elif self.model_server.startswith('dashscope'):
             dashscope.api_key = self.api_key or os.getenv('DASHSCOPE_API_KEY', default='')

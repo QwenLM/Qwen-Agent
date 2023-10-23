@@ -73,7 +73,7 @@ def update_pop_url(data, cache_file_popup_url):
 
 
 def is_local_path(path):
-    if path.startswith('file://'):
+    if path.startswith('file://') or (not (path.startswith('https://') or path.startswith('http://'))):
         return True
     else:
         return False
@@ -158,11 +158,12 @@ def cache_data(data, cache_file):
         print('parse pdf time: ', date2 - date1)
         data['content'] = pdf_content
         data['type'] = 'pdf'
-        if prompt_lan == 'CN':
-            cacheprompt = '参考资料是一篇论文的首页，请提取出一句话作为标题。'
-        elif prompt_lan == 'EN':
-            cacheprompt = 'The reference material is the first page of a paper. Please extract one sentence as the title'
-        extract = get_title(pdf_content[0]['page_content'], cacheprompt=cacheprompt)
+        # if prompt_lan == 'CN':
+        #     cacheprompt = '参考资料是一篇论文的首页，请提取出一句话作为标题。'
+        # elif prompt_lan == 'EN':
+        #     cacheprompt = 'The reference material is the first page of a paper. Please extract one sentence as the title'
+        # extract = get_title(pdf_content[0]['page_content'], cacheprompt=cacheprompt)
+        extract = pdf_path.split('/')[-1].split('\\')[-1].split('.')[0]
     else:
         if data['content'] and data['type'] == 'html':
             new_record = Record(url=data['url'], time='', type=data['type'], raw=[], extract='', topic='', checked=False, session=[]).to_dict()

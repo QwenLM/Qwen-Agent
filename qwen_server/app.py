@@ -21,6 +21,7 @@ from qwen_agent.utils.util import get_last_one_line_context, save_text_to_file, 
 from qwen_agent.actions import ContinueWriting, Simple, WriteFromZero, ReAct  # NOQA
 from qwen_agent.memory import Memory  # NOQA
 from qwen_agent.actions.func_call import func_call  # NOQA
+from main import cache_data  # NOQA
 
 prompt_lan = sys.argv[1]
 llm_name = sys.argv[2]
@@ -49,11 +50,13 @@ mem = Memory(config_browserqwen.similarity_search, config_browserqwen.similarity
 app_global_para = {
     'time': [str(datetime.date.today()), str(datetime.date.today())],
     'cache_file': os.path.join(config_browserqwen.cache_root, config_browserqwen.browser_cache_file),
-    'use_ci_flag': False,
     'messages': [],
     'last_turn_msg_id': [],
     'is_first_upload': True
 }
+
+DOC_OPTION = 'Document QA'
+CI_OPTION = 'Code Interpreter'
 
 with open(Path(__file__).resolve().parent / 'css/main.css', 'r') as f:
     css = f.read()
@@ -79,7 +82,7 @@ def rm_text(history):
 
 def chat_clear():
     app_global_para['messages'] = []
-    return None, None, None
+    return None, None
 
 
 def chat_clear_last():
@@ -90,21 +93,26 @@ def chat_clear_last():
     app_global_para['last_turn_msg_id'] = []
 
 
-def add_file(file):
+def add_file(file, chosen_plug):
     output_filepath = config_browserqwen.code_interpreter_ws
     fn = os.path.basename(file.name)
-    new_path = os.path.join(output_filepath, fn)
-    if os.path.exists(new_path):
-        os.remove(new_path)
-    shutil.move(file.name, output_filepath)
-    path_show = '<p></p><p>File</p>'  # NOQA
-    app_global_para['is_first_upload'] = True
-    return path_show, new_path
+    if chosen_plug == DOC_OPTION and fn[-4:] != '.pdf' and fn[-4:] != '.PDF':
+        new_path = 'Upload failed: only adding PDF documents as references is supported!'
+    else:
+        new_path = os.path.join(output_filepath, fn)
+        if os.path.exists(new_path):
+            os.remove(new_path)
+        shutil.move(file.name, output_filepath)
+        # path_show = '<p></p><p>File</p>'  # NOQA
+        if chosen_plug == CI_OPTION:
+            app_global_para['is_first_upload'] = True
 
+        # upload references
+        if chosen_plug == DOC_OPTION:
+            data = {'content': '', 'query': '', 'url': new_path, 'task': 'cache', 'type': 'pdf'}
+            cache_data(data, app_global_para['cache_file'])  # waiting for analyse file
 
-def check_file():
-    if not app_global_para['use_ci_flag']:
-        gr.Warning('Select the Code Interpreter to analyze the file!')
+    return new_path
 
 
 def read_records(file, times=None):
@@ -156,7 +164,6 @@ def update_rec_list(flag):
 def update_app_global_para(date1, date2):
     app_global_para['time'][0] = date1
     app_global_para['time'][1] = date2
-    app_global_para['use_ci_flag'] = False
 
 
 def update_browser_list():
@@ -203,27 +210,26 @@ def count_token(text):
     return count_tokens(text)
 
 
-def change_use_ci_flag():
-    if app_global_para['use_ci_flag']:
-        app_global_para['use_ci_flag'] = False
+def choose_plugin(chosen_plugin):
+    if chosen_plugin == CI_OPTION or chosen_plugin == DOC_OPTION:
+        return gr.update(interactive=True), None
     else:
-        app_global_para['use_ci_flag'] = True
+        return gr.update(interactive=False), None
 
 
 def add_url_manu(url, date):
     text = get_html_content(url)
     msg = {'content': text, 'query': '', 'url': url, 'task': 'cache', 'type': 'html'}
 
-    from main import cache_data  # NOQA
     cache_data(msg, app_global_para['cache_file'])
 
 
-def bot(history, upload_file):
+def bot(history, upload_file, chosen_plug):
     if not history:
         yield history
     else:
         history[-1][1] = ''
-        if app_global_para['use_ci_flag']:  # use code interpreter
+        if chosen_plug == CI_OPTION:  # use code interpreter
             prompt_upload_file = ''
             if upload_file and app_global_para['is_first_upload']:
                 workspace_dir = config_browserqwen.code_interpreter_ws
@@ -531,12 +537,7 @@ with gr.Blocks(css=css, theme='soft') as demo:
             with gr.Row():
                 with gr.Column(scale=1, min_width=0):
                     file_btn = gr.UploadButton('Upload', file_types=['file'])  # NOQA
-                with gr.Column(scale=3, min_width=0):
-                    plug_bt = gr.Checkbox(label='Code Interpreter')
-                with gr.Column(scale=1, min_width=0):
-                    show_path_md = gr.HTML('')
-                # with gr.Column(scale=0.03, min_width=0):
-                #     show_path_bt = gr.Button('✖️', visible=False)  # NOQA
+
                 with gr.Column(scale=13):
                     chat_txt = gr.Textbox(show_label=False, placeholder='Chat with Qwen...', container=False)  # NOQA
                 # with gr.Column(scale=0.05, min_width=0):
@@ -548,37 +549,43 @@ with gr.Blocks(css=css, theme='soft') as demo:
                     chat_stop_bt = gr.Button('Stop')  # NOQA
                 with gr.Column(scale=1, min_width=0):
                     chat_re_bt = gr.Button('Again')  # NOQA
+            with gr.Row():
+                with gr.Column(scale=2, min_width=0):
+                    plug_bt = gr.Dropdown(
+                        [CI_OPTION, DOC_OPTION], label='Plugin', info='', value=DOC_OPTION
+                    )
+                with gr.Column(scale=8, min_width=0):
+                    hidden_file_path = gr.Textbox(interactive=False, label='The uploaded file is displayed here')
 
-            hidden_file_path = gr.Textbox(visible=False)
-
-            txt_msg = chat_txt.submit(add_text, [chatbot, chat_txt], [chatbot, chat_txt], queue=False).then(bot, [chatbot, hidden_file_path], chatbot)
+            txt_msg = chat_txt.submit(add_text, [chatbot, chat_txt], [chatbot, chat_txt], queue=False).then(bot, [chatbot, hidden_file_path, plug_bt], chatbot)
             txt_msg.then(lambda: gr.update(interactive=True), None, [chat_txt], queue=False)
 
             # txt_msg_bt = chat_smt_bt.click(add_text, [chatbot, chat_txt], [chatbot, chat_txt], queue=False).then(bot, chatbot, chatbot)
             # txt_msg_bt.then(lambda: gr.update(interactive=True), None, [chat_txt], queue=False)
             # (None, None, None, cancels=[txt_msg], queue=False).then
-            re_txt_msg = chat_re_bt.click(rm_text, [chatbot], [chatbot, chat_txt], queue=False).then(chat_clear_last, None, None).then(bot, [chatbot, hidden_file_path], chatbot)
+            re_txt_msg = chat_re_bt.click(rm_text, [chatbot], [chatbot, chat_txt], queue=False).then(chat_clear_last, None, None).then(bot, [chatbot, hidden_file_path, plug_bt], chatbot)
             re_txt_msg.then(lambda: gr.update(interactive=True), None, [chat_txt], queue=False)
 
-            file_msg = file_btn.upload(add_file, [file_btn], [show_path_md, hidden_file_path], queue=False).then(check_file, None, None)
+            file_msg = file_btn.upload(add_file, [file_btn, plug_bt], [hidden_file_path], queue=False)
+            file_msg.then(update_browser_list, None, browser_list).then(lambda: None, None, None, _js=f'() => {{{js}}}')
 
-            chat_clr_bt.click(chat_clear, None, [chatbot, hidden_file_path, show_path_md], queue=False)
+            chat_clr_bt.click(chat_clear, None, [chatbot, hidden_file_path], queue=False)
             # re_bt.click(re_bot, chatbot, chatbot)
             chat_stop_bt.click(chat_clear_last, None, None, cancels=[txt_msg, re_txt_msg], queue=False)
 
             # show_path_bt.click(lambda x:[None, gr.update(visible=False)], hidden_file_path, [show_path_md,show_path_bt])
 
-            plug_bt.change(change_use_ci_flag)
+            plug_bt.change(choose_plugin, plug_bt, [file_btn, hidden_file_path])
 
     # img_cloud = gr.Image(height='50px')
     # update_bt.click(update_rec_list, gr.Textbox('update', visible=False), rec_list, queue=False)
 
     # date.change(update_all, date,  [img_cloud, browser_list, rec_list], queue=False)
-    date1.change(update_app_global_para, [date1, date2], None).then(update_browser_list, None, browser_list).then(lambda: None, None, None, _js=f'() => {{{js}}}').then(chat_clear, None, [chatbot, hidden_file_path, show_path_md])
-    date2.change(update_app_global_para, [date1, date2], None).then(update_browser_list, None, browser_list).then(lambda: None, None, None, _js=f'() => {{{js}}}').then(chat_clear, None, [chatbot, hidden_file_path, show_path_md])
+    date1.change(update_app_global_para, [date1, date2], None).then(update_browser_list, None, browser_list).then(lambda: None, None, None, _js=f'() => {{{js}}}').then(chat_clear, None, [chatbot, hidden_file_path])
+    date2.change(update_app_global_para, [date1, date2], None).then(update_browser_list, None, browser_list).then(lambda: None, None, None, _js=f'() => {{{js}}}').then(chat_clear, None, [chatbot, hidden_file_path])
 
     # demo.load(update_all, date,  [img_cloud, browser_list, rec_list])
-    demo.load(update_app_global_para, [date1, date2], None).then(update_browser_list, None, browser_list).then(lambda: None, None, None, _js=f'() => {{{js}}}').then(chat_clear, None, [chatbot, hidden_file_path, show_path_md])
+    demo.load(update_app_global_para, [date1, date2], None).then(update_browser_list, None, browser_list).then(lambda: None, None, None, _js=f'() => {{{js}}}').then(chat_clear, None, [chatbot, hidden_file_path])
     # .then(update_rec_list, gr.Textbox('load', visible=False), rec_list, queue=False)
 
 demo.queue().launch(server_name=server_host, server_port=workstation_port)
