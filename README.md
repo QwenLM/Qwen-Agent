@@ -4,7 +4,7 @@
 
 Qwen-Agent is a framework for harnessing the tool usage, planning, and memory capabilities of the open-source language model [Qwen](https://github.com/QwenLM/Qwen).
 Building upon Qwen-Agent, we have developed a **Chrome browser extension** called BrowserQwen, which has key features such as:
-- Discuss with Qwen about the current web page or PDF document.
+- Engage in discussions with Qwen regarding the current webpage or PDF document..
 - BrowserQwen records the web pages and PDF materials that you have browsed, with your permission. It helps you quickly understand the contents of multiple pages, summarize your browsing content, and eliminate tedious writing tasks.
 - Supports plugin integration, including **Code Interpreter** for math problem solving and data visualization.
 
@@ -14,13 +14,13 @@ If you prefer watching videos instead of screenshots, you can refer to the [vide
 
 ## Workstation - Editor Mode
 
-**Long article creation based on browsed web pages and PDFs**
+**This mode is designed for creating long articles based on browsed web pages and PDFs.**
 
 <figure>
     <img src="assets/screenshot-writing.png">
 </figure>
 
-**Calling plugins to assist rich text creation**
+**It allows you to call plugins to assist in rich text creation**
 
 <figure>
     <img src="assets/screenshot-editor-movie.png">
@@ -28,13 +28,13 @@ If you prefer watching videos instead of screenshots, you can refer to the [vide
 
 ## Workstation - Chat Mode
 
-**Multi-webpage QA**
+**In this mode, you can engage in multi-webpage QA**
 
 <figure >
     <img src="assets/screenshot-multi-web-qa.png">
 </figure>
 
-**Drawing data charts using the code interpreter**
+**create data charts using the code interpreter**
 
 <figure>
     <img src="assets/screenshot-ci.png">
@@ -109,7 +109,7 @@ If you have skipped Step 1 and decided to use DashScope's model service, then pl
 #   - qwen-turbo
 #   - qwen-plus
 # You need to replace YOUR_DASHSCOPE_API_KEY with your actual api key.
-export DASHSCOPE_API_KEY=YOUR_DASHSCOPE_API_KEY
+export DASHSCOPE_API_KEY=YOUR_DASHSCOPE_API_KEY #Make sure that "YOUR_DASHSCOPE_API_KEY" is a placeholder, and the user should replace it with their actual key
 python run_server.py --model_server dashscope --llm qwen-7b-chat --workstation_port 7864
 ```
 
