@@ -1,6 +1,6 @@
 # Qwen-Agent
 
-[中文](./README_CN.md) ｜ English
+[中文](./README_CN.md) ｜ English | [日本語](./README_JA.md)
 
 Qwen-Agent is a framework for harnessing the tool usage, planning, and memory capabilities of the open-source language model [Qwen](https://github.com/QwenLM/Qwen).
 Building upon Qwen-Agent, we have developed a **Chrome browser extension** called BrowserQwen, which has key features such as:
