@@ -15,12 +15,7 @@ react_parser_map = {
     'internlm': InternLMReActParser,
 }
 
-model_map = {
-    'qwen': Qwen,
-    'llama': LLM,
-    'internlm': LLM,
-    'qwen-vl': HFModel
-}
+model_map = {'qwen': Qwen, 'llama': LLM, 'internlm': LLM, 'qwen-vl': HFModel}
 
 model_type_map = {
     'qwen-14b-chat': 'qwen',
@@ -34,7 +29,6 @@ model_type_map = {
     'internlm-20b-chat': 'internlm',
     'qwen-vl-chat': 'qwen-vl',
 }
-
 
 model_path_map = {
     'qwen-14b-chat': 'Qwen/Qwen-14B-Chat',
@@ -51,12 +45,14 @@ model_path_map = {
 
 
 def get_react_prompt(model_name, query, lang, upload_fname_list):
-    react_prompt_cls = react_prompt_map.get(model_type_map[model_name], QwenReAct)
+    react_prompt_cls = react_prompt_map.get(model_type_map[model_name],
+                                            QwenReAct)
     return react_prompt_cls(query, lang, upload_fname_list)
 
 
 def get_react_parser(model_name):
-    react_parser_cls = react_parser_map.get(model_type_map[model_name], ReActParser)
+    react_parser_cls = react_parser_map.get(model_type_map[model_name],
+                                            ReActParser)
     return react_parser_cls()
 
 

@@ -1,14 +1,11 @@
-import json
 import re
 import sys
 import traceback
 
 import jieba
 import json5
-import requests
-from jieba import analyse
-
 import tiktoken
+from jieba import analyse
 
 
 def print_traceback():
@@ -31,26 +28,15 @@ def count_tokens(text):
     return len(tokens)
 
 
-def gen_rec(text):
-    return 'text'
-
-
-def get_html_content(url):
-    response = requests.get(url)
-    html_content = response.text
-    return html_content
-
-
-def send_msg(url, msg):
-    return requests.post(url, params=msg)
-
-
 def get_split_word(text):
     text = text.lower()
     _wordlist = jieba.lcut(text.strip())
     wordlist = []
     for x in _wordlist:
-        if x not in [' ', '  ', '\t', '\n', '\\', 'is', 'are', 'what', 'how', '的', '吗', '是', '了', '怎么', '如何', '什么', '？', '?', '!']:
+        if x not in [
+                ' ', '  ', '\t', '\n', '\\', 'is', 'are', 'what', 'how', '的',
+                '吗', '是', '了', '怎么', '如何', '什么', '？', '?', '!'
+        ]:
             wordlist.append(x)
     # print('wordlist: ', wordlist)
     return wordlist
@@ -61,7 +47,10 @@ def get_key_word(text):
     _wordlist = analyse.extract_tags(text)
     wordlist = []
     for x in _wordlist:
-        if x not in [' ', '  ', '\t', '\n', '\\', 'is', 'are', 'what', 'how', '的', '吗', '是', '了', '怎么', '如何', '什么', '？', '?', '!']:
+        if x not in [
+                ' ', '  ', '\t', '\n', '\\', 'is', 'are', 'what', 'how', '的',
+                '吗', '是', '了', '怎么', '如何', '什么', '？', '?', '!'
+        ]:
             wordlist.append(x)
     print('wordlist: ', wordlist)
     return wordlist
@@ -70,7 +59,8 @@ def get_key_word(text):
 def get_last_one_line_context(text):
     lines = text.split('\n')
     n = len(lines)
-    for i in range(n-1, -1, -1):
+    res = ''
+    for i in range(n - 1, -1, -1):
         if lines[i].strip():
             res = lines[i]
             break
@@ -86,7 +76,7 @@ def extract_urls(text):
 def extract_obs(text):
     k = text.rfind('\nObservation:')
     j = text.rfind('\nThought:')
-    obs = text[k+len('\nObservation:'):j]
+    obs = text[k + len('\nObservation:'):j]
     return obs.strip()
 
 
@@ -99,7 +89,7 @@ def extract_code(text):
         try:
             text = json5.loads(text)['code']
         except Exception:
-            pass
+            print_traceback()
     # If no code blocks found, return original text
     return text
 
@@ -121,12 +111,13 @@ def parse_latest_plugin_call(text):
     return plugin_name, plugin_args, text
 
 
+# TODO: Say no to these ugly if statements.
 def format_answer(text):
     action, action_input, output = parse_latest_plugin_call(text)
     print('==format_answer==')
     print('action: ', action)
     print('action input: ', action_input)
-    print('output: ',  output)
+    print('output: ', output)
     if 'code_interpreter' in text:
         rsp = ''
         code = extract_code(action_input)
@@ -138,12 +129,12 @@ def format_answer(text):
     elif 'image_gen' in text:
         # get url of FA
         # img_urls = URLExtract().find_urls(text.split("Final Answer:")[-1].strip())
-        obs = text.split('Observation:')[-1].split('Final Answer')[0].strip()
+        obs = text.split('Observation:')[-1].split('\nThought:')[0].strip()
         img_urls = []
         if obs:
-            print(obs)
+            print('repr(Observation)', repr(obs))
             try:
-                obs = json.loads(obs)
+                obs = json5.loads(obs)
                 img_urls.append(obs['image_url'])
             except Exception:
                 print_traceback()
@@ -153,7 +144,7 @@ def format_answer(text):
         print(img_urls)
         rsp = ''
         for x in img_urls:
-            rsp += '\n![picture]('+x.strip()+')'
+            rsp += '\n![picture](' + x.strip() + ')'
         return rsp
     else:
         return text.split('Final Answer:')[-1].strip()

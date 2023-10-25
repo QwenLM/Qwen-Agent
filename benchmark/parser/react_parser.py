@@ -1,5 +1,5 @@
-
 class ReActParser(object):
+
     def __init__(self):
         self.action = '\nAction:'
         self.action_input = '\nAction Input:'
@@ -21,8 +21,8 @@ class ReActParser(object):
                 # because the output text may have discarded the stop word.
                 text = text.rstrip() + observation  # Add it back.
             k = text.rfind(observation)
-            plugin_name = text[i + len(action): j].strip()
-            plugin_args = text[j + len(action_input): k].strip()
+            plugin_name = text[i + len(action):j].strip()
+            plugin_args = text[j + len(action_input):k].strip()
             text = text[:k]
         return plugin_name, plugin_args, text
 
@@ -32,13 +32,15 @@ class ReActParser(object):
         if i != -1:
             j = text.find(end_flag, i)
             if j != -1:
-                target = text[i+len(start_flag):j].strip()
+                target = text[i + len(start_flag):j].strip()
             else:
-                target = text[i+len(start_flag):].strip()
+                target = text[i + len(start_flag):].strip()
         return target
 
     def get_first_observation(self, text):
-        return self._extract_first_target(text, self.observation, self.observation_stop)
+        return self._extract_first_target(text, self.observation,
+                                          self.observation_stop)
 
     def get_first_action_input(self, text):
-        return self._extract_first_target(text, self.action_input, self.action_input_stop)
+        return self._extract_first_target(text, self.action_input,
+                                          self.action_input_stop)

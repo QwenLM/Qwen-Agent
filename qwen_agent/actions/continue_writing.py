@@ -12,24 +12,6 @@ PROMPT_TEMPLATE_CN = """
 
 """
 
-PROMPT_TEMPLATE_EN_COT = """
-You are a writing assistant, please follow the reference materials and continue to write appropriate content based on the given previous text.
-
-# References:
-{ref_doc}
-
-# Previous text:
-{user_request}
-
-Please start writing directly, output only the continued text, do not repeat the previous text, do not say irrelevant words, and ensure that the continued content and the previous text remain consistent.
-
-Use the following format:
-Thought: you should always think about what to do
-Summariz: extracted relevant text
-Final Answer: the continuation of previous text
-
-"""
-
 PROMPT_TEMPLATE_EN = """
 You are a writing assistant, please follow the reference materials and continue to write appropriate content based on the given previous text.
 
@@ -44,10 +26,8 @@ Please start writing directly, output only the continued text, do not repeat the
 
 
 class ContinueWriting(Action):
-    def __init__(self, llm=None, stream=False):
-        super().__init__(llm=llm, stream=stream)
 
-    def run(self, ref_doc, user_request, messages=None, prompt_lan='CN'):
+    def run(self, user_request, ref_doc, prompt_lan='CN'):
         if prompt_lan == 'CN':
             prompt = PROMPT_TEMPLATE_CN.format(
                 ref_doc=ref_doc,
@@ -58,5 +38,7 @@ class ContinueWriting(Action):
                 ref_doc=ref_doc,
                 user_request=user_request,
             )
+        else:
+            raise NotImplementedError
 
-        return self._run(prompt, messages=messages)
+        return self._call_llm(prompt)

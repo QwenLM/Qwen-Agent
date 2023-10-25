@@ -1,20 +1,16 @@
-import importlib
 import json
 import os
 import sys
 from pathlib import Path
 
+import add_qwen_libs  # NOQA
 import gradio as gr
 import jsonlines
 
-import config_browserqwen
-
-sys.path.insert(
-    0,
-    str(Path(__file__).absolute().parent.parent))  # NOQA
-
-from qwen_agent.actions import Simple  # NOQA
-from qwen_agent.memory import Memory  # NOQA
+from qwen_agent.actions import RetrievalQA
+from qwen_agent.llm import get_chat_model
+from qwen_agent.memory import Memory
+from qwen_server import server_config
 
 prompt_lan = sys.argv[1]
 llm_name = sys.argv[2]
@@ -23,19 +19,16 @@ model_server = sys.argv[4]
 api_key = sys.argv[5]
 server_host = sys.argv[6]
 
-if llm_name.startswith('gpt'):
-    module = 'qwen_agent.llm.gpt'
-    llm = importlib.import_module(module).GPT(llm_name)
-elif llm_name.startswith('Qwen') or llm_name.startswith('qwen'):
-    module = 'qwen_agent.llm.qwen'
-    llm = importlib.import_module(module).Qwen(llm_name, model_server=model_server, api_key=api_key)
-else:
-    raise NotImplementedError
+llm = get_chat_model(model=llm_name,
+                     api_key=api_key,
+                     model_server=model_server)
 
-mem = Memory(config_browserqwen.similarity_search, config_browserqwen.similarity_search_type)
+mem = Memory()
 
-cache_file = os.path.join(config_browserqwen.cache_root, config_browserqwen.browser_cache_file)
-cache_file_popup_url = os.path.join(config_browserqwen.cache_root, config_browserqwen.url_file)
+cache_file = os.path.join(server_config.cache_root,
+                          server_config.browser_cache_file)
+cache_file_popup_url = os.path.join(server_config.cache_root,
+                                    server_config.url_file)
 
 PAGE_URL = []
 
@@ -89,19 +82,27 @@ def bot(history):
                     now_page = line
 
             if not now_page:
-                gr.Info("This page has not yet been added to the Qwen's reading list!")
+                gr.Info(
+                    "This page has not yet been added to the Qwen's reading list!"
+                )
             elif not now_page['raw']:
                 gr.Info('Please wait, Qwen is analyzing this page...')
             else:
-                _ref_list = mem.get(history[-1][0], [now_page], llm=llm, stream=False, max_token=max_ref_token)
+                _ref_list = mem.get(history[-1][0], [now_page],
+                                    llm=llm,
+                                    stream=False,
+                                    max_token=max_ref_token)
                 if _ref_list:
-                    _ref = '\n'.join(json.dumps(x, ensure_ascii=False) for x in _ref_list)
+                    _ref = '\n'.join(
+                        json.dumps(x, ensure_ascii=False) for x in _ref_list)
                 else:
                     _ref = ''
         # print(_ref)
-        agent = Simple(stream=True, llm=llm)
+        agent = RetrievalQA(stream=True, llm=llm)
         history[-1][1] = ''
-        response = agent.run(_ref, history, prompt_lan=prompt_lan)
+        response = agent.run(user_request=history[-1][0],
+                             ref_doc=_ref,
+                             prompt_lan=prompt_lan)
 
         for chunk in response:
             history[-1][1] += chunk
@@ -164,7 +165,8 @@ with gr.Blocks(css=css, theme='soft') as demo:
                          elem_id='chatbot',
                          height=480,
                          avatar_images=(None, (os.path.join(
-                             Path(__file__).resolve().parent, 'img/logo.png'))))
+                             Path(__file__).resolve().parent,
+                             'img/logo.png'))))
     with gr.Row():
         with gr.Column(scale=7):
             txt = gr.Textbox(show_label=False,
@@ -190,11 +192,15 @@ with gr.Blocks(css=css, theme='soft') as demo:
     #                 queue=False)
 
     clr_bt.click(clear_session, None, chatbot, queue=False)
-    re_txt_msg = re_bt.click(rm_text, [chatbot], [chatbot, txt], queue=False).then(bot, chatbot, chatbot)
-    re_txt_msg.then(lambda: gr.update(interactive=True), None, [txt], queue=False)
+    re_txt_msg = re_bt.click(rm_text, [chatbot], [chatbot, txt],
+                             queue=False).then(bot, chatbot, chatbot)
+    re_txt_msg.then(lambda: gr.update(interactive=True),
+                    None, [txt],
+                    queue=False)
 
     stop_bt.click(None, None, None, cancels=[txt_msg, re_txt_msg], queue=False)
 
     demo.load(set_page_url).then(load_history_session, chatbot, chatbot)
 
-demo.queue().launch(server_name=server_host, server_port=config_browserqwen.app_in_browser_port)
+demo.queue().launch(server_name=server_host,
+                    server_port=server_config.app_in_browser_port)

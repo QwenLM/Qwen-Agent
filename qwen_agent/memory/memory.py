@@ -1,32 +1,29 @@
-from typing import List
+from typing import Dict, List
 
 from qwen_agent.memory.similarity_search import SimilaritySearch
 from qwen_agent.schema import RefMaterial
-from qwen_agent.utils.util import count_tokens
+from qwen_agent.utils.utils import count_tokens
 
 
+# TODO: Design the interface.
 class Memory:
 
-    def __init__(self, open_ss, ss_type):
-        self.open_ss = open_ss
-        self.ss_type = ss_type
+    def __init__(self):
+        pass
 
     def get(self,
             query: str,
             records: list,
             llm=None,
             stream=False,
-            max_token=4000) -> List[RefMaterial]:
+            max_token=4000) -> List[Dict]:
 
-        if not self.open_ss:
-            _ref_list = self.get_top(records)
-        else:
-            search_agent = SimilaritySearch(llm=llm, stream=stream)
-            _ref_list = []
-            for record in records:
-                now_ref_list = search_agent.run(record, query)
-                if now_ref_list['text']:
-                    _ref_list.append(now_ref_list)
+        search_agent = SimilaritySearch(llm=llm, stream=stream)
+        _ref_list = []
+        for record in records:
+            now_ref_list = search_agent.run(record, query)
+            if now_ref_list['text']:
+                _ref_list.append(now_ref_list)
 
         if not _ref_list:
             _ref_list = self.get_top(records)

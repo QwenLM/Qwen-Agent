@@ -9,8 +9,11 @@ INVALID_ANS = '[invalid]'
 
 
 def extract_answer(completion):
+
     def _get_last_digit(s):
-        _PAT_LAST_DIGIT = re.compile(r'(?<=(\s|[\$%#{]))([+-])?(?=(\S))(0|([1-9](\d*|\d{0,2}(,\d{3})*)))?(\.\d*[1-9])?(?=(\s|[.,}]|$))')
+        _PAT_LAST_DIGIT = re.compile(
+            r'(?<=(\s|[\$%#{]))([+-])?(?=(\S))(0|([1-9](\d*|\d{0,2}(,\d{3})*)))?(\.\d*[1-9])?(?=(\s|[.,}]|$))'
+        )
         match = list(_PAT_LAST_DIGIT.finditer(s))
         if match:
             last_digit = match[-1].group().replace(',', '').replace('+', '')
@@ -36,15 +39,16 @@ def is_correct(completion, answer):
 def eval_gsm8k_acc(output_fname):
     data_list = load_jsonl(output_fname)
     acc_res = [item['acc'] for item in data_list]
-    logging.info('='*60)
+    logging.info('=' * 60)
     logging.info('{:^60}'.format('Math Acc.'))
-    logging.info('='*60)
+    logging.info('=' * 60)
     logging.info('Total num={:.2f}'.format(len(acc_res)))
     logging.info('Right num={:.2f}'.format(np.sum(acc_res)))
-    logging.info('Zero-shot Acc={:.2f}'.format(np.mean(acc_res)*100))
+    logging.info('Zero-shot Acc={:.2f}'.format(np.mean(acc_res) * 100))
 
     error_data_list = [item for item in data_list if not item['acc']]
-    error_data_output_fname = os.path.splitext(output_fname)[0] + '_gsm8k_error.jsonl'
+    error_data_output_fname = os.path.splitext(
+        output_fname)[0] + '_gsm8k_error.jsonl'
     save_jsonl(error_data_list, error_data_output_fname)
 
-    return {'math': np.mean(acc_res)*100}
+    return {'math': np.mean(acc_res) * 100}

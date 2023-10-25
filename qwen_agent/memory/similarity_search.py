@@ -1,5 +1,5 @@
 from qwen_agent.schema import RefMaterial
-from qwen_agent.utils.util import get_split_word
+from qwen_agent.utils.utils import get_split_word
 
 
 class SimilaritySearch:
@@ -24,7 +24,7 @@ class SimilaritySearch:
         for i, page in enumerate(content):
             sim = self.filter_section(page, wordlist)
             sims.append([i, sim])
-        sims.sort(key=lambda x: x[1], reverse=True)
+        sims.sort(key=lambda item: item[1], reverse=True)
         # print('sims: ', sims)
         max_sims = sims[0][1]
         if max_sims != 0:

@@ -12,7 +12,6 @@ import signal
 import subprocess
 import sys
 import time
-import traceback
 import uuid
 from pathlib import Path
 from typing import Dict, Optional
@@ -21,20 +20,27 @@ import matplotlib
 import PIL.Image
 from jupyter_client import BlockingKernelClient
 
-sys.path.insert(
-    0,
-    str(Path(__file__).absolute().parent.parent.parent))  # NOQA
+sys.path.insert(0, str(Path(__file__).absolute().parent.parent.parent))  # NOQA
 
-from qwen_server import config_browserqwen  # NOQA
-from qwen_agent.utils.util import extract_code, print_traceback  # NOQA
+from qwen_agent.utils.utils import extract_code, print_traceback  # NOQA
 
-WORK_DIR = os.getenv('CODE_INTERPRETER_WORK_DIR', config_browserqwen.code_interpreter_ws)
+WORK_DIR = os.getenv('M6_CODE_INTERPRETER_WORK_DIR', '/tmp/m6_ci_workspace')
+
+STATIC_URL = os.getenv('M6_CODE_INTERPRETER_STATIC_URL',
+                       'http://127.0.0.1:7866/static')
+
 LAUNCH_KERNEL_PY = """
 from ipykernel import kernelapp as app
 app.launch_new_instance()
 """
-INIT_CODE_FILE = str(Path(__file__).absolute().parent / 'code_interpreter_init_kernel.py')
-ALIB_FONT_FILE = str(Path(__file__).absolute().parent / 'AlibabaPuHuiTi-3-45-Light.ttf')
+
+INIT_CODE_FILE = str(
+    Path(__file__).absolute().parent / 'resource' /
+    'code_interpreter_init_kernel.py')
+
+ALIB_FONT_FILE = str(
+    Path(__file__).absolute().parent / 'resource' /
+    'AlibabaPuHuiTi-3-45-Light.ttf')
 
 _KERNEL_CLIENTS: Dict[int, BlockingKernelClient] = {}
 
@@ -61,7 +67,7 @@ def _start_kernel(pid) -> BlockingKernelClient:
         '--matplotlib=inline',
         '--quiet',
     ],
-        cwd=WORK_DIR)
+                                      cwd=WORK_DIR)
     print(f"INFO: kernel process's PID = {kernel_process.pid}")
 
     # Wait for kernel connection file to be written
@@ -107,14 +113,7 @@ def _serve_image(image_base64: str) -> str:
     bytes_io = io.BytesIO(png_bytes)
     PIL.Image.open(bytes_io).save(local_image_file, 'png')
 
-    if os.path.exists(config_browserqwen.address_file):
-        with open(config_browserqwen.address_file) as f:
-            data = json.load(f)
-        figure_url = 'http://' + data['address'] + ':' + str(config_browserqwen.fast_api_port) + '/static'
-    else:
-        figure_url = config_browserqwen.fast_api_figure_url
-    print(figure_url)
-    image_url = f'{figure_url}/{image_file}'
+    image_url = f'{STATIC_URL}/{image_file}'
     return image_url
 
 
@@ -166,7 +165,7 @@ def _execute_code(kc: BlockingKernelClient, code: str) -> str:
             finished = True
         except Exception:
             text = 'The code interpreter encountered an unexpected error.'
-            print(''.join(traceback.format_exception(*sys.exc_info())))
+            print_traceback()
             finished = True
         if text:
             result += f'\n\n{msg_type}:\n\n```\n{text}\n```'
@@ -212,7 +211,8 @@ def code_interpreter(action_input: str, timeout: Optional[int] = 30) -> str:
         kc = _start_kernel(pid)
         with open(INIT_CODE_FILE) as fin:
             start_code = fin.read()
-            start_code = start_code.replace('{{M6_FONT_PATH}}', repr(ALIB_FONT_FILE)[1:-1])
+            start_code = start_code.replace('{{M6_FONT_PATH}}',
+                                            repr(ALIB_FONT_FILE)[1:-1])
         print(_execute_code(kc, start_code))
         _KERNEL_CLIENTS[pid] = kc
 
@@ -223,7 +223,8 @@ def code_interpreter(action_input: str, timeout: Optional[int] = 30) -> str:
     for line in code.split('\n'):
         fixed_code.append(line)
         if line.startswith('sns.set_theme('):
-            fixed_code.append('plt.rcParams["font.family"] = _m6_font_prop.get_name()')
+            fixed_code.append(
+                'plt.rcParams["font.family"] = _m6_font_prop.get_name()')
     fixed_code = '\n'.join(fixed_code)
     result = _execute_code(kc, fixed_code)
 

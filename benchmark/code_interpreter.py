@@ -39,7 +39,9 @@ def fix_matplotlib_cjk_font_issue():
             os.path.join(matplotlib.matplotlib_fname(), os.path.pardir)),
         'fonts', 'ttf', 'simhei.ttf')
     if not os.path.exists(local_ttf):
-        logging.warning(f'Missing font file `{local_ttf}` for matplotlib. It may cause some error when using matplotlib.')
+        logging.warning(
+            f'Missing font file `{local_ttf}` for matplotlib. It may cause some error when using matplotlib.'
+        )
 
 
 def start_kernel(pid):
@@ -211,7 +213,8 @@ def _code_interpreter(code: str, timeout, clear=False):
             finished = True
         except Exception:
             text = 'The code interpreter encountered an unexpected error.'
-            logging.warning(''.join(traceback.format_exception(*sys.exc_info())))
+            logging.warning(''.join(
+                traceback.format_exception(*sys.exc_info())))
             finished = True
         if text:
             result += f'\n\n{msg_type}:\n\n```\n{text}\n```'

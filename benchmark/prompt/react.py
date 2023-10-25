@@ -13,7 +13,6 @@ code
 Enclose the code within triple backticks (```) at the beginning and end of the code.
 """
 
-
 REACT_PROMPT = """Answer the following questions as best you can. You have access to the following tools:
 
 {tools_text}
@@ -33,7 +32,6 @@ Begin!
 
 Question: {query}"""
 
-
 fname_template = {
     'zh': '文件{fname_str}，',
     'en_multi': 'Files {fname_str}. ',
@@ -42,10 +40,13 @@ fname_template = {
 
 
 class ReAct(object):
+
     def __init__(self, query, lang='en', upload_file_paths=[]):
         self.query = query
         self.lang = lang
-        self.upload_file_paths = [f'`{os.path.basename(fname)}`' for fname in upload_file_paths]
+        self.upload_file_paths = [
+            f'`{os.path.basename(fname)}`' for fname in upload_file_paths
+        ]
 
         self.fname_template = fname_template
         self.react_template = REACT_PROMPT
@@ -55,7 +56,10 @@ class ReAct(object):
         query = self._format_upload_fname() + self.query
         tools_text = self._build_tools_text()
         tools_name_text = self._build_tools_name_text()
-        planning_prompt = self.react_template.format(query=query, tools_text=tools_text, tools_name_text=tools_name_text)
+        planning_prompt = self.react_template.format(
+            query=query,
+            tools_text=tools_text,
+            tools_name_text=tools_name_text)
 
         self.prompt = planning_prompt
         return planning_prompt
@@ -64,7 +68,8 @@ class ReAct(object):
         prefix = ''
         if self.upload_file_paths:
             fname_str = ', '.join(self.upload_file_paths)
-            lang_key = 'en_multi' if self.lang == 'en' and len(self.upload_file_paths) > 1 else self.lang
+            lang_key = 'en_multi' if self.lang == 'en' and len(
+                self.upload_file_paths) > 1 else self.lang
             fname_template = self.fname_template[lang_key]
             prefix = fname_template.format(fname_str=fname_str)
         return prefix

@@ -1,7 +1,8 @@
 import json
+from typing import Dict, Iterator, List, Optional
 
 from qwen_agent.actions.base import Action
-from qwen_agent.tools.tools import call_plugin
+from qwen_agent.tools import call_plugin
 
 TOOL_DESC = """{name_for_model}: Call this tool to interact with the {name_for_human} API. What is the {name_for_human} API useful for? {description_for_model} Parameters: {parameters}"""
 
@@ -25,79 +26,81 @@ Begin!
 Question: {query}"""
 
 
+def _build_react_instruction(query: str, functions: List[Dict]):
+    tool_descs = []
+    tool_names = []
+    for info in functions:
+        tool_descs.append(
+            TOOL_DESC.format(
+                name_for_model=info['name_for_model'],
+                name_for_human=info['name_for_human'],
+                description_for_model=info['description_for_model'],
+                parameters=json.dumps(info['parameters'], ensure_ascii=False),
+            ))
+        tool_names.append(info['name_for_model'])
+    tool_descs = '\n\n'.join(tool_descs)
+    tool_names = ','.join(tool_names)
+
+    prompt = PROMPT_REACT.format(tool_descs=tool_descs,
+                                 tool_names=tool_names,
+                                 query=query)
+    return prompt
+
+
+def _parse_last_action(text):
+    plugin_name, plugin_args = '', ''
+    i = text.rfind('\nAction:')
+    j = text.rfind('\nAction Input:')
+    k = text.rfind('\nObservation:')
+    if 0 <= i < j:  # If the text has `Action` and `Action input`,
+        if k < j:  # but does not contain `Observation`,
+            # then it is likely that `Observation` is ommited by the LLM,
+            # because the output text may have discarded the stop word.
+            text = text.rstrip() + '\nObservation:'  # Add it back.
+        k = text.rfind('\nObservation:')
+        plugin_name = text[i + len('\nAction:'):j].strip()
+        plugin_args = text[j + len('\nAction Input:'):k].strip()
+        text = text[:k]  # Discard '\nObservation:'.
+    return plugin_name, plugin_args, text
+
+
+# TODO: When to put an parameter (such as history) in __init__()? When to put it in run()?
 class ReAct(Action):
 
-    def __init__(self, llm=None, stream=False, list_of_plugin_info=None):
-        super().__init__(llm=llm, stream=stream)
-        self.list_of_plugin_info = list_of_plugin_info or []
+    def run(self,
+            user_request,
+            functions: List[Dict] = None,
+            history: Optional[List[Dict]] = None) -> Iterator[str]:
+        functions = functions or []
+        prompt = _build_react_instruction(user_request, functions)
 
-    def run(self, user_request, messages=None):
-        prompt = self.build_input_text(user_request)
-        rsp = self.run_with_tools(prompt, messages)
+        messages = []
+        if history:
+            assert history[-1][
+                'role'] != 'user', 'The history should not include the latest user query.'
+            messages.extend(history)
+        messages.append({'role': 'user', 'content': prompt})
 
-        return rsp
-
-    def run_with_tools(self, prompt, messages):
-        react_stop_words = ['Observation:', 'Observation:\n']
-
-        new_messages = []
-        new_messages.extend(messages)
-        new_messages.append({'role': 'user', 'content': prompt})
-
-        text = ''
         max_turn = 5
         while True and max_turn > 0:
             max_turn -= 1
-            output = self.llm.chat('',
-                                   messages=new_messages,
-                                   stream=False,
-                                   stop=react_stop_words)
-            action, action_input, output = self.parse_latest_plugin_call(
-                output)
+            output = self.llm.chat(
+                messages=messages,
+                stream=False,  # TODO:
+                stop=['Observation:', 'Observation:\n'],
+            )
+            action, action_input, output = _parse_last_action(output)
+            if messages[-1]['content'].endswith('\nThought:'):
+                if not output.startswith(' '):
+                    output = ' ' + output
+            else:
+                if not output.startswith('\n'):
+                    output = '\n' + output
+            yield output
             if action:
                 observation = call_plugin(action, action_input)
-                print(observation)
-                output += f'\nObservation: {observation}\nThought:'
-                text += output
-                new_messages[-1]['content'] += output
+                observation = f'\nObservation: {observation}\nThought:'
+                yield observation
+                messages[-1]['content'] += output + observation
             else:
-                text += output
                 break
-        return text
-
-    def parse_latest_plugin_call(self, text):
-        plugin_name, plugin_args = '', ''
-        i = text.rfind('\nAction:')
-        j = text.rfind('\nAction Input:')
-        k = text.rfind('\nObservation:')
-        if 0 <= i < j:  # If the text has `Action` and `Action input`,
-            if k < j:  # but does not contain `Observation`,
-                # then it is likely that `Observation` is ommited by the LLM,
-                # because the output text may have discarded the stop word.
-                text = text.rstrip() + '\nObservation:'  # Add it back.
-            k = text.rfind('\nObservation:')
-            plugin_name = text[i + len('\nAction:'):j].strip()
-            plugin_args = text[j + len('\nAction Input:'):k].strip()
-            text = text[:k]
-        return plugin_name, plugin_args, text
-
-    def build_input_text(self, query):
-        tool_descs = []
-        tool_names = []
-        for info in self.list_of_plugin_info:
-            tool_descs.append(
-                TOOL_DESC.format(
-                    name_for_model=info['name_for_model'],
-                    name_for_human=info['name_for_human'],
-                    description_for_model=info['description_for_model'],
-                    parameters=json.dumps(info['parameters'],
-                                          ensure_ascii=False),
-                ))
-            tool_names.append(info['name_for_model'])
-        tool_descs = '\n\n'.join(tool_descs)
-        tool_names = ','.join(tool_names)
-
-        prompt = PROMPT_REACT.format(tool_descs=tool_descs,
-                                     tool_names=tool_names,
-                                     query=query)
-        return prompt

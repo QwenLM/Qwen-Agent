@@ -1,7 +1,7 @@
 import json
 import logging
 
-import tqdm
+from tqdm import tqdm
 
 
 def load_jsonl(path):

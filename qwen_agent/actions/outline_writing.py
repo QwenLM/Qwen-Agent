@@ -22,12 +22,9 @@ In order to complete the above writing tasks, please provide an outline first. T
 """
 
 
-class Outline(Action):
+class OutlineWriting(Action):
 
-    def __init__(self, llm=None, stream=False):
-        super().__init__(llm=llm, stream=stream)
-
-    def run(self, ref_doc, user_request, messages=None, prompt_lan='CN'):
+    def run(self, user_request, ref_doc, prompt_lan='CN'):
         if prompt_lan == 'CN':
             prompt = PROMPT_TEMPLATE_CN.format(
                 ref_doc=ref_doc,
@@ -38,4 +35,6 @@ class Outline(Action):
                 ref_doc=ref_doc,
                 user_request=user_request,
             )
-        return self._run(prompt, messages=messages)
+        else:
+            raise NotImplementedError
+        return self._call_llm(prompt)

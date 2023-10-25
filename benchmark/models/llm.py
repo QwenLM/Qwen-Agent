@@ -3,6 +3,7 @@ from models.base import HFModel
 
 
 class LLM(HFModel):
+
     def __init__(self, model_path):
         super().__init__(model_path)
 
@@ -20,6 +21,6 @@ class LLM(HFModel):
         for stop_str in stop_words:
             idx = output.find(stop_str)
             if idx != -1:
-                output = output[: idx + len(stop_str)]
+                output = output[:idx + len(stop_str)]
 
         return output

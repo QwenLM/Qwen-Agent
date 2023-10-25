@@ -1,12 +1,11 @@
-from .continuewriting import ContinueWriting
-from .eval_correlation import EvalCorr
-from .expand import Expand
-from .outline import Outline
+from .continue_writing import ContinueWriting
+from .expand_writing import ExpandWriting
+from .outline_writing import OutlineWriting
 from .react import ReAct
-from .simple import Simple
-from .writefromzero import WriteFromZero
+from .retrieval_qa import RetrievalQA
+from .write_from_scratch import WriteFromScratch
 
 __all__ = [
-    'Simple', 'ContinueWriting', 'Outline', 'Expand', 'EvalCorr', 'ReAct',
-    'WriteFromZero'
+    'RetrievalQA', 'ContinueWriting', 'OutlineWriting', 'ExpandWriting',
+    'ReAct', 'WriteFromScratch'
 ]

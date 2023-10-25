@@ -13,7 +13,7 @@ from matplotlib.font_manager import FontProperties
 from sympy import Eq, solve, symbols  # noqa
 
 
-def input(*args, **kwargs):
+def input(*args, **kwargs):  # noqa
     raise NotImplementedError('Python input() function is disabled.')
 
 
@@ -28,6 +28,7 @@ except AttributeError:  # windows
 
 
 class _M6CountdownTimer:
+
     @classmethod
     def start(cls, timeout: int):
         try:

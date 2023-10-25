@@ -28,31 +28,33 @@ Note that each chapter is responsible for writing different content, so you don'
 """
 
 
-class Expand(Action):
+class ExpandWriting(Action):
 
-    def __init__(self, llm=None, stream=False):
-        super().__init__(llm=llm, stream=stream)
-
-    def run(self, ref_doc, user_request, outline='', index='1', capture='', capture_later='', messages=None, prompt_lan='CN'):
+    def run(self,
+            user_request,
+            ref_doc,
+            outline='',
+            index='1',
+            capture='',
+            capture_later='',
+            prompt_lan='CN'):
         if prompt_lan == 'CN':
-            prompt = PROMPT_TEMPLATE_CN.format(
-                ref_doc=ref_doc,
-                user_request=user_request,
-                index=index,
-                outline=outline,
-                capture=capture
-            )
+            prompt = PROMPT_TEMPLATE_CN.format(ref_doc=ref_doc,
+                                               user_request=user_request,
+                                               index=index,
+                                               outline=outline,
+                                               capture=capture)
             if capture_later:
-                prompt = prompt + '请在涉及 '+capture_later+' 时停止。'
+                prompt = prompt + '请在涉及 ' + capture_later + ' 时停止。'
         elif prompt_lan == 'EN':
-            prompt = PROMPT_TEMPLATE_EN.format(
-                ref_doc=ref_doc,
-                user_request=user_request,
-                index=index,
-                outline=outline,
-                capture=capture
-            )
+            prompt = PROMPT_TEMPLATE_EN.format(ref_doc=ref_doc,
+                                               user_request=user_request,
+                                               index=index,
+                                               outline=outline,
+                                               capture=capture)
             if capture_later:
-                prompt = prompt + ' Please stop when writing '+capture_later
+                prompt = prompt + ' Please stop when writing ' + capture_later
+        else:
+            raise NotImplementedError
 
-        return self._run(prompt, messages=messages)
+        return self._call_llm(prompt)

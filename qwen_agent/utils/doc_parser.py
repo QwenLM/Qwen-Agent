@@ -1,7 +1,7 @@
 import re
 
 
-def parse_pdf_pypdf(path, pre_gen_question=False):
+def parse_pdf_pypdf(path):
     from langchain.document_loaders import PyPDFLoader
 
     loader = PyPDFLoader(path)
@@ -21,7 +21,7 @@ def pre_process_html(s):
     return s
 
 
-def parse_html_bs(path, pre_gen_question=False):
+def parse_html_bs(path):
     from langchain.document_loaders import BSHTMLLoader
 
     loader = BSHTMLLoader(path, open_encoding='utf-8')
