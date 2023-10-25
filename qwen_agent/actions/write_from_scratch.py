@@ -2,8 +2,10 @@ import re
 
 import json5
 
-from qwen_agent.actions import ExpandWriting, OutlineWriting, RetrievalQA
 from qwen_agent.actions.base import Action
+from qwen_agent.actions.expand_writing import ExpandWriting
+from qwen_agent.actions.outline_writing import OutlineWriting
+from qwen_agent.actions.summarize import Summarize
 
 default_plan = """{"action1": "summarize", "action2": "outline", "action3": "expand"}"""
 
@@ -16,7 +18,7 @@ def is_roman_numeral(s):
 
 class WriteFromScratch(Action):
 
-    def run(self, user_request, ref_doc, prompt_lan='CN'):
+    def _run(self, user_request, ref_doc, lang: str = 'en'):
         # plan
         yield '\n========================= \n'
         yield '> Use Default plans: \n'
@@ -31,17 +33,8 @@ class WriteFromScratch(Action):
                 yield '\n========================= \n'
                 yield '> Summarize Browse Content: \n'
                 summ = ''
-                sum_agent = RetrievalQA(llm=self.llm, stream=self.stream)
-                if prompt_lan == 'CN':
-                    command = '总结参考资料的主要内容'
-                elif prompt_lan == 'EN':
-                    command = 'Summarize the main content of reference materials.'
-                else:
-                    raise NotImplementedError
-                res_sum = sum_agent.run(
-                    user_request=command,
-                    ref_doc=ref_doc,
-                )
+                sum_agent = Summarize(llm=self.llm, stream=self.stream)
+                res_sum = sum_agent.run(ref_doc=ref_doc, lang=lang)
                 for trunk in res_sum:
                     summ += trunk
                     yield trunk
@@ -51,7 +44,8 @@ class WriteFromScratch(Action):
                 outline = ''
                 otl_agent = OutlineWriting(llm=self.llm, stream=self.stream)
                 res_otl = otl_agent.run(user_request=user_request,
-                                        ref_doc=summ)
+                                        ref_doc=summ,
+                                        lang=lang)
                 for trunk in res_otl:
                     outline += trunk
                     yield trunk
@@ -81,6 +75,7 @@ class WriteFromScratch(Action):
                         index=str(index),
                         capture=capture,
                         capture_later=capture_later,
+                        lang=lang,
                     )
                     for trunk in res_exp:
                         text += trunk

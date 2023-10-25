@@ -1,6 +1,7 @@
 from .code_interpreter import code_interpreter
 from .image_gen import image_gen
 
+# TODO: Meta info in multiple language such as en and zh.
 # TODO: Use ChatGPT's schema for functions?
 # TODO: These meta info should be provided by the tools' classes.
 # TODO: Make this immutable once it is initialized.

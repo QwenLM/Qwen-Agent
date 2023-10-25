@@ -1,6 +1,6 @@
 from qwen_agent.actions.base import Action
 
-PROMPT_TEMPLATE_CN = """
+PROMPT_TEMPLATE_ZH = """
 你是一个写作助手，任务是依据参考资料，完成写作任务。
 #参考资料：
 {ref_doc}
@@ -27,34 +27,36 @@ At this point, your task is to expand the chapter corresponding to the {index} f
 Note that each chapter is responsible for writing different content, so you don't need to cover the following content. Please do not generate an outline here. Write only based on the given reference materials and do not introduce other knowledge.
 """
 
+PROMPT_TEMPLATE = {
+    'zh': PROMPT_TEMPLATE_ZH,
+    'en': PROMPT_TEMPLATE_EN,
+}
+
 
 class ExpandWriting(Action):
 
-    def run(self,
-            user_request,
-            ref_doc,
-            outline='',
-            index='1',
-            capture='',
-            capture_later='',
-            prompt_lan='CN'):
-        if prompt_lan == 'CN':
-            prompt = PROMPT_TEMPLATE_CN.format(ref_doc=ref_doc,
-                                               user_request=user_request,
-                                               index=index,
-                                               outline=outline,
-                                               capture=capture)
-            if capture_later:
+    def _run(
+        self,
+        user_request,
+        ref_doc,
+        outline='',
+        index='1',
+        capture='',
+        capture_later='',
+        lang: str = 'en',
+    ):
+        prompt = PROMPT_TEMPLATE[lang].format(
+            ref_doc=ref_doc,
+            user_request=user_request,
+            index=index,
+            outline=outline,
+            capture=capture,
+        )
+        if capture_later:
+            if lang == 'zh':
                 prompt = prompt + '请在涉及 ' + capture_later + ' 时停止。'
-        elif prompt_lan == 'EN':
-            prompt = PROMPT_TEMPLATE_EN.format(ref_doc=ref_doc,
-                                               user_request=user_request,
-                                               index=index,
-                                               outline=outline,
-                                               capture=capture)
-            if capture_later:
+            elif lang == 'en':
                 prompt = prompt + ' Please stop when writing ' + capture_later
-        else:
-            raise NotImplementedError
-
+            else:
+                raise NotImplementedError
         return self._call_llm(prompt)

@@ -7,13 +7,17 @@ from qwen_agent.tools import call_plugin
 
 class FunctionCalling(Action):
 
-    def run(self, user_request, functions: List[Dict] = None) -> Iterator[str]:
+    def _run(self,
+             user_request,
+             functions: List[Dict] = None,
+             lang: str = 'en') -> Iterator[str]:
         functions = functions or []
 
         if not self.llm.support_function_calling():
             return ReAct(llm=self.llm,
                          stream=self.stream).run(user_request,
-                                                 functions=functions)
+                                                 functions=functions,
+                                                 lang=lang)
 
         messages = [{'role': 'user', 'content': user_request}]
         is_first_yield = True

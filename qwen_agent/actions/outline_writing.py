@@ -1,6 +1,6 @@
 from qwen_agent.actions.base import Action
 
-PROMPT_TEMPLATE_CN = """
+PROMPT_TEMPLATE_ZH = """
 你是一个写作助手，任务是充分理解参考资料，从而完成写作。
 #参考资料：
 {ref_doc}
@@ -21,20 +21,17 @@ The title is: {user_request}
 In order to complete the above writing tasks, please provide an outline first. The reply only needs to include an outline. The first level titles of the outline are all counted in Roman numerals. Write only based on the given reference materials and do not introduce other knowledge.
 """
 
+PROMPT_TEMPLATE = {
+    'zh': PROMPT_TEMPLATE_ZH,
+    'en': PROMPT_TEMPLATE_EN,
+}
+
 
 class OutlineWriting(Action):
 
-    def run(self, user_request, ref_doc, prompt_lan='CN'):
-        if prompt_lan == 'CN':
-            prompt = PROMPT_TEMPLATE_CN.format(
-                ref_doc=ref_doc,
-                user_request=user_request,
-            )
-        elif prompt_lan == 'EN':
-            prompt = PROMPT_TEMPLATE_EN.format(
-                ref_doc=ref_doc,
-                user_request=user_request,
-            )
-        else:
-            raise NotImplementedError
+    def _run(self, user_request, ref_doc, lang: str = 'en'):
+        prompt = PROMPT_TEMPLATE[lang].format(
+            ref_doc=ref_doc,
+            user_request=user_request,
+        )
         return self._call_llm(prompt)

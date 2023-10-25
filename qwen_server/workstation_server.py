@@ -1,7 +1,6 @@
 import datetime
 import json
 import os
-import random
 import shutil
 import sys
 from pathlib import Path
@@ -18,7 +17,7 @@ from qwen_agent.memory import Memory
 from qwen_agent.tools import call_plugin, list_of_all_functions
 from qwen_agent.utils.utils import (count_tokens, format_answer,
                                     get_last_one_line_context,
-                                    save_text_to_file)
+                                    has_chinese_chars, save_text_to_file)
 from qwen_server import server_config
 from qwen_server.utils import extract_and_cache_document
 
@@ -125,50 +124,6 @@ def read_records(file, times=None):
     return lines
 
 
-def update_rec_list(flag):
-    rec_list = []
-    if not os.path.exists(app_global_para['cache_file']):
-        return 'No browsing records'
-    lines = []
-    for line in jsonlines.open(app_global_para['cache_file']):
-        if (app_global_para['time'][0] <= line['time'] <=
-                app_global_para['time'][1]) and line['checked']:
-            if flag == 'load' and line['topic']:
-                rec_list.append(line['topic'])
-            else:
-                agent = RetrievalQA(llm=llm, stream=False)
-                page_number = len(line['raw'])
-                index = random.randint(0, page_number - 1)
-                if prompt_lan == 'CN':
-                    topicprompt = '请提出一个有新意的吸引人的话题'
-                elif prompt_lan == 'EN':
-                    topicprompt = 'Please propose a new and attractive topic'
-                else:
-                    raise NotImplementedError
-                rec = agent.run(
-                    user_request=topicprompt,
-                    ref_doc=line['raw'][index]['page_content'],
-                    prompt_lan=prompt_lan,
-                )
-                assert isinstance(rec, str)
-                rec_list.append(rec)
-                line['topic'] = rec
-
-        lines.append(line)
-    if lines:
-        # update cache file
-        with jsonlines.open(app_global_para['cache_file'], mode='w') as writer:
-            for new_line in lines:
-                writer.write(new_line)
-
-    res = '<ol>{rec}</ol>'
-    rec = ''
-    for x in rec_list:
-        rec += '<li>{rec_topic}</li>'.format(rec_topic=x)
-    res = res.format(rec=rec)
-    return res
-
-
 def update_app_global_para(date1, date2):
     app_global_para['time'][0] = date1
     app_global_para['time'][1] = date2
@@ -196,11 +151,6 @@ def update_browser_list():
             checkbox=ck, url=x[0], title=x[1])
     res = res.format(bl=bl)
     return res
-
-
-def update_all(date1, date2):
-    update_app_global_para(date1, date2)
-    return update_browser_list(), update_rec_list('update')
 
 
 def layout_to_right(text):
@@ -241,10 +191,10 @@ def bot(history, upload_file, chosen_plug):
                 workspace_dir = server_config.code_interpreter_ws
                 file_relpath = os.path.relpath(path=upload_file,
                                                start=workspace_dir)
-                if prompt_lan == 'EN':
-                    prompt_upload_file = f'[Upload file {file_relpath}]'
-                elif prompt_lan == 'CN':
+                if has_chinese_chars(history[-1][0]):
                     prompt_upload_file = f'上传了[文件]({file_relpath})到当前目录，'
+                else:
+                    prompt_upload_file = f'[Upload file {file_relpath}]'
                 app_global_para['is_first_upload'] = False
             history[-1][0] = prompt_upload_file + history[-1][0]
             if llm.support_function_calling():
@@ -383,7 +333,11 @@ def generate(context):
     res = ''
     if server_config.code_flag in sp_query:  # router to code interpreter
         sp_query = sp_query.split(server_config.code_flag)[-1]
-        sp_query += ', 必须使用code_interpreter工具'
+        if has_chinese_chars(sp_query):
+            sp_query += ', 必须使用code_interpreter工具'
+        else:
+            sp_query += ' (Please use code_interpreter.)'
+
         functions = [
             x for x in list_of_all_functions
             if x['name_for_model'] == 'code_interpreter'
@@ -458,9 +412,7 @@ def generate(context):
             agent = ContinueWriting(llm=llm, stream=True)
             user_request = context
 
-        response = agent.run(user_request=user_request,
-                             ref_doc=_ref,
-                             prompt_lan=prompt_lan)
+        response = agent.run(user_request=user_request, ref_doc=_ref)
         for chunk in response:
             res += chunk
             yield res
@@ -570,9 +522,6 @@ with gr.Blocks(css=css, theme='soft') as demo:
                         ],
                         show_copy_button=True,
                     )
-        # br_input_bt.click(add_url_manu, br_input, None).then(update_browser_list, None, browser_list).then(lambda: None, None, None, _js=f'() => {{{js}}}')
-        # .then(update_rec_list, gr.Textbox('update', visible=False), rec_list)
-        # clk_ctn_bt = ctn_bt.click(qwen_ctn, edit_area, edit_area)
         clk_ctn_bt = ctn_bt.click(generate, edit_area, cmd_area)
         clk_ctn_bt.then(format_generate, [edit_area, cmd_area], edit_area)
 
@@ -693,10 +642,6 @@ with gr.Blocks(css=css, theme='soft') as demo:
             plug_bt.change(choose_plugin, plug_bt,
                            [file_btn, hidden_file_path])
 
-    # img_cloud = gr.Image(height='50px')
-    # update_bt.click(update_rec_list, gr.Textbox('update', visible=False), rec_list, queue=False)
-
-    # date.change(update_all, date,  [img_cloud, browser_list, rec_list], queue=False)
     date1.change(update_app_global_para, [date1, date2],
                  None).then(update_browser_list, None,
                             browser_list).then(lambda: None,
@@ -714,7 +659,6 @@ with gr.Blocks(css=css, theme='soft') as demo:
                                                    chat_clear, None,
                                                    [chatbot, hidden_file_path])
 
-    # demo.load(update_all, date,  [img_cloud, browser_list, rec_list])
     demo.load(update_app_global_para, [date1, date2],
               None).then(update_browser_list, None,
                          browser_list).then(lambda: None,
@@ -723,6 +667,5 @@ with gr.Blocks(css=css, theme='soft') as demo:
                                             _js=f'() => {{{js}}}').then(
                                                 chat_clear, None,
                                                 [chatbot, hidden_file_path])
-    # .then(update_rec_list, gr.Textbox('load', visible=False), rec_list, queue=False)
 
 demo.queue().launch(server_name=server_host, server_port=workstation_port)

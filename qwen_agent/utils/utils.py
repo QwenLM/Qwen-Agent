@@ -12,6 +12,11 @@ def print_traceback():
     print(''.join(traceback.format_exception(*sys.exc_info())))
 
 
+def has_chinese_chars(data) -> bool:
+    text = f'{data}'
+    return len(re.findall(r'[\u4e00-\u9fff]+', text)) > 0
+
+
 def save_text_to_file(path, text):
     try:
         with open(path, 'w', encoding='utf-8') as fp:

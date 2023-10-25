@@ -67,10 +67,11 @@ def _parse_last_action(text):
 # TODO: When to put an parameter (such as history) in __init__()? When to put it in run()?
 class ReAct(Action):
 
-    def run(self,
-            user_request,
-            functions: List[Dict] = None,
-            history: Optional[List[Dict]] = None) -> Iterator[str]:
+    def _run(self,
+             user_request,
+             functions: List[Dict] = None,
+             history: Optional[List[Dict]] = None,
+             lang: str = 'en') -> Iterator[str]:
         functions = functions or []
         prompt = _build_react_instruction(user_request, functions)
 
