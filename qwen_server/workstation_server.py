@@ -194,7 +194,7 @@ def bot(history, upload_file, chosen_plug):
                 if has_chinese_chars(history[-1][0]):
                     prompt_upload_file = f'上传了[文件]({file_relpath})到当前目录，'
                 else:
-                    prompt_upload_file = f'[Upload file {file_relpath}]'
+                    prompt_upload_file = f'Uploaded the [file]({file_relpath}) to the current directory. '
                 app_global_para['is_first_upload'] = False
             history[-1][0] = prompt_upload_file + history[-1][0]
             if llm.support_function_calling():
