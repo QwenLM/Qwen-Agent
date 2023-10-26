@@ -62,7 +62,7 @@ Supported platforms: MacOS, Linux, Windows.
 
 ***You can skip this step if you are using the model service provided by [DashScope](https://help.aliyun.com/zh/dashscope/developer-reference/quick-start) from Alibaba Cloud.***
 
-However, if you prefer to deploy your own model service instead of using DashScope, please follow the instruction provided by the [Qwen](https://github.com/QwenLM/Qwen) project to deploy a model service compatible with the OpenAI API:
+However, if you prefer to deploy your own model service instead of using DashScope, please follow the instruction below, which is provided by the [Qwen](https://github.com/QwenLM/Qwen) project, to deploy a model service compatible with the OpenAI API:
 
 ```bash
 # Install dependencies.
