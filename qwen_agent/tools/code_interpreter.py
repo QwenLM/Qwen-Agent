@@ -22,6 +22,7 @@ from jupyter_client import BlockingKernelClient
 
 sys.path.insert(0, str(Path(__file__).absolute().parent.parent.parent))  # NOQA
 
+from qwen_agent.log import logger  # NOQA
 from qwen_agent.utils.utils import extract_code, print_traceback  # NOQA
 
 WORK_DIR = os.getenv('M6_CODE_INTERPRETER_WORK_DIR', '/tmp/m6_ci_workspace')
@@ -51,7 +52,7 @@ def _start_kernel(pid) -> BlockingKernelClient:
     launch_kernel_script = os.path.join(WORK_DIR, f'launch_kernel_{pid}.py')
     for f in [connection_file, launch_kernel_script]:
         if os.path.exists(f):
-            print(f'WARNING: {f} already exists')
+            logger.info(f'WARNING: {f} already exists')
             os.remove(f)
 
     os.makedirs(WORK_DIR, exist_ok=True)
@@ -68,7 +69,7 @@ def _start_kernel(pid) -> BlockingKernelClient:
         '--quiet',
     ],
                                       cwd=WORK_DIR)
-    print(f"INFO: kernel process's PID = {kernel_process.pid}")
+    logger.info(f"INFO: kernel process's PID = {kernel_process.pid}")
 
     # Wait for kernel connection file to be written
     while True:
@@ -213,7 +214,7 @@ def code_interpreter(action_input: str, timeout: Optional[int] = 30) -> str:
             start_code = fin.read()
             start_code = start_code.replace('{{M6_FONT_PATH}}',
                                             repr(ALIB_FONT_FILE)[1:-1])
-        print(_execute_code(kc, start_code))
+        logger.info(_execute_code(kc, start_code))
         _KERNEL_CLIENTS[pid] = kc
 
     if timeout:
@@ -235,8 +236,8 @@ def code_interpreter(action_input: str, timeout: Optional[int] = 30) -> str:
 
 
 def _get_multiline_input(hint: str) -> str:
-    print(hint)
-    print('// Press ENTER to make a new line. Press CTRL-D to end input.')
+    logger.info(
+        '// Press ENTER to make a new line. Press CTRL-D to end input.')
     lines = []
     while True:
         try:
@@ -244,7 +245,7 @@ def _get_multiline_input(hint: str) -> str:
         except EOFError:  # CTRL-D
             break
         lines.append(line)
-    print('// Input received.')
+    logger.info('// Input received.')
     if lines:
         return '\n'.join(lines)
     else:
@@ -253,4 +254,5 @@ def _get_multiline_input(hint: str) -> str:
 
 if __name__ == '__main__':
     while True:
-        print(code_interpreter(_get_multiline_input('Enter python code:')))
+        logger.info(
+            code_interpreter(_get_multiline_input('Enter python code:')))

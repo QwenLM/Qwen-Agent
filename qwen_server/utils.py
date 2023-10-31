@@ -6,9 +6,9 @@ from urllib.parse import unquote, urlparse
 import add_qwen_libs  # NOQA
 import jsonlines
 
+from qwen_agent.log import logger
 from qwen_agent.utils.doc_parser import parse_html_bs, parse_pdf_pypdf
 from qwen_agent.utils.utils import print_traceback, save_text_to_file
-from qwen_server import server_config
 from qwen_server.schema import Record
 
 
@@ -44,8 +44,8 @@ def sanitize_chrome_file_path(file_path: str) -> str:
     return file_path
 
 
-def extract_and_cache_document(data, cache_file):
-    print('Begin cache...')
+def extract_and_cache_document(data, cache_file, cache_root):
+    logger.info('Starting cache pages...')
     if data['url'][-4:] in ['.pdf', '.PDF']:
         date1 = datetime.datetime.now()
 
@@ -66,7 +66,6 @@ def extract_and_cache_document(data, cache_file):
             pdf_path = data['url']
         else:
             parsed_url = urlparse(data['url'])
-            print('parsed_url: ', parsed_url)
             pdf_path = unquote(parsed_url.path)
             pdf_path = sanitize_chrome_file_path(pdf_path)
 
@@ -86,7 +85,7 @@ def extract_and_cache_document(data, cache_file):
             return 'failed'
 
         date2 = datetime.datetime.now()
-        print('parse pdf time: ', date2 - date1)
+        logger.info('Parsing pdf time: ' + str(date2 - date1))
         data['content'] = pdf_content
         data['type'] = 'pdf'
         extract = pdf_path.split('/')[-1].split('\\')[-1].split('.')[0]
@@ -103,7 +102,7 @@ def extract_and_cache_document(data, cache_file):
             writer.write(new_record)
 
         try:
-            tmp_html_file = os.path.join(server_config.cache_root, 'tmp.html')
+            tmp_html_file = os.path.join(cache_root, 'tmp.html')
             save_text_to_file(tmp_html_file, data['content'])
             data['content'] = parse_html_bs(tmp_html_file)
         except Exception:

@@ -33,9 +33,8 @@ class Memory:
         for _ref in _ref_list:
             tmp = {'url': _ref['url'], 'text': []}
             now_token = 0
-            print(len(_ref['text']))
+
             for x in _ref['text']:
-                # lenx = len(x)
                 lenx = count_tokens(x)
                 if (now_token + lenx) <= single_max_token:
                     tmp['text'].append(x)

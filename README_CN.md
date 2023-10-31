@@ -1,6 +1,9 @@
-# Qwen-Agent
-
 中文 ｜ [English](./README.md)
+
+<p align="center">
+    <img src="https://qianwen-res.oss-cn-beijing.aliyuncs.com/assets/qwen_agent/logo-qwen-agent.png" width="400"/>
+<p>
+<br>
 
 Qwen-Agent是一个代码框架，用于发掘开源通义千问模型（[Qwen](https://github.com/QwenLM/Qwen)）的工具使用、规划、记忆能力。
 在Qwen-Agent的基础上，我们开发了一个名为BrowserQwen的**Chrome浏览器扩展**，它具有以下主要功能：

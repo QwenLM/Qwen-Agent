@@ -26,7 +26,6 @@ class QwenChatAsOAI(BaseChatModel):
         # TODO: error handling
         for chunk in response:
             if hasattr(chunk.choices[0].delta, 'content'):
-                print(chunk.choices[0].delta.content, end='', flush=True)
                 yield chunk.choices[0].delta.content
 
     def _chat_no_stream(

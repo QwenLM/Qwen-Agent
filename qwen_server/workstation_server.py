@@ -2,7 +2,6 @@ import datetime
 import json
 import os
 import shutil
-import sys
 from pathlib import Path
 
 import add_qwen_libs  # NOQA
@@ -18,36 +17,34 @@ from qwen_agent.tools import call_plugin, list_of_all_functions
 from qwen_agent.utils.utils import (count_tokens, format_answer,
                                     get_last_one_line_context,
                                     has_chinese_chars, save_text_to_file)
-from qwen_server import server_config
+from qwen_server.schema import GlobalConfig
 from qwen_server.utils import extract_and_cache_document
 
-prompt_lan = sys.argv[1]
-llm_name = sys.argv[2]
-max_ref_token = int(sys.argv[3])
-workstation_port = int(sys.argv[4])
-model_server = sys.argv[5]
-api_key = sys.argv[6]
-server_host = sys.argv[7]
+# Read config
+with open(Path(__file__).resolve().parent / 'server_config.json', 'r') as f:
+    server_config = json.load(f)
+    server_config = GlobalConfig(**server_config)
 
-llm = get_chat_model(model=llm_name,
-                     api_key=api_key,
-                     model_server=model_server)
+llm = get_chat_model(model=server_config.server.llm,
+                     api_key=server_config.server.api_key,
+                     model_server=server_config.server.model_server)
 
 mem = Memory()
 
 app_global_para = {
     'time': [str(datetime.date.today()),
              str(datetime.date.today())],
-    'cache_file':
-    os.path.join(server_config.cache_root, server_config.browser_cache_file),
+    'cache_file': os.path.join(server_config.path.cache_root, 'browse.jsonl'),
     'messages': [],
     'last_turn_msg_id': [],
-    'is_first_upload':
-    True,
+    'is_first_upload': True,
 }
 
 DOC_OPTION = 'Document QA'
 CI_OPTION = 'Code Interpreter'
+CODE_FLAG = '/code'
+PLUGIN_FLAG = '/plug'
+TITLE_FLAG = '/title'
 
 with open(Path(__file__).resolve().parent / 'css/main.css', 'r') as f:
     css = f.read()
@@ -77,15 +74,13 @@ def chat_clear():
 
 
 def chat_clear_last():
-    # print(app_global_para['last_turn_msg_id'][::-1])
-    # print(app_global_para['messages'])
     for index in app_global_para['last_turn_msg_id'][::-1]:
         del app_global_para['messages'][index]
     app_global_para['last_turn_msg_id'] = []
 
 
 def add_file(file, chosen_plug):
-    output_filepath = server_config.code_interpreter_ws
+    output_filepath = server_config.path.code_interpreter_ws
     fn = os.path.basename(file.name)
     if chosen_plug == DOC_OPTION and fn[-4:] != '.pdf' and fn[-4:] != '.PDF':
         new_path = (
@@ -109,8 +104,8 @@ def add_file(file, chosen_plug):
                 'type': 'pdf',
             }
             extract_and_cache_document(
-                data,
-                app_global_para['cache_file'])  # waiting for analyse file
+                data, app_global_para['cache_file'],
+                server_config.path.cache_root)  # waiting for analyse file
 
     return new_path
 
@@ -129,6 +124,15 @@ def update_app_global_para(date1, date2):
     app_global_para['time'][1] = date2
 
 
+def refresh_date():
+    option = [
+        str(datetime.date.today() - datetime.timedelta(days=i))
+        for i in range(server_config.server.max_days)
+    ]
+    return (gr.update(choices=option, value=str(datetime.date.today())),
+            gr.update(choices=option, value=str(datetime.date.today())))
+
+
 def update_browser_list():
     if not os.path.exists(app_global_para['cache_file']):
         return 'No browsing records'
@@ -137,7 +141,7 @@ def update_browser_list():
 
     br_list = [[line['url'], line['extract'], line['checked']]
                for line in lines]
-    print('browser_list: ', len(br_list))
+
     res = '<ol>{bl}</ol>'
     bl = ''
     for i, x in enumerate(br_list):
@@ -161,7 +165,7 @@ def download_text(text):
     now = datetime.datetime.now()
     current_time = now.strftime('%Y-%m-%d_%H-%M-%S')
     filename = f'file_{current_time}.md'
-    save_path = os.path.join(server_config.download_root, filename)
+    save_path = os.path.join(server_config.path.download_root, filename)
     rsp = save_text_to_file(save_path, text)
     if rsp == 'SUCCESS':
         gr.Info(f'Saved to {save_path}')
@@ -188,7 +192,7 @@ def bot(history, upload_file, chosen_plug):
         if chosen_plug == CI_OPTION:  # use code interpreter
             prompt_upload_file = ''
             if upload_file and app_global_para['is_first_upload']:
-                workspace_dir = server_config.code_interpreter_ws
+                workspace_dir = server_config.path.code_interpreter_ws
                 file_relpath = os.path.relpath(path=upload_file,
                                                start=workspace_dir)
                 if has_chinese_chars(history[-1][0]):
@@ -203,7 +207,6 @@ def bot(history, upload_file, chosen_plug):
                     len(app_global_para['messages']))
                 app_global_para['messages'].append(message)
                 while True:
-                    print(app_global_para['messages'])
                     functions = [
                         x for x in list_of_all_functions
                         if x['name_for_model'] == 'code_interpreter'
@@ -262,7 +265,6 @@ def bot(history, upload_file, chosen_plug):
                         app_global_para['messages'].append(bot_msg)
                         break
             else:
-                print(app_global_para['messages'])
                 functions = [
                     x for x in list_of_all_functions
                     if x['name_for_model'] == 'code_interpreter'
@@ -299,7 +301,7 @@ def bot(history, upload_file, chosen_plug):
                         lines,
                         llm=llm,
                         stream=True,
-                        max_token=max_ref_token,
+                        max_token=server_config.server.max_ref_token,
                     )
                     _ref = '\n'.join(
                         json.dumps(x, ensure_ascii=False) for x in _ref_list)
@@ -331,8 +333,8 @@ def bot(history, upload_file, chosen_plug):
 def generate(context):
     sp_query = get_last_one_line_context(context)
     res = ''
-    if server_config.code_flag in sp_query:  # router to code interpreter
-        sp_query = sp_query.split(server_config.code_flag)[-1]
+    if CODE_FLAG in sp_query:  # router to code interpreter
+        sp_query = sp_query.split(CODE_FLAG)[-1]
         if has_chinese_chars(sp_query):
             sp_query += ', 必须使用code_interpreter工具'
         else:
@@ -354,8 +356,8 @@ def generate(context):
                 res += chunk
                 yield res
             yield res
-    elif server_config.plugin_flag in sp_query:  # router to plugin
-        sp_query = sp_query.split(server_config.plugin_flag)[-1]
+    elif PLUGIN_FLAG in sp_query:  # router to plugin
+        sp_query = sp_query.split(PLUGIN_FLAG)[-1]
         functions = list_of_all_functions
         if llm.support_function_calling():
             response = FunctionCalling(llm=llm).run(sp_query,
@@ -383,15 +385,14 @@ def generate(context):
             yield res
 
             sp_query_no_title = sp_query
-            if server_config.title_flag in sp_query:  # /title
-                sp_query_no_title = sp_query.split(
-                    server_config.title_flag)[-1]
+            if TITLE_FLAG in sp_query:  # /title
+                sp_query_no_title = sp_query.split(TITLE_FLAG)[-1]
 
             _ref_list = mem.get(sp_query_no_title,
                                 lines,
                                 llm=llm,
                                 stream=True,
-                                max_token=max_ref_token)
+                                max_token=server_config.server.max_ref_token)
             _ref = '\n'.join(
                 json.dumps(x, ensure_ascii=False) for x in _ref_list)
             res += _ref
@@ -402,9 +403,9 @@ def generate(context):
             gr.Warning(
                 'No reference materials selected, Qwen will answer directly')
 
-        if server_config.title_flag in sp_query:  # /title
+        if TITLE_FLAG in sp_query:  # /title
             agent = WriteFromScratch(llm=llm, stream=True)
-            user_request = sp_query.split(server_config.title_flag)[-1]
+            user_request = sp_query.split(TITLE_FLAG)[-1]
         else:
             res += '\n========================= \n'
             res += '> Writing Text: \n'
@@ -416,7 +417,6 @@ def generate(context):
         for chunk in response:
             res += chunk
             yield res
-        print('OK!')
 
 
 def format_generate(edit, context):
@@ -453,7 +453,7 @@ with gr.Blocks(css=css, theme='soft') as demo:
                         [
                             str(datetime.date.today() -
                                 datetime.timedelta(days=i))
-                            for i in range(server_config.max_days)
+                            for i in range(server_config.server.max_days)
                         ],
                         value=str(datetime.date.today()),
                         label='Start Date',
@@ -462,7 +462,7 @@ with gr.Blocks(css=css, theme='soft') as demo:
                         [
                             str(datetime.date.today() -
                                 datetime.timedelta(days=i))
-                            for i in range(server_config.max_days)
+                            for i in range(server_config.server.max_days)
                         ],
                         value=str(datetime.date.today()),
                         label='End Date',
@@ -637,8 +637,6 @@ with gr.Blocks(css=css, theme='soft') as demo:
                                cancels=[txt_msg, re_txt_msg],
                                queue=False)
 
-            # show_path_bt.click(lambda x:[None, gr.update(visible=False)], hidden_file_path, [show_path_md,show_path_bt])
-
             plug_bt.change(choose_plugin, plug_bt,
                            [file_btn, hidden_file_path])
 
@@ -660,12 +658,14 @@ with gr.Blocks(css=css, theme='soft') as demo:
                                                    [chatbot, hidden_file_path])
 
     demo.load(update_app_global_para, [date1, date2],
-              None).then(update_browser_list, None,
-                         browser_list).then(lambda: None,
-                                            None,
-                                            None,
-                                            _js=f'() => {{{js}}}').then(
-                                                chat_clear, None,
-                                                [chatbot, hidden_file_path])
+              None).then(refresh_date, None, [date1, date2]).then(
+                  update_browser_list, None,
+                  browser_list).then(lambda: None,
+                                     None,
+                                     None,
+                                     _js=f'() => {{{js}}}').then(
+                                         chat_clear, None,
+                                         [chatbot, hidden_file_path])
 
-demo.queue().launch(server_name=server_host, server_port=workstation_port)
+demo.queue().launch(server_name=server_config.server.server_host,
+                    server_port=server_config.server.workstation_port)

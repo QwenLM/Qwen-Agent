@@ -14,10 +14,10 @@ class SimilaritySearch:
         Output: the relative text
         """
         wordlist = get_split_word(query)
+        if not wordlist:
+            return RefMaterial(url=line['url'], text=[]).to_dict()
 
         content = line['raw']
-        if isinstance(content, str):
-            content = content.split('\n')
 
         res = []
         sims = []
@@ -25,35 +25,37 @@ class SimilaritySearch:
             sim = self.filter_section(page, wordlist)
             sims.append([i, sim])
         sims.sort(key=lambda item: item[1], reverse=True)
-        # print('sims: ', sims)
+
+        assert len(sims) > 0
+        found_page_first = {0: False, 1: False}
+
         max_sims = sims[0][1]
         if max_sims != 0:
             for i, x in enumerate(sims):
-                if x[1] < max_sims and i > 3:
+                if i > 3:
                     break
                 page = content[x[0]]
-                text = ''
-                if isinstance(page, str):
-                    text = content[x[0]]
-                elif isinstance(page, dict):
-                    text = page['page_content']
+                text = page['page_content']
                 res.append(text)
-            # for x in res:
-            #     print("=========")
-            #     print(x)
+                if x[0] in found_page_first.keys():
+                    found_page_first[x[0]] = True
+
+            # manually add pages
+            for k in found_page_first.keys():
+                if k >= len(content):
+                    break
+                if not found_page_first[k]:
+                    page = content[k]
+                    text = page['page_content']
+                    res.append(text)
+
         return RefMaterial(url=line['url'], text=res).to_dict()
 
     def filter_section(self, page, wordlist):
-        if isinstance(page, str):
-            text = page
-        elif isinstance(page, dict):
-            text = page['page_content']
-        else:
-            print(type(page))
-            raise TypeError
+        text = page['page_content']
 
-        pagelist = get_split_word(text)
-        sim = self.jaccard_similarity(wordlist, pagelist)
+        page_list = get_split_word(text)
+        sim = self.jaccard_similarity(wordlist, page_list)
 
         return sim
 

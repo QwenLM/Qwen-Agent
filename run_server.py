@@ -1,15 +1,15 @@
 import argparse
+import json
 import os
 import signal
-import socket
 import stat
 import subprocess
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).absolute().parent))  # NOQA
-
-from qwen_server import server_config  # NOQA
+from qwen_agent.log import logger
+from qwen_agent.utils.utils import get_local_ip
+from qwen_server.schema import GlobalConfig
 
 
 def parse_args():
@@ -20,7 +20,7 @@ def parse_args():
         '-l',
         '--llm',
         type=str,
-        default='qwen-plus',
+        default='qwen-turbo',
         help='DashScope: qwen-plus, qwen-turbo, qwen-14b-chat, qwen-7b-chat.',
     )
     parser.add_argument('-s',
@@ -28,14 +28,6 @@ def parse_args():
                         type=str,
                         default='127.0.0.1',
                         choices=['127.0.0.1', '0.0.0.0'])
-    parser.add_argument(
-        '-lan',
-        '--prompt_language',
-        type=str,
-        default='CN',
-        choices=['EN', 'CN'],
-        help='the language of built-in prompt',
-    )  # TODO: auto detect based on query and ref
     parser.add_argument(
         '-t',
         '--max_ref_token',
@@ -55,10 +47,9 @@ def parse_args():
     return args
 
 
-def _fix_secure_write_for_code_interpreter():
+def _fix_secure_write_for_code_interpreter(code_interpreter_ws):
     if 'linux' in sys.platform.lower():
-        fname = os.path.join(server_config.code_interpreter_ws,
-                             'test_file_permission.txt')
+        fname = os.path.join(code_interpreter_ws, 'test_file_permission.txt')
         if os.path.exists(fname):
             os.remove(fname)
         with os.fdopen(
@@ -70,61 +61,69 @@ def _fix_secure_write_for_code_interpreter():
             os.environ['JUPYTER_ALLOW_INSECURE_WRITES'] = '1'
 
 
+def update_config(server_config, args, server_config_path):
+    server_config.server.model_server = args.model_server
+    server_config.server.api_key = args.api_key
+    server_config.server.llm = args.llm
+    server_config.server.server_host = args.server_host
+    server_config.server.max_ref_token = args.max_ref_token
+    server_config.server.workstation_port = args.workstation_port
+
+    with open(server_config_path, 'w') as f:
+        try:
+            cfg = server_config.model_dump_json()
+        except AttributeError:  # for pydantic v1
+            cfg = server_config.json()
+        json.dump(json.loads(cfg), f, ensure_ascii=False)
+    return server_config
+
+
 def main():
     args = parse_args()
+    server_config_path = Path(
+        __file__).resolve().parent / 'qwen_server/server_config.json'
+    with open(server_config_path, 'r') as f:
+        server_config = json.load(f)
+        server_config = GlobalConfig(**server_config)
+    server_config = update_config(server_config, args, server_config_path)
 
-    os.makedirs(server_config.work_space_root, exist_ok=True)
-    os.makedirs(server_config.cache_root, exist_ok=True)
-    os.makedirs(server_config.download_root, exist_ok=True)
+    logger.info(server_config)
 
-    os.makedirs(server_config.code_interpreter_ws, exist_ok=True)
-    os.environ[
-        'M6_CODE_INTERPRETER_WORK_DIR'] = server_config.code_interpreter_ws
+    os.makedirs(server_config.path.work_space_root, exist_ok=True)
+    os.makedirs(server_config.path.cache_root, exist_ok=True)
+    os.makedirs(server_config.path.download_root, exist_ok=True)
+
+    os.makedirs(server_config.path.code_interpreter_ws, exist_ok=True)
+    code_interpreter_work_dir = str(
+        Path(__file__).resolve().parent /
+        server_config.path.code_interpreter_ws)
+    os.environ['M6_CODE_INTERPRETER_WORK_DIR'] = code_interpreter_work_dir
 
     if args.server_host == '0.0.0.0':
-        static_url = socket.gethostbyname(socket.gethostname())
+        static_url = get_local_ip()
     else:
         static_url = args.server_host
-    static_url = f'http://{static_url}:{server_config.fast_api_port}/static'
+    static_url = f'http://{static_url}:{server_config.server.fast_api_port}/static'
     os.environ['M6_CODE_INTERPRETER_STATIC_URL'] = static_url
 
-    _fix_secure_write_for_code_interpreter()
+    _fix_secure_write_for_code_interpreter(
+        server_config.path.code_interpreter_ws)
 
     servers = {
         'database':
         subprocess.Popen([
             sys.executable,
-            os.path.join(os.getcwd(), 'qwen_server/database_server.py'),
-            args.prompt_language,
-            args.llm,
-            str(args.max_ref_token),
-            str(args.workstation_port),
-            args.model_server,
-            args.api_key,
-            args.server_host,
+            os.path.join(os.getcwd(), 'qwen_server/database_server.py')
         ]),
         'workstation':
         subprocess.Popen([
             sys.executable,
-            os.path.join(os.getcwd(), 'qwen_server/workstation_server.py'),
-            args.prompt_language,
-            args.llm,
-            str(args.max_ref_token),
-            str(args.workstation_port),
-            args.model_server,
-            args.api_key,
-            args.server_host,
+            os.path.join(os.getcwd(), 'qwen_server/workstation_server.py')
         ]),
         'assistant':
         subprocess.Popen([
             sys.executable,
-            os.path.join(os.getcwd(), 'qwen_server/assistant_server.py'),
-            args.prompt_language,
-            args.llm,
-            str(args.max_ref_token),
-            args.model_server,
-            args.api_key,
-            args.server_host,
+            os.path.join(os.getcwd(), 'qwen_server/assistant_server.py')
         ]),
     }
 

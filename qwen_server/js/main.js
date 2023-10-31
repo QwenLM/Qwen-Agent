@@ -28,7 +28,9 @@ window.addEventListener('DOMContentLoaded', scrollTextboxToBottom);
 var checkboxes = document.querySelectorAll('input[type="checkbox"]');
 checkboxes.forEach(function(checkbox) {
   checkbox.addEventListener("change", function() {
-    fetch("http://127.0.0.1:7866/endpoint", {
+    console.log(location.hostname)
+    var _server_url = "http://"+location.hostname+":7866/endpoint";
+    fetch(_server_url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

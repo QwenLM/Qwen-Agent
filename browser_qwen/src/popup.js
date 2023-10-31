@@ -59,7 +59,7 @@ document.getElementById('set_addr').addEventListener('click', function() {
     // save config
     chrome.storage.local.set({database_host: addr}, function() {
       console.log('database_host is set to ' + addr);
-      chrome.runtime.sendMessage({ data: addr , close: true , flag: 'set_addr'});
+//      chrome.runtime.sendMessage({ data: addr , close: true , flag: 'set_addr'});
       document.getElementById('addr').value = '';
     });
 })

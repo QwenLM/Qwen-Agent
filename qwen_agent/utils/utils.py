@@ -1,4 +1,5 @@
 import re
+import socket
 import sys
 import traceback
 
@@ -7,9 +8,24 @@ import json5
 import tiktoken
 from jieba import analyse
 
+from qwen_agent.log import logger
+
+
+def get_local_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # doesn't even have to be reachable
+        s.connect(('10.255.255.255', 1))
+        IP = s.getsockname()[0]
+    except Exception:
+        IP = '127.0.0.1'
+    finally:
+        s.close()
+    return IP
+
 
 def print_traceback():
-    print(''.join(traceback.format_exception(*sys.exc_info())))
+    logger.error(''.join(traceback.format_exception(*sys.exc_info())))
 
 
 def has_chinese_chars(data) -> bool:
@@ -33,17 +49,23 @@ def count_tokens(text):
     return len(tokens)
 
 
+ignore_words = [
+    '', ' ', '\t', '\n', '\\', 'is', 'are', 'am', 'what', 'how', '的', '吗', '是',
+    '了', '啊', '呢', '怎么', '如何', '什么', '？', '?', '！', '!', '“', '”', '‘', '’',
+    "'", "'", '"', '"', ':', '：', '讲了', '描述', '讲', '说说', '讲讲', '介绍', '总结下',
+    '总结一下', '文档', '文章', '文稿', '稿子', '论文', 'PDF', 'pdf', '这个', '这篇', '这', '我',
+    '帮我', '那个', '下', '翻译'
+]
+
+
 def get_split_word(text):
     text = text.lower()
     _wordlist = jieba.lcut(text.strip())
     wordlist = []
     for x in _wordlist:
-        if x not in [
-                ' ', '  ', '\t', '\n', '\\', 'is', 'are', 'what', 'how', '的',
-                '吗', '是', '了', '怎么', '如何', '什么', '？', '?', '!'
-        ]:
-            wordlist.append(x)
-    # print('wordlist: ', wordlist)
+        if x in ignore_words:
+            continue
+        wordlist.append(x)
     return wordlist
 
 
@@ -52,11 +74,9 @@ def get_key_word(text):
     _wordlist = analyse.extract_tags(text)
     wordlist = []
     for x in _wordlist:
-        if x not in [
-                ' ', '  ', '\t', '\n', '\\', 'is', 'are', 'what', 'how', '的',
-                '吗', '是', '了', '怎么', '如何', '什么', '？', '?', '!'
-        ]:
-            wordlist.append(x)
+        if x in ignore_words:
+            continue
+        wordlist.append(x)
     print('wordlist: ', wordlist)
     return wordlist
 
@@ -119,10 +139,6 @@ def parse_latest_plugin_call(text):
 # TODO: Say no to these ugly if statements.
 def format_answer(text):
     action, action_input, output = parse_latest_plugin_call(text)
-    print('==format_answer==')
-    print('action: ', action)
-    print('action input: ', action_input)
-    print('output: ', output)
     if 'code_interpreter' in text:
         rsp = ''
         code = extract_code(action_input)
@@ -137,7 +153,7 @@ def format_answer(text):
         obs = text.split('Observation:')[-1].split('\nThought:')[0].strip()
         img_urls = []
         if obs:
-            print('repr(Observation)', repr(obs))
+            logger.info(repr(obs))
             try:
                 obs = json5.loads(obs)
                 img_urls.append(obs['image_url'])
@@ -146,7 +162,7 @@ def format_answer(text):
                 img_urls = []
         if not img_urls:
             img_urls = extract_urls(text.split('Final Answer:')[-1].strip())
-        print(img_urls)
+        logger.info(img_urls)
         rsp = ''
         for x in img_urls:
             rsp += '\n![picture](' + x.strip() + ')'

@@ -1,7 +1,7 @@
-import pprint
 from abc import ABC, abstractmethod
 from typing import Dict, Iterator, List, Optional, Union
 
+from qwen_agent.log import logger
 from qwen_agent.utils.utils import print_traceback
 
 
@@ -33,7 +33,7 @@ class BaseChatModel(ABC):
             messages = [{'role': 'user', 'content': prompt}]
         else:
             assert prompt is None, 'Do not pass prompt and messages at the same time.'
-        pprint.pprint(messages, indent=2)
+        logger.debug(messages)
         if stream:
             return self._chat_stream(messages, stop=stop)
         else:
@@ -70,7 +70,7 @@ class BaseChatModel(ABC):
                 response = self.chat_with_functions(messages=messages,
                                                     functions=functions)
                 if response.get('function_call', None):
-                    print('Support of function calling is detected.')
+                    logger.info('Support of function calling is detected.')
                     self._support_fn_call = True
             except FnCallNotImplError:
                 pass
