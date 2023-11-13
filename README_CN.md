@@ -288,3 +288,5 @@ python run_server.py --model_server http://{MODEL_SERVER_IP}:7905/v1 --workstati
 # 免责声明
 
 本项目并非正式产品，而是一个概念验证项目，用于演示Qwen系列模型的能力。
+
+> 重要提示：代码解释器未进行沙盒隔离，会在部署环境中执行代码。请避免向Qwen发出危险指令，切勿将该代码解释器直接用于生产目的。

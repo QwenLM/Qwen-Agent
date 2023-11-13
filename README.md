@@ -288,3 +288,5 @@ Qwen-7B-Chat refers to the version updated after September 25, 2023.
 # Disclaimer
 
 This project is not intended to be an official product, rather it serves as a proof-of-concept project that highlights the capabilities of the Qwen series models.
+
+> Important: The code interpreter is not sandboxed, and it executes code in your own environment. Please do not ask Qwen to perform dangerous tasks, and do not directly use the code interpreter for production purposes.

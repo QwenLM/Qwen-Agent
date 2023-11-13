@@ -178,6 +178,10 @@ def count_token(text):
 
 
 def choose_plugin(chosen_plugin):
+    if chosen_plugin == CI_OPTION:
+        gr.Info(
+            'Code execution is NOT sandboxed. Do NOT ask Qwen to perform dangerous tasks.'
+        )
     if chosen_plugin == CI_OPTION or chosen_plugin == DOC_OPTION:
         return gr.update(interactive=True), None
     else:
