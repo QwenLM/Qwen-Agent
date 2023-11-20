@@ -58,6 +58,11 @@ def add_text(history, text):
     return history, gr.update(value='', interactive=False)
 
 
+def pure_add_text(history, text):
+    history = history + [(text, None)]
+    return history, gr.update(value='', interactive=False)
+
+
 def rm_text(history):
     if not history:
         gr.Warning('No input content!')
@@ -186,6 +191,22 @@ def choose_plugin(chosen_plugin):
         return gr.update(interactive=True), None
     else:
         return gr.update(interactive=False), None
+
+
+def pure_bot(history):
+    if not history:
+        yield history
+    else:
+        history[-1][1] = ''
+        messages = []
+        for chat in history[:-1]:
+            messages.append({'role': 'user', 'content': chat[0]})
+            messages.append({'role': 'assistant', 'content': chat[1]})
+        messages.append({'role': 'user', 'content': history[-1][0]})
+        response = llm.chat(messages=messages, stream=True)
+        for chunk in response:
+            history[-1][1] += chunk
+            yield history
 
 
 def bot(history, upload_file, chosen_plug):
@@ -643,6 +664,60 @@ with gr.Blocks(css=css, theme='soft') as demo:
 
             plug_bt.change(choose_plugin, plug_bt,
                            [file_btn, hidden_file_path])
+
+    with gr.Tab('Pure Chat', elem_id='pure-chat-tab'):
+        gr.Markdown('Note: The chat box on this tab will not use any browsing history!')
+        with gr.Column():
+            pure_chatbot = gr.Chatbot(
+                [],
+                elem_id='pure_chatbot',
+                height=680,
+                show_copy_button=True,
+                avatar_images=(
+                    None,
+                    (os.path.join(
+                        Path(__file__).resolve().parent, 'img/logo.png')),
+                ),
+            )
+            with gr.Row():
+                with gr.Column(scale=13):
+                    chat_txt = gr.Textbox(
+                        show_label=False,
+                        placeholder='Chat with Qwen...',
+                        container=False,
+                    )
+                with gr.Column(scale=1, min_width=0):
+                    chat_clr_bt = gr.Button('Clear')
+                with gr.Column(scale=1, min_width=0):
+                    chat_stop_bt = gr.Button('Stop')
+                with gr.Column(scale=1, min_width=0):
+                    chat_re_bt = gr.Button('Again')
+
+            txt_msg = chat_txt.submit(
+                pure_add_text, [pure_chatbot, chat_txt], [pure_chatbot, chat_txt],
+                queue=False).then(pure_bot, pure_chatbot,
+                                  pure_chatbot)
+            txt_msg.then(lambda: gr.update(interactive=True),
+                         None, [chat_txt],
+                         queue=False)
+
+            re_txt_msg = chat_re_bt.click(
+                rm_text, [pure_chatbot], [pure_chatbot, chat_txt],
+                queue=False).then(
+                    pure_bot, pure_chatbot, pure_chatbot)
+            re_txt_msg.then(lambda: gr.update(interactive=True),
+                            None, [chat_txt],
+                            queue=False)
+
+            chat_clr_bt.click(lambda: None,
+                              None, pure_chatbot,
+                              queue=False)
+
+            chat_stop_bt.click(chat_clear_last,
+                               None,
+                               None,
+                               cancels=[txt_msg, re_txt_msg],
+                               queue=False)
 
     date1.change(update_app_global_para, [date1, date2],
                  None).then(update_browser_list, None,
