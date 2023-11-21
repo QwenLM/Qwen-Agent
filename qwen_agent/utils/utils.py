@@ -2,11 +2,12 @@ import re
 import socket
 import sys
 import traceback
+from pathlib import Path
 
 import jieba
 import json5
-import tiktoken
 from jieba import analyse
+from qwen_agent.utils.tokenization_qwen import QWenTokenizer
 
 from qwen_agent.log import logger
 
@@ -43,9 +44,11 @@ def save_text_to_file(path, text):
         return ex
 
 
+tokenizer = QWenTokenizer(Path(__file__).resolve().parent / 'qwen.tiktoken')
+
+
 def count_tokens(text):
-    encoding = tiktoken.get_encoding('cl100k_base')
-    tokens = encoding.encode(text)
+    tokens = tokenizer.tokenize(text)
     return len(tokens)
 
 
