@@ -11,7 +11,7 @@ jupyter>=1.0.0
 langchain
 matplotlib
 numpy
-openai
+openai==0.28
 pandas
 pdf2image
 pdfminer-six
