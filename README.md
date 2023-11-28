@@ -7,9 +7,10 @@
 
 Qwen-Agent is a framework for harnessing the tool usage, planning, and memory capabilities of the open-source language model [Qwen](https://github.com/QwenLM/Qwen).
 Building upon Qwen-Agent, we have developed a **Chrome browser extension** called BrowserQwen, which has key features such as:
-- Engage in discussions with Qwen regarding the current webpage or PDF document.
-- BrowserQwen records the web pages and PDF materials that you have browsed, with your permission. It helps you quickly understand the contents of multiple pages, summarize your browsing content, and eliminate tedious writing tasks.
-- Supports plugin integration, including **Code Interpreter** for math problem solving and data visualization.
+- You can discuss with Qwen regarding the current webpage or PDF document.
+- It records the web pages and PDF materials that you have browsed, with your permission. It helps you quickly understand the contents of multiple pages, summarize your browsing content, and eliminate tedious writing tasks.
+- It supports plugin integration, including **Code Interpreter** for math problem solving and data visualization.
+- It supports uploading PDF, Word, PPT and other types of documents for multi document Q&A.
 
 # Use Case Demonstration
 

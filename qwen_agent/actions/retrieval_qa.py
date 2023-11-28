@@ -1,27 +1,17 @@
 from qwen_agent.actions.base import Action
 
-PROMPT_TEMPLATE_ZH = """
-你是一个写作助手，请依据参考资料，组织出满足用户需求的条理清晰的回复。不要编造参考资料中不存在的内容。如果用户需求中没有指定回复语言，则回复语言必须与用户需求的语言保持一致。
+PROMPT_TEMPLATE_ZH = """请充分理解以下参考资料内容，组织出满足用户提问的条理清晰的回复。
 #参考资料：
 {ref_doc}
 
-#用户需求：
-{user_request}
-
-#助手回复：
+请记住以上参考资料，明白了就请说“好的，我将依据参考资料回复之后的提问。”
 """
 
-PROMPT_TEMPLATE_EN = """
-You are a writing assistant. Please fully understand the content of the reference materials, and organize a clear response that meets the user requirements.
-If the response language is not specified in the user requirements, the response language must be consistent with the language of the user requirements.
-
-# References:
+PROMPT_TEMPLATE_EN = """Please fully understand the content of the following reference materials and organize a clear response that meets the user's questions.
+# Reference materials:
 {ref_doc}
 
-# User Requirements:
-{user_request}
-
-# Assistant Response:
+Please remember the above reference materials. If you understand, please say "Okay, I will reply to the questions based on the reference materials."
 """
 
 PROMPT_TEMPLATE = {
@@ -29,13 +19,29 @@ PROMPT_TEMPLATE = {
     'en': PROMPT_TEMPLATE_EN,
 }
 
+ANSWER_PROMPT_TEMPLATE_ZH = '好的，我将依据参考资料回复之后的提问。'
+
+ANSWER_PROMPT_TEMPLATE_EN = 'Okay, I will reply to the questions based on the reference materials.'
+
+ANSWER_PROMPT_TEMPLATE = {
+    'zh': ANSWER_PROMPT_TEMPLATE_ZH,
+    'en': ANSWER_PROMPT_TEMPLATE_EN,
+}
+
 
 class RetrievalQA(Action):
 
     def _run(self, user_request, ref_doc, lang: str = 'en'):
-        query = user_request
-        prompt = PROMPT_TEMPLATE[lang].format(
-            ref_doc=ref_doc,
-            user_request=query,
-        )
-        return self._call_llm(prompt)
+
+        messages = [{
+            'role': 'user',
+            'content': PROMPT_TEMPLATE[lang].format(ref_doc=ref_doc),
+        }, {
+            'role': 'assistant',
+            'content': ANSWER_PROMPT_TEMPLATE[lang],
+        }, {
+            'role': 'user',
+            'content': user_request,
+        }]
+
+        return self._call_llm(messages=messages)

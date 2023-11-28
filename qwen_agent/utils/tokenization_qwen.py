@@ -2,20 +2,19 @@
 #
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
-
 """Tokenization classes for QWen."""
 
 import base64
 import logging
 import os
 import unicodedata
-from typing import Collection, Dict, List, Set, Tuple, Union
 from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Collection, Dict, List, Set, Tuple, Union
 
 import tiktoken
 
 logger = logging.getLogger(__name__)
-
 
 VOCAB_FILES_NAMES = {'vocab_file': 'qwen.tiktoken'}
 
@@ -31,17 +30,13 @@ EXTRAS = tuple((f'<|extra_{i}|>' for i in range(205)))
 SPECIAL_START_ID = 151643
 SPECIAL_TOKENS = tuple(
     enumerate(
-        (
-            (
-                ENDOFTEXT,
-                IMSTART,
-                IMEND,
-            )
-            + EXTRAS
-        ),
+        ((
+            ENDOFTEXT,
+            IMSTART,
+            IMEND,
+        ) + EXTRAS),
         start=SPECIAL_START_ID,
-    )
-)
+    ))
 SPECIAL_TOKENS_SET = set(t for i, t in SPECIAL_TOKENS)
 
 
@@ -50,7 +45,8 @@ def _load_tiktoken_bpe(tiktoken_bpe_file: str) -> Dict[bytes, int]:
         contents = f.read()
     return {
         base64.b64decode(token): int(rank)
-        for token, rank in (line.split() for line in contents.splitlines() if line)
+        for token, rank in (line.split() for line in contents.splitlines()
+                            if line)
     }
 
 
@@ -91,22 +87,23 @@ class QWenTokenizer():
         # use ignore if you are in streaming inference
         self.errors = errors
 
-        self.mergeable_ranks = _load_tiktoken_bpe(vocab_file)  # type: Dict[bytes, int]
-        self.special_tokens = {
-            token: index
-            for index, token in SPECIAL_TOKENS
-        }
+        self.mergeable_ranks = _load_tiktoken_bpe(
+            vocab_file)  # type: Dict[bytes, int]
+        self.special_tokens = {token: index for index, token in SPECIAL_TOKENS}
 
         # try load extra vocab from file
         if extra_vocab_file is not None:
-            used_ids = set(self.mergeable_ranks.values()) | set(self.special_tokens.values())
+            used_ids = set(self.mergeable_ranks.values()) | set(
+                self.special_tokens.values())
             extra_mergeable_ranks = _load_tiktoken_bpe(extra_vocab_file)
             for token, index in extra_mergeable_ranks.items():
                 if token in self.mergeable_ranks:
                     logger.info(f'extra token {token} exists, skipping')
                     continue
                 if index in used_ids:
-                    logger.info(f'the index {index} for extra token {token} exists, skipping')
+                    logger.info(
+                        f'the index {index} for extra token {token} exists, skipping'
+                    )
                     continue
                 self.mergeable_ranks[token] = index
             # the index may be sparse after this, but don't worry tiktoken.Encoding will handle this
@@ -121,9 +118,9 @@ class QWenTokenizer():
             len(self.mergeable_ranks) + len(self.special_tokens) == enc.n_vocab
         ), f'{len(self.mergeable_ranks) + len(self.special_tokens)} != {enc.n_vocab} in encoding'
 
-        self.decoder = {
-            v: k for k, v in self.mergeable_ranks.items()
-        }  # type: dict[int, bytes|str]
+        self.decoder = {v: k
+                        for k, v in self.mergeable_ranks.items()
+                        }  # type: dict[int, bytes|str]
         self.decoder.update({v: k for k, v in self.special_tokens.items()})
 
         self.tokenizer = enc  # type: tiktoken.Encoding
@@ -156,8 +153,8 @@ class QWenTokenizer():
         return self.mergeable_ranks
 
     def convert_tokens_to_ids(
-        self, tokens: Union[bytes, str, List[Union[bytes, str]]]
-    ) -> List[int]:
+            self, tokens: Union[bytes, str, List[Union[bytes,
+                                                       str]]]) -> List[int]:
         ids = []
         if isinstance(tokens, (str, bytes)):
             if tokens in self.special_tokens:
@@ -179,9 +176,11 @@ class QWenTokenizer():
         if not special_tokens and new_tokens:
             raise ValueError('Adding regular tokens is not supported')
         for token in new_tokens:
-            surface_form = token.content if isinstance(token, AddedToken) else token
+            surface_form = token.content if isinstance(token,
+                                                       AddedToken) else token
             if surface_form not in SPECIAL_TOKENS_SET:
-                raise ValueError('Adding unknown special tokens is not supported')
+                raise ValueError(
+                    'Adding unknown special tokens is not supported')
         return 0
 
     def save_vocabulary(self, save_directory: str, **kwargs) -> Tuple[str]:
@@ -196,7 +195,7 @@ class QWenTokenizer():
             for k, v in self.mergeable_ranks.items():
                 line = base64.b64encode(k).decode('utf8') + ' ' + str(v) + '\n'
                 w.write(line)
-        return (file_path,)
+        return (file_path, )
 
     def tokenize(
         self,
@@ -228,9 +227,9 @@ class QWenTokenizer():
         text = unicodedata.normalize('NFC', text)
 
         # this implementation takes a detour: text -> token id -> token surface forms
-        for t in self.tokenizer.encode(
-            text, allowed_special=allowed_special, disallowed_special=disallowed_special
-        ):
+        for t in self.tokenizer.encode(text,
+                                       allowed_special=allowed_special,
+                                       disallowed_special=disallowed_special):
             tokens.append(self.decoder[t])
         return tokens
 
@@ -293,3 +292,11 @@ class QWenTokenizer():
         if skip_special_tokens:
             token_ids = [i for i in token_ids if i < self.eod_id]
         return self.tokenizer.decode(token_ids, errors=errors or self.errors)
+
+
+tokenizer = QWenTokenizer(Path(__file__).resolve().parent / 'qwen.tiktoken')
+
+
+def count_tokens(text):
+    tokens = tokenizer.tokenize(text)
+    return len(tokens)

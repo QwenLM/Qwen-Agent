@@ -2,12 +2,10 @@ import re
 import socket
 import sys
 import traceback
-from pathlib import Path
 
 import jieba
 import json5
 from jieba import analyse
-from qwen_agent.utils.tokenization_qwen import QWenTokenizer
 
 from qwen_agent.log import logger
 
@@ -44,14 +42,6 @@ def save_text_to_file(path, text):
         return ex
 
 
-tokenizer = QWenTokenizer(Path(__file__).resolve().parent / 'qwen.tiktoken')
-
-
-def count_tokens(text):
-    tokens = tokenizer.tokenize(text)
-    return len(tokens)
-
-
 ignore_words = [
     '', ' ', '\t', '\n', '\\', 'is', 'are', 'am', 'what', 'how', '的', '吗', '是',
     '了', '啊', '呢', '怎么', '如何', '什么', '？', '?', '！', '!', '“', '”', '‘', '’',
@@ -70,6 +60,33 @@ def get_split_word(text):
             continue
         wordlist.append(x)
     return wordlist
+
+
+def get_keyword_by_llm(text, keyword_agent):
+    try:
+        res = keyword_agent.run(text)
+        res = json5.loads(res)
+    except Exception:
+        print('keyword is not json format!')
+        return get_split_word(text)
+
+    # json format
+    _wordlist = []
+    try:
+        if 'keywords_zh' in res and isinstance(res['keywords_zh'], list):
+            _wordlist.extend([kw.lower() for kw in res['keywords_zh']])
+        if 'keywords_en' in res and isinstance(res['keywords_en'], list):
+            _wordlist.extend([kw.lower() for kw in res['keywords_en']])
+
+        wordlist = []
+        for x in _wordlist:
+            if x in ignore_words:
+                continue
+            wordlist.append(x)
+        wordlist.extend(get_split_word(text))
+        return wordlist
+    except Exception:
+        return get_split_word(text)
 
 
 def get_key_word(text):

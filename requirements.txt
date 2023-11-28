@@ -1,5 +1,6 @@
 anyio>=3.7.1
 dashscope>=1.11.0
+docx2txt
 fastapi>=0.103.1
 gradio==3.41.1
 gradio-client>=0.5.0
@@ -18,9 +19,10 @@ pdfminer-six
 pillow
 pydantic>=2.3.0
 pypdf
+python-pptx
 seaborn
 sympy
 tiktoken
-unstructured
+unstructured==0.8.0
 uvicorn>=0.23.2
 wordcloud

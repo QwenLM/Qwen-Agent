@@ -7,7 +7,7 @@ import add_qwen_libs  # NOQA
 import jsonlines
 
 from qwen_agent.log import logger
-from qwen_agent.utils.doc_parser import parse_html_bs, parse_pdf_pypdf
+from qwen_agent.utils.doc_parser import parse_doc, parse_html_bs
 from qwen_agent.utils.utils import print_traceback, save_text_to_file
 from qwen_server.schema import Record
 
@@ -46,7 +46,7 @@ def sanitize_chrome_file_path(file_path: str) -> str:
 
 def extract_and_cache_document(data, cache_file, cache_root):
     logger.info('Starting cache pages...')
-    if data['url'][-4:] in ['.pdf', '.PDF']:
+    if data['url'].split('.')[-1].lower() in ['pdf', 'docx', 'pptx']:
         date1 = datetime.datetime.now()
 
         # generate one processing record
@@ -70,7 +70,7 @@ def extract_and_cache_document(data, cache_file, cache_root):
             pdf_path = sanitize_chrome_file_path(pdf_path)
 
         try:
-            pdf_content = parse_pdf_pypdf(pdf_path)
+            pdf_content = parse_doc(pdf_path)
         except Exception:
             print_traceback()
             # del the processing record
@@ -109,6 +109,9 @@ def extract_and_cache_document(data, cache_file, cache_root):
             print_traceback()
         extract = data['content'][0]['metadata']['title']
     else:
+        logger.error(
+            'Only Support the Following File Types: [\'.html\', \'.pdf\', \'.docx\', \'.pptx\']'
+        )
         raise NotImplementedError
 
     today = datetime.date.today()

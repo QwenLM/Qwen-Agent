@@ -21,7 +21,7 @@ llm = get_chat_model(model=server_config.server.llm,
                      api_key=server_config.server.api_key,
                      model_server=server_config.server.model_server)
 
-mem = Memory()
+mem = Memory(llm=llm, stream=False)
 
 cache_file = os.path.join(server_config.path.cache_root, 'browse.jsonl')
 cache_file_popup_url = os.path.join(server_config.path.cache_root,
@@ -83,12 +83,10 @@ def bot(history):
                     "This page has not yet been added to the Qwen's reading list!"
                 )
             elif not now_page['raw']:
-                gr.Info('Please wait, Qwen is analyzing this page...')
+                gr.Info('Please reopen later, Qwen is analyzing this page...')
             else:
                 _ref_list = mem.get(
                     history[-1][0], [now_page],
-                    llm=llm,
-                    stream=False,
                     max_token=server_config.server.max_ref_token)
                 if _ref_list:
                     _ref = '\n'.join(
@@ -96,6 +94,7 @@ def bot(history):
                 else:
                     _ref = ''
 
+        # TODO: considering history for retrieval qa
         agent = RetrievalQA(stream=True, llm=llm)
         history[-1][1] = ''
         response = agent.run(user_request=history[-1][0], ref_doc=_ref)

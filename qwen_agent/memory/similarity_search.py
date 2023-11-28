@@ -1,53 +1,69 @@
 from qwen_agent.schema import RefMaterial
-from qwen_agent.utils.utils import get_split_word
+from qwen_agent.utils.utils import get_keyword_by_llm, get_split_word
 
 
 class SimilaritySearch:
 
-    def __init__(self, llm=None, stream=False):
-        self.llm = llm
-        self.stream = stream
+    def __init__(self):
+        pass
 
-    def run(self, line, query):
+    def run(self, line, query, max_token=4000, keyword_agent=None):
         """
         Input: one line
         Output: the relative text
         """
-        wordlist = get_split_word(query)
+        content = line['raw']
+        if isinstance(content, str):
+            content = content.split('\n')
+        if not content:
+            return RefMaterial(url=line['url'], text=[]).to_dict()
+
+        tokens = [x['token'] for x in content]
+        all_tokens = sum(tokens)
+        if all_tokens <= max_token:
+            print('use full ref: ', all_tokens)
+            return {
+                'url': line['url'],
+                'text': [x['page_content'] for x in content]
+            }
+
+        wordlist = get_keyword_by_llm(query, keyword_agent)
+        print('wordlist: ', wordlist)
         if not wordlist:
             return RefMaterial(url=line['url'], text=[]).to_dict()
 
-        content = line['raw']
-
-        res = []
         sims = []
         for i, page in enumerate(content):
             sim = self.filter_section(page, wordlist)
             sims.append([i, sim])
         sims.sort(key=lambda item: item[1], reverse=True)
-
         assert len(sims) > 0
-        found_page_first = {0: False, 1: False}
 
+        res = []
         max_sims = sims[0][1]
         if max_sims != 0:
+            manul = 2
+            for i in range(min(manul, len(content))):
+                res.append(content[i]['page_content'])
+                max_token -= tokens[i]
             for i, x in enumerate(sims):
-                if i > 3:
-                    break
+                if x[0] < manul:
+                    continue
                 page = content[x[0]]
-                text = page['page_content']
-                res.append(text)
-                if x[0] in found_page_first.keys():
-                    found_page_first[x[0]] = True
-
-            # manually add pages
-            for k in found_page_first.keys():
-                if k >= len(content):
+                print('select: ', x)
+                if max_token < tokens[x[0]]:
+                    use_rate = (max_token / page['token']) * 0.2
+                    res.append(page['page_content']
+                               [:int(len(page['page_content']) * use_rate)])
                     break
-                if not found_page_first[k]:
-                    page = content[k]
+
+                text = ''
+                if isinstance(page, str):
+                    text = content[x[0]]
+                elif isinstance(page, dict):
                     text = page['page_content']
-                    res.append(text)
+                res.append(text)
+                max_token -= tokens[x[0]]
 
         return RefMaterial(url=line['url'], text=res).to_dict()
 

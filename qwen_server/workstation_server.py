@@ -12,10 +12,10 @@ from qwen_agent.actions import (ContinueWriting, ReAct, RetrievalQA,
                                 WriteFromScratch)
 from qwen_agent.actions.function_calling import FunctionCalling
 from qwen_agent.llm import get_chat_model
+from qwen_agent.log import logger
 from qwen_agent.memory import Memory
 from qwen_agent.tools import call_plugin, list_of_all_functions
-from qwen_agent.utils.utils import (count_tokens, format_answer,
-                                    get_last_one_line_context,
+from qwen_agent.utils.utils import (format_answer, get_last_one_line_context,
                                     has_chinese_chars, save_text_to_file)
 from qwen_server.schema import GlobalConfig
 from qwen_server.utils import extract_and_cache_document
@@ -29,7 +29,7 @@ llm = get_chat_model(model=server_config.server.llm,
                      api_key=server_config.server.api_key,
                      model_server=server_config.server.model_server)
 
-mem = Memory()
+mem = Memory(llm=llm, stream=False)
 
 app_global_para = {
     'time': [str(datetime.date.today()),
@@ -87,9 +87,11 @@ def chat_clear_last():
 def add_file(file, chosen_plug):
     output_filepath = server_config.path.code_interpreter_ws
     fn = os.path.basename(file.name)
-    if chosen_plug == DOC_OPTION and fn[-4:] != '.pdf' and fn[-4:] != '.PDF':
+    fn_type = fn.split('.')[-1].lower()
+    logger.info('file type: ' + fn_type)
+    if chosen_plug == DOC_OPTION and (fn_type not in ['pdf', 'docx', 'pptx']):
         new_path = (
-            'Upload failed: only adding PDF documents as references is supported!'
+            'Upload failed: only adding [\'.pdf\', \'.docx\', \'.pptx\'] documents as references is supported!'
         )
     else:
         new_path = os.path.join(output_filepath, fn)
@@ -106,7 +108,7 @@ def add_file(file, chosen_plug):
                 'query': '',
                 'url': new_path,
                 'task': 'cache',
-                'type': 'pdf',
+                'type': fn_type,
             }
             extract_and_cache_document(
                 data, app_global_para['cache_file'],
@@ -176,10 +178,6 @@ def download_text(text):
         gr.Info(f'Saved to {save_path}')
     else:
         gr.Error("Can't Save: ", rsp)
-
-
-def count_token(text):
-    return count_tokens(text)
 
 
 def choose_plugin(chosen_plugin):
@@ -324,8 +322,6 @@ def bot(history, upload_file, chosen_plug):
                     _ref_list = mem.get(
                         history[-1][0],
                         lines,
-                        llm=llm,
-                        stream=True,
                         max_token=server_config.server.max_ref_token,
                     )
                     _ref = '\n'.join(
@@ -335,7 +331,8 @@ def bot(history, upload_file, chosen_plug):
                     gr.Warning(
                         'No reference materials selected, Qwen will answer directly'
                     )
-
+            logger.info(_ref)
+            # TODO: considering history for retrieval qa
             agent = RetrievalQA(llm=llm, stream=True)
             response = agent.run(user_request=history[-1][0], ref_doc=_ref)
 
@@ -415,8 +412,6 @@ def generate(context):
 
             _ref_list = mem.get(sp_query_no_title,
                                 lines,
-                                llm=llm,
-                                stream=True,
                                 max_token=server_config.server.max_ref_token)
             _ref = '\n'.join(
                 json.dumps(x, ensure_ascii=False) for x in _ref_list)
@@ -552,7 +547,6 @@ with gr.Blocks(css=css, theme='soft') as demo:
 
         edit_area_change = edit_area.change(layout_to_right, edit_area,
                                             [text_out_area, md_out_area])
-        # edit_area_change.then(count_token, edit_area, token_count)
 
         stop_bt.click(lambda: None, cancels=[clk_ctn_bt], queue=False)
         clr_bt.click(
@@ -666,7 +660,9 @@ with gr.Blocks(css=css, theme='soft') as demo:
                            [file_btn, hidden_file_path])
 
     with gr.Tab('Pure Chat', elem_id='pure-chat-tab'):
-        gr.Markdown('Note: The chat box on this tab will not use any browsing history!')
+        gr.Markdown(
+            'Note: The chat box on this tab will not use any browsing history!'
+        )
         with gr.Column():
             pure_chatbot = gr.Chatbot(
                 [],
@@ -693,25 +689,24 @@ with gr.Blocks(css=css, theme='soft') as demo:
                 with gr.Column(scale=1, min_width=0):
                     chat_re_bt = gr.Button('Again')
 
-            txt_msg = chat_txt.submit(
-                pure_add_text, [pure_chatbot, chat_txt], [pure_chatbot, chat_txt],
-                queue=False).then(pure_bot, pure_chatbot,
-                                  pure_chatbot)
+            txt_msg = chat_txt.submit(pure_add_text, [pure_chatbot, chat_txt],
+                                      [pure_chatbot, chat_txt],
+                                      queue=False).then(
+                                          pure_bot, pure_chatbot, pure_chatbot)
             txt_msg.then(lambda: gr.update(interactive=True),
                          None, [chat_txt],
                          queue=False)
 
-            re_txt_msg = chat_re_bt.click(
-                rm_text, [pure_chatbot], [pure_chatbot, chat_txt],
-                queue=False).then(
-                    pure_bot, pure_chatbot, pure_chatbot)
+            re_txt_msg = chat_re_bt.click(rm_text, [pure_chatbot],
+                                          [pure_chatbot, chat_txt],
+                                          queue=False).then(
+                                              pure_bot, pure_chatbot,
+                                              pure_chatbot)
             re_txt_msg.then(lambda: gr.update(interactive=True),
                             None, [chat_txt],
                             queue=False)
 
-            chat_clr_bt.click(lambda: None,
-                              None, pure_chatbot,
-                              queue=False)
+            chat_clr_bt.click(lambda: None, None, pure_chatbot, queue=False)
 
             chat_stop_bt.click(chat_clear_last,
                                None,

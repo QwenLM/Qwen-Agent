@@ -26,5 +26,12 @@ class Action(ABC):
         raise NotImplementedError
 
     # It is okay for an Action to not call LLMs.
-    def _call_llm(self, prompt) -> Union[str, Iterator[str]]:
-        return self.llm.chat(prompt=prompt, stream=self.stream)
+    def _call_llm(self,
+                  prompt=None,
+                  messages=None) -> Union[str, Iterator[str]]:
+        if messages is None:
+            assert isinstance(prompt, str)
+            messages = [{'role': 'user', 'content': prompt}]
+        else:
+            assert prompt is None, 'Do not pass prompt and messages at the same time.'
+        return self.llm.chat(messages=messages, stream=self.stream)

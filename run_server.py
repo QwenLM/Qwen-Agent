@@ -20,7 +20,7 @@ def parse_args():
         '-l',
         '--llm',
         type=str,
-        default='qwen-turbo',
+        default='qwen-plus',
         help='DashScope: qwen-plus, qwen-turbo, qwen-14b-chat, qwen-7b-chat.',
     )
     parser.add_argument('-s',
