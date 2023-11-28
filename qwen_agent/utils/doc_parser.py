@@ -13,9 +13,15 @@ def rm_cid(text):
     return text
 
 
+def rm_hexadecimal(text):
+    text = re.sub(r'[0-9A-Fa-f]{21,}', '', text)
+    return text
+
+
 def deal(text):
     text = rm_newlines(text)
     text = rm_cid(text)
+    text = rm_hexadecimal(text)
     return text
 
 

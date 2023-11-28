@@ -322,8 +322,7 @@ def bot(history, upload_file, chosen_plug):
                     _ref_list = mem.get(
                         history[-1][0],
                         lines,
-                        max_token=server_config.server.max_ref_token,
-                    )
+                        max_token=server_config.server.max_ref_token)
                     _ref = '\n'.join(
                         json.dumps(x, ensure_ascii=False) for x in _ref_list)
                 else:
