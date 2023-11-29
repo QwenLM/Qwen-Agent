@@ -21,3 +21,4 @@ docqa/*
 log/*
 ai_builder/*
 qwen_agent.egg-info/*
+build/*
