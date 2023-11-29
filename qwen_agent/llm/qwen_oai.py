@@ -1,3 +1,4 @@
+import os
 from typing import Dict, Iterator, List, Optional
 
 import openai
@@ -9,9 +10,10 @@ class QwenChatAsOAI(BaseChatModel):
 
     def __init__(self, model: str, api_key: str, model_server: str):
         super().__init__()
-        assert model_server.startswith('http')
-        openai.api_base = model_server
-        openai.api_key = api_key.strip() or 'EMPTY'
+        if model_server.strip().lower() != 'openai':
+            openai.api_base = model_server
+        openai.api_key = api_key.strip() or os.getenv('OPENAI_API_KEY',
+                                                      default='EMPTY')
         self.model = model
 
     def _chat_stream(
