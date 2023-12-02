@@ -1,7 +1,9 @@
+import datetime
 import re
 import socket
 import sys
 import traceback
+from typing import Literal, Optional
 
 import jieba
 import json5
@@ -30,6 +32,27 @@ def print_traceback():
 def has_chinese_chars(data) -> bool:
     text = f'{data}'
     return len(re.findall(r'[\u4e00-\u9fff]+', text)) > 0
+
+
+def get_current_date_str(
+    lang: Literal['en', 'zh'] = 'en',
+    hours_from_utc: Optional[int] = None,
+) -> str:
+    if hours_from_utc is None:
+        cur_time = datetime.datetime.now()
+    else:
+        cur_time = datetime.datetime.utcnow() + datetime.timedelta(
+            hours=hours_from_utc)
+    if lang == 'en':
+        date_str = 'Current date: ' + cur_time.strftime('%A, %B %d, %Y')
+    elif lang == 'zh':
+        cur_time = cur_time.timetuple()
+        date_str = f'当前时间：{cur_time.tm_year}年{cur_time.tm_mon}月{cur_time.tm_mday}日，星期'
+        date_str += ['一', '二', '三', '四', '五', '六', '日'][cur_time.tm_wday]
+        date_str += '。'
+    else:
+        raise NotImplementedError
+    return date_str
 
 
 def save_text_to_file(path, text):

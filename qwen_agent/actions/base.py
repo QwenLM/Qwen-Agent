@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Iterator, Union
+from typing import Dict, Iterator, List, Optional, Union
 
 from qwen_agent.llm.base import BaseChatModel
 from qwen_agent.utils.utils import has_chinese_chars
@@ -26,12 +26,15 @@ class Action(ABC):
         raise NotImplementedError
 
     # It is okay for an Action to not call LLMs.
-    def _call_llm(self,
-                  prompt=None,
-                  messages=None) -> Union[str, Iterator[str]]:
-        if messages is None:
-            assert isinstance(prompt, str)
-            messages = [{'role': 'user', 'content': prompt}]
-        else:
-            assert prompt is None, 'Do not pass prompt and messages at the same time.'
-        return self.llm.chat(messages=messages, stream=self.stream)
+    def _call_llm(
+        self,
+        prompt: Optional[str] = None,
+        messages: Optional[List[Dict]] = None,
+        stop: Optional[List[str]] = None,
+    ) -> Union[str, Iterator[str]]:
+        return self.llm.chat(
+            prompt=prompt,
+            messages=messages,
+            stop=stop,
+            stream=self.stream,
+        )
