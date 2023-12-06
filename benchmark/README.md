@@ -63,8 +63,8 @@ In terms of code executability, we calculate executable rate of the generated co
     <tr>
         <td>ChatGLM3-6B</td>
         <td align="center">54.2</td>
-        <td align="center">15.5</td>
-        <td align="center">21.5</td>
+        <td align="center">4.8</td>
+        <td align="center">15.2</td>
         <td align="center">67.1</td>
     </tr>
     <tr>

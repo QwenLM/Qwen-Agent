@@ -208,8 +208,8 @@ python run_server.py --model_server http://{MODEL_SERVER_IP}:7905/v1 --workstati
     <tr>
         <td>ChatGLM3-6B</td>
         <td align="center">54.2</td>
-        <td align="center">15.5</td>
-        <td align="center">21.5</td>
+        <td align="center">4.8</td>
+        <td align="center">15.2</td>
         <td align="center">67.1</td>
     </tr>
     <tr>
