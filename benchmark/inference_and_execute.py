@@ -180,7 +180,7 @@ def eval_metrics(args, test_set, full_output_fname):
         if args.task in ['all_ci', 'visualization'
                          ] and not args.eval_code_exec_only:
             visualization_code_correctness = eval_visualization_acc(
-                abs_output_fname, args.model)
+                abs_output_fname, args.model, args.vis_judger)
             global_eval_result['code_correctness'].update(
                 visualization_code_correctness)
 
@@ -259,6 +259,8 @@ def parse_args():
                         default=False)
     parser.add_argument('--gen-exec-only', action='store_true', default=False)
     parser.add_argument('--gen-only', action='store_true', default=False)
+    parser.add_argument('--vis-judger', type=str, default="'gpt-4-vision-preview'",
+                        choices=['gpt-4-vision-preview', 'qwen-vl-chat'])
     args = parser.parse_args()
     return args
 

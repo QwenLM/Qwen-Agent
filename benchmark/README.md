@@ -57,7 +57,7 @@ In terms of code executability, we calculate executable rate of the generated co
         <td>InternLM-20B-Chat</td>
         <td align="center">34.6</td>
         <td align="center">10.7</td>
-        <td align="center">25.1</td>
+        <td align="center">24.1</td>
         <td align="center">65.5</td>
     </tr>
     <tr>
@@ -65,7 +65,7 @@ In terms of code executability, we calculate executable rate of the generated co
         <td align="center">54.2</td>
         <td align="center">4.8</td>
         <td align="center">15.2</td>
-        <td align="center">67.1</td>
+        <td align="center">62.1</td>
     </tr>
     <tr>
         <td>Qwen-1.8B-Chat</td>
@@ -98,7 +98,7 @@ In terms of code executability, we calculate executable rate of the generated co
 </table>
 
 - Qwen-7B-Chat refers to the version updated after September 25, 2023.
-- The code correctness judgment model for `Visualization` has changed from `Qwen-vl-chat` to `gpt-4-vision-preview`.
+- The code correctness judger model for `Visualization` has changed from `Qwen-vl-chat` to `gpt-4-vision-preview`.
 
 
 
@@ -190,3 +190,4 @@ The inference_and_exec.py file contains the following configurable options:
 - `--eval-code-exec-only`: Only evaluate code executable rate
 - `--gen-exec-only`: Only generate and execuate code without calculating evaluation metrics.
 - `--gen-only`: Only generate without execuating code and calculating evaluation metrics.
+- `--vis-judger`: The model to judge the result correctness for `Visualization` task. It is set to `gpt-4-vision-preview` by default in version 20231206, and `Qwen-vl-chat` has been deprecated.

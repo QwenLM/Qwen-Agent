@@ -202,7 +202,7 @@ We have also open-sourced a benchmark for evaluating the performance of a model 
         <td>InternLM-20B-Chat</td>
         <td align="center">34.6</td>
         <td align="center">10.7</td>
-        <td align="center">25.1</td>
+        <td align="center">24.1</td>
         <td align="center">65.5</td>
     </tr>
     <tr>
@@ -210,7 +210,7 @@ We have also open-sourced a benchmark for evaluating the performance of a model 
         <td align="center">54.2</td>
         <td align="center">4.8</td>
         <td align="center">15.2</td>
-        <td align="center">67.1</td>
+        <td align="center">62.1</td>
     </tr>
     <tr>
         <td>Qwen-1.8B-Chat</td>
