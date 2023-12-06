@@ -244,7 +244,7 @@ def parse_args():
         '--task',
         type=str,
         default='all',
-        choices=['all', 'gsm8k', 'all_ci', 'visualization', 'math', 'general'])
+        choices=['all', 'gsm8k', 'visualization', 'general'])
     parser.add_argument('--output-path', type=str, default='output_data')
     parser.add_argument('--input-path', type=str, default='eval_data')
     parser.add_argument('-o', '--output-fname', type=str, default='')
@@ -270,7 +270,7 @@ if __name__ == '__main__':
         logging.info(f'Init {args.model} done.')
 
     if args.task == 'all':
-        for key in ['all_ci', 'gsm8k']:
+        for key in ['gsm8k', 'visualization', 'general']:
             args.task = key
             main(args)
     else:

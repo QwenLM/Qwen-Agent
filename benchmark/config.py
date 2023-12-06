@@ -18,6 +18,7 @@ react_parser_map = {
 model_map = {'qwen': Qwen, 'llama': LLM, 'internlm': LLM, 'qwen-vl': HFModel}
 
 model_type_map = {
+    'qwen-72b-chat': 'qwen',
     'qwen-14b-chat': 'qwen',
     'qwen-1.8b-chat': 'qwen',
     'qwen-7b-chat': 'qwen',
@@ -31,9 +32,10 @@ model_type_map = {
 }
 
 model_path_map = {
+    'qwen-72b-chat': 'Qwen/Qwen-72B-Chat',
     'qwen-14b-chat': 'Qwen/Qwen-14B-Chat',
     'qwen-7b-chat': 'Qwen/Qwen-7B-Chat',
-    'qwen-1.8b-chat': 'Qwen/Qwen-1.8B-chat',
+    'qwen-1.8b-chat': 'Qwen/Qwen-1_8B-Chat',
     'llama-2-7b-chat': 'meta-llama/Llama-2-7b-chat-hf',
     'llama-2-13b-chat': 'meta-llama/Llama-2-13b-chat-hf',
     'codellama-7b-instruct': 'codellama/CodeLlama-7b-Instruct-hf',
