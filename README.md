@@ -8,9 +8,8 @@
 Qwen-Agent is a framework for harnessing the tool usage, planning, and memory capabilities of the open-source language model [Qwen](https://github.com/QwenLM/Qwen).
 Building upon Qwen-Agent, we have developed a **Chrome browser extension** called BrowserQwen, which has key features such as:
 - You can discuss with Qwen regarding the current webpage or PDF document.
-- It records the web pages and PDF materials that you have browsed, with your permission. It helps you quickly understand the contents of multiple pages, summarize your browsing content, and eliminate tedious writing tasks.
+- It records the web pages and PDF/Word/PowerPoint materials that you have browsed, with your permission. It helps you understand the contents of multiple pages, summarize your browsing content, and automate tedious writing tasks.
 - It supports plugin integration, including **Code Interpreter** for math problem solving and data visualization.
-- It supports uploading PDF, Word, PPT and other types of documents for multi document Q&A.
 
 # Use Case Demonstration
 
@@ -73,22 +72,15 @@ However, if you prefer to deploy your own model service instead of using DashSco
 git clone git@github.com:QwenLM/Qwen.git
 cd Qwen
 pip install -r requirements.txt
-pip install fastapi uvicorn openai "pydantic>=2.3.0" sse_starlette
+pip install fastapi uvicorn "openai<1.0.0" "pydantic>=2.3.0" sse_starlette
 
 # Start the model service, specifying the model version with the -c parameter.
 # --server-name 0.0.0.0 allows other machines to access your service.
 # --server-name 127.0.0.1 only allows the machine deploying the model to access the service.
-python openai_api.py --server-name 0.0.0.0 --server-port 7905 -c QWen/QWen-14B-Chat
+python openai_api.py --server-name 0.0.0.0 --server-port 7905 -c Qwen/Qwen-14B-Chat
 ```
 
-Currently, we can specify the -c argument with the following models, ordered in increasing GPU memory consumption:
-
-- [`Qwen/Qwen-7B-Chat-Int4`](https://huggingface.co/Qwen/Qwen-7B-Chat-Int4)
-- [`Qwen/Qwen-7B-Chat`](https://huggingface.co/Qwen/Qwen-7B-Chat-Int4)
-- [`Qwen/Qwen-14B-Chat-Int4`](https://huggingface.co/Qwen/Qwen-14B-Chat-Int4)
-- [`Qwen/Qwen-14B-Chat`](https://huggingface.co/Qwen/Qwen-14B-Chat)
-
-For the 7B models, please use the versions pulled from the official HuggingFace repository after September 25, 2023, as both the code and model weights have changed.
+We can specify the -c argument to load the Qwen models listed on [Qwen's Hugging Face page](https://huggingface.co/Qwen), such as `Qwen/Qwen-1_8B-Chat`, `Qwen/Qwen-7B-Chat`, `Qwen/Qwen-14B-Chat`, `Qwen/Qwen-72B-Chat`, as well as their `Int4` and `Int8` versions.
 
 ## Step 2. Deploy Local Database Service
 
@@ -241,8 +233,6 @@ We have also open-sourced a benchmark for evaluating the performance of a model 
         <td align="center">82.8</td>
     </tr>
 </table>
-
-Qwen-7B-Chat refers to the version updated after September 25, 2023.
 
 # Disclaimer
 
