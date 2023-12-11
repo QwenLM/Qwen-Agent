@@ -13,6 +13,9 @@ When evaluating the accuracy of the code execution results for code correctness,
 In terms of code executability, we calculate executable rate of the generated code for `General problem-solving`.
 
 ## Results
+- Qwen-7B-Chat refers to the version updated after September 25, 2023.
+- The code correctness judger model for `Visualization` has changed from `Qwen-vl-chat` to `gpt-4-vision-preview` in the version 20231206.
+
 <table>
     <tr>
         <th colspan="5" align="center">In-house Code Interpreter Benchmark (Version 20231206)</th>
@@ -97,9 +100,61 @@ In terms of code executability, we calculate executable rate of the generated co
     </tr>
 </table>
 
-- Qwen-7B-Chat refers to the version updated after September 25, 2023.
-- The code correctness judger model for `Visualization` has changed from `Qwen-vl-chat` to `gpt-4-vision-preview`.
+Furthermore, we also provide the results of `Qwen-vl-plus` as the code correctness judger model for `Visualization` task to serve as a reference.
 
+<table>
+    <tr>
+        <th colspan="3" align="center">Code Correctness Judger Model = Qwen-vl-plus</th>
+    </tr>
+    <tr>
+        <th rowspan="2" align="center">Model</th>
+        <th colspan="2" align="center">Accuracy of Code Execution Results (%)</th>
+    </tr>
+    <tr>
+        <th align="center">Visualization-Hard↑</th>
+        <th align="center">Visualization-Easy↑</th>
+    </tr>
+    <tr>
+        <td>LLaMA2-13B-Chat</td>
+        <td align="center">2.4</td>
+        <td align="center">17.7</td>
+    </tr>
+    <tr>
+        <td>CodeLLaMA-13B-Instruct</td>
+        <td align="center">17.9</td>
+        <td align="center">34.2</td>
+    </tr>
+    <tr>
+        <td>InternLM-20B-Chat</td>
+        <td align="center">9.5</td>
+        <td align="center">31.7</td>
+    </tr>
+    <tr>
+        <td>ChatGLM3-6B</td>
+        <td align="center">10.7</td>
+        <td align="center">29.1</td>
+    </tr>
+    <tr>
+        <td>Qwen-1.8B-Chat</td>
+        <td align="center">32.1</td>
+        <td align="center">32.9</td>
+    </tr>
+    <tr>
+        <td>Qwen-7B-Chat</td>
+        <td align="center">26.2</td>
+        <td align="center">39.2</td>
+    </tr>
+    <tr>
+        <td>Qwen-14B-Chat</td>
+        <td align="center">36.9</td>
+        <td align="center">41.8</td>
+    </tr>
+    <tr>
+        <td>Qwen-72B-Chat</td>
+        <td align="center">38.1</td>
+        <td align="center">38.0</td>
+    </tr>
+</table>
 
 
 
@@ -190,4 +245,4 @@ The inference_and_exec.py file contains the following configurable options:
 - `--eval-code-exec-only`: Only evaluate code executable rate
 - `--gen-exec-only`: Only generate and execuate code without calculating evaluation metrics.
 - `--gen-only`: Only generate without execuating code and calculating evaluation metrics.
-- `--vis-judger`: The model to judge the result correctness for `Visualization` task. It is set to `gpt-4-vision-preview` by default in version 20231206, and `Qwen-vl-chat` has been deprecated.
+- `--vis-judger`: The model to judge the result correctness for `Visualization` task which can be one of `gpt-4-vision-preview`, `qwen-vl-chat`, `qwen-vl-plus`. It is set to `gpt-4-vision-preview` by default in the version 20231206, and `Qwen-vl-chat` has been deprecated.

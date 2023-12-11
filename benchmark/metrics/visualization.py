@@ -1,7 +1,7 @@
 import logging
 import os
 import re
-
+import base64
 import torch
 from config import get_model, get_react_parser
 from utils.data_utils import load_jsonl, save_jsonl
@@ -28,9 +28,9 @@ def encode_image(image_path):
     return a
 
 
-def judger_model_inference(judger_model, imgs=[], prompt=''):
+def judger_model_inference(judger_model_name, judger_model, imgs=[], prompt=''):
     output = ""
-    if not judger_model:
+    if judger_model_name == 'gpt-4-vision-preview':
         logging.warning("This is an example of `gpt-4-vision-preview`. "
                         "Please set the API key and use according to your actual situation.")
         from openai import OpenAI
@@ -55,16 +55,17 @@ def judger_model_inference(judger_model, imgs=[], prompt=''):
             max_tokens=300,
         )
         output = response.choices[0]
-    else:
+    elif judger_model_name in ['qwen-vl-plus', 'qwen-vl-chat']:
         inputs = []
         for img in imgs:
+            if 'http' not in img and judger_model_name == 'qwen-vl-plus':
+                img = "file://" + img
             inputs.append({'image': img})
-
         inputs.append({'text': prompt})
+
         logging.info('Eval'.center(60, '-'))
         logging.info(inputs)
-        query = judger_model.tokenizer.from_list_format(inputs)
-        output, history = judger_model.model.chat(judger_model.tokenizer, query=query, history=None)
+        output = judger_model.generate(inputs)
     logging.info(output)
     logging.info('=' * 60)
     return output
@@ -107,11 +108,12 @@ eval_visual_prompt = {'zh': EVAL_VISUAL_PROMPT_ZH, 'en': EVAL_VISUAL_PROMPT_EN}
 def eval_visualization_acc(output_fname, model_name, judger_model_name='gpt-4-vision-preview'):
     if judger_model_name == 'gpt-4-vision-preview':
         judger_model = None
-    if judger_model_name == 'qwen-vl-chat':
-        logging.warning('In this benchmark of version 20231206, `Qwen-vl-chat` is no longer used as the '
-                        'evaluation model for `Visualization` task.. If you insist on using it, '
-                        'the evaluation results might differ from the official results.')
-        judger_model = get_model('qwen-vl-chat')
+    elif judger_model_name in ['qwen-vl-chat', 'qwen-vl-plus']:
+        if judger_model_name == 'qwen-vl-chat':
+            logging.warning('In this benchmark of version 20231206, `Qwen-vl-chat` is no longer used as the '
+                            'evaluation model for `Visualization` task.. If you insist on using it, '
+                            'the evaluation results might differ from the official results.')
+        judger_model = get_model(judger_model_name)
     else:
         raise Exception("Not supported judger model.")
 
@@ -137,7 +139,7 @@ def eval_visualization_acc(output_fname, model_name, judger_model_name='gpt-4-vi
                                                model_name):
             input_prompt = eval_visual_prompt[item.get('lang', 'en')]
             format_prompt = input_prompt.format(query=prompt)
-            output = judger_model_inference(judger_model, images, format_prompt)
+            output = judger_model_inference(judger_model_name, judger_model, images, format_prompt)
             if 'right' in output.lower():
                 item['vis_acc'] = True
                 if '<|im_end|>' in item['query']:

@@ -260,7 +260,7 @@ def parse_args():
     parser.add_argument('--gen-exec-only', action='store_true', default=False)
     parser.add_argument('--gen-only', action='store_true', default=False)
     parser.add_argument('--vis-judger', type=str, default="'gpt-4-vision-preview'",
-                        choices=['gpt-4-vision-preview', 'qwen-vl-chat'])
+                        choices=['gpt-4-vision-preview', 'qwen-vl-chat', 'qwen-vl-plus'])
     args = parser.parse_args()
     return args
 
