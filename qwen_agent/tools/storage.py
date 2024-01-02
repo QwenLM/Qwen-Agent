@@ -131,6 +131,5 @@ class Storage(BaseTool):
             logger.error(f'Failed to remove: {ex}')
 
     def scan(self):
-        # Todo: maintaining metadata
         for key in self.data.keys():
             yield [key, self.get(key)]

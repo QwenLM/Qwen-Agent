@@ -223,14 +223,11 @@ def bot(history, upload_file, chosen_plug):
                 app_global_para['is_first_upload'] = False
             history[-1][0] = prompt_upload_file + history[-1][0]
 
-            print('here====')
             func_assistant = ReAct(function_list=['code_interpreter'],
                                    llm=llm_config)
             response = func_assistant.run(user_request=history[-1][0],
                                           history=app_global_para['messages'])
-            print(response)
             for chunk in response:
-                print(chunk)
                 history[-1][1] += chunk
                 yield history
         else:

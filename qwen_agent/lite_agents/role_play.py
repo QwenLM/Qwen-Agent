@@ -13,10 +13,10 @@ TOOL_TEMPLATE_ZH = """# 工具
 
 ## 你可以在回复中插入零次、一次或多次以下命令以调用工具：
 
-✿FUNCTION✿: 工具名称，必须是[{tool_names}]之一
-✿ARGS✿: 工具输入
-✿RESULT✿: 工具结果
-✿RETURN✿: 根据工具结果进行回复，如果存在url，请使用如何格式展示出来：![图片](url)
+Action: 工具名称，必须是[{tool_names}]之一
+Action Input: 工具输入
+Observation: 工具结果
+Final Answer: 根据工具结果进行回复，如果存在url，请使用如何格式展示出来：![图片](url)
 
 """
 
@@ -52,10 +52,10 @@ TOOL_TEMPLATE_EN = """# Tools
 
 ## When you need to call a tool, please insert the following command in your reply, which can be called zero or multiple times according to your needs:
 
-✿FUNCTION✿: The tool to use, should be one of [{tool_names}]
-✿ARGS✿: The input of the tool, need to be formatted as a JSON
-✿RESULT✿: The result returned by the tool
-✿RETURN✿: Summarize the results based on the ✿RESULT✿
+Action: The tool to use, should be one of [{tool_names}]
+Action Input: The input of the tool, need to be formatted as a JSON
+Observation: The result returned by the tool
+Final Answer: Summarize the results based on the Observation
 
 """
 
@@ -90,10 +90,10 @@ SPECIAL_PREFIX_TEMPLATE = {
     'en': '(You have access to tools: [{tool_names}])',
 }
 
-ACTION_TOKEN = '\n✿FUNCTION✿:'
-ARGS_TOKEN = '\n✿ARGS✿:'
-OBSERVATION_TOKEN = '\n✿RESULT✿:'
-ANSWER_TOKEN = '\n✿RETURN✿:'
+ACTION_TOKEN = '\nAction:'
+ARGS_TOKEN = '\nAction Input:'
+OBSERVATION_TOKEN = '\nObservation:'
+ANSWER_TOKEN = '\nFinal Answer:'
 
 
 class RolePlay(Agent):
@@ -166,14 +166,14 @@ class RolePlay(Agent):
             max_turn -= 1
             output = self.llm.chat_with_raw_prompt(
                 prompt=planning_prompt,
-                stop=['✿RESULT✿:', '✿RESULT✿:\n'],
+                stop=['Observation:', 'Observation:\n'],
             )
             use_tool, action, action_input, output = self._detect_tool(output)
 
             yield output
             if use_tool:
                 observation = self._call_tool(action, action_input)
-                observation = f'\n✿RESULT✿: {observation}\n✿RETURN✿:'
+                observation = f'\nObservation: {observation}\nFinal Answer:'
                 yield observation
                 planning_prompt += output + observation
             else:
@@ -186,13 +186,13 @@ class RolePlay(Agent):
         j = text.rfind(ARGS_TOKEN)
         k = text.rfind(OBSERVATION_TOKEN)
         if 0 <= i < j:  # If the text has `Action` and `Action input`,
-            if k < j:  # but does not contain `✿RESULT✿`,
-                # then it is likely that `✿RESULT✿` is ommited by the LLM,
+            if k < j:  # but does not contain `Observation`,
+                # then it is likely that `Observation` is ommited by the LLM,
                 # because the output text may have discarded the stop word.
                 text = text.rstrip() + OBSERVATION_TOKEN  # Add it back.
             k = text.rfind(OBSERVATION_TOKEN)
             func_name = text[i + len(ACTION_TOKEN):j].strip()
             func_args = text[j + len(ARGS_TOKEN):k].strip()
-            text = text[:k]  # Discard '\n✿RESULT✿:'.
+            text = text[:k]  # Discard '\nObservation:'.
 
         return (func_name is not None), func_name, func_args, text
