@@ -7,6 +7,36 @@ import dashscope
 from qwen_agent.llm.base import BaseChatModel
 
 
+def stream_output(response):
+    last_len = 0
+    delay_len = 5
+    in_delay = False
+    text = ''
+    for trunk in response:
+        if trunk.status_code == HTTPStatus.OK:
+            text = trunk.output.choices[0].message.content
+            if (len(text) - last_len) <= delay_len:
+                in_delay = True
+                continue
+            else:
+                in_delay = False
+                real_text = text[:-delay_len]
+                now_rsp = real_text[last_len:]
+                yield now_rsp
+                last_len = len(real_text)
+        else:
+            err = '\nError code: %s. Error message: %s' % (trunk.code,
+                                                           trunk.message)
+            if trunk.code == 'DataInspectionFailed':
+                err += '\n错误码: 数据检查失败。错误信息: 输入数据可能包含不适当的内容。'
+            text = ''
+            yield f'{err}'
+    # with open('debug.json', 'w', encoding='utf-8') as writer:
+    #     writer.write(json.dumps(trunk, ensure_ascii=False))
+    if text and (in_delay or (last_len != len(text))):
+        yield text[last_len:]
+
+
 class QwenChatAtDS(BaseChatModel):
 
     def __init__(self, model: str, api_key: str):
@@ -33,31 +63,7 @@ class QwenChatAtDS(BaseChatModel):
             result_format='message',
             stream=True,
         )
-        last_len = 0
-        delay_len = 5
-        in_delay = False
-        text = ''
-        for trunk in response:
-            if trunk.status_code == HTTPStatus.OK:
-                text = trunk.output.choices[0].message.content
-                if (len(text) - last_len) <= delay_len:
-                    in_delay = True
-                    continue
-                else:
-                    in_delay = False
-                    real_text = text[:-delay_len]
-                    now_rsp = real_text[last_len:]
-                    yield now_rsp
-                    last_len = len(real_text)
-            else:
-                err = '\nError code: %s. Error message: %s' % (trunk.code,
-                                                               trunk.message)
-                if trunk.code == 'DataInspectionFailed':
-                    err += '\n错误码: 数据检查失败。错误信息: 输入数据可能包含不适当的内容。'
-                text = ''
-                yield f'{err}'
-        if text and (in_delay or (last_len != len(text))):
-            yield text[last_len:]
+        return stream_output(response)
 
     def _chat_no_stream(
         self,
@@ -77,6 +83,35 @@ class QwenChatAtDS(BaseChatModel):
             top_p=0.8,
         )
         if response.status_code == HTTPStatus.OK:
+            return response.output.choices[0].message.content
+        else:
+            err = 'Error code: %s, error message: %s' % (
+                response.code,
+                response.message,
+            )
+            return err
+
+    def chat_with_raw_prompt(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+    ) -> str:
+        stop = stop or []
+        response = dashscope.Generation.call(
+            self.model,
+            prompt=prompt,  # noqa
+            stop_words=[{
+                'stop_str': word,
+                'mode': 'exclude'
+            } for word in stop],
+            top_p=0.8,
+            result_format='message',
+            stream=False,
+            use_raw_prompt=True,
+        )
+        if response.status_code == HTTPStatus.OK:
+            # with open('debug.json', 'w', encoding='utf-8') as writer:
+            #     writer.write(json.dumps(response, ensure_ascii=False))
             return response.output.choices[0].message.content
         else:
             err = 'Error code: %s, error message: %s' % (

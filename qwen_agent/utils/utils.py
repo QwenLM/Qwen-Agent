@@ -65,6 +65,12 @@ def save_text_to_file(path, text):
         return ex
 
 
+def read_text_from_file(path):
+    with open(path, 'r', encoding='utf-8') as file:
+        file_content = file.read()
+    return file_content
+
+
 ignore_words = [
     '', ' ', '\t', '\n', '\\', 'is', 'are', 'am', 'what', 'how', '的', '吗', '是',
     '了', '啊', '呢', '怎么', '如何', '什么', '？', '?', '！', '!', '“', '”', '‘', '’',
@@ -85,12 +91,10 @@ def get_split_word(text):
     return wordlist
 
 
-def get_keyword_by_llm(text, keyword_agent):
+def get_keyword_by_llm(text):
     try:
-        res = keyword_agent.run(text)
-        res = json5.loads(res)
+        res = json5.loads(text)
     except Exception:
-        print('keyword is not json format!')
         return get_split_word(text)
 
     # json format
@@ -100,13 +104,12 @@ def get_keyword_by_llm(text, keyword_agent):
             _wordlist.extend([kw.lower() for kw in res['keywords_zh']])
         if 'keywords_en' in res and isinstance(res['keywords_en'], list):
             _wordlist.extend([kw.lower() for kw in res['keywords_en']])
-
         wordlist = []
         for x in _wordlist:
             if x in ignore_words:
                 continue
             wordlist.append(x)
-        wordlist.extend(get_split_word(text))
+        wordlist.extend(get_split_word(res['text']))
         return wordlist
     except Exception:
         return get_split_word(text)
@@ -212,3 +215,26 @@ def format_answer(text):
         return rsp
     else:
         return text.split('Final Answer:')[-1].strip()
+
+
+def build_raw_prompt(messages):
+    im_start = '<|im_start|>'
+    im_end = '<|im_end|>'
+    if messages[0]['role'] == 'system':
+        sys = messages[0]['role']
+        prompt = f'{im_start}system\n{sys}{im_end}'
+    else:
+        prompt = f'{im_start}system\nYou are a helpful assistant.{im_end}'
+
+    for message in messages:
+        if message['role'] == 'user':
+            query = message['content'].lstrip('\n').rstrip()
+            prompt += f'\n{im_start}user\n{query}{im_end}'
+        elif message['role'] == 'assistant':
+            response = message['content'].lstrip('\n').rstrip()
+            prompt += f'\n{im_start}assistant\n{response}{im_end}'
+
+    # add one empty reply for the last round of assistant
+    assert prompt.endswith(f'\n{im_start}assistant\n{im_end}')
+    prompt = prompt[:-len(f'{im_end}')]
+    return prompt

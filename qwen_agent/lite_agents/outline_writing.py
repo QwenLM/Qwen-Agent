@@ -1,4 +1,4 @@
-from qwen_agent.actions.base import Action
+from qwen_agent import Agent
 
 PROMPT_TEMPLATE_ZH = """
 你是一个写作助手，任务是充分理解参考资料，从而完成写作。
@@ -27,7 +27,7 @@ PROMPT_TEMPLATE = {
 }
 
 
-class OutlineWriting(Action):
+class OutlineWriting(Agent):
 
     def _run(self, user_request, ref_doc, lang: str = 'en'):
         prompt = PROMPT_TEMPLATE[lang].format(

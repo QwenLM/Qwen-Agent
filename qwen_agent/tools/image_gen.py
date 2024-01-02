@@ -1,12 +1,34 @@
 import json
 import urllib.parse
 
-import json5
+from qwen_agent.tools.base import BaseTool, register_tool
 
 
-def image_gen(plugin_args):
-    prompt = json5.loads(plugin_args)['prompt']
-    prompt = urllib.parse.quote(prompt)
-    return json.dumps(
-        {'image_url': f'https://image.pollinations.ai/prompt/{prompt}'},
-        ensure_ascii=False)
+@register_tool('image_gen')
+class ImageGen(BaseTool):
+    name = 'image_gen'
+    description = 'AI绘画（图像生成）服务，输入文本描述和图像分辨率，返回根据文本信息绘制的图片URL。'
+    parameters = [{
+        'name': 'prompt',
+        'type': 'string',
+        'description': '详细描述了希望生成的图像具有什么内容，例如人物、环境、动作等细节描述，使用英文',
+        'required': True
+    }, {
+        'name':
+        'resolution',
+        'type':
+        'string',
+        'description':
+        '格式是 数字*数字，表示希望生成的图像的分辨率大小，选项有[1024*1024, 720*1280, 1280*720]'
+    }]
+
+    def call(self, params: str, **kwargs) -> str:
+        params = self._verify_args(params)
+        if isinstance(params, str):
+            return 'Parameter Error'
+
+        prompt = params['prompt']
+        prompt = urllib.parse.quote(prompt)
+        return json.dumps(
+            {'image_url': f'https://image.pollinations.ai/prompt/{prompt}'},
+            ensure_ascii=False)

@@ -1,4 +1,4 @@
-from qwen_agent.actions.base import Action
+from qwen_agent import Agent
 
 PROMPT_TEMPLATE_ZH = """你是一个写作助手，请依据参考资料，根据给定的前置文本续写合适的内容。
 #参考资料：
@@ -25,7 +25,7 @@ PROMPT_TEMPLATE = {
 }
 
 
-class ContinueWriting(Action):
+class ContinueWriting(Agent):
 
     def _run(self, user_request, ref_doc, lang: str = 'en'):
         prompt = PROMPT_TEMPLATE[lang].format(

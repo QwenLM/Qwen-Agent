@@ -1,3 +1,5 @@
+# need refactor
+
 import datetime
 import json
 import os
@@ -6,35 +8,43 @@ from pathlib import Path
 
 import add_qwen_libs  # NOQA
 import gradio as gr
-import jsonlines
 
-from qwen_agent.actions import (ContinueWriting, ReAct, RetrievalQA,
-                                WriteFromScratch)
-from qwen_agent.actions.function_calling import FunctionCalling
-from qwen_agent.llm import get_chat_model
+from qwen_agent.agents import ArticleAgent, DocQAAgent
+from qwen_agent.lite_agents import ReAct
 from qwen_agent.log import logger
-from qwen_agent.memory import Memory
-from qwen_agent.tools import call_plugin, list_of_all_functions
 from qwen_agent.utils.utils import (format_answer, get_last_one_line_context,
                                     has_chinese_chars, save_text_to_file)
 from qwen_server.schema import GlobalConfig
-from qwen_server.utils import extract_and_cache_document
 
 # Read config
 with open(Path(__file__).resolve().parent / 'server_config.json', 'r') as f:
     server_config = json.load(f)
     server_config = GlobalConfig(**server_config)
+function_list = None
+llm_config = None
+storage_path = None
 
-llm = get_chat_model(model=server_config.server.llm,
-                     api_key=server_config.server.api_key,
-                     model_server=server_config.server.model_server)
+if hasattr(server_config.server, 'llm'):
+    llm_config = {
+        'model': server_config.server.llm,
+        'api_key': server_config.server.api_key,
+        'model_server': server_config.server.model_server
+    }
+if hasattr(server_config.server, 'functions'):
+    function_list = server_config.server.functions
+if hasattr(server_config.path, 'database_root'):
+    storage_path = server_config.path.database_root
 
-mem = Memory(llm=llm, stream=False)
+qa_assistant = DocQAAgent(function_list=function_list,
+                          llm=llm_config,
+                          storage_path=storage_path)
+writing_assistant = ArticleAgent(function_list=function_list,
+                                 llm=llm_config,
+                                 storage_path=storage_path)
 
 app_global_para = {
     'time': [str(datetime.date.today()),
              str(datetime.date.today())],
-    'cache_file': os.path.join(server_config.path.cache_root, 'browse.jsonl'),
     'messages': [],
     'last_turn_msg_id': [],
     'is_first_upload': True,
@@ -107,23 +117,11 @@ def add_file(file, chosen_plug):
                 'content': '',
                 'query': '',
                 'url': new_path,
-                'task': 'cache',
                 'type': fn_type,
             }
-            extract_and_cache_document(
-                data, app_global_para['cache_file'],
-                server_config.path.cache_root)  # waiting for analyse file
+            qa_assistant.mem.run(**data)
 
     return new_path
-
-
-def read_records(file, times=None):
-    lines = []
-    if times:
-        for line in jsonlines.open(file):
-            if times[0] <= line['time'] <= times[1]:
-                lines.append(line)
-    return lines
 
 
 def update_app_global_para(date1, date2):
@@ -141,13 +139,13 @@ def refresh_date():
 
 
 def update_browser_list():
-    if not os.path.exists(app_global_para['cache_file']):
+    br_list = json.loads(
+        qa_assistant.mem.run(raw=True, time_limit=app_global_para['time']))
+    if not br_list:
         return 'No browsing records'
-    lines = read_records(app_global_para['cache_file'],
-                         times=app_global_para['time'])
 
-    br_list = [[line['url'], line['extract'], line['checked']]
-               for line in lines]
+    br_list = [[line['url'], line['title'], line['checked']]
+               for line in br_list]
 
     res = '<ol>{bl}</ol>'
     bl = ''
@@ -201,7 +199,7 @@ def pure_bot(history):
             messages.append({'role': 'user', 'content': chat[0]})
             messages.append({'role': 'assistant', 'content': chat[1]})
         messages.append({'role': 'user', 'content': history[-1][0]})
-        response = llm.chat(messages=messages, stream=True)
+        response = qa_assistant.llm.chat(messages=messages, stream=True)
         for chunk in response:
             history[-1][1] += chunk
             yield history
@@ -224,131 +222,37 @@ def bot(history, upload_file, chosen_plug):
                     prompt_upload_file = f'Uploaded the [file]({file_relpath}) to the current directory. '
                 app_global_para['is_first_upload'] = False
             history[-1][0] = prompt_upload_file + history[-1][0]
-            if llm.support_function_calling():
-                message = {'role': 'user', 'content': history[-1][0]}
-                app_global_para['last_turn_msg_id'].append(
-                    len(app_global_para['messages']))
-                app_global_para['messages'].append(message)
-                while True:
-                    functions = [
-                        x for x in list_of_all_functions
-                        if x['name_for_model'] == 'code_interpreter'
-                    ]
-                    rsp = llm.chat_with_functions(app_global_para['messages'],
-                                                  functions)
-                    if rsp.get('function_call', None):
-                        history[-1][1] += rsp['content'].strip() + '\n'
-                        yield history
-                        history[-1][1] += (
-                            'Action: ' + rsp['function_call']['name'].strip() +
-                            '\n')
-                        yield history
-                        history[-1][1] += ('Action Input:\n' +
-                                           rsp['function_call']['arguments'] +
-                                           '\n')
-                        yield history
-                        bot_msg = {
-                            'role': 'assistant',
-                            'content': rsp['content'],
-                            'function_call': {
-                                'name': rsp['function_call']['name'],
-                                'arguments': rsp['function_call']['arguments'],
-                            },
-                        }
-                        app_global_para['last_turn_msg_id'].append(
-                            len(app_global_para['messages']))
-                        app_global_para['messages'].append(bot_msg)
 
-                        obs = call_plugin(
-                            rsp['function_call']['name'],
-                            rsp['function_call']['arguments'],
-                        )
-                        func_msg = {
-                            'role': 'function',
-                            'name': rsp['function_call']['name'],
-                            'content': obs,
-                        }
-                        history[-1][1] += 'Observation: ' + obs + '\n'
-                        yield history
-                        app_global_para['last_turn_msg_id'].append(
-                            len(app_global_para['messages']))
-                        app_global_para['messages'].append(func_msg)
-                    else:
-                        bot_msg = {
-                            'role': 'assistant',
-                            'content': rsp['content'],
-                        }
-                        # tmp_msg = '\nThought: I now know the final answer.\nFinal Answer: '
-                        # tmp_msg += rsp['content']
-                        # history[-1][1] += tmp_msg
-                        history[-1][1] += rsp['content']
-                        yield history
-                        app_global_para['last_turn_msg_id'].append(
-                            len(app_global_para['messages']))
-                        app_global_para['messages'].append(bot_msg)
-                        break
-            else:
-                functions = [
-                    x for x in list_of_all_functions
-                    if x['name_for_model'] == 'code_interpreter'
-                ]
-                agent = ReAct(llm=llm)
-                for chunk in agent.run(user_request=history[-1][0],
-                                       functions=functions,
-                                       history=app_global_para['messages']):
-                    history[-1][1] += chunk
-                    yield history
+            print('here====')
+            func_assistant = ReAct(function_list=['code_interpreter'],
+                                   llm=llm_config)
+            response = func_assistant.run(user_request=history[-1][0],
+                                          history=app_global_para['messages'])
+            print(response)
+            for chunk in response:
+                print(chunk)
+                history[-1][1] += chunk
                 yield history
-
-                message = {'role': 'user', 'content': history[-1][0]}
-                app_global_para['last_turn_msg_id'].append(
-                    len(app_global_para['messages']))
-                app_global_para['messages'].append(message)
-                rsp_message = {'role': 'assistant', 'content': history[-1][1]}
-                app_global_para['last_turn_msg_id'].append(
-                    len(app_global_para['messages']))
-                app_global_para['messages'].append(rsp_message)
-
         else:
-            lines = []
-            if not os.path.exists(app_global_para['cache_file']):
-                _ref = ''
-            else:
-                for line in jsonlines.open(app_global_para['cache_file']):
-                    if (app_global_para['time'][0] <= line['time'] <=
-                            app_global_para['time'][1]) and line['checked']:
-                        lines.append(line)
-                if lines:
-                    _ref_list = mem.get(
-                        history[-1][0],
-                        lines,
-                        max_token=server_config.server.max_ref_token)
-                    _ref = '\n'.join(
-                        json.dumps(x, ensure_ascii=False) for x in _ref_list)
-                else:
-                    _ref = ''
-                    gr.Warning(
-                        'No reference materials selected, Qwen will answer directly'
-                    )
-            logger.info(_ref)
-            # TODO: considering history for retrieval qa
-            agent = RetrievalQA(llm=llm, stream=True)
-            response = agent.run(user_request=history[-1][0], ref_doc=_ref)
-
+            response = qa_assistant.run(
+                query=history[-1][0],
+                max_ref_token=server_config.server.max_ref_token,
+                time_limit=app_global_para['time'],
+                checked=True)
             for chunk in response:
                 history[-1][1] += chunk
                 yield history
 
-            # append message
-            message = {'role': 'user', 'content': history[-1][0]}
-            app_global_para['last_turn_msg_id'].append(
-                len(app_global_para['messages']))
-            app_global_para['messages'].append(message)
+        # append message
+        message = {'role': 'user', 'content': history[-1][0]}
+        app_global_para['last_turn_msg_id'].append(
+            len(app_global_para['messages']))
+        app_global_para['messages'].append(message)
 
-            message = {'role': 'assistant', 'content': history[-1][1]}
-            app_global_para['last_turn_msg_id'].append(
-                len(app_global_para['messages']))
-            app_global_para['messages'].append(message)
+        message = {'role': 'assistant', 'content': history[-1][1]}
+        app_global_para['last_turn_msg_id'].append(
+            len(app_global_para['messages']))
+        app_global_para['messages'].append(message)
 
 
 def generate(context):
@@ -361,78 +265,36 @@ def generate(context):
         else:
             sp_query += ' (Please use code_interpreter.)'
 
-        functions = [
-            x for x in list_of_all_functions
-            if x['name_for_model'] == 'code_interpreter'
-        ]
-        if llm.support_function_calling():
-            response = FunctionCalling(llm=llm).run(sp_query,
-                                                    functions=functions)
-            for chunk in response:
-                res += chunk
-                yield res
-        else:
-            agent = ReAct(llm=llm)
-            for chunk in agent.run(user_request=sp_query, functions=functions):
-                res += chunk
-                yield res
+        func_assistant = ReAct(function_list=['code_interpreter'],
+                               llm=llm_config)
+        response = func_assistant.run(user_request=sp_query)
+        for chunk in response:
+            res += chunk
             yield res
+
     elif PLUGIN_FLAG in sp_query:  # router to plugin
         sp_query = sp_query.split(PLUGIN_FLAG)[-1]
-        functions = list_of_all_functions
-        if llm.support_function_calling():
-            response = FunctionCalling(llm=llm).run(sp_query,
-                                                    functions=functions)
-            for chunk in response:
-                res += chunk
-                yield res
-        else:
-            agent = ReAct(llm=llm)
-            for chunk in agent.run(user_request=sp_query, functions=functions):
-                res += chunk
-                yield res
+        func_assistant = ReAct(function_list=['code_interpreter', 'image_gen'],
+                               llm=llm_config)
+        response = func_assistant.run(user_request=sp_query)
+        for chunk in response:
+            res += chunk
             yield res
+
     else:  # router to continue writing
-        lines = []
-        if os.path.exists(app_global_para['cache_file']):
-            for line in jsonlines.open(app_global_para['cache_file']):
-                if (app_global_para['time'][0] <= line['time'] <=
-                        app_global_para['time'][1]) and line['checked']:
-                    lines.append(line)
-        if lines:
-            res += '\n========================= \n'
-            yield res
-            res += '> Search for relevant information: \n'
-            yield res
-
-            sp_query_no_title = sp_query
-            if TITLE_FLAG in sp_query:  # /title
-                sp_query_no_title = sp_query.split(TITLE_FLAG)[-1]
-
-            _ref_list = mem.get(sp_query_no_title,
-                                lines,
-                                max_token=server_config.server.max_ref_token)
-            _ref = '\n'.join(
-                json.dumps(x, ensure_ascii=False) for x in _ref_list)
-            res += _ref
-            yield res
-            res += '\n'
-        else:
-            _ref = ''
-            gr.Warning(
-                'No reference materials selected, Qwen will answer directly')
-
+        sp_query_no_title = context
         if TITLE_FLAG in sp_query:  # /title
-            agent = WriteFromScratch(llm=llm, stream=True)
-            user_request = sp_query.split(TITLE_FLAG)[-1]
-        else:
-            res += '\n========================= \n'
-            res += '> Writing Text: \n'
-            yield res
-            agent = ContinueWriting(llm=llm, stream=True)
-            user_request = context
+            sp_query_no_title = sp_query.split(TITLE_FLAG)[-1]
 
-        response = agent.run(user_request=user_request, ref_doc=_ref)
+        full_article = False
+        if TITLE_FLAG in sp_query:  # /title
+            full_article = True
+        response = writing_assistant.run(
+            sp_query_no_title,
+            max_ref_token=server_config.server.max_ref_token,
+            full_article=full_article,
+            time_limit=app_global_para['time'],
+            checked=True)
         for chunk in response:
             res += chunk
             yield res

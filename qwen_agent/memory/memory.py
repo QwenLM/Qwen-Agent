@@ -1,66 +1,95 @@
-import copy
-from typing import Dict, List
+import json
+from typing import Dict, List, Optional, Union
 
-from qwen_agent.actions import GenKeyword
-from qwen_agent.memory.similarity_search import SimilaritySearch
-from qwen_agent.utils.tokenization_qwen import count_tokens
+import json5
+
+from qwen_agent import Agent
+from qwen_agent.lite_agents import GenKeyword
+from qwen_agent.llm import BaseChatModel
+from qwen_agent.log import logger
+from qwen_agent.tools import SimilaritySearch, Storage
+from qwen_agent.tools.similarity_search import RefMaterialInput
 
 
-# TODO: Design the interface.
-class Memory:
+class Memory(Agent):
+    """
+    Memory is special agent for data management
+    This memory defaults to using tools: Storage and SimilaritySearch; lightagent: GenKeyword
+    """
 
-    def __init__(self, llm=None, stream=False):
-        self.search_agent = SimilaritySearch()
-        self.keyword_agent = GenKeyword(llm=llm, stream=stream)
+    def __init__(self,
+                 function_list: Optional[List[str]] = None,
+                 llm: Optional[Union[Dict, BaseChatModel]] = None,
+                 storage_path: Optional[str] = None,
+                 name: Optional[str] = None,
+                 description: Optional[str] = None,
+                 **kwargs):
+        super().__init__(function_list=function_list,
+                         llm=llm,
+                         name=name,
+                         description=description)
 
-    def get(self, query: str, records: list, max_token=4000) -> List[Dict]:
-        # token counter backup
-        new_records = []
-        for record in records:
-            if not record['raw']:
-                continue
-            if 'token' not in record['raw'][0]['page_content']:
-                tmp = []
-                for page in record['raw']:
-                    new_page = copy.deepcopy(page)
-                    new_page['token'] = count_tokens(page['page_content'])
-                    tmp.append(new_page)
-                record['raw'] = tmp
-            new_records.append(record)
-        records = new_records
+        self.db = Storage()
+        self.db.init(storage_path)
 
+        self.search_tool = SimilaritySearch()
+
+        self.keygen = GenKeyword(llm=llm)
+        self.keygen.stream = False
+
+    def _run(self,
+             query: str = None,
+             url: str = None,
+             max_token: int = 4000,
+             **kwargs):
+        # parse doc
+        if url:
+            func_args = json.dumps({'url': url}, ensure_ascii=False)
+        else:
+            func_args = {}
+        records = self._call_tool('doc_parser',
+                                  func_args,
+                                  db=self.db,
+                                  **kwargs)
+        if not query:
+            return records
+        records = json5.loads(records)
+        if not records:
+            return ''
+
+        # need to retrieval
+        # gen keyword
+        keyword = self.keygen.run(query)
+        logger.info(keyword)
+        try:
+            keyword_dict = json5.loads(keyword)
+            keyword_dict['text'] = query
+            query_with_keyword = keyword_dict
+        except Exception:
+            query_with_keyword = query
+
+        # retrieval related content
+        records = [
+            RefMaterialInput(**record) for record in json5.loads(records)
+        ]
+        content = self.retrieve_content(query_with_keyword,
+                                        records=records,
+                                        max_token=max_token)
+        return content
+
+    def retrieve_content(self,
+                         query: str,
+                         records: List[RefMaterialInput],
+                         max_token=4000,
+                         **kwargs) -> str:
         single_max_token = int(max_token / len(records))
         _ref_list = []
         for record in records:
-            now_ref_list = self.search_agent.run(record, query,
-                                                 single_max_token,
-                                                 self.keyword_agent)
-            if now_ref_list['text']:
-                _ref_list.append(now_ref_list)
-
-        if not _ref_list:
-            _ref_list = self.get_top(records,
-                                     single_max_token=single_max_token)
-
-        return _ref_list
-
-    def get_top(self, records: list, single_max_token=4000):
-        _ref_list = []
-        for record in records:
-            now_token = 0
-            raw = record['raw']
-            tmp = {'url': record['url'], 'text': []}
-            for page in raw:
-                if (now_token + page['token']) <= single_max_token:
-                    tmp['text'].append(page['page_content'])
-                    now_token += page['token']
-                else:
-                    use_rate = (
-                        (single_max_token - now_token) / page['token']) * 0.2
-                    tmp['text'].append(
-                        page['page_content']
-                        [:int(len(page['page_content']) * use_rate)])
-                    break
-
-            _ref_list.append(tmp)
-        return _ref_list
+            # retrieval for query
+            now_ref_list = self.search_tool.call({'query': query}, record,
+                                                 single_max_token)
+            _ref_list.append(now_ref_list)
+        _ref = ''
+        if _ref_list:
+            _ref = '\n'.join(_ref_list)
+        return _ref

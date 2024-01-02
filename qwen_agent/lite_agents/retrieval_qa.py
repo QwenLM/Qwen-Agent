@@ -1,4 +1,4 @@
-from qwen_agent.actions.base import Action
+from qwen_agent import Agent
 
 PROMPT_TEMPLATE_ZH = """请充分理解以下参考资料内容，组织出满足用户提问的条理清晰的回复。
 #参考资料：
@@ -29,7 +29,7 @@ ANSWER_PROMPT_TEMPLATE = {
 }
 
 
-class RetrievalQA(Action):
+class RetrievalQA(Agent):
 
     def _run(self, user_request, ref_doc, lang: str = 'en'):
 

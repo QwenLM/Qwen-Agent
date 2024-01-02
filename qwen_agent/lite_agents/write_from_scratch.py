@@ -2,10 +2,8 @@ import re
 
 import json5
 
-from qwen_agent.actions.base import Action
-from qwen_agent.actions.expand_writing import ExpandWriting
-from qwen_agent.actions.outline_writing import OutlineWriting
-from qwen_agent.actions.summarize import Summarize
+from qwen_agent import Agent
+from qwen_agent.lite_agents import ExpandWriting, OutlineWriting, Summarize
 
 default_plan = """{"action1": "summarize", "action2": "outline", "action3": "expand"}"""
 
@@ -16,7 +14,7 @@ def is_roman_numeral(s):
     return match is not None
 
 
-class WriteFromScratch(Action):
+class WriteFromScratch(Agent):
 
     def _run(self, user_request, ref_doc, lang: str = 'en'):
         # plan

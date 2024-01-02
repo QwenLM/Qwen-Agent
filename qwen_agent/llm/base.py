@@ -83,6 +83,13 @@ class BaseChatModel(ABC):
                             functions: Optional[List[Dict]] = None) -> Dict:
         raise FnCallNotImplError
 
+    def chat_with_raw_prompt(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+    ) -> str:
+        raise FnCallNotImplError
+
     @abstractmethod
     def _chat_stream(
         self,

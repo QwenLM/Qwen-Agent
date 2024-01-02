@@ -74,7 +74,7 @@ def update_config(server_config, args, server_config_path):
             cfg = server_config.model_dump_json()
         except AttributeError:  # for pydantic v1
             cfg = server_config.json()
-        json.dump(json.loads(cfg), f, ensure_ascii=False)
+        json.dump(json.loads(cfg), f, ensure_ascii=False, indent=4)
     return server_config
 
 
@@ -90,7 +90,7 @@ def main():
     logger.info(server_config)
 
     os.makedirs(server_config.path.work_space_root, exist_ok=True)
-    os.makedirs(server_config.path.cache_root, exist_ok=True)
+    os.makedirs(server_config.path.database_root, exist_ok=True)
     os.makedirs(server_config.path.download_root, exist_ok=True)
 
     os.makedirs(server_config.path.code_interpreter_ws, exist_ok=True)

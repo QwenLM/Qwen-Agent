@@ -23,6 +23,7 @@ from jupyter_client import BlockingKernelClient
 sys.path.insert(0, str(Path(__file__).absolute().parent.parent.parent))  # NOQA
 
 from qwen_agent.log import logger  # NOQA
+from qwen_agent.tools.base import BaseTool, register_tool  # NOQA
 from qwen_agent.utils.utils import extract_code, print_traceback  # NOQA
 
 WORK_DIR = os.getenv('M6_CODE_INTERPRETER_WORK_DIR', '/tmp/m6_ci_workspace')
@@ -123,6 +124,26 @@ def _escape_ansi(line: str) -> str:
     return ansi_escape.sub('', line)
 
 
+def _fix_matplotlib_cjk_font_issue():
+    ttf_name = os.path.basename(ALIB_FONT_FILE)
+    local_ttf = os.path.join(
+        os.path.abspath(
+            os.path.join(matplotlib.matplotlib_fname(), os.path.pardir)),
+        'fonts', 'ttf', ttf_name)
+    if not os.path.exists(local_ttf):
+        try:
+            shutil.copy(ALIB_FONT_FILE, local_ttf)
+            font_list_cache = os.path.join(matplotlib.get_cachedir(),
+                                           'fontlist-*.json')
+            for cache_file in glob.glob(font_list_cache):
+                with open(cache_file) as fin:
+                    cache_content = fin.read()
+                if ttf_name not in cache_content:
+                    os.remove(cache_file)
+        except Exception:
+            print_traceback()
+
+
 def _execute_code(kc: BlockingKernelClient, code: str) -> str:
     kc.wait_for_ready()
     kc.execute(code)
@@ -178,61 +199,51 @@ def _execute_code(kc: BlockingKernelClient, code: str) -> str:
     return result
 
 
-def _fix_matplotlib_cjk_font_issue():
-    ttf_name = os.path.basename(ALIB_FONT_FILE)
-    local_ttf = os.path.join(
-        os.path.abspath(
-            os.path.join(matplotlib.matplotlib_fname(), os.path.pardir)),
-        'fonts', 'ttf', ttf_name)
-    if not os.path.exists(local_ttf):
-        try:
-            shutil.copy(ALIB_FONT_FILE, local_ttf)
-            font_list_cache = os.path.join(matplotlib.get_cachedir(),
-                                           'fontlist-*.json')
-            for cache_file in glob.glob(font_list_cache):
-                with open(cache_file) as fin:
-                    cache_content = fin.read()
-                if ttf_name not in cache_content:
-                    os.remove(cache_file)
-        except Exception:
-            print_traceback()
+@register_tool('code_interpreter')
+class CodeInterpreter(BaseTool):
+    name = 'code_interpreter'
+    description = '代码解释器，可用于执行Python代码。 Enclose the code within triple backticks (`) at the beginning and end of the code.'
+    parameters = [{'name': 'code', 'type': 'string', 'description': '待执行的代码'}]
 
+    def call(self, params: str, timeout: Optional[int] = 30, **kwargs) -> str:
+        params = self._verify_args(params)
+        if isinstance(params, dict):
+            code = params['code']
+        else:
+            code = extract_code(params)
 
-def code_interpreter(action_input: str, timeout: Optional[int] = 30) -> str:
-    code = extract_code(action_input)
+        if not code.strip():
+            return ''
 
-    if not code.strip():
-        return ''
+        pid: int = os.getpid()
+        if pid in _KERNEL_CLIENTS:
+            kc = _KERNEL_CLIENTS[pid]
+        else:
+            _fix_matplotlib_cjk_font_issue()
+            kc = _start_kernel(pid)
+            with open(INIT_CODE_FILE) as fin:
+                start_code = fin.read()
+                start_code = start_code.replace('{{M6_FONT_PATH}}',
+                                                repr(ALIB_FONT_FILE)[1:-1])
+            logger.info(_execute_code(kc, start_code))
+            _KERNEL_CLIENTS[pid] = kc
 
-    pid: int = os.getpid()
-    if pid in _KERNEL_CLIENTS:
-        kc = _KERNEL_CLIENTS[pid]
-    else:
-        _fix_matplotlib_cjk_font_issue()
-        kc = _start_kernel(pid)
-        with open(INIT_CODE_FILE) as fin:
-            start_code = fin.read()
-            start_code = start_code.replace('{{M6_FONT_PATH}}',
-                                            repr(ALIB_FONT_FILE)[1:-1])
-        logger.info(_execute_code(kc, start_code))
-        _KERNEL_CLIENTS[pid] = kc
+        if timeout:
+            code = f'_M6CountdownTimer.start({timeout})\n{code}'
 
-    if timeout:
-        code = f'_M6CountdownTimer.start({timeout})\n{code}'
+        fixed_code = []
+        for line in code.split('\n'):
+            fixed_code.append(line)
+            if line.startswith('sns.set_theme('):
+                fixed_code.append(
+                    'plt.rcParams["font.family"] = _m6_font_prop.get_name()')
+        fixed_code = '\n'.join(fixed_code)
+        result = _execute_code(kc, fixed_code)
 
-    fixed_code = []
-    for line in code.split('\n'):
-        fixed_code.append(line)
-        if line.startswith('sns.set_theme('):
-            fixed_code.append(
-                'plt.rcParams["font.family"] = _m6_font_prop.get_name()')
-    fixed_code = '\n'.join(fixed_code)
-    result = _execute_code(kc, fixed_code)
+        if timeout:
+            _execute_code(kc, '_M6CountdownTimer.cancel()')
 
-    if timeout:
-        _execute_code(kc, '_M6CountdownTimer.cancel()')
-
-    return result
+        return result
 
 
 def _get_multiline_input(hint: str) -> str:
@@ -253,6 +264,6 @@ def _get_multiline_input(hint: str) -> str:
 
 
 if __name__ == '__main__':
+    tool = CodeInterpreter()
     while True:
-        logger.info(
-            code_interpreter(_get_multiline_input('Enter python code:')))
+        logger.info(tool.call(_get_multiline_input('Enter python code:')))

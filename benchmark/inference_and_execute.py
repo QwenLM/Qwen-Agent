@@ -56,7 +56,7 @@ def llm_with_plugin(args, query, item=None, exec_limit=3):
     if '<|im_start|>' in query:
         _, prepend_code, __ = ReActParser().parse_latest_plugin_call(query)
         prepend_code = replace_upload_fname(prepend_code, upload_fname_list)
-        call_plugin(_, [prepend_code], clear=(exec_count == 0))
+        call_tool(_, [prepend_code], clear=(exec_count == 0))
         exec_count += 1
         exec_limit += 1
 
@@ -78,8 +78,8 @@ def llm_with_plugin(args, query, item=None, exec_limit=3):
         if action:
             action_input = replace_upload_fname(action_input,
                                                 upload_fname_list)
-            observation = call_plugin(action, [action_input],
-                                      clear=(exec_count == 0))
+            observation = call_tool(action, [action_input],
+                                    clear=(exec_count == 0))
             output += react_prompt_obj.build_observation(observation)
             text += output
             exec_count += 1
@@ -103,7 +103,7 @@ def text_completion(llm, input_text, stop_words=[]):
     return output
 
 
-def call_plugin(plugin_name, plugin_args_list, clear=False):
+def call_tool(plugin_name, plugin_args_list, clear=False):
     # Relax constraints on plugin name.
     logging.info('Call code interpreter'.center(60, '='))
     obs = code_interpreter(plugin_args_list, clear=clear)
@@ -240,11 +240,10 @@ def parse_args():
                         type=str,
                         default='qwen-14b-chat',
                         choices=list(model_path_map.keys()))
-    parser.add_argument(
-        '--task',
-        type=str,
-        default='all',
-        choices=['all', 'gsm8k', 'visualization', 'general'])
+    parser.add_argument('--task',
+                        type=str,
+                        default='all',
+                        choices=['all', 'gsm8k', 'visualization', 'general'])
     parser.add_argument('--output-path', type=str, default='output_data')
     parser.add_argument('--input-path', type=str, default='eval_data')
     parser.add_argument('-o', '--output-fname', type=str, default='')
@@ -259,8 +258,11 @@ def parse_args():
                         default=False)
     parser.add_argument('--gen-exec-only', action='store_true', default=False)
     parser.add_argument('--gen-only', action='store_true', default=False)
-    parser.add_argument('--vis-judger', type=str, default="'gpt-4-vision-preview'",
-                        choices=['gpt-4-vision-preview', 'qwen-vl-chat', 'qwen-vl-plus'])
+    parser.add_argument(
+        '--vis-judger',
+        type=str,
+        default="'gpt-4-vision-preview'",
+        choices=['gpt-4-vision-preview', 'qwen-vl-chat', 'qwen-vl-plus'])
     args = parser.parse_args()
     return args
 

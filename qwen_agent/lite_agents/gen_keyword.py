@@ -1,4 +1,4 @@
-from qwen_agent.actions.base import Action
+from qwen_agent import Agent
 
 PROMPT_TEMPLATE_ZH = """请提取问题中的关键词，需要中英文均有，可以适量补充不在问题中但相关的关键词。关键词尽量切分为动词/名词/形容词等类型，不要长词组。关键词以JSON的格式给出，比如{{"keywords_zh": ["关键词1", "关键词2"], "keywords_en": ["keyword 1", "keyword 2"]}}
 
@@ -37,7 +37,7 @@ PROMPT_TEMPLATE = {
 }
 
 
-class GenKeyword(Action):
+class GenKeyword(Agent):
 
     def _run(self, user_request, lang: str = 'en'):
         prompt = PROMPT_TEMPLATE[lang].format(user_request=user_request, )

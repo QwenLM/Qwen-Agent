@@ -1,1 +1,24 @@
-{"path": {"work_space_root": "workspace/", "cache_root": "workspace/browser_cache/", "download_root": "workspace/download/", "code_interpreter_ws": "workspace/ci_workspace/"}, "server": {"server_host": "127.0.0.1", "fast_api_port": 7866, "app_in_browser_port": 7863, "workstation_port": 7864, "model_server": "dashscope", "api_key": "", "llm": "qwen-plus", "max_ref_token": 4000, "max_days": 7}}
+{
+    "path": {
+        "work_space_root": "workspace/",
+        "database_root": "workspace/database/",
+        "download_root": "workspace/download/",
+        "code_interpreter_ws": "workspace/ci_workspace/"
+    },
+    "server": {
+        "server_host": "127.0.0.1",
+        "fast_api_port": 7866,
+        "app_in_browser_port": 7863,
+        "workstation_port": 7864,
+        "model_server": "dashscope",
+        "api_key": "",
+        "llm": "qwen-plus",
+        "max_ref_token": 4000,
+        "max_days": 7,
+        "functions": [
+            "doc_parser",
+            "code_interpreter",
+            "image_gen"
+        ]
+    }
+}

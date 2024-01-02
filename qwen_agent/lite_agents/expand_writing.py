@@ -1,4 +1,4 @@
-from qwen_agent.actions.base import Action
+from qwen_agent import Agent
 
 PROMPT_TEMPLATE_ZH = """
 你是一个写作助手，任务是依据参考资料，完成写作任务。
@@ -33,7 +33,7 @@ PROMPT_TEMPLATE = {
 }
 
 
-class ExpandWriting(Action):
+class ExpandWriting(Agent):
 
     def _run(
         self,

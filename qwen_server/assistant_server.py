@@ -4,30 +4,35 @@ from pathlib import Path
 
 import add_qwen_libs  # NOQA
 import gradio as gr
-import jsonlines
-from schema import GlobalConfig
+import json5
 
-from qwen_agent.actions import RetrievalQA
-from qwen_agent.llm import get_chat_model
+from qwen_agent.agents import DocQAAgent
 from qwen_agent.log import logger
-from qwen_agent.memory import Memory
+from qwen_server.schema import GlobalConfig
 
-# Read config
-with open(Path(__file__).resolve().parent / 'server_config.json', 'r') as f:
+server_config_path = Path(__file__).resolve().parent / 'server_config.json'
+with open(server_config_path, 'r') as f:
     server_config = json.load(f)
     server_config = GlobalConfig(**server_config)
 
-llm = get_chat_model(model=server_config.server.llm,
-                     api_key=server_config.server.api_key,
-                     model_server=server_config.server.model_server)
+function_list = None
+llm_config = None
+storage_path = None
 
-mem = Memory(llm=llm, stream=False)
+if hasattr(server_config.server, 'llm'):
+    llm_config = {
+        'model': server_config.server.llm,
+        'api_key': server_config.server.api_key,
+        'model_server': server_config.server.model_server
+    }
+if hasattr(server_config.server, 'functions'):
+    function_list = server_config.server.functions
+if hasattr(server_config.path, 'database_root'):
+    storage_path = server_config.path.database_root
 
-cache_file = os.path.join(server_config.path.cache_root, 'browse.jsonl')
-cache_file_popup_url = os.path.join(server_config.path.cache_root,
-                                    'popup_url.jsonl')
-
-PAGE_URL = []
+assistant = DocQAAgent(function_list=function_list,
+                       llm=llm_config,
+                       storage_path=storage_path)
 
 with open(Path(__file__).resolve().parent / 'css/main.css', 'r') as f:
     css = f.read()
@@ -50,108 +55,66 @@ def rm_text(history):
         return history, gr.update(value='', interactive=False)
 
 
-def add_file(history, file):
-    history = history + [((file.name, ), None)]
-    return history
+def set_url():
+    url = assistant.mem.db.get('browsing_url', re_load=True)
+    logger.info('The current access url is: ' + url)
+    return url
 
 
-def set_page_url():
-    lines = []
-    assert os.path.exists(cache_file_popup_url)
-    for line in jsonlines.open(cache_file_popup_url):
-        lines.append(line)
-    PAGE_URL.append(lines[-1]['url'])
-    logger.info('The current access page is: ' + PAGE_URL[-1])
+def read_content(url):
+    return assistant.mem.db.get(url)
+
+
+def save_history(history, url):
+    history = history or []
+    content = json5.loads(read_content(url))
+    content['session'] = history
+    assistant.mem.db.put(url, json.dumps(content, ensure_ascii=False))
 
 
 def bot(history):
-    set_page_url()
+    page_url = set_url()
     if not history:
         yield history
     else:
-        now_page = None
-        _ref = ''
-        if not os.path.exists(cache_file):
-            gr.Info("Please add this page to Qwen's Reading List first!")
-        else:
-            for line in jsonlines.open(cache_file):
-                if line['url'] == PAGE_URL[-1]:
-                    now_page = line
-
-            if not now_page:
-                gr.Info(
-                    "This page has not yet been added to the Qwen's reading list!"
-                )
-            elif not now_page['raw']:
-                gr.Info('Please reopen later, Qwen is analyzing this page...')
-            else:
-                _ref_list = mem.get(
-                    history[-1][0], [now_page],
-                    max_token=server_config.server.max_ref_token)
-                if _ref_list:
-                    _ref = '\n'.join(
-                        json.dumps(x, ensure_ascii=False) for x in _ref_list)
-                else:
-                    _ref = ''
-
-        # TODO: considering history for retrieval qa
-        agent = RetrievalQA(stream=True, llm=llm)
+        query = history[-1][0]
         history[-1][1] = ''
-        response = agent.run(user_request=history[-1][0], ref_doc=_ref)
-
-        for chunk in response:
-            history[-1][1] += chunk
-            yield history
-
-        # save history
-        if now_page:
-            now_page['session'] = history
-            lines = []
-            for line in jsonlines.open(cache_file):
-                if line['url'] != PAGE_URL[-1]:
-                    lines.append(line)
-
-            lines.append(now_page)
-            with jsonlines.open(cache_file, mode='w') as writer:
-                for new_line in lines:
-                    writer.write(new_line)
-
-
-def load_history_session(history):
-    now_page = None
-    if not os.path.exists(cache_file):
-        gr.Info("Please add this page to Qwen's Reading List first!")
-        return []
-    for line in jsonlines.open(cache_file):
-        if line['url'] == PAGE_URL[-1]:
-            now_page = line
-    if not now_page:
-        gr.Info("Please add this page to Qwen's Reading List first!")
-        return []
-    if not now_page['raw']:
-        gr.Info('Please wait, Qwen is analyzing this page...')
-        return []
-    return now_page['session']
-
-
-def clear_session():
-    if not os.path.exists(cache_file):
-        return None
-    now_page = None
-    lines = []
-    for line in jsonlines.open(cache_file):
-        if line['url'] == PAGE_URL[-1]:
-            now_page = line
+        if len(history) > 1:
+            chat_history = history[:-1]
         else:
-            lines.append(line)
-    if not now_page:
-        return None
-    now_page['session'] = []
-    lines.append(now_page)
-    with jsonlines.open(cache_file, mode='w') as writer:
-        for new_line in lines:
-            writer.write(new_line)
+            chat_history = None
+        response = assistant.run(
+            query,
+            page_url,
+            max_ref_token=server_config.server.max_ref_token,
+            history=chat_history)
+        if response == 'Not Exist':
+            gr.Info("Please add this page to Qwen's Reading List first!")
+        elif response == 'Empty':
+            gr.Info('Please reopen later, Qwen is analyzing this page...')
+        else:
+            for chunk in response:
+                history[-1][1] += chunk
+                yield history
+            save_history(history, page_url)
 
+
+def load_history_session():
+    page_url = set_url()
+    response = read_content(page_url)
+    if response == 'Not Exist':
+        gr.Info("Please add this page to Qwen's Reading List first!")
+    elif response == '':
+        gr.Info('Please reopen later, Qwen is analyzing this page...')
+    else:
+        return json5.loads(response)['session']
+
+
+def clear_session(history):
+    page_url = set_url()
+    if not history:
+        return None
+    save_history(None, page_url)
     return None
 
 
@@ -167,8 +130,6 @@ with gr.Blocks(css=css, theme='soft') as demo:
             txt = gr.Textbox(show_label=False,
                              placeholder='Chat with Qwen...',
                              container=False)
-        # with gr.Column(scale=0.06, min_width=0):
-        #     smt_bt = gr.Button('⏎')
         with gr.Column(scale=1, min_width=0):
             clr_bt = gr.Button('🧹', elem_classes='bt_small_font')
         with gr.Column(scale=1, min_width=0):
@@ -180,12 +141,6 @@ with gr.Blocks(css=css, theme='soft') as demo:
                          queue=False).then(bot, chatbot, chatbot)
     txt_msg.then(lambda: gr.update(interactive=True), None, [txt], queue=False)
 
-    # txt_msg_bt = smt_bt.click(add_text, [chatbot, txt], [chatbot, txt],
-    #                           queue=False).then(bot, chatbot, chatbot)
-    # txt_msg_bt.then(lambda: gr.update(interactive=True),
-    #                 None, [txt],
-    #                 queue=False)
-
     clr_bt.click(clear_session, None, chatbot, queue=False)
     re_txt_msg = re_bt.click(rm_text, [chatbot], [chatbot, txt],
                              queue=False).then(bot, chatbot, chatbot)
@@ -195,7 +150,7 @@ with gr.Blocks(css=css, theme='soft') as demo:
 
     stop_bt.click(None, None, None, cancels=[txt_msg, re_txt_msg], queue=False)
 
-    demo.load(set_page_url).then(load_history_session, chatbot, chatbot)
+    demo.load(load_history_session, None, chatbot)
 
 demo.queue().launch(server_name=server_config.server.server_host,
                     server_port=server_config.server.app_in_browser_port)
