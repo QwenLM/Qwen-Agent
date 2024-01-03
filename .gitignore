@@ -20,6 +20,7 @@ Qwen-Agent
 
 docqa/*
 log/*
+log.jsonl
 
 ai_agent/debug.json
 ai_agent/local_prompts/*
@@ -29,3 +30,5 @@ ai_agent/log.jsonl
 qwen_agent.egg-info/*
 build/*
 dist/*
+
+demo/*

@@ -102,23 +102,22 @@ class RolePlay(Agent):
              user_request,
              response_to_continue: str = None,
              role_prompt: str = None,
-             functions: Optional[dict] = None,
              history: Optional[List[Dict]] = None,
              ref_doc: str = None,
              lang: str = 'zh'):
-        self.functions = functions or {}
         self.role_prompt = role_prompt
 
         self.tool_descs = '\n\n'.join(tool.function_plain_text
-                                      for tool in functions.values())
-        self.tool_names = ','.join(tool.name for tool in functions.values())
+                                      for tool in self.function_map.values())
+        self.tool_names = ','.join(tool.name
+                                   for tool in self.function_map.values())
 
         self.system_prompt = ''
         self.query_prefix = ''
         if ref_doc:
             self.system_prompt += KNOWLEDGE_TEMPLATE[lang].format(
                 ref_doc=ref_doc)
-        if self.functions:
+        if self.function_map:
             self.system_prompt += TOOL_TEMPLATE[lang].format(
                 tool_descs=self.tool_descs, tool_names=self.tool_names)
             self.query_prefix = SPECIAL_PREFIX_TEMPLATE[lang].format(
