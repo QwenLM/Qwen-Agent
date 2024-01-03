@@ -1,9 +1,9 @@
 from typing import Dict, Iterator, List, Optional, Union
 
 from qwen_agent import Agent
-from qwen_agent.lite_agents import RetrievalQA
 from qwen_agent.llm.base import BaseChatModel
 from qwen_agent.memory import Memory
+from qwen_agent.prompts import RetrievalQA
 
 
 class DocQAAgent(Agent):

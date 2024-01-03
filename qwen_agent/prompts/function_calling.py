@@ -1,7 +1,7 @@
 from typing import Dict, Iterator, List, Optional
 
 from qwen_agent import Agent
-from qwen_agent.lite_agents.react import ReAct
+from qwen_agent.prompts.react import ReAct
 
 
 class FunctionCalling(Agent):

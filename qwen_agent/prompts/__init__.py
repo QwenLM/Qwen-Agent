@@ -1,3 +1,7 @@
+"""
+    Prompts are special agents: Using a prompt template to complete one QA.
+
+"""
 from .continue_writing import ContinueWriting
 from .expand_writing import ExpandWriting
 from .function_calling import FunctionCalling

@@ -4,9 +4,9 @@ from typing import Dict, List, Optional, Union
 import json5
 
 from qwen_agent import Agent
-from qwen_agent.lite_agents import GenKeyword
 from qwen_agent.llm import BaseChatModel
 from qwen_agent.log import logger
+from qwen_agent.prompts import GenKeyword
 from qwen_agent.tools import SimilaritySearch, Storage
 from qwen_agent.tools.similarity_search import RefMaterialInput
 

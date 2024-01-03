@@ -3,7 +3,7 @@ import re
 import json5
 
 from qwen_agent import Agent
-from qwen_agent.lite_agents import ExpandWriting, OutlineWriting, Summarize
+from qwen_agent.prompts import ExpandWriting, OutlineWriting, Summarize
 
 default_plan = """{"action1": "summarize", "action2": "outline", "action3": "expand"}"""
 

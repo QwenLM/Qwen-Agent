@@ -1,4 +1,4 @@
-from qwen_agent.lite_agents.retrieval_qa import RetrievalQA
+from qwen_agent.prompts.retrieval_qa import RetrievalQA
 
 
 class Summarize(RetrievalQA):
