@@ -3,7 +3,6 @@ from typing import Dict, List, Optional
 import jsonlines
 
 from qwen_agent import Agent
-from qwen_agent.utils.utils import build_raw_prompt
 
 TOOL_TEMPLATE_ZH = """# 工具
 
@@ -156,7 +155,7 @@ class RolePlay(Agent):
         with jsonlines.open('log.jsonl', mode='a') as writer:
             writer.write(messages)
 
-        planning_prompt = build_raw_prompt(messages)
+        planning_prompt = self.llm.build_raw_prompt(messages)
         if response_to_continue:
             planning_prompt += response_to_continue
 

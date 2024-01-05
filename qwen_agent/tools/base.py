@@ -18,13 +18,6 @@ def register_tool(name):
     return decorator
 
 
-def call_tool(plugin_name: str, plugin_args: str) -> str:
-    if plugin_name in TOOL_REGISTRY:
-        return TOOL_REGISTRY[plugin_name].call(plugin_args)
-    else:
-        raise NotImplementedError
-
-
 class BaseTool(ABC):
     name: str
     description: str

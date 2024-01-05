@@ -11,7 +11,7 @@ import gradio as gr
 
 from qwen_agent.agents import ArticleAgent, DocQAAgent
 from qwen_agent.log import logger
-from qwen_agent.prompts import ReAct
+from qwen_agent.prompts import FunctionCalling
 from qwen_agent.utils.utils import (format_answer, get_last_one_line_context,
                                     has_chinese_chars, save_text_to_file)
 from qwen_server.schema import GlobalConfig
@@ -223,8 +223,8 @@ def bot(history, upload_file, chosen_plug):
                 app_global_para['is_first_upload'] = False
             history[-1][0] = prompt_upload_file + history[-1][0]
 
-            func_assistant = ReAct(function_list=['code_interpreter'],
-                                   llm=llm_config)
+            func_assistant = FunctionCalling(
+                function_list=['code_interpreter'], llm=llm_config)
             response = func_assistant.run(user_request=history[-1][0],
                                           history=app_global_para['messages'])
             for chunk in response:
@@ -262,8 +262,8 @@ def generate(context):
         else:
             sp_query += ' (Please use code_interpreter.)'
 
-        func_assistant = ReAct(function_list=['code_interpreter'],
-                               llm=llm_config)
+        func_assistant = FunctionCalling(function_list=['code_interpreter'],
+                                         llm=llm_config)
         response = func_assistant.run(user_request=sp_query)
         for chunk in response:
             res += chunk
@@ -271,8 +271,8 @@ def generate(context):
 
     elif PLUGIN_FLAG in sp_query:  # router to plugin
         sp_query = sp_query.split(PLUGIN_FLAG)[-1]
-        func_assistant = ReAct(function_list=['code_interpreter', 'image_gen'],
-                               llm=llm_config)
+        func_assistant = FunctionCalling(
+            function_list=['code_interpreter', 'image_gen'], llm=llm_config)
         response = func_assistant.run(user_request=sp_query)
         for chunk in response:
             res += chunk

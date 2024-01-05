@@ -8,6 +8,7 @@ from .function_calling import FunctionCalling
 from .gen_keyword import GenKeyword
 from .outline_writing import OutlineWriting
 from .react import ReAct
+from .react_chat import ReActChat
 from .retrieval_qa import RetrievalQA
 from .role_play import RolePlay
 from .summarize import Summarize
@@ -18,5 +19,5 @@ DEFAULT_SYSTEM = 'You are a helpful assistant.'
 __all__ = [
     'RetrievalQA', 'ContinueWriting', 'OutlineWriting', 'ExpandWriting',
     'ReAct', 'WriteFromScratch', 'Summarize', 'GenKeyword', 'RolePlay',
-    'FunctionCalling'
+    'FunctionCalling', 'ReActChat'
 ]

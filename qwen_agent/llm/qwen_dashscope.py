@@ -96,6 +96,8 @@ class QwenChatAtDS(BaseChatModel):
         prompt: str,
         stop: Optional[List[str]] = None,
     ) -> str:
+        if prompt == '':
+            return ''
         stop = stop or []
         response = dashscope.Generation.call(
             self.model,
@@ -119,3 +121,25 @@ class QwenChatAtDS(BaseChatModel):
                 response.message,
             )
             return err
+
+    def build_raw_prompt(self, messages):
+        im_start = '<|im_start|>'
+        im_end = '<|im_end|>'
+        if messages[0]['role'] == 'system':
+            sys = messages[0]['role']
+            prompt = f'{im_start}system\n{sys}{im_end}'
+        else:
+            prompt = f'{im_start}system\nYou are a helpful assistant.{im_end}'
+
+        for message in messages:
+            if message['role'] == 'user':
+                query = message['content'].lstrip('\n').rstrip()
+                prompt += f'\n{im_start}user\n{query}{im_end}'
+            elif message['role'] == 'assistant':
+                response = message['content'].lstrip('\n').rstrip()
+                prompt += f'\n{im_start}assistant\n{response}{im_end}'
+
+        # add one empty reply for the last round of assistant
+        assert prompt.endswith(f'\n{im_start}assistant\n{im_end}')
+        prompt = prompt[:-len(f'{im_end}')]
+        return prompt

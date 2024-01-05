@@ -1,7 +1,9 @@
 from typing import Dict, Iterator, List, Optional
 
 from qwen_agent import Agent
+from qwen_agent.log import logger
 from qwen_agent.prompts.react import ReAct
+from qwen_agent.prompts.react_chat import ReActChat
 
 
 class FunctionCalling(Agent):
@@ -12,8 +14,29 @@ class FunctionCalling(Agent):
              lang: str = 'en') -> Iterator[str]:
 
         if not self.llm.support_function_calling():
-            react = ReAct(function_list=self.function_list, llm=self.llm)
-            return react.run(user_request, history=history, lang=lang)
+            if self.llm.support_raw_prompt():
+                logger.info(
+                    'this model does not support function calling, using ReAct'
+                )
+                react = ReAct(function_list=self.function_list, llm=self.llm)
+                return react.run(user_request, history=history, lang=lang)
+            else:
+                logger.info(
+                    'this model does not support function calling and ReAct-continue, using ReAct-Chat'
+                )
+                react_chat = ReActChat(function_list=self.function_list,
+                                       llm=self.llm)
+                return react_chat.run(user_request, history=history, lang=lang)
+        else:
+            logger.info('beging function calling... ')
+            return self._run_with_func_call(user_request,
+                                            history=history,
+                                            lang=lang)
+
+    def _run_with_func_call(self,
+                            user_request,
+                            history: Optional[List[Dict]] = None,
+                            lang: str = 'en') -> Iterator[str]:
         messages = []
         if history:
             assert history[-1][

@@ -22,12 +22,10 @@ Begin!
 Question: {query}"""
 
 
-# TODO: When to put an parameter (such as history) in __init__()? When to put it in run()?
-class ReAct(Agent):
+class ReActChat(Agent):
 
     def _run(self,
              user_request,
-             response_to_continue: str = None,
              history: Optional[List[Dict]] = None,
              lang: str = 'en') -> Iterator[str]:
 
@@ -46,21 +44,17 @@ class ReAct(Agent):
                                      tool_names=self.tool_names,
                                      query=user_request)
         messages.append({'role': 'user', 'content': prompt})
-        messages.append({'role': 'assistant', 'content': ''})
-
-        planning_prompt = self.llm.build_raw_prompt(messages)
-        if response_to_continue:
-            planning_prompt += response_to_continue
 
         max_turn = 5
         while True and max_turn > 0:
             max_turn -= 1
-            output = self.llm.chat_with_raw_prompt(
-                prompt=planning_prompt,
+            output = self.llm.chat(
+                messages=messages,
+                stream=False,
                 stop=['Observation:', 'Observation:\n'],
             )
             use_tool, action, action_input, output = self._detect_tool(output)
-            if planning_prompt.endswith('\nThought:'):
+            if messages[-1]['content'].endswith('\nThought:'):
                 if not output.startswith(' '):
                     output = ' ' + output
             else:
@@ -71,7 +65,6 @@ class ReAct(Agent):
                 observation = self._call_tool(action, action_input)
                 observation = f'\nObservation: {observation}\nThought:'
                 yield observation
-                planning_prompt += output + observation
+                messages[-1]['content'] += output + observation
             else:
-                planning_prompt += output
                 break
