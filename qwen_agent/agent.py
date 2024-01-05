@@ -127,7 +127,7 @@ class Agent(ABC):
         """
         func_name = None
         func_args = None
-        if 'function_call' in message:
+        if 'function_call' in message and message['function_call']:
             func_call = message['function_call']
             func_name = func_call.get('name', '')
             func_args = func_call.get('arguments', '')
