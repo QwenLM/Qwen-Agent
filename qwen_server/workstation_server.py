@@ -117,7 +117,7 @@ def add_file(file, chosen_plug):
                 'content': '',
                 'query': '',
                 'url': new_path,
-                'type': fn_type,
+                'type': fn_type
             }
             qa_assistant.mem.run(**data)
 

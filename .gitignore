@@ -31,4 +31,4 @@ qwen_agent.egg-info/*
 build/*
 dist/*
 
-demo/*
+examples/*.ipynb

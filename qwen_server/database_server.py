@@ -59,10 +59,7 @@ def update_pop_url(url: str):
 
 def change_checkbox_state(key):
     meta_info = json.loads(assistant.mem.db.get('meta_info'))
-    for x in meta_info:
-        if x['url'] == key[3:]:
-            x['checked'] = (not x['checked'])
-            break
+    meta_info[key[3:]]['checked'] = (not meta_info[key[3:]]['checked'])
     assistant.mem.db.put('meta_info', json.dumps(meta_info,
                                                  ensure_ascii=False))
     return {'result': 'changed'}

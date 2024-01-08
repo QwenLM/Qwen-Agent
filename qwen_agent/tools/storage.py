@@ -1,5 +1,6 @@
 import hashlib
 import os
+from typing import Dict, Optional
 
 from qwen_agent.log import logger
 from qwen_agent.tools.base import BaseTool, register_tool
@@ -41,12 +42,12 @@ class Storage(BaseTool):
         'description': '数据的内容，仅存数据时需要'
     }]
 
-    def __init__(self, schema: str = 'oai'):
+    def __init__(self, cfg: Optional[Dict] = None):
         """
 
         :param schema: Format of tools, default to oai format, in case there is a need for other formats
         """
-        super().__init__(schema)
+        super().__init__(cfg)
         self.root = None
         self.data = {}
 

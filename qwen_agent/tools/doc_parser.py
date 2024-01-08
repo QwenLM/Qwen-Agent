@@ -131,15 +131,22 @@ def process_file(url: str, content: str, source: str, db: Storage = None):
 
     meta_info = db.get('meta_info')
     if meta_info == 'Not Exist':
-        meta_info = []
+        meta_info = {}
     else:
         meta_info = json5.loads(meta_info)
-    meta_info.append({
+    if isinstance(meta_info, list):
+        logger.info('update meta_info to new format')
+        new_meta_info = {}
+        for x in meta_info:
+            new_meta_info[x['url']] = x
+        meta_info = new_meta_info
+
+    meta_info[url] = {
         'url': url,
         'time': now_time,
         'title': title,
         'checked': True,
-    })
+    }
     db.put('meta_info', json.dumps(meta_info, ensure_ascii=False))
 
     return new_record_str
@@ -171,6 +178,7 @@ def read_data_by_condition(db: Storage = None, **kwargs):
         records = []
     else:
         records = json5.loads(meta_info)
+        records = records.values()
 
     if 'time_limit' in kwargs:
         filter_records = []
@@ -214,7 +222,6 @@ class DocParser(BaseTool):
     def call(self,
              params: str,
              db: Storage = None,
-             re_parse: bool = False,
              raw: bool = False,
              **kwargs) -> str:
         params = self._verify_args(params)
@@ -227,7 +234,8 @@ class DocParser(BaseTool):
         record = None
         if 'url' in params:
             record = db.get(params['url'])
-            if re_parse or record == 'Not Exist':
+            # need to parse and save doc
+            if 'content' in kwargs:
                 record = process_file(url=params['url'],
                                       content=kwargs['content'],
                                       source=kwargs['type'],

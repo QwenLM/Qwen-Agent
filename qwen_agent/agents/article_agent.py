@@ -9,7 +9,7 @@ from qwen_agent.prompts import ContinueWriting, WriteFromScratch
 class ArticleAgent(Agent):
 
     def __init__(self,
-                 function_list: Optional[List[str]] = None,
+                 function_list: Optional[List[Union[str, Dict]]] = None,
                  llm: Optional[Union[Dict, BaseChatModel]] = None,
                  storage_path: Optional[str] = None,
                  name: Optional[str] = None,

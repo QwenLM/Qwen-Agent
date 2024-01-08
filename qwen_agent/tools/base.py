@@ -1,6 +1,6 @@
 import json
 from abc import ABC, abstractmethod
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
 import json5
 
@@ -23,12 +23,11 @@ class BaseTool(ABC):
     description: str
     parameters: List[Dict]
 
-    def __init__(self, schema: str = 'oai'):
-        """
+    def __init__(self, cfg: Optional[Dict] = None):
+        self.cfg = cfg or {}
 
-        :param schema: Format of tools, default to oai format, in case there is a need for other formats
-        """
-        self.schema = schema
+        # schema: Format of tools, default to oai format, in case there is a need for other formats
+        self.schema = self.cfg.get('schema', 'oai')
         self.function = self._build_function()
         self.function_plain_text = self._parser_function()
 

@@ -1,7 +1,5 @@
 from typing import Dict, List, Optional
 
-import jsonlines
-
 from qwen_agent import Agent
 
 TOOL_TEMPLATE_ZH = """# 工具
@@ -15,7 +13,7 @@ TOOL_TEMPLATE_ZH = """# 工具
 Action: 工具名称，必须是[{tool_names}]之一
 Action Input: 工具输入
 Observation: 工具结果
-Final Answer: 根据工具结果进行回复，如果存在url，请使用如何格式展示出来：![图片](url)
+Answer: 根据工具结果进行回复，如果存在url，请使用如下格式展示出来：![图片](url)
 
 """
 
@@ -54,7 +52,7 @@ TOOL_TEMPLATE_EN = """# Tools
 Action: The tool to use, should be one of [{tool_names}]
 Action Input: The input of the tool, need to be formatted as a JSON
 Observation: The result returned by the tool
-Final Answer: Summarize the results based on the Observation
+Answer: Summarize the results based on the Observation
 
 """
 
@@ -89,10 +87,10 @@ SPECIAL_PREFIX_TEMPLATE = {
     'en': '(You have access to tools: [{tool_names}])',
 }
 
-ACTION_TOKEN = '\nAction:'
-ARGS_TOKEN = '\nAction Input:'
-OBSERVATION_TOKEN = '\nObservation:'
-ANSWER_TOKEN = '\nFinal Answer:'
+ACTION_TOKEN = 'Action:'
+ARGS_TOKEN = 'Action Input:'
+OBSERVATION_TOKEN = 'Observation:'
+ANSWER_TOKEN = 'Answer:'
 
 
 class RolePlay(Agent):
@@ -100,11 +98,9 @@ class RolePlay(Agent):
     def _run(self,
              user_request,
              response_to_continue: str = None,
-             role_prompt: str = None,
              history: Optional[List[Dict]] = None,
              ref_doc: str = None,
              lang: str = 'zh'):
-        self.role_prompt = role_prompt
 
         self.tool_descs = '\n\n'.join(tool.function_plain_text
                                       for tool in self.function_map.values())
@@ -122,7 +118,7 @@ class RolePlay(Agent):
             self.query_prefix = SPECIAL_PREFIX_TEMPLATE[lang].format(
                 tool_names=self.tool_names)
         self.system_prompt += PROMPT_TEMPLATE[lang].format(
-            role_prompt=self.role_prompt)
+            role_prompt=self.system_instruction)
 
         # Concat the system as one round of dialogue
         messages = ([{
@@ -152,8 +148,8 @@ class RolePlay(Agent):
         })
         messages.append({'role': 'assistant', 'content': ''})
 
-        with jsonlines.open('log.jsonl', mode='a') as writer:
-            writer.write(messages)
+        # with jsonlines.open('log.jsonl', mode='a') as writer:
+        #     writer.write(messages)
 
         planning_prompt = self.llm.build_raw_prompt(messages)
         if response_to_continue:
@@ -171,7 +167,7 @@ class RolePlay(Agent):
             yield output
             if use_tool:
                 observation = self._call_tool(action, action_input)
-                observation = f'\nObservation: {observation}\nFinal Answer:'
+                observation = f'\nObservation: {observation}\nAnswer:'
                 yield observation
                 planning_prompt += output + observation
             else:

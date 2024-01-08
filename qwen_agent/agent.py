@@ -10,8 +10,9 @@ from qwen_agent.utils.utils import has_chinese_chars
 class Agent(ABC):
 
     def __init__(self,
-                 function_list: Optional[List[str]] = None,
+                 function_list: Optional[List[Union[str, Dict]]] = None,
                  llm: Optional[Union[Dict, BaseChatModel]] = None,
+                 system_instruction: Optional[str] = None,
                  storage_path: Optional[str] = None,
                  name: Optional[str] = None,
                  description: Optional[str] = None,
@@ -19,7 +20,9 @@ class Agent(ABC):
         """
         init tools/llm for one agent
 
-        :param function_list: Optional[List[str]] : a list of tool names
+        :param function_list: Optional[List[Union[str, Dict]]] :
+            (1)When str: tool names
+            (2)When Dict: tool cfg
         :param llm: Optional[Union[Dict, BaseChatModel]]:
             (1) When Dict: set the config of llm as {'model': '', 'api_key': '', 'model_server': ''}
             (2) When BaseChatModel: llm is sent by another agent
@@ -45,6 +48,7 @@ class Agent(ABC):
         self.mem = None
         self.name = name
         self.description = description
+        self.system_instruction = system_instruction or 'You are a helpful assistant.'
 
     def run(self, *args, **kwargs) -> Union[str, Iterator[str]]:
         if 'lang' not in kwargs:
@@ -78,16 +82,21 @@ class Agent(ABC):
         """
         return self.function_map[tool_name].call(tool_args, **kwargs)
 
-    def _register_tool(self, tool_name: str):
+    def _register_tool(self, tool: Union[str, Dict]):
         """
         Instantiate the global tool for the agent
 
         """
+        tool_name = tool
+        tool_cfg = None
+        if isinstance(tool, Dict):
+            tool_name = tool['name']
+            tool_cfg = tool
         if tool_name not in TOOL_REGISTRY:
             raise NotImplementedError
-        if tool_name not in self.function_list:
-            self.function_list.append(tool_name)
-            self.function_map[tool_name] = TOOL_REGISTRY[tool_name]()
+        if tool not in self.function_list:
+            self.function_list.append(tool)
+            self.function_map[tool_name] = TOOL_REGISTRY[tool_name](tool_cfg)
 
     def _detect_tool(self, message: Union[str, dict]):
         # use built-in default judgment functions

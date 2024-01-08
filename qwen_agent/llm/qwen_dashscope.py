@@ -126,7 +126,7 @@ class QwenChatAtDS(BaseChatModel):
         im_start = '<|im_start|>'
         im_end = '<|im_end|>'
         if messages[0]['role'] == 'system':
-            sys = messages[0]['role']
+            sys = messages[0]['content']
             prompt = f'{im_start}system\n{sys}{im_end}'
         else:
             prompt = f'{im_start}system\nYou are a helpful assistant.{im_end}'
