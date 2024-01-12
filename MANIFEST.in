@@ -1,0 +1,7 @@
+include qwen_server/img/*
+include qwen_server/css/*
+include qwen_server/js/*
+include qwen_server/*.json
+recursive-include browser_qwen *
+include qwen_agent/utils/qwen.tiktoken
+recursive-include qwen_agent/tools/resource *
