@@ -11,9 +11,10 @@ import gradio as gr
 
 from qwen_agent.agents import ArticleAgent, DocQAAgent
 from qwen_agent.log import logger
-from qwen_agent.prompts import FunctionCalling
-from qwen_agent.utils.utils import (format_answer, get_last_one_line_context,
+from qwen_agent.prompts import Assistant
+from qwen_agent.utils.utils import (get_last_one_line_context,
                                     has_chinese_chars, save_text_to_file)
+from qwen_server import output_beautify
 from qwen_server.schema import GlobalConfig
 
 # Read config
@@ -119,7 +120,7 @@ def add_file(file, chosen_plug):
                 'url': new_path,
                 'type': fn_type
             }
-            qa_assistant.mem.run(**data)
+            output_beautify.convert_to_str(qa_assistant.mem.run(**data))
 
     return new_path
 
@@ -140,7 +141,9 @@ def refresh_date():
 
 def update_browser_list():
     br_list = json.loads(
-        qa_assistant.mem.run(raw=True, time_limit=app_global_para['time']))
+        output_beautify.convert_to_str(
+            qa_assistant.mem.run(raw=True,
+                                 time_limit=app_global_para['time'])))
     if not br_list:
         return 'No browsing records'
 
@@ -199,9 +202,9 @@ def pure_bot(history):
             messages.append({'role': 'user', 'content': chat[0]})
             messages.append({'role': 'assistant', 'content': chat[1]})
         messages.append({'role': 'user', 'content': history[-1][0]})
-        response = qa_assistant.llm.chat(messages=messages, stream=True)
-        for chunk in response:
-            history[-1][1] += chunk
+        response = qa_assistant.llm.chat(messages=messages)
+        for chunk in output_beautify.convert_to_full_str_stream(response):
+            history[-1][1] = chunk
             yield history
 
 
@@ -222,22 +225,28 @@ def bot(history, upload_file, chosen_plug):
                     prompt_upload_file = f'Uploaded the [file]({file_relpath}) to the current directory. '
                 app_global_para['is_first_upload'] = False
             history[-1][0] = prompt_upload_file + history[-1][0]
+            messages = app_global_para['messages'] + [{
+                'role': 'user',
+                'content': history[-1][0]
+            }]
+            func_assistant = Assistant(function_list=['code_interpreter'],
+                                       llm=llm_config)
+            response = func_assistant.run(messages=messages)
 
-            func_assistant = FunctionCalling(
-                function_list=['code_interpreter'], llm=llm_config)
-            response = func_assistant.run(user_request=history[-1][0],
-                                          history=app_global_para['messages'])
-            for chunk in response:
-                history[-1][1] += chunk
+            for chunk in output_beautify.convert_to_full_str_stream(response):
+                history[-1][1] = chunk
                 yield history
         else:
             response = qa_assistant.run(
-                query=history[-1][0],
+                messages=[{
+                    'role': 'user',
+                    'content': history[-1][0]
+                }],
                 max_ref_token=server_config.server.max_ref_token,
                 time_limit=app_global_para['time'],
                 checked=True)
-            for chunk in response:
-                history[-1][1] += chunk
+            for chunk in output_beautify.convert_to_full_str_stream(response):
+                history[-1][1] = chunk
                 yield history
 
         # append message
@@ -254,7 +263,6 @@ def bot(history, upload_file, chosen_plug):
 
 def generate(context):
     sp_query = get_last_one_line_context(context)
-    res = ''
     if CODE_FLAG in sp_query:  # router to code interpreter
         sp_query = sp_query.split(CODE_FLAG)[-1]
         if has_chinese_chars(sp_query):
@@ -262,21 +270,25 @@ def generate(context):
         else:
             sp_query += ' (Please use code_interpreter.)'
 
-        func_assistant = FunctionCalling(function_list=['code_interpreter'],
-                                         llm=llm_config)
-        response = func_assistant.run(user_request=sp_query)
-        for chunk in response:
-            res += chunk
-            yield res
+        func_assistant = Assistant(function_list=['code_interpreter'],
+                                   llm=llm_config)
+        response = func_assistant.run(messages=[{
+            'role': 'user',
+            'content': sp_query
+        }])
+        for chunk in output_beautify.convert_to_full_str_stream(response):
+            yield chunk
 
     elif PLUGIN_FLAG in sp_query:  # router to plugin
         sp_query = sp_query.split(PLUGIN_FLAG)[-1]
-        func_assistant = FunctionCalling(
+        func_assistant = Assistant(
             function_list=['code_interpreter', 'image_gen'], llm=llm_config)
-        response = func_assistant.run(user_request=sp_query)
-        for chunk in response:
-            res += chunk
-            yield res
+        response = func_assistant.run(messages=[{
+            'role': 'user',
+            'content': sp_query
+        }])
+        for chunk in output_beautify.convert_to_full_str_stream(response):
+            yield chunk
 
     else:  # router to continue writing
         sp_query_no_title = context
@@ -287,26 +299,28 @@ def generate(context):
         if TITLE_FLAG in sp_query:  # /title
             full_article = True
         response = writing_assistant.run(
-            sp_query_no_title,
+            messages=[{
+                'role': 'user',
+                'content': sp_query_no_title
+            }],
             max_ref_token=server_config.server.max_ref_token,
             full_article=full_article,
             time_limit=app_global_para['time'],
             checked=True)
-        for chunk in response:
-            res += chunk
-            yield res
+        for chunk in output_beautify.convert_to_full_str_stream(response):
+            yield chunk
 
 
 def format_generate(edit, context):
     res = edit
     yield res
-    if '> Writing Text: ' in context:
-        text = context.split('> Writing Text: ')[-1].strip()
+    if '> Writing Text:' in context:
+        text = context.split('> Writing Text:')[-1].strip()
         res += '\n'
         res += text
         yield res
-    elif 'Final Answer' in context:
-        response = format_answer(context)
+    elif 'Answer:' in context:
+        response = output_beautify.format_answer(context)
         res += '\n'
         res += response
         yield res

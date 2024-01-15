@@ -12,6 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from qwen_agent.agents import DocQAAgent
 from qwen_agent.log import logger
 from qwen_agent.utils.utils import get_local_ip, print_traceback
+from qwen_server import output_beautify
 from qwen_server.schema import GlobalConfig
 
 # Read config
@@ -65,6 +66,10 @@ def change_checkbox_state(key):
     return {'result': 'changed'}
 
 
+def cache_page(**kwargs):
+    output_beautify.convert_to_str(assistant.mem.run(**kwargs))
+
+
 @app.post('/endpoint')
 async def web_listening(request: Request):
     data = await request.json()
@@ -73,8 +78,7 @@ async def web_listening(request: Request):
     if msg_type == 'change_checkbox':
         rsp = change_checkbox_state(data['ckid'])
     elif msg_type == 'cache':
-        cache_obj = multiprocessing.Process(target=assistant.mem.run,
-                                            kwargs=data)
+        cache_obj = multiprocessing.Process(target=cache_page, kwargs=data)
         cache_obj.start()
         # rsp = cache_data(data, cache_file)
         rsp = 'caching'

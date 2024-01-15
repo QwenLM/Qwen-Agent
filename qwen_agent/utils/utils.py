@@ -1,9 +1,10 @@
 import datetime
+import json
 import re
 import socket
 import sys
 import traceback
-from typing import Literal, Optional
+from typing import Dict, Literal, Optional
 
 import jieba
 import json5
@@ -182,36 +183,22 @@ def parse_latest_plugin_call(text):
     return plugin_name, plugin_args, text
 
 
-# TODO: Say no to these ugly if statements.
-def format_answer(text):
-    action, action_input, output = parse_latest_plugin_call(text)
-    if 'code_interpreter' in text:
-        rsp = ''
-        code = extract_code(action_input)
-        rsp += ('\n```py\n' + code + '\n```\n')
-        obs = extract_obs(text)
-        if '![fig' in obs:
-            rsp += obs
-        return rsp
-    elif 'image_gen' in text:
-        # get url of FA
-        # img_urls = URLExtract().find_urls(text.split("Final Answer:")[-1].strip())
-        obs = text.split('Observation:')[-1].split('\nThought:')[0].strip()
-        img_urls = []
-        if obs:
-            logger.info(repr(obs))
-            try:
-                obs = json5.loads(obs)
-                img_urls.append(obs['image_url'])
-            except Exception:
-                print_traceback()
-                img_urls = []
-        if not img_urls:
-            img_urls = extract_urls(text.split('Final Answer:')[-1].strip())
-        logger.info(img_urls)
-        rsp = ''
-        for x in img_urls:
-            rsp += '\n![picture](' + x.strip() + ')'
-        return rsp
+def parser_function(function: Dict) -> str:
+    """
+    Text description of function
+    """
+    tool_desc_template = {
+        'zh': '{name}: {description} 输入参数: {parameters}',
+        'en': '{name}: {description} Parameters: {parameters}'
+    }
+
+    if has_chinese_chars(function['description']):
+        tool_desc = tool_desc_template['zh']
     else:
-        return text.split('Final Answer:')[-1].strip()
+        tool_desc = tool_desc_template['en']
+
+    return tool_desc.format(
+        name=function['name'],
+        description=function['description'],
+        parameters=json.dumps(function['parameters'], ensure_ascii=False),
+    )

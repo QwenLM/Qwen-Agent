@@ -1,6 +1,9 @@
-from typing import Dict, Iterator, List, Optional
+from typing import Dict, Iterator, List
 
-from qwen_agent import Agent
+from qwen_agent.llm.schema import ASSISTANT, CONTENT, ROLE
+
+from ..utils.utils import parser_function
+from .react import ReAct
 
 PROMPT_REACT = """Answer the following questions as best you can. You have access to the following tools:
 
@@ -22,37 +25,38 @@ Begin!
 Question: {query}"""
 
 
-class ReActChat(Agent):
+class ReActChat(ReAct):
 
     def _run(self,
-             user_request,
-             history: Optional[List[Dict]] = None,
-             lang: str = 'en') -> Iterator[str]:
+             messages: List[Dict],
+             response_to_continue: str = None,
+             lang: str = 'en') -> Iterator[List[Dict]]:
 
-        self.tool_descs = '\n\n'.join(tool.function_plain_text
-                                      for tool in self.function_map.values())
-        self.tool_names = ','.join(tool.name
-                                   for tool in self.function_map.values())
+        tool_descs = '\n\n'.join(
+            parser_function(func.function)
+            for func in self.function_map.values())
+        tool_names = ','.join(tool.name for tool in self.function_map.values())
 
-        messages = []
-        if history:
-            assert history[-1][
-                'role'] != 'user', 'The history should not include the latest user query.'
-            messages.extend(history)
-
-        prompt = PROMPT_REACT.format(tool_descs=self.tool_descs,
-                                     tool_names=self.tool_names,
-                                     query=user_request)
-        messages.append({'role': 'user', 'content': prompt})
+        prompt = PROMPT_REACT.format(tool_descs=tool_descs,
+                                     tool_names=tool_names,
+                                     query=messages[-1][CONTENT])
+        messages[-1][CONTENT] = prompt
 
         max_turn = 5
+        response = []
         while True and max_turn > 0:
             max_turn -= 1
-            output = self.llm.chat(
+            output_stream = self._call_llm(
                 messages=messages,
-                stream=False,
                 stop=['Observation:', 'Observation:\n'],
             )
+            output = []
+            for output in output_stream:
+                yield response + output
+            response.extend(output)
+            assert len(output) == 1 and output[-1][ROLE] == ASSISTANT
+            output = output[-1][CONTENT]
+
             use_tool, action, action_input, output = self._detect_tool(output)
             if messages[-1]['content'].endswith('\nThought:'):
                 if not output.startswith(' '):
@@ -60,11 +64,13 @@ class ReActChat(Agent):
             else:
                 if not output.startswith('\n'):
                     output = '\n' + output
-            yield output
+
             if use_tool:
                 observation = self._call_tool(action, action_input)
                 observation = f'\nObservation: {observation}\nThought:'
-                yield observation
-                messages[-1]['content'] += output + observation
+                response[-1][CONTENT] += observation
+                yield response
+
+                messages[-1][CONTENT] += output + observation
             else:
                 break

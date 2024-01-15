@@ -4,53 +4,69 @@ from typing import Dict, Iterator, List, Optional
 import openai
 
 from qwen_agent.llm.base import BaseChatModel
+from qwen_agent.log import logger
 
 
 class QwenChatAsOAI(BaseChatModel):
 
-    def __init__(self, model: str, api_key: str, model_server: str):
-        super().__init__()
-        if model_server.strip().lower() != 'openai':
-            openai.api_base = model_server
-        openai.api_key = api_key.strip() or os.getenv('OPENAI_API_KEY',
-                                                      default='EMPTY')
-        self.model = model
+    def __init__(self, cfg: Optional[Dict] = None):
+        super().__init__(cfg)
+        self.model = cfg.get('model', '')
+        if 'model_server' in cfg and cfg['model_server'].strip().lower(
+        ) != 'openai':
+            openai.api_base = cfg['model_server']
+        openai.api_key = os.getenv('OPENAI_API_KEY',
+                                   default=cfg.get('api_key', ''))
 
     def _chat_stream(
         self,
         messages: List[Dict],
         stop: Optional[List[str]] = None,
+        delta_stream: bool = False,
     ) -> Iterator[str]:
         response = openai.ChatCompletion.create(model=self.model,
                                                 messages=messages,
                                                 stop=stop,
-                                                stream=True)
+                                                stream=True,
+                                                **self.generate_cfg)
         # TODO: error handling
-        for chunk in response:
-            if hasattr(chunk.choices[0].delta, 'content'):
-                yield chunk.choices[0].delta.content
+        if delta_stream:
+            for chunk in response:
+                if hasattr(chunk.choices[0].delta, 'content'):
+                    yield self.wrapper_text_to_message_list(
+                        chunk.choices[0].delta.content)
+        else:
+            full_response = ''
+            for chunk in response:
+                if hasattr(chunk.choices[0].delta, 'content'):
+                    full_response += chunk.choices[0].delta.content
+                    yield self.wrapper_text_to_message_list(full_response)
 
-    def _chat_no_stream(
-        self,
-        messages: List[Dict],
-        stop: Optional[List[str]] = None,
-    ) -> str:
+    def _chat_no_stream(self,
+                        messages: List[Dict],
+                        stop: Optional[List[str]] = None) -> str:
         response = openai.ChatCompletion.create(model=self.model,
                                                 messages=messages,
                                                 stop=stop,
-                                                stream=False)
+                                                stream=False,
+                                                **self.generate_cfg)
         # TODO: error handling
-        return response.choices[0].message.content
+        yield self.wrapper_text_to_message_list(
+            response.choices[0].message.content)
 
     def chat_with_functions(self,
                             messages: List[Dict],
-                            functions: Optional[List[Dict]] = None) -> Dict:
-        if functions:
-            response = openai.ChatCompletion.create(model=self.model,
-                                                    messages=messages,
-                                                    functions=functions)
-        else:
-            response = openai.ChatCompletion.create(model=self.model,
-                                                    messages=messages)
+                            functions: Optional[List[Dict]] = None,
+                            stop: Optional[List[str]] = None,
+                            stream: bool = False,
+                            delta_stream: bool = False) -> List[Dict]:
+        logger.debug('==== Inputted messages ===')
+        logger.debug(messages)
+        assert not delta_stream, 'qwenoai only supports delta_stream=False for function call now'
+        # Todo: support streaming
+        response = openai.ChatCompletion.create(model=self.model,
+                                                messages=messages,
+                                                functions=functions,
+                                                **self.generate_cfg)
         # TODO: error handling
-        return response.choices[0].message
+        yield [response.choices[0].message]

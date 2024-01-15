@@ -1,10 +1,7 @@
-import json
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Union
 
 import json5
-
-from qwen_agent.utils.utils import has_chinese_chars
 
 TOOL_REGISTRY = {}
 
@@ -29,7 +26,6 @@ class BaseTool(ABC):
         # schema: Format of tools, default to oai format, in case there is a need for other formats
         self.schema = self.cfg.get('schema', 'oai')
         self.function = self._build_function()
-        self.function_plain_text = self._parser_function()
 
     @abstractmethod
     def call(self, params: str, **kwargs):
@@ -89,25 +85,3 @@ class BaseTool(ABC):
             }
 
         return function
-
-    def _parser_function(self):
-        """
-        Text description of function
-
-        """
-        tool_desc_template = {
-            'zh': '{name}: {description} 输入参数: {parameters}',
-            'en': '{name}: {description} Parameters: {parameters}'
-        }
-
-        if has_chinese_chars(self.function['description']):
-            tool_desc = tool_desc_template['zh']
-        else:
-            tool_desc = tool_desc_template['en']
-
-        return tool_desc.format(
-            name=self.function['name'],
-            description=self.function['description'],
-            parameters=json.dumps(self.function['parameters'],
-                                  ensure_ascii=False),
-        )

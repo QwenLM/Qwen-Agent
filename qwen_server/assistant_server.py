@@ -8,6 +8,7 @@ import json5
 
 from qwen_agent.agents import DocQAAgent
 from qwen_agent.log import logger
+from qwen_server import output_beautify
 from qwen_server.schema import GlobalConfig
 
 server_config_path = Path(__file__).resolve().parent / 'server_config.json'
@@ -77,24 +78,19 @@ def bot(history):
     if not history:
         yield history
     else:
-        query = history[-1][0]
+        messages = [{'role': 'user', 'content': history[-1][0]}]
         history[-1][1] = ''
-        if len(history) > 1:
-            chat_history = history[:-1]
-        else:
-            chat_history = None
         response = assistant.run(
-            query,
-            page_url,
-            max_ref_token=server_config.server.max_ref_token,
-            history=chat_history)
+            messages=messages,
+            url=page_url,
+            max_ref_token=server_config.server.max_ref_token)
         if response == 'Not Exist':
             gr.Info("Please add this page to Qwen's Reading List first!")
         elif response == 'Empty':
             gr.Info('Please reopen later, Qwen is analyzing this page...')
         else:
-            for chunk in response:
-                history[-1][1] += chunk
+            for chunk in output_beautify.convert_to_full_str_stream(response):
+                history[-1][1] = chunk
                 yield history
             save_history(history, page_url)
 

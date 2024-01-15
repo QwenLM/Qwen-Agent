@@ -1,4 +1,7 @@
+from typing import Dict, Iterator, List
+
 from qwen_agent import Agent
+from qwen_agent.llm.schema import CONTENT
 
 PROMPT_TEMPLATE_ZH = """
 你是一个写作助手，任务是依据参考资料，完成写作任务。
@@ -35,19 +38,19 @@ PROMPT_TEMPLATE = {
 
 class ExpandWriting(Agent):
 
-    def _run(
-        self,
-        user_request,
-        ref_doc,
-        outline='',
-        index='1',
-        capture='',
-        capture_later='',
-        lang: str = 'en',
-    ):
+    def _run(self,
+             messages: List[Dict],
+             knowledge: str = '',
+             outline: str = '',
+             index: str = '1',
+             capture: str = '',
+             capture_later: str = '',
+             lang: str = 'en',
+             **kwargs) -> Iterator[List[Dict]]:
+
         prompt = PROMPT_TEMPLATE[lang].format(
-            ref_doc=ref_doc,
-            user_request=user_request,
+            ref_doc=knowledge,
+            user_request=messages[-1][CONTENT],
             index=index,
             outline=outline,
             capture=capture,
@@ -59,4 +62,6 @@ class ExpandWriting(Agent):
                 prompt = prompt + ' Please stop when writing ' + capture_later
             else:
                 raise NotImplementedError
-        return self._call_llm(prompt)
+
+        messages[-1][CONTENT] = prompt
+        return self._call_llm(messages)

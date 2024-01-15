@@ -1,8 +1,11 @@
+import copy
 from abc import ABC, abstractmethod
-from typing import Dict, Iterator, List, Optional, Union
+from typing import Dict, Iterator, List, Optional, Tuple, Union
 
 from qwen_agent.llm import get_chat_model
 from qwen_agent.llm.base import BaseChatModel
+from qwen_agent.llm.schema import (CONTENT, DEFAULT_SYSTEM_MESSAGE, ROLE,
+                                   SYSTEM, USER)
 from qwen_agent.tools import TOOL_REGISTRY
 from qwen_agent.utils.utils import has_chinese_chars
 
@@ -12,7 +15,7 @@ class Agent(ABC):
     def __init__(self,
                  function_list: Optional[List[Union[str, Dict]]] = None,
                  llm: Optional[Union[Dict, BaseChatModel]] = None,
-                 system_instruction: Optional[str] = None,
+                 system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
                  storage_path: Optional[str] = None,
                  name: Optional[str] = None,
                  description: Optional[str] = None,
@@ -26,6 +29,7 @@ class Agent(ABC):
         :param llm: Optional[Union[Dict, BaseChatModel]]:
             (1) When Dict: set the config of llm as {'model': '', 'api_key': '', 'model_server': ''}
             (2) When BaseChatModel: llm is sent by another agent
+        :param system_message: If not specified during the conversation, using this default system message for llm chat
         :param storage_path: If not specified otherwise, all data will be stored here in KV pairs by memory
         :param name: the name of agent
         :param description: the description of agent, which is used for multi_agent
@@ -33,10 +37,9 @@ class Agent(ABC):
         """
         if isinstance(llm, Dict):
             self.llm_config = llm
-            self.llm = get_chat_model(**self.llm_config)
+            self.llm = get_chat_model(self.llm_config)
         else:
             self.llm = llm
-        self.stream = True
 
         self.function_list = []
         self.function_map = {}
@@ -46,34 +49,49 @@ class Agent(ABC):
 
         self.storage_path = storage_path
         self.mem = None
-        self.name = name
-        self.description = description
-        self.system_instruction = system_instruction or 'You are a helpful assistant.'
 
-    def run(self, *args, **kwargs) -> Union[str, Iterator[str]]:
+        self.system_message = {ROLE: SYSTEM, CONTENT: system_message}
+
+        self.name = name
+        self.description = description or system_message
+
+    def run(self, messages: List[Dict], **kwargs) -> Iterator[List[Dict]]:
+        assert messages[-1][ROLE] == USER, 'you must send the user query'
+        messages = copy.deepcopy(messages)
         if 'lang' not in kwargs:
-            if has_chinese_chars([args, kwargs]):
+            if has_chinese_chars([messages[-1][CONTENT], kwargs]):
                 kwargs['lang'] = 'zh'
             else:
                 kwargs['lang'] = 'en'
-        return self._run(*args, **kwargs)
+        return self._run(messages, **kwargs)
 
     @abstractmethod
-    def _run(self, *args, **kwargs) -> Union[str, Iterator[str]]:
+    def _run(self,
+             messages: List[Dict],
+             lang: str = 'en',
+             **kwargs) -> Iterator[List[Dict]]:
         raise NotImplementedError
 
-    def _call_llm(
-        self,
-        prompt: Optional[str] = None,
-        messages: Optional[List[Dict]] = None,
-        stop: Optional[List[str]] = None,
-    ) -> Union[str, Iterator[str]]:
-        return self.llm.chat(
-            prompt=prompt,
-            messages=messages,
-            stop=stop,
-            stream=self.stream,
-        )
+    def _call_llm(self,
+                  messages: List[Dict],
+                  functions: Optional[List[Dict]] = None,
+                  stop: Optional[List[str]] = None,
+                  stream: bool = True,
+                  delta_stream: bool = False) -> Iterator[List[Dict]]:
+        """
+        for an agent, default to call llm using full stream interfaces
+        """
+        messages = copy.deepcopy(messages)
+        if messages[0][ROLE] != SYSTEM:
+            messages.insert(0, self.system_message)
+        else:
+            messages[0][
+                CONTENT] = self.system_message[CONTENT] + messages[0][CONTENT]
+        return self.llm.chat(messages=messages,
+                             functions=functions,
+                             stop=stop,
+                             stream=stream,
+                             delta_stream=delta_stream)
 
     def _call_tool(self, tool_name: str, tool_args: str, **kwargs):
         """
@@ -98,38 +116,20 @@ class Agent(ABC):
             self.function_list.append(tool)
             self.function_map[tool_name] = TOOL_REGISTRY[tool_name](tool_cfg)
 
-    def _detect_tool(self, message: Union[str, dict]):
+    def _detect_tool(self, message: Union[str,
+                                          dict]) -> Tuple[bool, str, str, str]:
         # use built-in default judgment functions
         if isinstance(message, str):
             return self._detect_tool_by_special_token(message)
         else:
             return self._detect_tool_by_func_call(message)
 
-    def _detect_tool_by_special_token(self, text: str):
-        """
-        A built-in tool call detection: After encapsulating function calls in the LLM layer, this is no longer needed
+    def _detect_tool_by_special_token(self,
+                                      text: str) -> Tuple[bool, str, str, str]:
+        raise NotImplementedError
 
-        """
-        special_func_token = '\nAction:'
-        special_args_token = '\nAction Input:'
-        special_obs_token = '\nObservation:'
-        func_name, func_args = None, None
-        i = text.rfind(special_func_token)
-        j = text.rfind(special_args_token)
-        k = text.rfind(special_obs_token)
-        if 0 <= i < j:  # If the text has `Action` and `Action input`,
-            if k < j:  # but does not contain `Observation`,
-                # then it is likely that `Observation` is ommited by the LLM,
-                # because the output text may have discarded the stop word.
-                text = text.rstrip() + special_obs_token  # Add it back.
-            k = text.rfind(special_obs_token)
-            func_name = text[i + len(special_func_token):j].strip()
-            func_args = text[j + len(special_args_token):k].strip()
-            text = text[:k]  # Discard '\nObservation:'.
-
-        return (func_name is not None), func_name, func_args, text
-
-    def _detect_tool_by_func_call(self, message: Dict):
+    def _detect_tool_by_func_call(self,
+                                  message: Dict) -> Tuple[bool, str, str, str]:
         """
         A built-in tool call detection for func_call format
 
@@ -143,21 +143,3 @@ class Agent(ABC):
         text = message['content']
 
         return (func_name is not None), func_name, func_args, text
-
-    def send(self,
-             message: Union[Dict, str],
-             recipient: 'Agent',
-             request_reply: Optional[bool] = None,
-             **kwargs):
-        recipient.receive(message, self, request_reply)
-
-    def receive(self,
-                message: Union[Dict, str],
-                sender: 'Agent',
-                request_reply: Optional[bool] = None,
-                **kwargs):
-        if request_reply is False or request_reply is None:
-            return
-        reply = self.run(message, sender=sender, **kwargs)
-        if reply is not None:
-            self.send(reply, sender, **kwargs)

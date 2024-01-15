@@ -1,4 +1,7 @@
+from typing import Dict, Iterator, List
+
 from qwen_agent import Agent
+from qwen_agent.llm.schema import CONTENT
 
 PROMPT_TEMPLATE_ZH = """请提取问题中的关键词，需要中英文均有，可以适量补充不在问题中但相关的关键词。关键词尽量切分为动词/名词/形容词等类型，不要长词组。关键词以JSON的格式给出，比如{{"keywords_zh": ["关键词1", "关键词2"], "keywords_en": ["keyword 1", "keyword 2"]}}
 
@@ -39,6 +42,9 @@ PROMPT_TEMPLATE = {
 
 class GenKeyword(Agent):
 
-    def _run(self, user_request, lang: str = 'en'):
-        prompt = PROMPT_TEMPLATE[lang].format(user_request=user_request, )
-        return self._call_llm(prompt)
+    def _run(self,
+             messages: List[Dict],
+             lang: str = 'en') -> Iterator[List[Dict]]:
+        messages[-1][CONTENT] = PROMPT_TEMPLATE[lang].format(
+            user_request=messages[-1][CONTENT])
+        return self._call_llm(messages)

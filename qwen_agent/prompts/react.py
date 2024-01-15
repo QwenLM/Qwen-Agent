@@ -1,6 +1,8 @@
-from typing import Dict, Iterator, List, Optional
+from typing import Dict, Iterator, List
 
 from qwen_agent import Agent
+from qwen_agent.llm.schema import ASSISTANT, CONTENT, ROLE
+from qwen_agent.utils.utils import parser_function
 
 PROMPT_REACT = """Answer the following questions as best you can. You have access to the following tools:
 
@@ -22,43 +24,45 @@ Begin!
 Question: {query}"""
 
 
-# TODO: When to put an parameter (such as history) in __init__()? When to put it in run()?
 class ReAct(Agent):
+    """
+    Using ReAct format to call tools
+    """
 
     def _run(self,
-             user_request,
+             messages: List[Dict],
              response_to_continue: str = None,
-             history: Optional[List[Dict]] = None,
-             lang: str = 'en') -> Iterator[str]:
+             lang: str = 'en') -> Iterator[List[Dict]]:
 
-        self.tool_descs = '\n\n'.join(tool.function_plain_text
-                                      for tool in self.function_map.values())
-        self.tool_names = ','.join(tool.name
-                                   for tool in self.function_map.values())
+        tool_descs = '\n\n'.join(
+            parser_function(func.function)
+            for func in self.function_map.values())
+        tool_names = ','.join(tool.name for tool in self.function_map.values())
 
-        messages = []
-        if history:
-            assert history[-1][
-                'role'] != 'user', 'The history should not include the latest user query.'
-            messages.extend(history)
+        prompt = PROMPT_REACT.format(tool_descs=tool_descs,
+                                     tool_names=tool_names,
+                                     query=messages[-1][CONTENT])
+        messages[-1][CONTENT] = prompt
 
-        prompt = PROMPT_REACT.format(tool_descs=self.tool_descs,
-                                     tool_names=self.tool_names,
-                                     query=user_request)
-        messages.append({'role': 'user', 'content': prompt})
-        messages.append({'role': 'assistant', 'content': ''})
-
-        planning_prompt = self.llm.build_raw_prompt(messages)
+        planning_prompt = self.llm.build_text_completion_prompt(messages)
         if response_to_continue:
             planning_prompt += response_to_continue
 
         max_turn = 5
+        response = []
         while True and max_turn > 0:
             max_turn -= 1
-            output = self.llm.chat_with_raw_prompt(
+            output_stream = self.llm.text_completion(
                 prompt=planning_prompt,
                 stop=['Observation:', 'Observation:\n'],
             )
+            output = []
+            for output in output_stream:
+                yield response + output
+            response.extend(output)
+            assert len(output) == 1 and output[-1][ROLE] == ASSISTANT
+            output = output[-1][CONTENT]
+
             use_tool, action, action_input, output = self._detect_tool(output)
             if planning_prompt.endswith('\nThought:'):
                 if not output.startswith(' '):
@@ -66,12 +70,36 @@ class ReAct(Agent):
             else:
                 if not output.startswith('\n'):
                     output = '\n' + output
-            yield output
+
             if use_tool:
                 observation = self._call_tool(action, action_input)
                 observation = f'\nObservation: {observation}\nThought:'
-                yield observation
+                response[-1][CONTENT] += observation
+                yield response
                 planning_prompt += output + observation
             else:
-                planning_prompt += output
                 break
+
+    def _detect_tool_by_special_token(self, text: str):
+        """
+        A built-in tool call detection: After encapsulating function calls in the LLM layer, this is no longer needed
+
+        """
+        special_func_token = '\nAction:'
+        special_args_token = '\nAction Input:'
+        special_obs_token = '\nObservation:'
+        func_name, func_args = None, None
+        i = text.rfind(special_func_token)
+        j = text.rfind(special_args_token)
+        k = text.rfind(special_obs_token)
+        if 0 <= i < j:  # If the text has `Action` and `Action input`,
+            if k < j:  # but does not contain `Observation`,
+                # then it is likely that `Observation` is ommited by the LLM,
+                # because the output text may have discarded the stop word.
+                text = text.rstrip() + special_obs_token  # Add it back.
+            k = text.rfind(special_obs_token)
+            func_name = text[i + len(special_func_token):j].strip()
+            func_args = text[j + len(special_args_token):k].strip()
+            text = text[:k]  # Discard '\nObservation:'.
+
+        return (func_name is not None), func_name, func_args, text

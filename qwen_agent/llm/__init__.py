@@ -1,14 +1,14 @@
+from typing import Dict, Optional
+
 from .base import BaseChatModel
 from .qwen_dashscope import QwenChatAtDS
 from .qwen_oai import QwenChatAsOAI
 
 
-def get_chat_model(model: str, api_key: str,
-                   model_server: str) -> BaseChatModel:
-    if model_server.strip().lower() == 'dashscope':
-        llm = QwenChatAtDS(model=model, api_key=api_key)
+def get_chat_model(cfg: Optional[Dict] = None) -> BaseChatModel:
+    if 'model_server' in cfg and cfg['model_server'].strip().lower(
+    ) == 'dashscope':
+        llm = QwenChatAtDS(cfg)
     else:
-        llm = QwenChatAsOAI(model=model,
-                            api_key=api_key,
-                            model_server=model_server)
+        llm = QwenChatAsOAI(cfg)
     return llm

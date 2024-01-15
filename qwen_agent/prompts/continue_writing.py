@@ -1,4 +1,7 @@
+from typing import Dict, Iterator, List
+
 from qwen_agent import Agent
+from qwen_agent.llm.schema import CONTENT
 
 PROMPT_TEMPLATE_ZH = """你是一个写作助手，请依据参考资料，根据给定的前置文本续写合适的内容。
 #参考资料：
@@ -27,9 +30,13 @@ PROMPT_TEMPLATE = {
 
 class ContinueWriting(Agent):
 
-    def _run(self, user_request, ref_doc, lang: str = 'en'):
-        prompt = PROMPT_TEMPLATE[lang].format(
-            ref_doc=ref_doc,
-            user_request=user_request,
+    def _run(self,
+             messages: List[Dict],
+             knowledge: str = '',
+             lang: str = 'en',
+             **kwargs) -> Iterator[List[Dict]]:
+        messages[-1][CONTENT] = PROMPT_TEMPLATE[lang].format(
+            ref_doc=knowledge,
+            user_request=messages[-1][CONTENT],
         )
-        return self._call_llm(prompt)
+        return self._call_llm(messages)
