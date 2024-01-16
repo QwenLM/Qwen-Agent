@@ -238,12 +238,13 @@ class CodeInterpreter(BaseTool):
                 fixed_code.append(
                     'plt.rcParams["font.family"] = _m6_font_prop.get_name()')
         fixed_code = '\n'.join(fixed_code)
+        fixed_code += '\n\n'  # Prevent code not executing in notebook due to no line breaks at the end
         result = _execute_code(kc, fixed_code)
 
         if timeout:
             _execute_code(kc, '_M6CountdownTimer.cancel()')
 
-        return result
+        return result if result.strip() else 'Finished execution.'
 
 
 def _get_multiline_input(hint: str) -> str:
