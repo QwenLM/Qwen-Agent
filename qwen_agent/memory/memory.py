@@ -28,7 +28,7 @@ class Memory(Agent):
                  storage_path: Optional[str] = None,
                  name: Optional[str] = None,
                  description: Optional[str] = None,
-                 **kwargs) -> Iterator[List[Dict]]:
+                 **kwargs):
         super().__init__(function_list=function_list,
                          llm=llm,
                          system_message=system_message,

@@ -1,5 +1,6 @@
 import json
 import os
+import time
 from pathlib import Path
 
 import add_qwen_libs  # NOQA
@@ -96,6 +97,7 @@ def bot(history):
 
 
 def load_history_session():
+    time.sleep(0.5)
     page_url = set_url()
     response = read_content(page_url)
     if response == 'Not Exist':

@@ -201,7 +201,6 @@ def _execute_code(kc: BlockingKernelClient, code: str) -> str:
 
 @register_tool('code_interpreter')
 class CodeInterpreter(BaseTool):
-    name = 'code_interpreter'
     description = '代码解释器，可用于执行Python代码。 Enclose the code within triple backticks (`) at the beginning and end of the code.'
     parameters = [{'name': 'code', 'type': 'string', 'description': '待执行的代码'}]
 

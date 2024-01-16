@@ -9,16 +9,22 @@ TOOL_REGISTRY = {}
 def register_tool(name):
 
     def decorator(cls):
+        if name in TOOL_REGISTRY:
+            raise ValueError(
+                f'tool {name} has a duplicate name! Please ensure that the tool name is unique.'
+            )
+        cls.name = name
         TOOL_REGISTRY[name] = cls
+
         return cls
 
     return decorator
 
 
 class BaseTool(ABC):
-    name: str
-    description: str
-    parameters: List[Dict]
+    name: str = ''
+    description: str = ''
+    parameters: List[Dict] = []
 
     def __init__(self, cfg: Optional[Dict] = None):
         self.cfg = cfg or {}

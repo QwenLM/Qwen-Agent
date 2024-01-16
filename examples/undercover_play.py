@@ -1,7 +1,7 @@
 import json
 import re
 
-from qwen_agent.prompts import Assistant
+from qwen_agent.agents import Assistant
 
 # config
 game_rule = """谁是卧底游戏规则如下：

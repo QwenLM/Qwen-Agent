@@ -5,17 +5,137 @@
 <p>
 <br>
 
-Qwen-Agent is a framework for harnessing the tool usage, planning, and memory capabilities of the open-source language model [Qwen](https://github.com/QwenLM/Qwen).
-Building upon Qwen-Agent, we have developed a **Chrome browser extension** called BrowserQwen, which has key features such as:
+Qwen-Agent is a framework for developing LLM applications based on the instruction following, tool usage, planning, and
+memory capabilities of Qwen.
+It also comes with example applications such as Browser Assistant, Code Interpreter, and Custom Assistant.
+
+# Getting Started
+
+## Installation
+
+```bash
+# Install dependencies.
+git clone https://github.com/QwenLM/Qwen-Agent.git
+cd Qwen-Agent
+pip install -e ./
+```
+
+## Preparation: Model Service
+
+You can either use the model service provided
+by [DashScope](https://help.aliyun.com/zh/dashscope/developer-reference/quick-start) from Alibaba Cloud, or deploy your
+own model service using the open-source Qwen models.
+
+If you want to use the model service provided by DashScope, please configure the environment variable:
+
+```bash
+# You need to replace YOUR_DASHSCOPE_API_KEY with your real DASHSCOPE_API_KEY.
+export DASHSCOPE_API_KEY=YOUR_DASHSCOPE_API_KEY
+````
+
+If you want to deploy and use your own model service, please follow the instruction below, which is provided by
+the <a href="https://github.com/QwenLM/Qwen">Qwen</a> project, to deploy a service compatible with the OpenAI API:
+
+```bash
+# Install dependencies.
+git clone git@github.com:QwenLM/Qwen.git
+cd Qwen
+pip install -r requirements.txt
+pip install fastapi uvicorn "openai<1.0.0" "pydantic>=2.3.0" sse_starlette
+
+# Start the model service
+#   -c to specify any open-source model listed at https://huggingface.co/Qwen
+#   --server-name 0.0.0.0 allows other machines to access your service.
+#   --server-name 127.0.0.1 only allows the machine deploying the model to access the service.
+python openai_api.py --server-name 0.0.0.0 --server-port 7905 -c Qwen/Qwen-14B-Chat
+```
+
+## Developing Your Own Agent
+
+Qwen-Agent provides atomic components such as LLMs and prompts, as well as high-level components such as Agents. The
+example below uses the Assistant component as an illustration, demonstrating how to add custom tools and quickly develop
+an agent that uses tools.
+
+```py
+import json
+import json5
+import urllib.parse
+from qwen_agent.agents import Assistant
+from qwen_agent.tools.base import BaseTool, register_tool
+
+llm_cfg = {
+    # Use the model service provided by DashScope:
+    'model': 'qwen-max',
+    'model_server': 'dashscope',
+    # Use your own model service compatible with OpenAI API:
+    # 'model': 'Qwen',
+    # 'model_server': 'http://127.0.0.1:7905/v1',
+
+    # (Optional) LLM hyper-paramters:
+    'generate_cfg': {
+        'top_p': 0.8
+    }
+}
+system = 'According to the user\'s request, you first draw a picture and then automatically run code to download the picture to image.jpg'
+
+
+# Add a custom tool named my_image_gen：
+@register_tool('my_image_gen')
+class MyImageGen(BaseTool):
+    description = 'AI painting (image generation) service, input text description, and return the image URL drawn based on text information.'
+    parameters = [{
+        'name': 'prompt',
+        'type': 'string',
+        'description': 'Detailed description of the desired image content, in English',
+        'required': True
+    }]
+
+    def call(self, params: str, **kwargs) -> str:
+        prompt = json5.loads(params)['prompt']
+        prompt = urllib.parse.quote(prompt)
+        return json.dumps(
+            {'image_url': f'https://image.pollinations.ai/prompt/{prompt}'},
+            ensure_ascii=False)
+
+
+tools = ['my_image_gen', 'code_interpreter']  # code_interpreter is a built-in tool in Qwen-Agent
+bot = Assistant(llm=llm_cfg, system_message=system, function_list=tools)
+
+messages = []
+while True:
+    query = input('user question: ')
+    messages.append({'role': 'user', 'content': query})
+    response = []
+    for response in bot.run(messages=messages):
+        print('bot response:', response)
+    messages.extend(response)
+```
+
+The framework also provides more atomic components for developers to combine. For additional showcases, please refer to
+the [examples](./examples) directory.
+
+# Example Application: BrowserQwen
+
+We have also developed an example application based on Qwen-Agent: a **Chrome browser extension** called BrowserQwen,
+which has key features such as:
+
 - You can discuss with Qwen regarding the current webpage or PDF document.
-- It records the web pages and PDF/Word/PowerPoint materials that you have browsed, with your permission. It helps you understand the contents of multiple pages, summarize your browsing content, and automate tedious writing tasks.
-- It supports plugin integration, including **Code Interpreter** for math problem solving and data visualization.
+- It records the web pages and PDF/Word/PowerPoint materials that you have browsed. It helps you understand multiple
+  pages, summarize your browsing content, and automate writing tasks.
+- It comes with plugin integration, including **Code Interpreter** for math problem solving and data visualization.
 
-# Use Case Demonstration
+## BrowserQwen Demonstration
 
-If you prefer watching videos instead of screenshots, you can refer to the [video demonstration](#video-demonstration).
+You can watch the following showcase videos to learn about the basic operations of BrowserQwen:
 
-## Workstation - Editor Mode
+- Long-form writing based on visited webpages and
+  PDFs. [video](https://qianwen-res.oss-cn-beijing.aliyuncs.com/assets/qwen_agent/showcase_write_article_based_on_webpages_and_pdfs.mp4)
+- Drawing a plot using code interpreter based on the given
+  information. [video](https://qianwen-res.oss-cn-beijing.aliyuncs.com/assets/qwen_agent/showcase_chat_with_docs_and_code_interpreter.mp4)
+- Uploading files, multi-turn conversation, and data analysis using code
+  interpreter. [video](https://qianwen-res.oss-cn-beijing.aliyuncs.com/assets/qwen_agent/showcase_code_interpreter_multi_turn_chat.mp4)
+
+### Workstation - Editor Mode
 
 **This mode is designed for creating long articles based on browsed web pages and PDFs.**
 
@@ -29,7 +149,7 @@ If you prefer watching videos instead of screenshots, you can refer to the [vide
     <img src="assets/screenshot-editor-movie.png">
 </figure>
 
-## Workstation - Chat Mode
+### Workstation - Chat Mode
 
 **In this mode, you can engage in multi-webpage QA.**
 
@@ -43,7 +163,7 @@ If you prefer watching videos instead of screenshots, you can refer to the [vide
     <img src="assets/screenshot-ci.png">
 </figure>
 
-## Browser Assistant
+### Browser Assistant
 
 **Web page QA**
 
@@ -57,78 +177,44 @@ If you prefer watching videos instead of screenshots, you can refer to the [vide
     <img src="assets/screenshot-pdf-qa.png">
 </figure>
 
-# BrowserQwen User Guide
+## BrowserQwen User Guide
 
-Supported platforms: MacOS, Linux, Windows.
+### Step 1. Deploy Local Database Service
 
-## Step 1. Deploy Model Service
+On your local machine (the machine where you can open the Chrome browser), you will need to deploy a database service to
+manage your browsing history and conversation history.
 
-***You can skip this step if you are using the model service provided by [DashScope](https://help.aliyun.com/zh/dashscope/developer-reference/quick-start) from Alibaba Cloud.***
-
-However, if you prefer to deploy your own model service instead of using DashScope, please follow the instruction below, which is provided by the [Qwen](https://github.com/QwenLM/Qwen) project, to deploy a model service compatible with the OpenAI API:
-
-```bash
-# Install dependencies.
-git clone git@github.com:QwenLM/Qwen.git
-cd Qwen
-pip install -r requirements.txt
-pip install fastapi uvicorn "openai<1.0.0" "pydantic>=2.3.0" sse_starlette
-
-# Start the model service, specifying the model version with the -c parameter.
-# --server-name 0.0.0.0 allows other machines to access your service.
-# --server-name 127.0.0.1 only allows the machine deploying the model to access the service.
-python openai_api.py --server-name 0.0.0.0 --server-port 7905 -c Qwen/Qwen-14B-Chat
-```
-
-We can specify the -c argument to load the Qwen models listed on [Qwen's Hugging Face page](https://huggingface.co/Qwen), such as `Qwen/Qwen-1_8B-Chat`, `Qwen/Qwen-7B-Chat`, `Qwen/Qwen-14B-Chat`, `Qwen/Qwen-72B-Chat`, as well as their `Int4` and `Int8` versions.
-
-## Step 2. Deploy Local Database Service
-
-On your local machine (the machine where you can open the Chrome browser), you will need to deploy a database service to manage your browsing history and conversation history.
-
-Please install the following dependencies if you have not done so already:
-
-```bash
-# Install dependencies.
-git clone https://github.com/QwenLM/Qwen-Agent.git
-cd Qwen-Agent
-pip install -r requirements.txt
-```
-
-If you have skipped Step 1 and decided to use DashScope's model service, then please execute the following command:
+If you are using DashScope's model service, then please execute the following command:
 
 ```bash
 # Start the database service, specifying the model on DashScope by using the --llm flag.
 # The value of --llm can be one of the following, in increasing order of resource consumption:
-#   - qwen-7b-chat (the same as the open-sourced 7B-Chat model)
-#   - qwen-14b-chat (the same as the open-sourced 14B-Chat model)
-#   - qwen-turbo
-#   - qwen-plus
+#   - qwen-7b/14b/72b-chat (the same as the open-sourced 7B/14B/72B-Chat model)
+#   - qwen-turbo, qwen-plus, qwen-max
 # "YOUR_DASHSCOPE_API_KEY" is a placeholder. The user should replace it with their actual key.
-python run_server.py --api_key YOUR_DASHSCOPE_API_KEY --model_server dashscope --llm qwen-7b-chat --workstation_port 7864
+python run_server.py --api_key YOUR_DASHSCOPE_API_KEY --model_server dashscope --llm qwen-72b-chat --workstation_port 7864
 ```
 
-If you have followed Step 1 and are using your own model service instead of DashScope, then please execute the following command:
+If you are using your own model service instead of DashScope, then please execute the following command:
 
 ```bash
-# Start the database service, specifying the model service deployed in Step 1 with --model_server.
-# If the IP address of the machine in Step 1 is 123.45.67.89,
+# Start the database service, specifying the model service deployed with --model_server.
+# If the IP address of the model service is 123.45.67.89,
 #     you can specify --model_server http://123.45.67.89:7905/v1
-# If Step 1 and Step 2 are on the same machine,
+# If the model service and the database service are on the same machine,
 #     you can specify --model_server http://127.0.0.1:7905/v1
 python run_server.py --model_server http://{MODEL_SERVER_IP}:7905/v1 --workstation_port 7864
 ```
 
 Now you can access [http://127.0.0.1:7864/](http://127.0.0.1:7864/) to use the Workstation's Editor mode and Chat mode.
 
-For tips on using the Workstation, please refer to the instructions on the Workstation page or watch the [video demonstration](#video-demonstration).
-
-## Step 3. Install Browser Assistant
+### Step 2. Install Browser Assistant
 
 Install the BrowserQwen Chrome extension:
 
 - Open the Chrome browser and enter `chrome://extensions/` in the address bar, then press Enter.
-- Make sure that the `Developer mode` in the top right corner is turned on, then click on `Load unpacked` to upload the `browser_qwen` directory from this project and enable it.
+- Make sure that the `Developer mode` in the top right corner is turned on, then click on `Load unpacked` to upload
+  the `browser_qwen` directory from this project and enable it.
 - Click the extension icon in the top right corner of the Chrome browser to pin BrowserQwen to the toolbar.
 
 Note that after installing the Chrome extension, you need to refresh the page for the extension to take effect.
@@ -138,17 +224,11 @@ When you want Qwen to read the content of the current webpage:
 - Click the `Add to Qwen's Reading List` button on the screen to authorize Qwen to analyze the page in the background.
 - Click the Qwen icon in the browser's top right corner to start interacting with Qwen about the current page's content.
 
-## Video Demonstration
-
-You can watch the following showcase videos to learn about the basic operations of BrowserQwen:
-
-- Long-form writing based on visited webpages and PDFs [video](https://qianwen-res.oss-cn-beijing.aliyuncs.com/assets/qwen_agent/showcase_write_article_based_on_webpages_and_pdfs.mp4)
-- Drawing a plot using code interpreter based on the given information [video](https://qianwen-res.oss-cn-beijing.aliyuncs.com/assets/qwen_agent/showcase_chat_with_docs_and_code_interpreter.mp4)
-- Uploading files, multi-turn conversation, and data analysis using code interpreter [video](https://qianwen-res.oss-cn-beijing.aliyuncs.com/assets/qwen_agent/showcase_code_interpreter_multi_turn_chat.mp4)
-
 # Evaluation Benchmark
 
-We have also open-sourced a benchmark for evaluating the performance of a model in writing Python code and using Code Interpreter for mathematical problem solving, data analysis, and other general tasks. The benchmark can be found in the [benchmark](benchmark/README.md) directory. The current evaluation results are as follows:
+We have also open-sourced a benchmark for evaluating the performance of a model in writing Python code and using Code
+Interpreter for mathematical problem solving, data analysis, and other general tasks. The benchmark can be found in
+the [benchmark](benchmark/README.md) directory. The current evaluation results are as follows:
 
 <table>
     <tr>
@@ -236,6 +316,8 @@ We have also open-sourced a benchmark for evaluating the performance of a model 
 
 # Disclaimer
 
-This project is not intended to be an official product, rather it serves as a proof-of-concept project that highlights the capabilities of the Qwen series models.
+This project is not intended to be an official product, rather it serves as a proof-of-concept project that highlights
+the capabilities of the Qwen series models.
 
-> Important: The code interpreter is not sandboxed, and it executes code in your own environment. Please do not ask Qwen to perform dangerous tasks, and do not directly use the code interpreter for production purposes.
+> Important: The code interpreter is not sandboxed, and it executes code in your own environment. Please do not ask Qwen
+> to perform dangerous tasks, and do not directly use the code interpreter for production purposes.

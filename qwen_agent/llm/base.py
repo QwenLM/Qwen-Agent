@@ -100,8 +100,9 @@ class BaseChatModel(ABC):
             }]
             self._support_fn_call = False
             try:
-                response = self.chat_with_functions(messages=messages,
+                *_, last = self.chat_with_functions(messages=messages,
                                                     functions=functions)
+                response = last[-1]
                 if response.get('function_call', None):
                     logger.info('Support of function calling is detected.')
                     self._support_fn_call = True

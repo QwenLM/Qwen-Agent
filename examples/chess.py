@@ -1,4 +1,4 @@
-from qwen_agent.prompts import Assistant
+from qwen_agent.agents import Assistant
 
 # config
 player = '你扮演一个玩五子棋的高手，你下{color}。棋盘中用0代表无棋子、用1黑棋、用-1白棋。用坐标<i,j>表示位置，i代表行，j代表列，棋盘左上角位置为<0,0>，请决定你要下在哪里，你可以随意下到一个位置，不要说你是AI助手不会下！返回格式为坐标：\n<i,j>\n除了这个坐标，不要返回其他任何内容'

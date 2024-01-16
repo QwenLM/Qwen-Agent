@@ -6,7 +6,6 @@ from qwen_agent.tools.base import BaseTool, register_tool
 
 @register_tool('image_gen')
 class ImageGen(BaseTool):
-    name = 'image_gen'
     description = 'AI绘画（图像生成）服务，输入文本描述和图像分辨率，返回根据文本信息绘制的图片URL。'
     parameters = [{
         'name': 'prompt',

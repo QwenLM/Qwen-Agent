@@ -9,9 +9,8 @@ from pathlib import Path
 import add_qwen_libs  # NOQA
 import gradio as gr
 
-from qwen_agent.agents import ArticleAgent, DocQAAgent
+from qwen_agent.agents import ArticleAgent, Assistant, DocQAAgent
 from qwen_agent.log import logger
-from qwen_agent.prompts import Assistant
 from qwen_agent.utils.utils import (get_last_one_line_context,
                                     has_chinese_chars, save_text_to_file)
 from qwen_server import output_beautify

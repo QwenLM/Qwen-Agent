@@ -19,7 +19,6 @@ class Storage(BaseTool):
     """
     This is a special tool for data storage
     """
-    name = 'storage'
     description = '数据在文件系统中存储和读取'
     parameters = [{
         'name': 'path',

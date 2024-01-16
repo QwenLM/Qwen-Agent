@@ -9,7 +9,6 @@ from qwen_agent.tools.base import BaseTool, register_tool
 
 @register_tool('amap_weather')
 class AmapWeather(BaseTool):
-    name = 'amap_weather'
     description = '获取对应城市的天气数据'
     parameters = [{
         'name': 'location',

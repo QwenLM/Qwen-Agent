@@ -15,9 +15,9 @@ class QwenChatAtDS(BaseChatModel):
 
     def __init__(self, cfg: Optional[Dict] = None):
         super().__init__(cfg)
-        self.model = cfg.get('model', 'qwen-max')
+        self.model = self.cfg.get('model', 'qwen-max')
         dashscope.api_key = os.getenv('DASHSCOPE_API_KEY',
-                                      default=cfg.get('api_key', ''))
+                                      default=self.cfg.get('api_key', ''))
         assert dashscope.api_key, 'DASHSCOPE_API_KEY is required.'
 
     def _chat_stream(
@@ -66,6 +66,9 @@ class QwenChatAtDS(BaseChatModel):
                 response.code,
                 response.message,
             )
+            logger.error(err)
+            if response.code == 'DataInspectionFailed':
+                err += '\n【异常输出】: 数据检查失败。【错误信息】: 输入数据可能包含不适当的内容。'
             yield self.wrapper_text_to_message_list(f'{err}')
 
     def _text_completion_no_stream(
@@ -97,6 +100,9 @@ class QwenChatAtDS(BaseChatModel):
                 response.code,
                 response.message,
             )
+            logger.error(err)
+            if response.code == 'DataInspectionFailed':
+                err += '\n【异常输出】: 数据检查失败。【错误信息】: 输入数据可能包含不适当的内容。'
             yield self.wrapper_text_to_message_list(f'{err}')
 
     def _text_completion_stream(
@@ -169,9 +175,10 @@ class QwenChatAtDS(BaseChatModel):
                 logger.error(err)
                 # todo: Better error handling
                 if trunk.code == 'DataInspectionFailed':
-                    err += '\n错误码: 数据检查失败。错误信息: 输入数据可能包含不适当的内容。'
+                    err += '\n【异常输出】: 数据检查失败。【错误信息】: 输入数据可能包含不适当的内容。'
                 text = ''
                 yield self.wrapper_text_to_message_list(f'{err}')
+                break
         # with open('debug.json', 'w', encoding='utf-8') as writer:
         #     writer.write(json.dumps(trunk, ensure_ascii=False))
         if text and (in_delay or (last_len != len(text))):
@@ -186,4 +193,7 @@ class QwenChatAtDS(BaseChatModel):
                 err = '\nError code: %s. Error message: %s' % (trunk.code,
                                                                trunk.message)
                 logger.error(err)
+                if trunk.code == 'DataInspectionFailed':
+                    err += '\n【异常输出】: 数据检查失败。【错误信息】: 输入数据可能包含不适当的内容。'
+                yield self.wrapper_text_to_message_list(f'{err}')
                 break

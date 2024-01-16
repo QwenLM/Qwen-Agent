@@ -211,7 +211,6 @@ def format_records(records: List[Dict]):
 
 @register_tool('doc_parser')
 class DocParser(BaseTool):
-    name = 'doc_parser'
     description = '解析文件'
     parameters = [{
         'name': 'url',

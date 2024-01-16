@@ -43,7 +43,6 @@ class RefMaterialInput(BaseModel):
 
 @register_tool('retrieval')
 class SimilaritySearch(BaseTool):
-    name = 'retrieval'
     description = '从文档中检索和问题相关的部分，从而辅助回答问题'
     parameters = [{
         'name': 'query',
@@ -98,8 +97,10 @@ class SimilaritySearch(BaseTool):
         if max_sims != 0:
             manul = 2
             for i in range(min(manul, len(doc.text))):
-                res.append(doc.text[i].content)
-                max_token -= tokens[i]
+                if max_token >= tokens[
+                        i] * 2:  # Ensure that the first two pages do not fill up the window
+                    res.append(doc.text[i].content)
+                    max_token -= tokens[i]
             for i, x in enumerate(sims):
                 if x[0] < manul:
                     continue

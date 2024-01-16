@@ -1,7 +1,9 @@
+import json
 from typing import Dict, Iterator, List
 
 from qwen_agent import Agent
 from qwen_agent.llm.schema import CONTENT, ROLE, SYSTEM
+from qwen_agent.log import logger
 
 KNOWLEDGE_TEMPLATE_ZH = """
 
@@ -69,8 +71,7 @@ class Assistant(Agent):
                 yield response + output
             response.extend(output)
             messages.extend(output)
-            # logger.info(json.dumps(response, ensure_ascii=False))
-
+            logger.debug(json.dumps(response, ensure_ascii=False, indent=4))
             use_tool, action, action_input, _ = self._detect_tool(response[-1])
             if use_tool:
                 observation = self._call_tool(action, action_input)

@@ -1,8 +1,8 @@
 from typing import Dict, Iterator, List
 
 from qwen_agent.llm.schema import ASSISTANT, CONTENT, ROLE
+from qwen_agent.utils.utils import parser_function
 
-from ..utils.utils import parser_function
 from .react import ReAct
 
 PROMPT_REACT = """Answer the following questions as best you can. You have access to the following tools:

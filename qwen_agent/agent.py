@@ -45,7 +45,7 @@ class Agent(ABC):
         self.function_map = {}
         if function_list:
             for function_name in function_list:
-                self._register_tool(function_name)
+                self._init_tool(function_name)
 
         self.storage_path = storage_path
         self.mem = None
@@ -98,9 +98,11 @@ class Agent(ABC):
         Use when calling tools in bot()
 
         """
+        if tool_name not in self.function_map:
+            raise ValueError(f'This agent cannot call tool {tool_name}.')
         return self.function_map[tool_name].call(tool_args, **kwargs)
 
-    def _register_tool(self, tool: Union[str, Dict]):
+    def _init_tool(self, tool: Union[str, Dict]):
         """
         Instantiate the global tool for the agent
 
