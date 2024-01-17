@@ -43,7 +43,7 @@ pip install fastapi uvicorn "openai<1.0.0" "pydantic>=2.3.0" sse_starlette
 # - 通过 -c 参数指定模型版本，支持 https://huggingface.co/Qwen 上列出的开源模型
 # - 指定 --server-name 0.0.0.0 将允许其他机器访问您的模型服务
 # - 指定 --server-name 127.0.0.1 则只允许部署模型的机器自身访问该模型服务
-python openai_api.py --server-name 0.0.0.0 --server-port 7905 -c Qwen/Qwen-14B-Chat
+python openai_api.py --server-name 0.0.0.0 --server-port 7905 -c Qwen/Qwen-72B-Chat
 ```
 
 ## 快速开发
@@ -179,8 +179,7 @@ while True:
 #   - qwen-7b/14b/72b-chat （与开源的Qwen-7B/14B/72B-Chat相同模型）
 #   - qwen-turbo, qwen-plus, qwen-max
 # 您需要将YOUR_DASHSCOPE_API_KEY替换为您的真实API-KEY。
-export DASHSCOPE_API_KEY=YOUR_DASHSCOPE_API_KEY
-python run_server.py --model_server dashscope --llm qwen-7b-chat --workstation_port 7864
+python run_server.py --api_key YOUR_DASHSCOPE_API_KEY --model_server dashscope --llm qwen-max --workstation_port 7864
 ```
 
 如果您没有在使用DashScope、而是部署了自己的模型服务的话，请执行以下命令：

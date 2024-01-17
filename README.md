@@ -47,7 +47,7 @@ pip install fastapi uvicorn "openai<1.0.0" "pydantic>=2.3.0" sse_starlette
 #   -c to specify any open-source model listed at https://huggingface.co/Qwen
 #   --server-name 0.0.0.0 allows other machines to access your service.
 #   --server-name 127.0.0.1 only allows the machine deploying the model to access the service.
-python openai_api.py --server-name 0.0.0.0 --server-port 7905 -c Qwen/Qwen-14B-Chat
+python openai_api.py --server-name 0.0.0.0 --server-port 7905 -c Qwen/Qwen-72B-Chat
 ```
 
 ## Developing Your Own Agent
@@ -192,7 +192,7 @@ If you are using DashScope's model service, then please execute the following co
 #   - qwen-7b/14b/72b-chat (the same as the open-sourced 7B/14B/72B-Chat model)
 #   - qwen-turbo, qwen-plus, qwen-max
 # "YOUR_DASHSCOPE_API_KEY" is a placeholder. The user should replace it with their actual key.
-python run_server.py --api_key YOUR_DASHSCOPE_API_KEY --model_server dashscope --llm qwen-72b-chat --workstation_port 7864
+python run_server.py --api_key YOUR_DASHSCOPE_API_KEY --model_server dashscope --llm qwen-max --workstation_port 7864
 ```
 
 If you are using your own model service instead of DashScope, then please execute the following command:
