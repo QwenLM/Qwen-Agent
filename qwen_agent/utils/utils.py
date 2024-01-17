@@ -124,7 +124,6 @@ def get_key_word(text):
         if x in ignore_words:
             continue
         wordlist.append(x)
-    print('wordlist: ', wordlist)
     return wordlist
 
 

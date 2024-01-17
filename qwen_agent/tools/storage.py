@@ -112,7 +112,7 @@ class Storage(BaseTool):
             self.data[key] = content
             return content
         except Exception:
-            return 'Not Exist'
+            return ''
 
     def delete(self, key):
         """

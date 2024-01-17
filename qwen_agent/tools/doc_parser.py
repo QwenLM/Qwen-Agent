@@ -75,7 +75,7 @@ def process_file(url: str, content: str, source: str, db: Storage = None):
         date1 = datetime.datetime.now()
 
         # generate one processing record
-        db.put(url, '')
+        db.put(url, 'Empty')
 
         if url.startswith('https://') or url.startswith('http://'):
             pdf_path = url
@@ -98,7 +98,7 @@ def process_file(url: str, content: str, source: str, db: Storage = None):
             return 'failed'
     elif content and source == 'html':
         # generate one processing record
-        db.put(url, '')
+        db.put(url, 'Empty')
 
         try:
             tmp_html_file = os.path.join(db.root, 'tmp.html')
@@ -130,7 +130,7 @@ def process_file(url: str, content: str, source: str, db: Storage = None):
     db.put(url, new_record_str)
 
     meta_info = db.get('meta_info')
-    if meta_info == 'Not Exist':
+    if meta_info == '':
         meta_info = {}
     else:
         meta_info = json5.loads(meta_info)
@@ -174,7 +174,7 @@ def read_data_by_condition(db: Storage = None, **kwargs):
 
     """
     meta_info = db.get('meta_info')
-    if meta_info == 'Not Exist':
+    if meta_info == '':
         records = []
     else:
         records = json5.loads(meta_info)
@@ -190,6 +190,12 @@ def read_data_by_condition(db: Storage = None, **kwargs):
         filter_records = []
         for x in records:
             if x['checked']:
+                filter_records.append(x)
+        records = filter_records
+    if 'files' in kwargs:
+        filter_records = []
+        for x in records:
+            if x['url'] in kwargs['files']:
                 filter_records.append(x)
         records = filter_records
 
@@ -221,7 +227,8 @@ class DocParser(BaseTool):
     def call(self,
              params: str,
              db: Storage = None,
-             raw: bool = False,
+             use_meta_info: bool = False,
+             ignore_cache: bool = False,
              **kwargs) -> str:
         params = self._verify_args(params)
         if isinstance(params, str):
@@ -234,10 +241,10 @@ class DocParser(BaseTool):
         if 'url' in params:
             record = db.get(params['url'])
             # need to parse and save doc
-            if 'content' in kwargs:
+            if not record or ignore_cache:
                 record = process_file(url=params['url'],
-                                      content=kwargs['content'],
-                                      source=kwargs['type'],
+                                      content=kwargs.get('content', ''),
+                                      source=kwargs.get('type', 'pdf'),
                                       db=db)
 
         if record is not None:
@@ -245,7 +252,7 @@ class DocParser(BaseTool):
         else:
             # load records by conditions
             records = read_data_by_condition(db, **kwargs)
-            if raw:
+            if use_meta_info:
                 return json.dumps(records, ensure_ascii=False)
             records = [
                 json5.loads(db.get(record['url'])) for record in records

@@ -16,7 +16,6 @@ class Agent(ABC):
                  function_list: Optional[List[Union[str, Dict]]] = None,
                  llm: Optional[Union[Dict, BaseChatModel]] = None,
                  system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
-                 storage_path: Optional[str] = None,
                  name: Optional[str] = None,
                  description: Optional[str] = None,
                  **kwargs):
@@ -30,7 +29,6 @@ class Agent(ABC):
             (1) When Dict: set the config of llm as {'model': '', 'api_key': '', 'model_server': ''}
             (2) When BaseChatModel: llm is sent by another agent
         :param system_message: If not specified during the conversation, using this default system message for llm chat
-        :param storage_path: If not specified otherwise, all data will be stored here in KV pairs by memory
         :param name: the name of agent
         :param description: the description of agent, which is used for multi_agent
         :param kwargs: other potential parameters
@@ -46,9 +44,6 @@ class Agent(ABC):
         if function_list:
             for function_name in function_list:
                 self._init_tool(function_name)
-
-        self.storage_path = storage_path
-        self.mem = None
 
         self.system_message = {ROLE: SYSTEM, CONTENT: system_message}
 

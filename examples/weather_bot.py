@@ -1,4 +1,5 @@
 import json
+import os
 import urllib.parse
 
 import json5
@@ -19,7 +20,8 @@ llm_cfg = {
         'top_p': 0.8
     }
 }
-system = '你扮演一个天气预报助手，你需要查询相应地区的天气，同时调用给你的画图工具绘制一张城市的图。'
+system = '你扮演一个天气预报助手，你具有查询天气和画图能力。' + \
+          '你需要查询相应地区的天气，然后调用给你的画图工具绘制一张城市的图，并从给定的诗词文档中选一首相关的诗词来描述天气，不要说文档以外的诗词。'
 
 
 # 增加一个名为my_image_gen的自定义工具：
@@ -42,7 +44,10 @@ class MyImageGen(BaseTool):
 
 
 tools = ['my_image_gen', 'amap_weather']  # amap_weather是框架预置的工具
-bot = Assistant(llm=llm_cfg, system_message=system, function_list=tools)
+bot = Assistant(llm=llm_cfg,
+                system_message=system,
+                function_list=tools,
+                files=[os.path.abspath('poem.pdf')])
 
 messages = []
 while True:

@@ -4,6 +4,8 @@ USER = 'user'
 ASSISTANT = 'assistant'
 SYSTEM = 'system'
 FUNCTION = 'function'
+FILE = 'file'
+IMAGE = 'image'
 
 CONTENT = 'content'
 MESSAGE = 'message'

@@ -85,24 +85,20 @@ def bot(history):
             messages=messages,
             url=page_url,
             max_ref_token=server_config.server.max_ref_token)
-        if response == 'Not Exist':
-            gr.Info("Please add this page to Qwen's Reading List first!")
-        elif response == 'Empty':
-            gr.Info('Please reopen later, Qwen is analyzing this page...')
-        else:
-            for chunk in output_beautify.convert_to_full_str_stream(response):
-                history[-1][1] = chunk
-                yield history
-            save_history(history, page_url)
+
+        for chunk in output_beautify.convert_to_full_str_stream(response):
+            history[-1][1] = chunk
+            yield history
+        save_history(history, page_url)
 
 
 def load_history_session():
     time.sleep(0.5)
     page_url = set_url()
     response = read_content(page_url)
-    if response == 'Not Exist':
+    if not response:
         gr.Info("Please add this page to Qwen's Reading List first!")
-    elif response == '':
+    elif response == 'Empty':
         gr.Info('Please reopen later, Qwen is analyzing this page...')
     else:
         return json5.loads(response)['session']

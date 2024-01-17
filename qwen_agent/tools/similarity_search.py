@@ -105,7 +105,6 @@ class SimilaritySearch(BaseTool):
                 if x[0] < manul:
                     continue
                 page = doc.text[x[0]]
-                print('select: ', x)
                 if max_token < page.token:
                     use_rate = (max_token / page.token) * 0.2
                     res.append(page.content[:int(len(page.content) *

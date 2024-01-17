@@ -79,6 +79,7 @@ class QwenChatAtDS(BaseChatModel):
         if prompt == '':
             yield self.wrapper_text_to_message_list('')
         stop = stop or []
+        logger.debug(prompt)
         response = dashscope.Generation.call(
             self.model,
             prompt=prompt,  # noqa

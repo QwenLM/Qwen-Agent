@@ -113,13 +113,13 @@ def add_file(file, chosen_plug):
 
         # upload references
         if chosen_plug == DOC_OPTION:
-            data = {
-                'content': '',
-                'query': '',
-                'url': new_path,
-                'type': fn_type
-            }
-            output_beautify.convert_to_str(qa_assistant.mem.run(**data))
+            *_, last = qa_assistant.mem.run([{
+                'role': 'user',
+                'content': [{
+                    'file': new_path
+                }]
+            }],
+                                            ignore_cache=True)
 
     return new_path
 
@@ -141,7 +141,7 @@ def refresh_date():
 def update_browser_list():
     br_list = json.loads(
         output_beautify.convert_to_str(
-            qa_assistant.mem.run(raw=True,
+            qa_assistant.mem.run(use_meta_info=True,
                                  time_limit=app_global_para['time'])))
     if not br_list:
         return 'No browsing records'

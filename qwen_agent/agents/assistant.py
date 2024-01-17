@@ -1,9 +1,12 @@
 import json
-from typing import Dict, Iterator, List
+from typing import Dict, Iterator, List, Optional, Union
 
 from qwen_agent import Agent
-from qwen_agent.llm.schema import CONTENT, ROLE, SYSTEM
+from qwen_agent.llm import BaseChatModel
+from qwen_agent.llm.schema import (CONTENT, DEFAULT_SYSTEM_MESSAGE, FILE, ROLE,
+                                   SYSTEM, USER)
 from qwen_agent.log import logger
+from qwen_agent.memory import Memory
 
 KNOWLEDGE_TEMPLATE_ZH = """
 
@@ -31,13 +34,52 @@ SPECIAL_PREFIX_TEMPLATE = {
 
 class Assistant(Agent):
 
+    def __init__(self,
+                 function_list: Optional[List[Union[str, Dict]]] = None,
+                 llm: Optional[Union[Dict, BaseChatModel]] = None,
+                 system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
+                 name: Optional[str] = None,
+                 description: Optional[str] = None,
+                 storage_path: Optional[str] = None,
+                 files: Optional[List[str]] = None):
+        super().__init__(function_list=function_list,
+                         llm=llm,
+                         system_message=system_message,
+                         name=name,
+                         description=description)
+
+        # default to use Memory to manage files
+        self.mem = Memory(llm=self.llm, storage_path=storage_path)
+
+        self.files = files or []
+        for file in self.files:
+            if not file.lower().endswith('pdf'):
+                raise ValueError(
+                    'Currently, only PDF documents can be added as knowledge')
+            # save file to knowledge base
+            try:
+                *_, last = self.mem.run(messages=[{
+                    ROLE: USER,
+                    CONTENT: [{
+                        FILE: file
+                    }]
+                }],
+                                        ignore_cache=True)
+            except Exception:
+                raise ValueError(f'Failed to parse document {file}.')
+
     def _run(self,
              messages: List[Dict],
-             knowledge: str = '',
-             lang: str = 'zh') -> Iterator[List[Dict]]:
-
+             lang: str = 'zh',
+             max_ref_token: int = 4000,
+             **kwargs) -> Iterator[List[Dict]]:
         system_prompt = ''
-        if knowledge:
+        if self.files:
+            # retrieval knowledge from files
+            *_, last = self.mem.run(messages=messages,
+                                    max_ref_token=max_ref_token,
+                                    files=self.files)
+            knowledge = last[-1][CONTENT]
             system_prompt += KNOWLEDGE_TEMPLATE[lang].format(
                 knowledge=knowledge)
 

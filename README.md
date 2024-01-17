@@ -58,6 +58,8 @@ an agent that uses tools.
 
 ```py
 import json
+import os
+
 import json5
 import urllib.parse
 from qwen_agent.agents import Assistant
@@ -76,8 +78,8 @@ llm_cfg = {
         'top_p': 0.8
     }
 }
-system = 'According to the user\'s request, you first draw a picture and then automatically run code to download the picture to image.jpg'
-
+system = 'According to the user\'s request, you first draw a picture and then automatically run code to download the picture ' + \
+          'and select an image operation from the given document to process the image'
 
 # Add a custom tool named my_image_gen：
 @register_tool('my_image_gen')
@@ -99,7 +101,10 @@ class MyImageGen(BaseTool):
 
 
 tools = ['my_image_gen', 'code_interpreter']  # code_interpreter is a built-in tool in Qwen-Agent
-bot = Assistant(llm=llm_cfg, system_message=system, function_list=tools)
+bot = Assistant(llm=llm_cfg,
+                system_message=system,
+                function_list=tools,
+                files=[os.path.abspath('doc.pdf')])
 
 messages = []
 while True:

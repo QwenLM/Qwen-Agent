@@ -9,10 +9,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from qwen_agent.agents import DocQAAgent
 from qwen_agent.log import logger
+from qwen_agent.memory import Memory
 from qwen_agent.utils.utils import get_local_ip, print_traceback
-from qwen_server import output_beautify
 from qwen_server.schema import GlobalConfig
 
 # Read config
@@ -20,9 +19,8 @@ with open(Path(__file__).resolve().parent / 'server_config.json', 'r') as f:
     server_config = json.load(f)
     server_config = GlobalConfig(**server_config)
 
-assistant = DocQAAgent(function_list=['doc_parser'],
-                       llm_config=False,
-                       storage_path=server_config.path.database_root)
+# This APP only requires storage capacity, so using the memory module alone
+mem = Memory(storage_path=server_config.path.database_root)
 
 app = FastAPI()
 
@@ -49,7 +47,7 @@ app.mount('/static',
 
 
 def update_pop_url(url: str):
-    msg = assistant.mem.db.put('browsing_url', url)
+    msg = mem.db.put('browsing_url', url)
     if msg == 'SUCCESS':
         response = 'Updated URL'
     else:
@@ -59,15 +57,21 @@ def update_pop_url(url: str):
 
 
 def change_checkbox_state(key):
-    meta_info = json.loads(assistant.mem.db.get('meta_info'))
+    meta_info = json.loads(mem.db.get('meta_info'))
     meta_info[key[3:]]['checked'] = (not meta_info[key[3:]]['checked'])
-    assistant.mem.db.put('meta_info', json.dumps(meta_info,
-                                                 ensure_ascii=False))
+    mem.db.put('meta_info', json.dumps(meta_info, ensure_ascii=False))
     return {'result': 'changed'}
 
 
 def cache_page(**kwargs):
-    output_beautify.convert_to_str(assistant.mem.run(**kwargs))
+    *_, last = mem.run([{
+        'role': 'user',
+        'content': [{
+            'file': kwargs.get('url', '')
+        }]
+    }],
+                       ignore_cache=True,
+                       **kwargs)
 
 
 @app.post('/endpoint')
