@@ -10,6 +10,7 @@ import add_qwen_libs  # NOQA
 import gradio as gr
 
 from qwen_agent.agents import ArticleAgent, Assistant, DocQAAgent
+from qwen_agent.llm.base import ModelServiceError
 from qwen_agent.log import logger
 from qwen_agent.utils.utils import (get_last_one_line_context,
                                     has_chinese_chars, save_text_to_file)
@@ -113,13 +114,17 @@ def add_file(file, chosen_plug):
 
         # upload references
         if chosen_plug == DOC_OPTION:
-            *_, last = qa_assistant.mem.run([{
-                'role': 'user',
-                'content': [{
-                    'file': new_path
-                }]
-            }],
-                                            ignore_cache=True)
+            try:
+                *_, last = qa_assistant.mem.run(
+                    [{
+                        'role': 'user',
+                        'content': [{
+                            'file': new_path
+                        }]
+                    }],
+                    ignore_cache=True)
+            except Exception as ex:
+                raise ValueError(ex)
 
     return new_path
 
@@ -201,10 +206,16 @@ def pure_bot(history):
             messages.append({'role': 'user', 'content': chat[0]})
             messages.append({'role': 'assistant', 'content': chat[1]})
         messages.append({'role': 'user', 'content': history[-1][0]})
-        response = qa_assistant.llm.chat(messages=messages)
-        for chunk in output_beautify.convert_to_full_str_stream(response):
-            history[-1][1] = chunk
+        try:
+            response = qa_assistant.llm.chat(messages=messages)
+            for chunk in output_beautify.convert_to_full_str_stream(response):
+                history[-1][1] = chunk
+                yield history
+        except ModelServiceError:
+            history[-1][1] = '模型调用出错，可能的原因有：未正确配置模型参数，或输入数据不安全等'
             yield history
+        except Exception as ex:
+            raise ValueError(ex)
 
 
 def bot(history, upload_file, chosen_plug):
@@ -230,23 +241,36 @@ def bot(history, upload_file, chosen_plug):
             }]
             func_assistant = Assistant(function_list=['code_interpreter'],
                                        llm=llm_config)
-            response = func_assistant.run(messages=messages)
-
-            for chunk in output_beautify.convert_to_full_str_stream(response):
-                history[-1][1] = chunk
+            try:
+                response = func_assistant.run(messages=messages)
+                for chunk in output_beautify.convert_to_full_str_stream(
+                        response):
+                    history[-1][1] = chunk
+                    yield history
+            except ModelServiceError:
+                history[-1][1] = '模型调用出错，可能的原因有：未正确配置模型参数，或输入数据不安全等'
                 yield history
+            except Exception as ex:
+                raise ValueError(ex)
         else:
-            response = qa_assistant.run(
-                messages=[{
-                    'role': 'user',
-                    'content': history[-1][0]
-                }],
-                max_ref_token=server_config.server.max_ref_token,
-                time_limit=app_global_para['time'],
-                checked=True)
-            for chunk in output_beautify.convert_to_full_str_stream(response):
-                history[-1][1] = chunk
+            try:
+                response = qa_assistant.run(
+                    messages=[{
+                        'role': 'user',
+                        'content': history[-1][0]
+                    }],
+                    max_ref_token=server_config.server.max_ref_token,
+                    time_limit=app_global_para['time'],
+                    checked=True)
+                for chunk in output_beautify.convert_to_full_str_stream(
+                        response):
+                    history[-1][1] = chunk
+                    yield history
+            except ModelServiceError:
+                history[-1][1] = '模型调用出错，可能的原因有：未正确配置模型参数，或输入数据不安全等'
                 yield history
+            except Exception as ex:
+                raise ValueError(ex)
 
         # append message
         message = {'role': 'user', 'content': history[-1][0]}
@@ -271,23 +295,33 @@ def generate(context):
 
         func_assistant = Assistant(function_list=['code_interpreter'],
                                    llm=llm_config)
-        response = func_assistant.run(messages=[{
-            'role': 'user',
-            'content': sp_query
-        }])
-        for chunk in output_beautify.convert_to_full_str_stream(response):
-            yield chunk
+        try:
+            response = func_assistant.run(messages=[{
+                'role': 'user',
+                'content': sp_query
+            }])
+            for chunk in output_beautify.convert_to_full_str_stream(response):
+                yield chunk
+        except ModelServiceError:
+            yield '模型调用出错，可能的原因有：未正确配置模型参数，或输入数据不安全等'
+        except Exception as ex:
+            raise ValueError(ex)
 
     elif PLUGIN_FLAG in sp_query:  # router to plugin
         sp_query = sp_query.split(PLUGIN_FLAG)[-1]
         func_assistant = Assistant(
             function_list=['code_interpreter', 'image_gen'], llm=llm_config)
-        response = func_assistant.run(messages=[{
-            'role': 'user',
-            'content': sp_query
-        }])
-        for chunk in output_beautify.convert_to_full_str_stream(response):
-            yield chunk
+        try:
+            response = func_assistant.run(messages=[{
+                'role': 'user',
+                'content': sp_query
+            }])
+            for chunk in output_beautify.convert_to_full_str_stream(response):
+                yield chunk
+        except ModelServiceError:
+            yield '模型调用出错，可能的原因有：未正确配置模型参数，或输入数据不安全等'
+        except Exception as ex:
+            raise ValueError(ex)
 
     else:  # router to continue writing
         sp_query_no_title = context
@@ -297,17 +331,22 @@ def generate(context):
         full_article = False
         if TITLE_FLAG in sp_query:  # /title
             full_article = True
-        response = writing_assistant.run(
-            messages=[{
-                'role': 'user',
-                'content': sp_query_no_title
-            }],
-            max_ref_token=server_config.server.max_ref_token,
-            full_article=full_article,
-            time_limit=app_global_para['time'],
-            checked=True)
-        for chunk in output_beautify.convert_to_full_str_stream(response):
-            yield chunk
+        try:
+            response = writing_assistant.run(
+                messages=[{
+                    'role': 'user',
+                    'content': sp_query_no_title
+                }],
+                max_ref_token=server_config.server.max_ref_token,
+                full_article=full_article,
+                time_limit=app_global_para['time'],
+                checked=True)
+            for chunk in output_beautify.convert_to_full_str_stream(response):
+                yield chunk
+        except ModelServiceError:
+            yield '模型调用出错，可能的原因有：未正确配置模型参数，或输入数据不安全等'
+        except Exception as ex:
+            raise ValueError(ex)
 
 
 def format_generate(edit, context):

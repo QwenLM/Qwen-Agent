@@ -1,10 +1,10 @@
 import os
 from http import HTTPStatus
-from typing import Dict, Iterator, List, Optional
+from typing import Dict, Iterator, List, Optional, Union
 
 import dashscope
 
-from qwen_agent.llm.base import BaseChatModel
+from qwen_agent.llm.base import BaseChatModel, ModelServiceError
 from qwen_agent.log import logger
 
 from .schema import (ASSISTANT, CONTENT, DEFAULT_SYSTEM_MESSAGE, ROLE, SYSTEM,
@@ -38,15 +38,15 @@ class QwenChatAtDS(BaseChatModel):
             stream=True,
             **self.generate_cfg)
         if delta_stream:
-            return self.delta_stream_output(response)
+            return self._delta_stream_output(response)
         else:
-            return self.full_stream_output(response)
+            return self._full_stream_output(response)
 
     def _chat_no_stream(
         self,
         messages: List[Dict],
         stop: Optional[List[str]] = None,
-    ) -> Iterator[List[Dict]]:
+    ) -> List[Dict]:
         stop = stop or []
         response = dashscope.Generation.call(
             self.model,
@@ -59,25 +59,35 @@ class QwenChatAtDS(BaseChatModel):
             } for word in stop],
             **self.generate_cfg)
         if response.status_code == HTTPStatus.OK:
-            yield self.wrapper_text_to_message_list(
+            return self._wrapper_text_to_message_list(
                 response.output.choices[0].message.content)
         else:
             err = 'Error code: %s, error message: %s' % (
                 response.code,
                 response.message,
             )
-            logger.error(err)
-            if response.code == 'DataInspectionFailed':
-                err += '\n【异常输出】: 数据检查失败。【错误信息】: 输入数据可能包含不适当的内容。'
-            yield self.wrapper_text_to_message_list(f'{err}')
+            raise ModelServiceError(err)
+
+    def text_completion(
+        self,
+        messages: List[Dict],
+        stop: Optional[List[str]] = None,
+        stream: bool = True,
+        delta_stream: bool = False,
+    ) -> Union[List[Dict], Iterator[List[Dict]]]:
+        prompt = self._build_text_completion_prompt(messages)
+        logger.debug('==== Inputted prompt ===')
+        logger.debug(prompt)
+        if stream:
+            return self._text_completion_stream(prompt, stop, delta_stream)
+        else:
+            return self._text_completion_no_stream(prompt, stop)
 
     def _text_completion_no_stream(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,
-    ) -> Iterator[List[Dict]]:
-        if prompt == '':
-            yield self.wrapper_text_to_message_list('')
+    ) -> List[Dict]:
         stop = stop or []
         logger.debug(prompt)
         response = dashscope.Generation.call(
@@ -94,17 +104,14 @@ class QwenChatAtDS(BaseChatModel):
         if response.status_code == HTTPStatus.OK:
             # with open('debug.json', 'w', encoding='utf-8') as writer:
             #     writer.write(json.dumps(response, ensure_ascii=False))
-            yield self.wrapper_text_to_message_list(
+            return self._wrapper_text_to_message_list(
                 response.output.choices[0].message.content)
         else:
             err = 'Error code: %s, error message: %s' % (
                 response.code,
                 response.message,
             )
-            logger.error(err)
-            if response.code == 'DataInspectionFailed':
-                err += '\n【异常输出】: 数据检查失败。【错误信息】: 输入数据可能包含不适当的内容。'
-            yield self.wrapper_text_to_message_list(f'{err}')
+            raise ModelServiceError(err)
 
     def _text_completion_stream(
         self,
@@ -112,7 +119,6 @@ class QwenChatAtDS(BaseChatModel):
         stop: Optional[List[str]] = None,
         delta_stream: bool = False,
     ) -> Iterator[List[Dict]]:
-
         stop = stop or []
         response = dashscope.Generation.call(
             self.model,
@@ -126,11 +132,11 @@ class QwenChatAtDS(BaseChatModel):
             use_raw_prompt=True,
             **self.generate_cfg)
         if delta_stream:
-            return self.delta_stream_output(response)
+            return self._delta_stream_output(response)
         else:
-            return self.full_stream_output(response)
+            return self._full_stream_output(response)
 
-    def build_text_completion_prompt(self, messages: List[Dict]) -> str:
+    def _build_text_completion_prompt(self, messages: List[Dict]) -> str:
         im_start = '<|im_start|>'
         im_end = '<|im_end|>'
         if messages[0][ROLE] == SYSTEM:
@@ -153,7 +159,7 @@ class QwenChatAtDS(BaseChatModel):
         prompt = prompt[:-len(f'{im_end}')]
         return prompt
 
-    def delta_stream_output(self, response) -> Iterator[List[Dict]]:
+    def _delta_stream_output(self, response) -> Iterator[List[Dict]]:
         last_len = 0
         delay_len = 5
         in_delay = False
@@ -168,33 +174,23 @@ class QwenChatAtDS(BaseChatModel):
                     in_delay = False
                     real_text = text[:-delay_len]
                     now_rsp = real_text[last_len:]
-                    yield self.wrapper_text_to_message_list(now_rsp)
+                    yield self._wrapper_text_to_message_list(now_rsp)
                     last_len = len(real_text)
             else:
                 err = '\nError code: %s. Error message: %s' % (trunk.code,
                                                                trunk.message)
-                logger.error(err)
-                # todo: Better error handling
-                if trunk.code == 'DataInspectionFailed':
-                    err += '\n【异常输出】: 数据检查失败。【错误信息】: 输入数据可能包含不适当的内容。'
-                text = ''
-                yield self.wrapper_text_to_message_list(f'{err}')
-                break
+                raise ModelServiceError(err)
         # with open('debug.json', 'w', encoding='utf-8') as writer:
         #     writer.write(json.dumps(trunk, ensure_ascii=False))
         if text and (in_delay or (last_len != len(text))):
-            yield self.wrapper_text_to_message_list(text[last_len:])
+            yield self._wrapper_text_to_message_list(text[last_len:])
 
-    def full_stream_output(self, response) -> Iterator[List[Dict]]:
+    def _full_stream_output(self, response) -> Iterator[List[Dict]]:
         for trunk in response:
             if trunk.status_code == HTTPStatus.OK:
-                yield self.wrapper_text_to_message_list(
+                yield self._wrapper_text_to_message_list(
                     trunk.output.choices[0].message.content)
             else:
                 err = '\nError code: %s. Error message: %s' % (trunk.code,
                                                                trunk.message)
-                logger.error(err)
-                if trunk.code == 'DataInspectionFailed':
-                    err += '\n【异常输出】: 数据检查失败。【错误信息】: 输入数据可能包含不适当的内容。'
-                yield self.wrapper_text_to_message_list(f'{err}')
-                break
+                raise ModelServiceError(err)

@@ -31,8 +31,8 @@ class ReAct(Agent):
 
     def _run(self,
              messages: List[Dict],
-             response_to_continue: str = None,
-             lang: str = 'en') -> Iterator[List[Dict]]:
+             lang: str = 'en',
+             **kwargs) -> Iterator[List[Dict]]:
 
         tool_descs = '\n\n'.join(
             parser_function(func.function)
@@ -44,16 +44,12 @@ class ReAct(Agent):
                                      query=messages[-1][CONTENT])
         messages[-1][CONTENT] = prompt
 
-        planning_prompt = self.llm.build_text_completion_prompt(messages)
-        if response_to_continue:
-            planning_prompt += response_to_continue
-
         max_turn = 5
         response = []
         while True and max_turn > 0:
             max_turn -= 1
             output_stream = self.llm.text_completion(
-                prompt=planning_prompt,
+                messages=messages,
                 stop=['Observation:', 'Observation:\n'],
             )
             output = []
@@ -64,7 +60,7 @@ class ReAct(Agent):
             output = output[-1][CONTENT]
 
             use_tool, action, action_input, output = self._detect_tool(output)
-            if planning_prompt.endswith('\nThought:'):
+            if messages[-1][CONTENT].endswith('\nThought:'):
                 if not output.startswith(' '):
                     output = ' ' + output
             else:
@@ -76,7 +72,7 @@ class ReAct(Agent):
                 observation = f'\nObservation: {observation}\nThought:'
                 response[-1][CONTENT] += observation
                 yield response
-                planning_prompt += output + observation
+                messages[-1][CONTENT] += output + observation
             else:
                 break
 

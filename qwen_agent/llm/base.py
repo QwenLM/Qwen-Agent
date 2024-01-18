@@ -1,20 +1,20 @@
+import copy
 from abc import ABC, abstractmethod
-from typing import Dict, Iterator, List, Optional
+from typing import Dict, Iterator, List, Optional, Union
 
 from qwen_agent.log import logger
-from qwen_agent.utils.utils import (has_chinese_chars, parser_function,
-                                    print_traceback)
+from qwen_agent.utils.utils import has_chinese_chars, parser_function
 
 from .schema import (ASSISTANT, CONTENT, DEFAULT_SYSTEM_MESSAGE, FN_ARGS,
                      FN_CALL_TEMPLATE, FN_EXIT, FN_NAME, FN_RESULT, ROLE,
                      SYSTEM, USER)
 
 
-class FnCallNotImplError(NotImplementedError):
+class TextCompleteNotImplError(NotImplementedError):
     pass
 
 
-class TextCompleteNotImplError(NotImplementedError):
+class ModelServiceError(Exception):
     pass
 
 
@@ -23,8 +23,7 @@ class BaseChatModel(ABC):
     def __init__(self, cfg: Optional[Dict] = None):
         self.cfg = cfg or {}
         self.generate_cfg = self.cfg.get('generate_cfg', {})
-        self._support_fn_call: Optional[bool] = None
-        self._support_text_completion: Optional[bool] = None
+        self._flag_support_text_completion: Optional[bool] = None
 
     def chat(
         self,
@@ -33,7 +32,7 @@ class BaseChatModel(ABC):
         stop: Optional[List[str]] = None,
         stream: bool = True,
         delta_stream: bool = False,
-    ) -> Iterator[List[Dict]]:
+    ) -> Union[List[Dict], Iterator[List[Dict]]]:
         """
         llm chat interface
 
@@ -44,25 +43,21 @@ class BaseChatModel(ABC):
         :param delta_stream: Whether to return incrementally
             - When False: Use full return
             - When True: Use incremental return
-        :return: the generated message list response by llm, return an Iterator
+        :return: the generated message list response by llm
+            - When List[Dict]: stream=False
+            - When Iterator[List[Dict]]]: stream=True
         """
+        messages = copy.deepcopy(messages)
         if messages[0][ROLE] != SYSTEM:
             messages.insert(0, {ROLE: SYSTEM, CONTENT: DEFAULT_SYSTEM_MESSAGE})
         if functions:
-            if self.support_function_calling():
-                return self.chat_with_functions(messages=messages,
-                                                functions=functions,
-                                                stop=stop,
-                                                stream=stream,
-                                                delta_stream=delta_stream)
-            else:
-                return self.chat_with_fn_call_template(
-                    messages=messages,
-                    functions=functions,
-                    stream=stream,
-                    delta_stream=delta_stream)
+            return self.chat_with_functions(messages=messages,
+                                            functions=functions,
+                                            stop=stop,
+                                            stream=stream,
+                                            delta_stream=delta_stream)
 
-        messages = self.convert_fncall_to_text(messages)
+        messages = self._convert_fncall_to_text(messages)
         logger.debug('==== Inputted messages ===')
         logger.debug(messages)
         if stream:
@@ -72,87 +67,18 @@ class BaseChatModel(ABC):
         else:
             return self._chat_no_stream(messages, stop=stop)
 
-    def support_function_calling(self) -> bool:
-        if self._support_fn_call is None:
-            functions = [{
-                'name': 'get_current_weather',
-                'description': 'Get the current weather in a given location.',
-                'parameters': {
-                    'type': 'object',
-                    'properties': {
-                        'location': {
-                            'type':
-                            'string',
-                            'description':
-                            'The city and state, e.g. San Francisco, CA',
-                        },
-                        'unit': {
-                            'type': 'string',
-                            'enum': ['celsius', 'fahrenheit'],
-                        },
-                    },
-                    'required': ['location'],
-                },
-            }]
-            messages = [{
-                'role': 'user',
-                'content': 'What is the weather like in Boston?'
-            }]
-            self._support_fn_call = False
-            try:
-                *_, last = self.chat_with_functions(messages=messages,
-                                                    functions=functions)
-                response = last[-1]
-                if response.get('function_call', None):
-                    logger.info('Support of function calling is detected.')
-                    self._support_fn_call = True
-            except FnCallNotImplError:
-                pass
-            except Exception:  # TODO: more specific
-                print_traceback()
-        return self._support_fn_call
-
     def chat_with_functions(
             self,
             messages: List[Dict],
             functions: Optional[List[Dict]] = None,
             stop: Optional[List[str]] = None,
             stream: bool = True,
-            delta_stream: bool = False) -> Iterator[List[Dict]]:
-        raise FnCallNotImplError
+            delta_stream: bool = False
+    ) -> Union[List[Dict], Iterator[List[Dict]]]:
+        # convert to chat format
+        messages = self._convert_fncall_to_text(messages)
 
-    def text_completion(
-        self,
-        prompt: str,
-        stop: Optional[List[str]] = None,
-        stream: bool = True,
-        delta_stream: bool = False,
-    ) -> Iterator[List[Dict]]:
-        """
-        Continuation Interface：Implement in specific llm models
-
-
-        :param prompt: Text that needs to be continued
-        :param stop: stop word list
-        :param stream: whether to generate by streaming style
-        :param delta_stream: Whether to return incrementally
-        :return: Continued text
-        """
-        logger.debug('==== Inputted prompt ===')
-        logger.debug(prompt)
-        if stream:
-            return self._text_completion_stream(prompt, stop, delta_stream)
-        else:
-            return self._text_completion_no_stream(prompt, stop)
-
-    def chat_with_fn_call_template(
-            self,
-            messages: List[Dict],
-            functions: Optional[List[Dict]] = None,
-            stream: bool = False,
-            delta_stream: bool = False) -> Iterator[List[Dict]]:
         # prepend tool react prompt
-        messages = self.convert_fncall_to_text(messages)
         tool_desc_template = FN_CALL_TEMPLATE['en']
         for message in messages[::-1]:
             if message[ROLE] == USER:
@@ -170,10 +96,9 @@ class BaseChatModel(ABC):
             messages.insert(0, {ROLE: SYSTEM, CONTENT: tool_system})
 
         # generate response
-        if self.support_text_completion():
-            planning_prompt = self.build_text_completion_prompt(messages)
+        if self._support_text_completion():
             output = self.text_completion(
-                prompt=planning_prompt,
+                messages=messages,
                 stop=[f'{FN_RESULT}:', f'{FN_RESULT}:\n'],
                 stream=stream,
                 delta_stream=delta_stream)
@@ -189,37 +114,38 @@ class BaseChatModel(ABC):
                 output = self._chat_no_stream(
                     messages, stop=[f'{FN_RESULT}:', f'{FN_RESULT}:\n'])
 
-        for m in output:
-            yield self.convert_text_to_fncall(m)
+        # convert to fn call format
+        if isinstance(output, List):
+            return self._convert_text_to_fncall(output)
+        else:
+            return self._wrapper_output_iterator(output)
 
-    def support_text_completion(self) -> bool:
-        if self._support_text_completion is None:
-            try:
-                _ = self.text_completion(prompt='', stream=False)
-                self._support_text_completion = True
-            except TextCompleteNotImplError:
-                self._support_text_completion = False
-            except Exception:
-                self._support_text_completion = False
-        return self._support_text_completion
+    def _wrapper_output_iterator(self, messages: Iterator[List[Dict]]):
+        for m in messages:
+            yield self._convert_text_to_fncall(m)
 
-    def build_text_completion_prompt(self, messages):
-        raise NotImplementedError
-
-    def _text_completion_no_stream(
+    def text_completion(
         self,
-        prompt: str,
+        messages: List[Dict],
         stop: Optional[List[str]] = None,
-    ) -> Iterator[List[Dict]]:
-        raise TextCompleteNotImplError
-
-    def _text_completion_stream(
-        self,
-        prompt: str,
-        stop: Optional[List[str]] = None,
+        stream: bool = True,
         delta_stream: bool = False,
-    ) -> Iterator[List[Dict]]:
+    ) -> Union[List[Dict], Iterator[List[Dict]]]:
         raise TextCompleteNotImplError
+
+    def _support_text_completion(self) -> bool:
+        if self._flag_support_text_completion is None:
+            try:
+                messages = [{ROLE: USER, CONTENT: 'hello'}]
+                response = self.text_completion(messages)
+                if not isinstance(response, List):
+                    *_, last = response
+                self._flag_support_text_completion = True
+            except TextCompleteNotImplError:
+                self._flag_support_text_completion = False
+            except Exception:
+                self._flag_support_text_completion = False
+        return self._flag_support_text_completion
 
     @abstractmethod
     def _chat_stream(
@@ -235,12 +161,12 @@ class BaseChatModel(ABC):
         self,
         messages: List[Dict],
         stop: Optional[List[str]] = None,
-    ) -> Iterator[List[Dict]]:
+    ) -> List[Dict]:
         raise NotImplementedError
 
     @staticmethod
-    def convert_fncall_to_text(messages: List[Dict],
-                               fn_role: str = 'function') -> List[Dict]:
+    def _convert_fncall_to_text(messages: List[Dict],
+                                fn_role: str = 'function') -> List[Dict]:
         new_messages = []
         for msg in messages:
             role, content = msg[ROLE], msg[CONTENT]
@@ -270,8 +196,8 @@ class BaseChatModel(ABC):
         return new_messages
 
     @staticmethod
-    def convert_text_to_fncall(messages: List[Dict],
-                               fn_role: str = 'function') -> List[Dict]:
+    def _convert_text_to_fncall(messages: List[Dict],
+                                fn_role: str = 'function') -> List[Dict]:
         new_messages = []
         for msg in messages:
             role, content = msg[ROLE], msg[CONTENT]
@@ -337,9 +263,5 @@ class BaseChatModel(ABC):
         return new_messages
 
     @staticmethod
-    def wrapper_text_to_message_list(text: str) -> List[Dict]:
+    def _wrapper_text_to_message_list(text: str) -> List[Dict]:
         return [{ROLE: ASSISTANT, CONTENT: text}]
-
-    @staticmethod
-    def get_last_text_from_message_list(message_list: List[Dict]) -> str:
-        return message_list[-1][CONTENT]

@@ -86,10 +86,10 @@ class Memory(Agent):
             else:
                 # need to retrieval
                 # gen keyword
-                *_, last = self.keygen.run([{ROLE: USER, CONTENT: query}])
-                keyword = last[-1][CONTENT]
-                logger.info(keyword)
                 try:
+                    *_, last = self.keygen.run([{ROLE: USER, CONTENT: query}])
+                    keyword = last[-1][CONTENT]
+                    logger.info(keyword)
                     keyword_dict = json5.loads(keyword)
                     keyword_dict['text'] = query
                     query_with_keyword = keyword_dict

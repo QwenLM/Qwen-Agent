@@ -8,6 +8,7 @@ import gradio as gr
 import json5
 
 from qwen_agent.agents import DocQAAgent
+from qwen_agent.llm.base import ModelServiceError
 from qwen_agent.log import logger
 from qwen_server import output_beautify
 from qwen_server.schema import GlobalConfig
@@ -81,14 +82,21 @@ def bot(history):
     else:
         messages = [{'role': 'user', 'content': history[-1][0]}]
         history[-1][1] = ''
-        response = assistant.run(
-            messages=messages,
-            url=page_url,
-            max_ref_token=server_config.server.max_ref_token)
+        try:
+            response = assistant.run(
+                messages=messages,
+                url=page_url,
+                max_ref_token=server_config.server.max_ref_token)
 
-        for chunk in output_beautify.convert_to_full_str_stream(response):
-            history[-1][1] = chunk
+            for chunk in output_beautify.convert_to_full_str_stream(response):
+                history[-1][1] = chunk
+                yield history
+        except ModelServiceError:
+            history[-1][1] = '模型调用出错，可能的原因有：未正确配置模型参数，或输入数据不安全等'
             yield history
+        except Exception as ex:
+            raise ValueError(ex)
+
         save_history(history, page_url)
 
 

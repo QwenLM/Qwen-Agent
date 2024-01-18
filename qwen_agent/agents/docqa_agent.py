@@ -43,6 +43,7 @@ class DocQAAgent(Agent):
         }, {
             'file': url
         }]
+
         *_, last = self.mem.run(messages=messages_with_file,
                                 max_ref_token=max_ref_token,
                                 **kwargs)

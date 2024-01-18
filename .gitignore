@@ -33,3 +33,4 @@ dist/*
 
 examples/*.ipynb
 */default_data_path/*
+test/*

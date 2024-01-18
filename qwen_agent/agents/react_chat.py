@@ -29,8 +29,8 @@ class ReActChat(ReAct):
 
     def _run(self,
              messages: List[Dict],
-             response_to_continue: str = None,
-             lang: str = 'en') -> Iterator[List[Dict]]:
+             lang: str = 'en',
+             **kwargs) -> Iterator[List[Dict]]:
 
         tool_descs = '\n\n'.join(
             parser_function(func.function)
@@ -58,7 +58,7 @@ class ReActChat(ReAct):
             output = output[-1][CONTENT]
 
             use_tool, action, action_input, output = self._detect_tool(output)
-            if messages[-1]['content'].endswith('\nThought:'):
+            if messages[-1][CONTENT].endswith('\nThought:'):
                 if not output.startswith(' '):
                     output = ' ' + output
             else:
