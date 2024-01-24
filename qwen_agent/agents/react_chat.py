@@ -46,10 +46,7 @@ class ReActChat(ReAct):
         response = []
         while True and max_turn > 0:
             max_turn -= 1
-            output_stream = self._call_llm(
-                messages=messages,
-                stop=['Observation:', 'Observation:\n'],
-            )
+            output_stream = self._call_llm(messages=messages)
             output = []
             for output in output_stream:
                 yield response + output

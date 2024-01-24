@@ -33,7 +33,7 @@ class Agent(ABC):
         :param description: the description of agent, which is used for multi_agent
         :param kwargs: other potential parameters
         """
-        if isinstance(llm, Dict):
+        if isinstance(llm, dict):
             self.llm_config = llm
             self.llm = get_chat_model(self.llm_config)
         else:
@@ -45,13 +45,13 @@ class Agent(ABC):
             for function_name in function_list:
                 self._init_tool(function_name)
 
-        self.system_message = {ROLE: SYSTEM, CONTENT: system_message}
+        self.system_message = system_message
 
         self.name = name
         self.description = description or system_message
 
     def run(self, messages: List[Dict], **kwargs) -> Iterator[List[Dict]]:
-        assert messages[-1][ROLE] == USER, 'you must send the user query'
+        assert messages[-1][ROLE] == USER, 'you must send the user message'
         messages = copy.deepcopy(messages)
         if 'lang' not in kwargs:
             if has_chinese_chars([messages[-1][CONTENT], kwargs]):
@@ -70,7 +70,6 @@ class Agent(ABC):
     def _call_llm(self,
                   messages: List[Dict],
                   functions: Optional[List[Dict]] = None,
-                  stop: Optional[List[str]] = None,
                   stream: bool = True,
                   delta_stream: bool = False) -> Iterator[List[Dict]]:
         """
@@ -78,17 +77,20 @@ class Agent(ABC):
         """
         messages = copy.deepcopy(messages)
         if messages[0][ROLE] != SYSTEM:
-            messages.insert(0, self.system_message)
+            messages.insert(0, {ROLE: SYSTEM, CONTENT: self.system_message})
+        elif isinstance(messages[0][CONTENT], str):
+            messages[0][CONTENT] = self.system_message + messages[0][CONTENT]
         else:
-            messages[0][
-                CONTENT] = self.system_message[CONTENT] + messages[0][CONTENT]
+            assert isinstance(messages[0][CONTENT], list)
+            messages[0][CONTENT] = [{
+                'text': self.system_message
+            }] + messages[0][CONTENT]
         return self.llm.chat(messages=messages,
                              functions=functions,
-                             stop=stop,
                              stream=stream,
                              delta_stream=delta_stream)
 
-    def _call_tool(self, tool_name: str, tool_args: str, **kwargs):
+    def _call_tool(self, tool_name: str, tool_args: str = '{}', **kwargs):
         """
         Use when calling tools in bot()
 
@@ -104,7 +106,7 @@ class Agent(ABC):
         """
         tool_name = tool
         tool_cfg = None
-        if isinstance(tool, Dict):
+        if isinstance(tool, dict):
             tool_name = tool['name']
             tool_cfg = tool
         if tool_name not in TOOL_REGISTRY:
@@ -115,28 +117,22 @@ class Agent(ABC):
 
     def _detect_tool(self, message: Union[str,
                                           dict]) -> Tuple[bool, str, str, str]:
-        # use built-in default judgment functions
-        if isinstance(message, str):
-            return self._detect_tool_by_special_token(message)
-        else:
-            return self._detect_tool_by_func_call(message)
-
-    def _detect_tool_by_special_token(self,
-                                      text: str) -> Tuple[bool, str, str, str]:
-        raise NotImplementedError
-
-    def _detect_tool_by_func_call(self,
-                                  message: Dict) -> Tuple[bool, str, str, str]:
         """
         A built-in tool call detection for func_call format
-
+        :param message: one message
+        :return:
+            - bool: need to call tool or not
+            - str: tool name
+            - str: tool args
+            - str: text replies except for tool calls
         """
         func_name = None
         func_args = None
+        assert isinstance(message, dict)
         if 'function_call' in message and message['function_call']:
             func_call = message['function_call']
             func_name = func_call.get('name', '')
             func_args = func_call.get('arguments', '')
-        text = message['content']
+        text = message.get('content', '')
 
         return (func_name is not None), func_name, func_args, text

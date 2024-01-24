@@ -1,4 +1,3 @@
-import copy
 from typing import Dict, Iterator, List, Optional, Union
 
 from qwen_agent import Agent
@@ -29,27 +28,19 @@ class DocQAAgent(Agent):
 
     def _run(self,
              messages: List[Dict],
-             url: str = None,
-             max_ref_token: int = 4000,
-             stop: Optional[List[str]] = None,
              lang: str = 'en',
+             max_ref_token: int = 4000,
              **kwargs) -> Iterator[List[Dict]]:
 
         # need to use Memory agent for data management
-        messages_with_file = copy.deepcopy(
-            messages)  # this is a temporary plan
-        messages_with_file[-1][CONTENT] = [{
-            'text': messages[-1][CONTENT]
-        }, {
-            'file': url
-        }]
-
-        *_, last = self.mem.run(messages=messages_with_file,
+        *_, last = self.mem.run(messages=messages,
                                 max_ref_token=max_ref_token,
                                 **kwargs)
         _ref = last[-1][CONTENT]
 
         # use RetrievalQA agent
-        response = self.doc_qa.run(messages=messages, knowledge=_ref)
+        response = self.doc_qa.run(messages=messages,
+                                   lang=lang,
+                                   knowledge=_ref)
 
         return response

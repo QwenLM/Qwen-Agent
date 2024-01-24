@@ -80,12 +80,18 @@ def bot(history):
     if not history:
         yield history
     else:
-        messages = [{'role': 'user', 'content': history[-1][0]}]
+        messages = [{
+            'role': 'user',
+            'content': [{
+                'text': history[-1][0]
+            }, {
+                'file': page_url
+            }]
+        }]
         history[-1][1] = ''
         try:
             response = assistant.run(
                 messages=messages,
-                url=page_url,
                 max_ref_token=server_config.server.max_ref_token)
 
             for chunk in output_beautify.convert_to_full_str_stream(response):

@@ -1,4 +1,3 @@
-import copy
 from typing import Dict, Iterator, List, Optional, Union
 
 from qwen_agent import Agent
@@ -30,22 +29,13 @@ class ArticleAgent(Agent):
 
     def _run(self,
              messages: List[Dict],
-             url: str = None,
+             lang: str = 'en',
              max_ref_token: int = 4000,
              full_article: bool = False,
-             stop: Optional[List[str]] = None,
-             lang: str = 'en',
              **kwargs) -> Union[str, Iterator[str]]:
 
         # need to use Memory agent for data management
-        messages_with_file = copy.deepcopy(
-            messages)  # this is a temporary plan
-        messages_with_file[-1][CONTENT] = [{
-            'text': messages[-1][CONTENT]
-        }, {
-            'file': url
-        }]
-        *_, last = self.mem.run(messages=messages_with_file,
+        *_, last = self.mem.run(messages=messages,
                                 max_ref_token=max_ref_token,
                                 **kwargs)
         _ref = last[-1][CONTENT]
@@ -71,6 +61,6 @@ class ArticleAgent(Agent):
                 '\n========================= \n> Writing Text: \n'
             })
             yield response
-        res = writing_agent.run(messages=messages, knowledge=_ref)
+        res = writing_agent.run(messages=messages, lang=lang, knowledge=_ref)
         for trunk in res:
             yield response + trunk

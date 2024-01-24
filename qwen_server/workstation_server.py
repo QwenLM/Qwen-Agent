@@ -3,7 +3,6 @@
 import datetime
 import json
 import os
-import shutil
 from pathlib import Path
 
 import add_qwen_libs  # NOQA
@@ -11,8 +10,9 @@ import gradio as gr
 
 from qwen_agent.agents import ArticleAgent, Assistant, DocQAAgent
 from qwen_agent.llm.base import ModelServiceError
-from qwen_agent.log import logger
-from qwen_agent.utils.utils import (get_last_one_line_context,
+from qwen_agent.memory import Memory
+from qwen_agent.utils.utils import (get_basename_from_url,
+                                    get_last_one_line_context,
                                     has_chinese_chars, save_text_to_file)
 from qwen_server import output_beautify
 from qwen_server.schema import GlobalConfig
@@ -96,35 +96,32 @@ def chat_clear_last():
 
 
 def add_file(file, chosen_plug):
+    # todo: Front end logic needs to be modified
     output_filepath = server_config.path.code_interpreter_ws
-    fn = os.path.basename(file.name)
-    fn_type = fn.split('.')[-1].lower()
-    logger.info('file type: ' + fn_type)
-    if chosen_plug == DOC_OPTION and (fn_type not in ['pdf', 'docx', 'pptx']):
+    fn = get_basename_from_url(file.name)
+    new_path = os.path.join(output_filepath, fn)
+
+    if chosen_plug == DOC_OPTION and (not file.name.lower().endswith(
+        ('pdf', 'docx', 'pptx'))):  # NOQA
         new_path = (
             'Upload failed: only adding [\'.pdf\', \'.docx\', \'.pptx\'] documents as references is supported!'
         )
     else:
-        new_path = os.path.join(output_filepath, fn)
-        if os.path.exists(new_path):
-            os.remove(new_path)
-        shutil.move(file.name, output_filepath)
         if chosen_plug == CI_OPTION:
             app_global_para['is_first_upload'] = True
 
-        # upload references
-        if chosen_plug == DOC_OPTION:
-            try:
-                *_, last = qa_assistant.mem.run(
-                    [{
-                        'role': 'user',
-                        'content': [{
-                            'file': new_path
-                        }]
-                    }],
-                    ignore_cache=True)
-            except Exception as ex:
-                raise ValueError(ex)
+        # upload file
+        try:
+            mem = Memory(storage_path=server_config.path.database_root)
+            *_, last = mem.run([{
+                'role': 'user',
+                'content': [{
+                    'file': file.name
+                }]
+            }],
+                               ignore_cache=True)
+        except Exception as ex:
+            raise ValueError(ex)
 
     return new_path
 
@@ -144,10 +141,10 @@ def refresh_date():
 
 
 def update_browser_list():
+    mem = Memory(storage_path=server_config.path.database_root)
     br_list = json.loads(
         output_beautify.convert_to_str(
-            qa_assistant.mem.run(use_meta_info=True,
-                                 time_limit=app_global_para['time'])))
+            mem.run(use_meta_info=True, time_limit=app_global_para['time'])))
     if not br_list:
         return 'No browsing records'
 

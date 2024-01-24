@@ -1,7 +1,9 @@
-from typing import Dict, Iterator, List
+from typing import Dict, Iterator, List, Optional, Tuple, Union
 
 from qwen_agent import Agent
-from qwen_agent.llm.schema import ASSISTANT, CONTENT, ROLE
+from qwen_agent.llm import BaseChatModel
+from qwen_agent.llm.schema import (ASSISTANT, CONTENT, DEFAULT_SYSTEM_MESSAGE,
+                                   ROLE)
 from qwen_agent.utils.utils import parser_function
 
 PROMPT_REACT = """Answer the following questions as best you can. You have access to the following tools:
@@ -29,6 +31,24 @@ class ReAct(Agent):
     Using ReAct format to call tools
     """
 
+    def __init__(self,
+                 function_list: Optional[List[Union[str, Dict]]] = None,
+                 llm: Optional[Union[Dict, BaseChatModel]] = None,
+                 system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
+                 name: Optional[str] = None,
+                 description: Optional[str] = None,
+                 **kwargs):
+        super().__init__(function_list=function_list,
+                         llm=llm,
+                         system_message=system_message,
+                         name=name,
+                         description=description)
+        stop = self.llm.generate_cfg.get('stop', [])
+        fn_stop = ['Observation:', 'Observation:\n']
+        self.llm.generate_cfg['stop'] = stop + [
+            x for x in fn_stop if x not in stop
+        ]
+
     def _run(self,
              messages: List[Dict],
              lang: str = 'en',
@@ -48,10 +68,7 @@ class ReAct(Agent):
         response = []
         while True and max_turn > 0:
             max_turn -= 1
-            output_stream = self.llm.text_completion(
-                messages=messages,
-                stop=['Observation:', 'Observation:\n'],
-            )
+            output_stream = self.llm.text_completion(messages=messages)
             output = []
             for output in output_stream:
                 yield response + output
@@ -76,11 +93,7 @@ class ReAct(Agent):
             else:
                 break
 
-    def _detect_tool_by_special_token(self, text: str):
-        """
-        A built-in tool call detection: After encapsulating function calls in the LLM layer, this is no longer needed
-
-        """
+    def _detect_tool(self, text: str) -> Tuple[bool, str, str, str]:
         special_func_token = '\nAction:'
         special_args_token = '\nAction Input:'
         special_obs_token = '\nObservation:'

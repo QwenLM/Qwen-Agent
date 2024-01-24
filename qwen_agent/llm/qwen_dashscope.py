@@ -1,17 +1,19 @@
+import json
 import os
 from http import HTTPStatus
 from typing import Dict, Iterator, List, Optional, Union
 
 import dashscope
 
-from qwen_agent.llm.base import BaseChatModel, ModelServiceError
+from qwen_agent.llm.base import ModelServiceError
 from qwen_agent.log import logger
 
+from .qwen_model import QwenChatModel
 from .schema import (ASSISTANT, CONTENT, DEFAULT_SYSTEM_MESSAGE, ROLE, SYSTEM,
                      USER)
 
 
-class QwenChatAtDS(BaseChatModel):
+class QwenChatAtDS(QwenChatModel):
 
     def __init__(self, cfg: Optional[Dict] = None):
         super().__init__(cfg)
@@ -23,17 +25,11 @@ class QwenChatAtDS(BaseChatModel):
     def _chat_stream(
         self,
         messages: List[Dict],
-        stop: Optional[List[str]] = None,
         delta_stream: bool = False,
     ) -> Iterator[List[Dict]]:
-        stop = stop or []
         response = dashscope.Generation.call(
             self.model,
             messages=messages,  # noqa
-            stop_words=[{
-                'stop_str': word,
-                'mode': 'exclude'
-            } for word in stop],
             result_format='message',
             stream=True,
             **self.generate_cfg)
@@ -45,18 +41,12 @@ class QwenChatAtDS(BaseChatModel):
     def _chat_no_stream(
         self,
         messages: List[Dict],
-        stop: Optional[List[str]] = None,
     ) -> List[Dict]:
-        stop = stop or []
         response = dashscope.Generation.call(
             self.model,
             messages=messages,  # noqa
             result_format='message',
             stream=False,
-            stop_words=[{
-                'stop_str': word,
-                'mode': 'exclude'
-            } for word in stop],
             **self.generate_cfg)
         if response.status_code == HTTPStatus.OK:
             return self._wrapper_text_to_message_list(
@@ -71,7 +61,6 @@ class QwenChatAtDS(BaseChatModel):
     def text_completion(
         self,
         messages: List[Dict],
-        stop: Optional[List[str]] = None,
         stream: bool = True,
         delta_stream: bool = False,
     ) -> Union[List[Dict], Iterator[List[Dict]]]:
@@ -79,28 +68,21 @@ class QwenChatAtDS(BaseChatModel):
         logger.debug('==== Inputted prompt ===')
         logger.debug(prompt)
         if stream:
-            return self._text_completion_stream(prompt, stop, delta_stream)
+            return self._text_completion_stream(prompt, delta_stream)
         else:
-            return self._text_completion_no_stream(prompt, stop)
+            return self._text_completion_no_stream(prompt)
 
     def _text_completion_no_stream(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
     ) -> List[Dict]:
-        stop = stop or []
         logger.debug(prompt)
-        response = dashscope.Generation.call(
-            self.model,
-            prompt=prompt,  # noqa
-            stop_words=[{
-                'stop_str': word,
-                'mode': 'exclude'
-            } for word in stop],
-            result_format='message',
-            stream=False,
-            use_raw_prompt=True,
-            **self.generate_cfg)
+        response = dashscope.Generation.call(self.model,
+                                             prompt=prompt,
+                                             result_format='message',
+                                             stream=False,
+                                             use_raw_prompt=True,
+                                             **self.generate_cfg)
         if response.status_code == HTTPStatus.OK:
             # with open('debug.json', 'w', encoding='utf-8') as writer:
             #     writer.write(json.dumps(response, ensure_ascii=False))
@@ -116,17 +98,11 @@ class QwenChatAtDS(BaseChatModel):
     def _text_completion_stream(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
         delta_stream: bool = False,
     ) -> Iterator[List[Dict]]:
-        stop = stop or []
         response = dashscope.Generation.call(
             self.model,
             prompt=prompt,  # noqa
-            stop_words=[{
-                'stop_str': word,
-                'mode': 'exclude'
-            } for word in stop],
             result_format='message',
             stream=True,
             use_raw_prompt=True,
@@ -141,6 +117,9 @@ class QwenChatAtDS(BaseChatModel):
         im_end = '<|im_end|>'
         if messages[0][ROLE] == SYSTEM:
             sys = messages[0][CONTENT]
+            assert isinstance(
+                sys,
+                str), 'text completion does not support vl format messages'
             prompt = f'{im_start}{SYSTEM}\n{sys}{im_end}'
         else:
             prompt = f'{im_start}{SYSTEM}\n{DEFAULT_SYSTEM_MESSAGE}{im_end}'
@@ -149,6 +128,9 @@ class QwenChatAtDS(BaseChatModel):
             messages.append({ROLE: ASSISTANT, CONTENT: ''})
 
         for message in messages:
+            assert isinstance(
+                message[CONTENT],
+                str), 'text completion does not support vl format messages'
             if message[ROLE] == USER:
                 query = message[CONTENT].lstrip('\n').rstrip()
                 prompt += f'\n{im_start}{USER}\n{query}{im_end}'
@@ -194,3 +176,5 @@ class QwenChatAtDS(BaseChatModel):
                 err = '\nError code: %s. Error message: %s' % (trunk.code,
                                                                trunk.message)
                 raise ModelServiceError(err)
+        with open('debug.json', 'w', encoding='utf-8') as writer:
+            writer.write(json.dumps(trunk, ensure_ascii=False))

@@ -26,7 +26,8 @@ from qwen_agent.log import logger  # NOQA
 from qwen_agent.tools.base import BaseTool, register_tool  # NOQA
 from qwen_agent.utils.utils import extract_code, print_traceback  # NOQA
 
-WORK_DIR = os.getenv('M6_CODE_INTERPRETER_WORK_DIR', '/tmp/m6_ci_workspace')
+WORK_DIR = os.getenv('M6_CODE_INTERPRETER_WORK_DIR',
+                     os.getcwd() + '/ci_workspace/')
 
 STATIC_URL = os.getenv('M6_CODE_INTERPRETER_STATIC_URL',
                        'http://127.0.0.1:7866/static')
@@ -57,7 +58,6 @@ def _start_kernel(pid) -> BlockingKernelClient:
             os.remove(f)
 
     os.makedirs(WORK_DIR, exist_ok=True)
-
     with open(launch_kernel_script, 'w') as fout:
         fout.write(LAUNCH_KERNEL_PY)
 

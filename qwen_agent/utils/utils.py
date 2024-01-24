@@ -1,13 +1,18 @@
 import datetime
 import json
+import os
 import re
+import shutil
 import socket
 import sys
 import traceback
+import urllib
 from typing import Dict, Literal, Optional
+from urllib.parse import urlparse
 
 import jieba
 import json5
+import requests
 from jieba import analyse
 
 from qwen_agent.log import logger
@@ -33,6 +38,42 @@ def print_traceback():
 def has_chinese_chars(data) -> bool:
     text = f'{data}'
     return len(re.findall(r'[\u4e00-\u9fff]+', text)) > 0
+
+
+def get_basename_from_url(url: str) -> str:
+    basename = os.path.basename(urlparse(url).path)
+    basename = urllib.parse.unquote(basename)
+    return basename.strip()
+
+
+def is_local_path(path):
+    if path.startswith('https://') or path.startswith('http://'):
+        return False
+    return True
+
+
+def save_url_to_local_work_dir(url, base_dir):
+    fn = get_basename_from_url(url)
+    new_path = os.path.join(base_dir, fn)
+    if os.path.exists(new_path):
+        os.remove(new_path)
+    if is_local_path(url):
+        shutil.copy(url, base_dir)
+    else:
+        response = requests.get(url)
+        if response.status_code == 200:
+            with open(new_path, 'wb') as file:
+                file.write(response.content)
+        else:
+            print_traceback()
+
+
+def is_image(filename):
+    filename = filename.lower()
+    for ext in ['jpg', 'jpeg', 'png', 'webp']:
+        if filename.endswith(ext):
+            return True
+    return False
 
 
 def get_current_date_str(

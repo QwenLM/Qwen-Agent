@@ -33,4 +33,5 @@ dist/*
 
 examples/*.ipynb
 */default_data_path/*
+*/ci_workspace/*
 test/*

@@ -3,6 +3,7 @@ from typing import Dict, Optional
 from .base import BaseChatModel
 from .qwen_dashscope import QwenChatAtDS
 from .qwen_oai import QwenChatAsOAI
+from .qwenvl_dashscope import QwenVLChatAtDS
 
 
 def get_chat_model(cfg: Optional[Dict] = None) -> BaseChatModel:
@@ -24,7 +25,12 @@ def get_chat_model(cfg: Optional[Dict] = None) -> BaseChatModel:
         }
     :return: BaseChatModel
     """
-    if 'model_server' in cfg and cfg['model_server'].strip().lower(
+    if 'model' in cfg and cfg['model'].strip().lower().startswith('qwen-vl'):
+        if 'model_server' in cfg:
+            assert cfg['model_server'].strip().lower(
+            ) == 'dashscope', 'Can only access qwen-vl through dashscope api'
+        llm = QwenVLChatAtDS(cfg)
+    elif 'model_server' in cfg and cfg['model_server'].strip().lower(
     ) == 'dashscope':
         llm = QwenChatAtDS(cfg)
     else:

@@ -2,12 +2,12 @@ import copy
 from abc import ABC, abstractmethod
 from typing import Dict, Iterator, List, Optional, Union
 
-from qwen_agent.log import logger
-from qwen_agent.utils.utils import has_chinese_chars, parser_function
-
+from ..log import logger
+from ..utils.utils import (get_basename_from_url, has_chinese_chars, is_image,
+                           parser_function)
 from .schema import (ASSISTANT, CONTENT, DEFAULT_SYSTEM_MESSAGE, FN_ARGS,
-                     FN_CALL_TEMPLATE, FN_EXIT, FN_NAME, FN_RESULT, ROLE,
-                     SYSTEM, USER)
+                     FN_CALL_TEMPLATE, FN_EXIT, FN_NAME, FN_RESULT, FUNCTION,
+                     ROLE, SYSTEM, USER)
 
 
 class TextCompleteNotImplError(NotImplementedError):
@@ -15,6 +15,10 @@ class TextCompleteNotImplError(NotImplementedError):
 
 
 class ModelServiceError(Exception):
+    pass
+
+
+class FnCallNotImplError(NotImplementedError):
     pass
 
 
@@ -29,7 +33,6 @@ class BaseChatModel(ABC):
         self,
         messages: List[Dict],
         functions: Optional[List[Dict]] = None,
-        stop: Optional[List[str]] = None,
         stream: bool = True,
         delta_stream: bool = False,
     ) -> Union[List[Dict], Iterator[List[Dict]]]:
@@ -38,7 +41,6 @@ class BaseChatModel(ABC):
 
         :param messages: input List[Dict] formatted messages
         :param functions: input functions
-        :param stop: set the stop words
         :param stream: whether to use streaming generation
         :param delta_stream: Whether to return incrementally
             - When False: Use full return
@@ -47,36 +49,39 @@ class BaseChatModel(ABC):
             - When List[Dict]: stream=False
             - When Iterator[List[Dict]]]: stream=True
         """
-        messages = copy.deepcopy(messages)
-        if messages[0][ROLE] != SYSTEM:
-            messages.insert(0, {ROLE: SYSTEM, CONTENT: DEFAULT_SYSTEM_MESSAGE})
         if functions:
             return self.chat_with_functions(messages=messages,
                                             functions=functions,
-                                            stop=stop,
                                             stream=stream,
                                             delta_stream=delta_stream)
+        messages = copy.deepcopy(messages)
+        messages = self._format_msg_to_list(messages)
 
-        messages = self._convert_fncall_to_text(messages)
-        logger.debug('==== Inputted messages ===')
+        if messages[0][ROLE] != SYSTEM:
+            messages.insert(0, {
+                ROLE: SYSTEM,
+                CONTENT: [{
+                    'text': DEFAULT_SYSTEM_MESSAGE
+                }]
+            })
+
+        messages = self._preprocess_convert_fncall_to_text(messages)
+        messages = self._format_msg_for_llm(messages)
+        logger.debug('==== Preprocessed Inputted messages ===')
         logger.debug(messages)
         if stream:
-            return self._chat_stream(messages,
-                                     stop=stop,
-                                     delta_stream=delta_stream)
+            return self._chat_stream(messages, delta_stream=delta_stream)
         else:
-            return self._chat_no_stream(messages, stop=stop)
+            return self._chat_no_stream(messages)
 
     def chat_with_functions(
             self,
             messages: List[Dict],
             functions: Optional[List[Dict]] = None,
-            stop: Optional[List[str]] = None,
             stream: bool = True,
             delta_stream: bool = False
     ) -> Union[List[Dict], Iterator[List[Dict]]]:
-        # convert to chat format
-        messages = self._convert_fncall_to_text(messages)
+        messages = copy.deepcopy(messages)
 
         # prepend tool react prompt
         tool_desc_template = FN_CALL_TEMPLATE['en']
@@ -90,68 +95,59 @@ class BaseChatModel(ABC):
         tool_names = ','.join(function['name'] for function in functions)
         tool_system = tool_desc_template.format(tool_descs=tool_descs,
                                                 tool_names=tool_names)
+        # preprocess
+        messages = self._format_msg_to_list(messages)
+
         if messages[0][ROLE] == SYSTEM:
-            messages[0][CONTENT] += tool_system
+            messages[0][CONTENT] += [{'text': tool_system}]
         else:
-            messages.insert(0, {ROLE: SYSTEM, CONTENT: tool_system})
+            messages.insert(0, {
+                ROLE: SYSTEM,
+                CONTENT: [{
+                    'text': DEFAULT_SYSTEM_MESSAGE
+                }]
+            })
+
+        messages = self._preprocess_convert_fncall_to_text(messages)
+        messages = self._format_msg_for_llm(messages)
+
+        stop = self.generate_cfg.get('stop', [])
+        fn_stop = [f'{FN_RESULT}:', f'{FN_RESULT}:\n']
+        self.generate_cfg['stop'] = stop + [
+            x for x in fn_stop if x not in stop
+        ]
 
         # generate response
         if self._support_text_completion():
-            output = self.text_completion(
-                messages=messages,
-                stop=[f'{FN_RESULT}:', f'{FN_RESULT}:\n'],
-                stream=stream,
-                delta_stream=delta_stream)
+            output = self.text_completion(messages=messages,
+                                          stream=stream,
+                                          delta_stream=delta_stream)
         else:
             logger.debug('==== Inputted messages ===')
             logger.debug(messages)
             if stream:
-                output = self._chat_stream(
-                    messages,
-                    stop=[f'{FN_RESULT}:', f'{FN_RESULT}:\n'],
-                    delta_stream=delta_stream)
+                output = self._chat_stream(messages, delta_stream=delta_stream)
             else:
-                output = self._chat_no_stream(
-                    messages, stop=[f'{FN_RESULT}:', f'{FN_RESULT}:\n'])
+                output = self._chat_no_stream(messages)
 
         # convert to fn call format
-        if isinstance(output, List):
-            return self._convert_text_to_fncall(output)
+        if isinstance(output, list):
+            return self._postprocess_convert_text_to_fncall(output)
         else:
-            return self._wrapper_output_iterator(output)
-
-    def _wrapper_output_iterator(self, messages: Iterator[List[Dict]]):
-        for m in messages:
-            yield self._convert_text_to_fncall(m)
+            return self._postprocess_iterator(output)
 
     def text_completion(
         self,
         messages: List[Dict],
-        stop: Optional[List[str]] = None,
         stream: bool = True,
         delta_stream: bool = False,
     ) -> Union[List[Dict], Iterator[List[Dict]]]:
         raise TextCompleteNotImplError
 
-    def _support_text_completion(self) -> bool:
-        if self._flag_support_text_completion is None:
-            try:
-                messages = [{ROLE: USER, CONTENT: 'hello'}]
-                response = self.text_completion(messages)
-                if not isinstance(response, List):
-                    *_, last = response
-                self._flag_support_text_completion = True
-            except TextCompleteNotImplError:
-                self._flag_support_text_completion = False
-            except Exception:
-                self._flag_support_text_completion = False
-        return self._flag_support_text_completion
-
     @abstractmethod
     def _chat_stream(
         self,
         messages: List[Dict],
-        stop: Optional[List[str]] = None,
         delta_stream: bool = False,
     ) -> Iterator[List[Dict]]:
         raise NotImplementedError
@@ -160,108 +156,219 @@ class BaseChatModel(ABC):
     def _chat_no_stream(
         self,
         messages: List[Dict],
-        stop: Optional[List[str]] = None,
     ) -> List[Dict]:
         raise NotImplementedError
 
+    @abstractmethod
+    def _format_msg_for_llm(self, messages: List[Dict]) -> List[Dict]:
+        raise NotImplementedError
+
+    def _support_text_completion(self) -> bool:
+        if self._flag_support_text_completion is None:
+            try:
+                messages = [{ROLE: USER, CONTENT: 'hello'}]
+                response = self.text_completion(messages)
+                if not isinstance(response, list):
+                    *_, last = response
+                self._flag_support_text_completion = True
+            except TextCompleteNotImplError:
+                self._flag_support_text_completion = False
+            except Exception:
+                self._flag_support_text_completion = False
+        return self._flag_support_text_completion
+
+    def _postprocess_iterator(
+            self, messages: Iterator[List[Dict]]) -> Iterator[List[Dict]]:
+        for m in messages:
+            yield self._postprocess_convert_text_to_fncall(m)
+
     @staticmethod
-    def _convert_fncall_to_text(messages: List[Dict],
-                                fn_role: str = 'function') -> List[Dict]:
+    def _format_msg_to_list(messages: List[Dict]) -> List[Dict]:
+        new_messages = []
+        for msg in messages:
+            role = msg[ROLE]
+            assert role in (USER, ASSISTANT, SYSTEM, FUNCTION)
+            if role == FUNCTION:
+                new_messages.append(msg)
+                continue
+            # assert f'{FUNCTION}_call' not in msg, 'assume vl does not support function'
+            content = []
+            if isinstance(msg[CONTENT], str):
+                content = [{'text': msg[CONTENT]}]
+            elif isinstance(msg[CONTENT], list):
+                files = []
+                for item in msg[CONTENT]:
+                    for k, v in item.items():
+                        if k in ('box', 'text', 'image', 'result_image'):
+                            content.append(item)
+                        if k in ('file', 'image'):
+                            files.append(v)
+                if files:
+                    has_zh = has_chinese_chars(content)
+                    upload = []
+                    for f in [get_basename_from_url(f) for f in files]:
+                        if is_image(f):
+                            if has_zh:
+                                upload.append(f'![图片]({f})')
+                            else:
+                                upload.append(f'![image]({f})')
+                        else:
+                            if has_zh:
+                                upload.append(f'[文件]({f})')
+                            else:
+                                upload.append(f'[file]({f})')
+                    upload = ' '.join(upload)
+                    if has_zh:
+                        upload = f'（上传了 {upload}）'
+                    else:
+                        upload = f'(Uploaded {upload})'
+                    content = [{'text': upload}] + content  # insert a text
+            else:
+                raise TypeError
+            if f'{FUNCTION}_call' in msg:
+                new_messages.append({
+                    ROLE: role,
+                    CONTENT: content,
+                    f'{FUNCTION}_call': msg[f'{FUNCTION}_call']
+                })
+            else:
+                new_messages.append({ROLE: role, CONTENT: content})
+
+        return new_messages
+
+    @staticmethod
+    def _preprocess_convert_fncall_to_text(messages: List[Dict]) -> List[Dict]:
+        """
+        Convert messages with function_call key and function role to assistant's content, which is
+            for chat interface or text_completion interface that do not support functions.
+        """
         new_messages = []
         for msg in messages:
             role, content = msg[ROLE], msg[CONTENT]
-            content = (content or '').lstrip('\n').rstrip()
             if role in (SYSTEM, USER):
                 new_messages.append({ROLE: role, CONTENT: content})
             elif role == ASSISTANT:
-                fn_call = msg.get(f'{fn_role}_call', {})
+                content = (content or [])
+                fn_call = msg.get(f'{FUNCTION}_call', {})
                 if fn_call:
+                    func_content = ''
                     f_name = fn_call['name']
                     f_args = fn_call['arguments']
                     if f_args.startswith('```'):  # if code snippet
                         f_args = '\n' + f_args  # for markdown rendering
-                    content += f'\n{FN_NAME}: {f_name}'
-                    content += f'\n{FN_ARGS}: {f_args}'
+                    func_content += f'\n{FN_NAME}: {f_name}'
+                    func_content += f'\n{FN_ARGS}: {f_args}'
+                    content.append({'text': func_content})
                 if new_messages[-1][ROLE] == ASSISTANT:
                     new_messages[-1][CONTENT] += content
                 else:
-                    content = content.lstrip('\n').rstrip()
                     new_messages.append({ROLE: role, CONTENT: content})
-            elif role == fn_role:
+            elif role == FUNCTION:
                 assert new_messages[-1][ROLE] == ASSISTANT
-                new_messages[-1][
-                    CONTENT] += f'\n{FN_RESULT}: {content}\n{FN_EXIT}: '
+                new_messages[-1][CONTENT] += [{
+                    'text':
+                    f'\n{FN_RESULT}: {content}\n{FN_EXIT}: '
+                }]
             else:
                 raise TypeError
         return new_messages
 
-    @staticmethod
-    def _convert_text_to_fncall(messages: List[Dict],
-                                fn_role: str = 'function') -> List[Dict]:
+    def _postprocess_convert_text_to_fncall(
+            self, messages: List[Dict]) -> List[Dict]:
+        """
+        If the model calls function by built-in function call template, convert and display it in function_call format in return.
+        """
+        messages = self._format_msg_to_list(messages)
         new_messages = []
         for msg in messages:
             role, content = msg[ROLE], msg[CONTENT]
-            if role in (SYSTEM, USER):
+            assert isinstance(content, list)
+            if role in (SYSTEM,
+                        USER):  # Currently, it is not possible to occur
                 new_messages.append({ROLE: role, CONTENT: content})
             else:
-                i = content.find(f'{FN_NAME}:')
-                if i < 0:
-                    content = content.lstrip('\n').rstrip()
-                    new_messages.append({ROLE: ASSISTANT, CONTENT: content})
-                    content = ''
-                elif i > 0:
-                    answer = content[:i].lstrip('\n').rstrip()
-                    if answer.endswith('\n'):
-                        answer = answer[:-1]
-                    new_messages.append({
-                        ROLE: ASSISTANT,
-                        CONTENT: answer,
-                    })
-                    content = content[i:]
+                new_content = []
+                for item in content:
+                    for k, v in item.items():
+                        if k == 'text':
+                            tmp_content = v
+                            i = tmp_content.find(f'{FN_NAME}:')
+                            if i < 0:
+                                new_content.append(item)
+                                continue
+                            elif i > 0:
+                                answer = tmp_content[:i].lstrip('\n').rstrip()
+                                if answer.endswith('\n'):
+                                    answer = answer[:-1]
+                                new_content.append({'text': answer})
+                                new_messages.append({
+                                    ROLE: role,
+                                    CONTENT: new_content
+                                })  # split message
+                                new_content = []
+                                tmp_content = tmp_content[i:]
 
-                for part in content.split(f'{FN_NAME}:'):
-                    if not part:
-                        continue
-                    if part.endswith('\n'):
-                        part = part[:-1]
-                    i = part.find(f'\n{FN_ARGS}:')
-                    j = part.find(f'\n{FN_RESULT}:')
-                    k = part.find(f'\n{FN_EXIT}:')
-                    fn_name, fn_args, result, answer = '', '', '', ''
-                    if i < 0:
-                        fn_name = part.strip()
-                    else:
-                        fn_name = part[:i].strip()
-                        if j < i:
-                            fn_args = part[i + len(f'\n{FN_ARGS}:'):].strip()
+                            for part in tmp_content.split(f'{FN_NAME}:'):
+                                if not part:
+                                    continue
+                                if part.endswith('\n'):
+                                    part = part[:-1]
+                                i = part.find(f'\n{FN_ARGS}:')
+                                j = part.find(f'\n{FN_RESULT}:')
+                                k = part.find(f'\n{FN_EXIT}:')
+                                fn_name, fn_args, result, answer = '', '', '', ''
+                                if i < 0:
+                                    fn_name = part.strip()
+                                else:
+                                    fn_name = part[:i].strip()
+                                    if j < i:
+                                        fn_args = part[i + len(f'\n{FN_ARGS}:'
+                                                               ):].strip()
+                                    else:
+                                        fn_args = part[i + len(f'\n{FN_ARGS}:'
+                                                               ):j].strip()
+                                        if k < j:
+                                            result = part[j +
+                                                          len(f'\n{FN_RESULT}:'
+                                                              ):]
+                                        else:
+                                            result = part[j +
+                                                          len(f'\n{FN_RESULT}:'
+                                                              ):k]
+                                            answer = part[k +
+                                                          len(f'\n{FN_EXIT}:'
+                                                              ):]
+                                new_messages.append({
+                                    ROLE: ASSISTANT,
+                                    CONTENT: [{
+                                        'text': ''
+                                    }],
+                                    f'{FUNCTION}_call': {
+                                        'name': fn_name,
+                                        'arguments': fn_args
+                                    }
+                                })
+                                if result or answer:  # result[1:] == '' is possible and allowed
+                                    new_messages.append({
+                                        ROLE: FUNCTION,
+                                        'name': fn_name,
+                                        CONTENT:
+                                        result[1:]  # rm the ' ' after ':'
+                                    })
+                                if answer and answer[1:]:
+                                    new_messages.append({
+                                        ROLE:
+                                        ASSISTANT,
+                                        CONTENT: [{
+                                            'text': answer[1:]
+                                        }]  # rm the ' ' after ':'
+                                    })
                         else:
-                            fn_args = part[i + len(f'\n{FN_ARGS}:'):j].strip()
-                            if k < j:
-                                result = part[j + len(f'\n{FN_RESULT}:'):]
-                            else:
-                                result = part[j + len(f'\n{FN_RESULT}:'):k]
-                                answer = part[k + len(f'\n{FN_EXIT}:'):]
+                            new_content.append(item)
+                if new_content:
                     new_messages.append({
-                        ROLE: ASSISTANT,
-                        CONTENT: '',
-                        f'{fn_role}_call': {
-                            'name': fn_name,
-                            'arguments': fn_args
-                        }
-                    })
-                    if result or answer:  # result[1:] == '' is possible and allowed
-                        new_messages.append({
-                            ROLE: fn_role,
-                            'name': fn_name,
-                            CONTENT: result[1:]  # rm the ' ' after ':'
-                        })
-                    if answer and answer[1:]:
-                        new_messages.append({
-                            ROLE: ASSISTANT,
-                            CONTENT: answer[1:]  # rm the ' ' after ':'
-                        })
+                        ROLE: role,
+                        CONTENT: new_content
+                    })  # no func call
+        new_messages = self._format_msg_for_llm(new_messages)
         return new_messages
-
-    @staticmethod
-    def _wrapper_text_to_message_list(text: str) -> List[Dict]:
-        return [{ROLE: ASSISTANT, CONTENT: text}]

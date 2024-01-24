@@ -3,14 +3,14 @@ from typing import Dict, Iterator, List
 import json5
 
 from qwen_agent.llm.schema import (ASSISTANT, CONTENT, FN_ARGS, FN_EXIT,
-                                   FN_NAME, FN_RESULT, ROLE, SYSTEM, USER)
+                                   FN_NAME, FN_RESULT, FUNCTION, ROLE, SYSTEM,
+                                   USER)
 from qwen_agent.log import logger
 from qwen_agent.utils.utils import (extract_code, extract_obs, extract_urls,
                                     print_traceback)
 
 
-def convert_fncall_to_text(messages: List[Dict],
-                           fn_role: str = 'function') -> List[Dict]:
+def convert_fncall_to_text(messages: List[Dict]) -> List[Dict]:
     new_messages = []
     for msg in messages:
         role, content = msg[ROLE], msg[CONTENT]
@@ -18,7 +18,7 @@ def convert_fncall_to_text(messages: List[Dict],
         if role in (SYSTEM, USER):
             new_messages.append({ROLE: role, CONTENT: content})
         elif role == ASSISTANT:
-            fn_call = msg.get(f'{fn_role}_call', {})
+            fn_call = msg.get(f'{FUNCTION}_call', {})
             if fn_call:
                 f_name = fn_call['name']
                 f_args = fn_call['arguments']
@@ -31,7 +31,7 @@ def convert_fncall_to_text(messages: List[Dict],
             else:
                 content = content.lstrip('\n').rstrip()
                 new_messages.append({ROLE: role, CONTENT: content})
-        elif role == fn_role:
+        elif role == FUNCTION:
             assert new_messages[-1][ROLE] == ASSISTANT
             new_messages[-1][
                 CONTENT] += f'\n{FN_RESULT}: {content}\n{FN_EXIT}: '
