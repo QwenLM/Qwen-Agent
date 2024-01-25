@@ -95,7 +95,7 @@ class SimilaritySearch(BaseTool):
         res = []
         max_sims = sims[0][1]
         if max_sims != 0:
-            manul = 2
+            manul = 0
             for i in range(min(manul, len(doc.text))):
                 if max_token >= tokens[
                         i] * 2:  # Ensure that the first two pages do not fill up the window
@@ -148,4 +148,5 @@ class SimilaritySearch(BaseTool):
                 use_rate = ((max_token - now_token) / page.token) * 0.2
                 text.append(page.content[:int(len(page.content) * use_rate)])
                 break
+        logger.info(f'remaining slots: {max_token-now_token}')
         return RefMaterialOutput(url=doc.url, text=text)

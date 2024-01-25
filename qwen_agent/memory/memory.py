@@ -67,7 +67,7 @@ class Memory(Agent):
 
     def _run(self,
              messages: List[Dict],
-             max_token: int = 4000,
+             max_ref_token: int = 4000,
              lang: str = 'en',
              ignore_cache: bool = False,
              **kwargs) -> Iterator[List[Dict]]:
@@ -75,7 +75,7 @@ class Memory(Agent):
         :param messages:
         - there are files: need parse and save
         - there are query(in last message): need retrieve and return retrieved text
-        :param max_token: the max tokens for retrieved text
+        :param max_ref_token: the max tokens for retrieved text
         :param lang: point the language if necessary
         :param ignore_cache: parse again
         :param kwargs: some possible additional parameters for doc_parser
@@ -149,7 +149,7 @@ class Memory(Agent):
                 ]
                 content = self._retrieve_content(query_with_keyword,
                                                  records=records,
-                                                 max_token=max_token)
+                                                 max_token=max_ref_token)
                 logger.debug(
                     json.dumps([{
                         ROLE: ASSISTANT,
