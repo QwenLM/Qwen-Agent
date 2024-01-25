@@ -7,7 +7,7 @@ import socket
 import sys
 import traceback
 import urllib
-from typing import Dict, Literal, Optional
+from typing import Dict, List, Literal, Optional, Union
 from urllib.parse import urlparse
 
 import jieba
@@ -228,17 +228,41 @@ def parser_function(function: Dict) -> str:
     Text description of function
     """
     tool_desc_template = {
-        'zh': '{name}: {description} 输入参数: {parameters}',
-        'en': '{name}: {description} Parameters: {parameters}'
+        'zh':
+        '### {name_for_human}\n\n{name_for_model}: {description_for_model} 输入参数：{parameters} {args_format}',
+        'en':
+        '### {name_for_human}\n\n{name_for_model}: {description_for_model} Parameters：{parameters} {args_format}'
     }
-
     if has_chinese_chars(function['description']):
         tool_desc = tool_desc_template['zh']
     else:
         tool_desc = tool_desc_template['en']
+    return tool_desc.format(name_for_human=function['name_for_human'],
+                            name_for_model=function['name'],
+                            description_for_model=function['description'],
+                            parameters=json.dumps(function['parameters'],
+                                                  ensure_ascii=False),
+                            args_format=function['args_format'])
 
-    return tool_desc.format(
-        name=function['name'],
-        description=function['description'],
-        parameters=json.dumps(function['parameters'], ensure_ascii=False),
-    )
+
+def format_knowledge_to_source_and_content(
+        result: Union[str, List[dict]]) -> List[dict]:
+    knowledge = []
+    if isinstance(result, str):
+        result = f'{result}'.strip()
+        docs = json5.loads(result)
+    else:
+        docs = result
+    try:
+        _tmp_knowledge = []
+        assert isinstance(docs, list)
+        for doc in docs:
+            url, snippets = doc['url'], doc['text']
+            assert isinstance(snippets, list)
+            for s in snippets:
+                _tmp_knowledge.append({'source': f'[文件]({url})', 'content': s})
+        knowledge.extend(_tmp_knowledge)
+    except Exception:
+        print_traceback()
+        knowledge.append({'source': '上传的文档', 'content': result})
+    return knowledge

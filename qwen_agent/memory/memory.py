@@ -156,13 +156,16 @@ class Memory(Agent):
                         CONTENT: content
                     }],
                                ensure_ascii=False))
-                yield [{ROLE: ASSISTANT, CONTENT: content}]
+                yield [{
+                    ROLE: ASSISTANT,
+                    CONTENT: json.dumps(content, ensure_ascii=False)
+                }]
 
     def _retrieve_content(self,
                           query: str,
                           records: List[RefMaterialInput],
                           max_token=4000,
-                          **kwargs) -> str:
+                          **kwargs):
         single_max_token = int(max_token / len(records))
         _ref_list = []
         for record in records:
@@ -172,11 +175,8 @@ class Memory(Agent):
                                                       ensure_ascii=False),
                                            doc=record,
                                            max_token=single_max_token)
-            _ref_list.append(now_ref_list)
-        _ref = ''
-        if _ref_list:
-            _ref = '\n'.join(_ref_list)
-        return _ref
+            _ref_list.append(json.loads(now_ref_list))
+        return _ref_list
 
     @staticmethod
     def _parse_last_message(messages: List[Dict]):

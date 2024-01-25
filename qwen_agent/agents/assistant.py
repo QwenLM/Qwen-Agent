@@ -6,23 +6,31 @@ from qwen_agent.llm import BaseChatModel
 from qwen_agent.llm.schema import CONTENT, DEFAULT_SYSTEM_MESSAGE, ROLE, SYSTEM
 from qwen_agent.log import logger
 from qwen_agent.memory import Memory
+from qwen_agent.utils.utils import format_knowledge_to_source_and_content
 
+KNOWLEDGE_SNIPPET_ZH = """## 来自 {source} 的内容：
+
+```
+{content}
+```"""
 KNOWLEDGE_TEMPLATE_ZH = """
 
 # 知识库
 
-{knowledge}
+{knowledge}"""
 
-"""
+KNOWLEDGE_SNIPPET_EN = """## The content from {source}:
 
+```
+{content}
+```"""
 KNOWLEDGE_TEMPLATE_EN = """
 
 # Knowledge Base
 
-{knowledge}
+{knowledge}"""
 
-"""
-
+KNOWLEDGE_SNIPPET = {'zh': KNOWLEDGE_SNIPPET_ZH, 'en': KNOWLEDGE_SNIPPET_EN}
 KNOWLEDGE_TEMPLATE = {'zh': KNOWLEDGE_TEMPLATE_ZH, 'en': KNOWLEDGE_TEMPLATE_EN}
 
 
@@ -57,8 +65,13 @@ class Assistant(Agent):
         knowledge = last[-1][CONTENT]
         logger.debug(knowledge)
         if knowledge:
+            knowledge = format_knowledge_to_source_and_content(knowledge)
+            snippets = []
+            for k in knowledge:
+                snippets.append(KNOWLEDGE_SNIPPET[lang].format(
+                    source=k['source'], content=k['content']))
             system_prompt += KNOWLEDGE_TEMPLATE[lang].format(
-                knowledge=knowledge)
+                knowledge='\n\n'.join(snippets))
 
         if messages[0][ROLE] == SYSTEM:
             messages[0][CONTENT] += system_prompt

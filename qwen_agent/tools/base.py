@@ -29,8 +29,9 @@ class BaseTool(ABC):
     def __init__(self, cfg: Optional[Dict] = None):
         self.cfg = cfg or {}
 
-        # schema: Format of tools, default to oai format, in case there is a need for other formats
-        self.schema = self.cfg.get('schema', 'oai')
+        self.name_for_human = self.cfg.get('name_for_human', self.name)
+        if not hasattr(self, 'args_format'):
+            self.args_format = self.cfg.get('args_format', '此工具的输入应为JSON对象。')
         self.function = self._build_function()
 
     @abstractmethod
@@ -66,28 +67,10 @@ class BaseTool(ABC):
         The dict format after applying the template to the function, such as oai format
 
         """
-        if self.schema == 'oai':
-            function = {
-                'name': self.name,
-                'description': self.description,
-                'parameters': {
-                    'type': 'object',
-                    'properties': {},
-                    'required': [],
-                },
-            }
-            for para in self.parameters:
-                function['parameters']['properties'][para['name']] = {
-                    'type': para['type'],
-                    'description': para['description']
-                }
-                if 'required' in para and para['required']:
-                    function['parameters']['required'].append(para['name'])
-        else:
-            function = {
-                'name': self.name,
-                'description': self.description,
-                'parameters': self.parameters
-            }
-
-        return function
+        return {
+            'name_for_human': self.name_for_human,
+            'name': self.name,
+            'description': self.description,
+            'parameters': self.parameters,
+            'args_format': self.args_format
+        }

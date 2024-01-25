@@ -2,9 +2,10 @@ import copy
 from abc import ABC, abstractmethod
 from typing import Dict, Iterator, List, Optional, Union
 
+from qwen_agent.utils.utils import (get_basename_from_url, has_chinese_chars,
+                                    is_image, parser_function)
+
 from ..log import logger
-from ..utils.utils import (get_basename_from_url, has_chinese_chars, is_image,
-                           parser_function)
 from .schema import (ASSISTANT, CONTENT, DEFAULT_SYSTEM_MESSAGE, FN_ARGS,
                      FN_CALL_TEMPLATE, FN_EXIT, FN_NAME, FN_RESULT, FUNCTION,
                      ROLE, SYSTEM, USER)
@@ -101,12 +102,13 @@ class BaseChatModel(ABC):
         if messages[0][ROLE] == SYSTEM:
             messages[0][CONTENT] += [{'text': tool_system}]
         else:
-            messages.insert(0, {
-                ROLE: SYSTEM,
-                CONTENT: [{
-                    'text': DEFAULT_SYSTEM_MESSAGE
-                }]
-            })
+            messages.insert(
+                0, {
+                    ROLE: SYSTEM,
+                    CONTENT: [{
+                        'text': DEFAULT_SYSTEM_MESSAGE + tool_system
+                    }]
+                })
 
         messages = self._preprocess_convert_fncall_to_text(messages)
         messages = self._format_msg_for_llm(messages)

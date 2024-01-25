@@ -16,7 +16,8 @@ from qwen_agent.tools.similarity_search import (RefMaterialInput,
 from qwen_agent.tools.storage import Storage
 from qwen_agent.utils.doc_parser import parse_doc, parse_html_bs
 from qwen_agent.utils.tokenization_qwen import count_tokens
-from qwen_agent.utils.utils import print_traceback, save_text_to_file
+from qwen_agent.utils.utils import (get_basename_from_url, print_traceback,
+                                    save_text_to_file)
 
 
 class Record(BaseModel):
@@ -206,7 +207,7 @@ def format_records(records: List[Dict]):
     formatted_records = []
     for record in records:
         formatted_records.append(
-            RefMaterialInput(url=record['url'],
+            RefMaterialInput(url=get_basename_from_url(record['url']),
                              text=[
                                  RefMaterialInputItem(
                                      content=x['page_content'],

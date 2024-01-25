@@ -26,10 +26,10 @@ FN_CALL_TEMPLATE_ZH = """
 
 ## 你可以在回复中插入零次、一次或多次以下命令以调用工具：
 
-%s: 工具名称，必须是[{tool_names}]之一
+%s: 工具名称，必须是[{tool_names}]之一。
 %s: 工具输入
-%s: 工具结果
-%s: 根据工具结果进行回复，如果存在url，请使用如下格式展示出来：![图片](url)""" % (
+%s: 工具结果，需将图片用![](url)渲染出来。
+%s: 根据工具结果进行回复""" % (
     FN_NAME,
     FN_ARGS,
     FN_RESULT,
@@ -48,8 +48,8 @@ FN_CALL_TEMPLATE_EN = """
 
 %s: The tool to use, should be one of [{tool_names}]
 %s: The input of the tool
-%s: The result returned by the tool
-%s: Summarize the result""" % (
+%s: The result returned by the tool. The image needs to be rendered as ![](url)
+%s: Reply based on tool result""" % (
     FN_NAME,
     FN_ARGS,
     FN_RESULT,

@@ -201,8 +201,12 @@ def _execute_code(kc: BlockingKernelClient, code: str) -> str:
 
 @register_tool('code_interpreter')
 class CodeInterpreter(BaseTool):
-    description = '代码解释器，可用于执行Python代码。 Enclose the code within triple backticks (`) at the beginning and end of the code.'
+    description = 'Python代码沙盒，可用于执行Python代码。'
     parameters = [{'name': 'code', 'type': 'string', 'description': '待执行的代码'}]
+
+    def __init__(self, cfg: Optional[Dict] = None):
+        self.args_format = '此工具的输入应为Markdown代码块。'
+        super().__init__(cfg)
 
     def call(self, params: str, timeout: Optional[int] = 30, **kwargs) -> str:
         params = self._verify_args(params)
