@@ -1,5 +1,6 @@
 import json
 import urllib.parse
+from typing import Union
 
 from qwen_agent.tools.base import BaseTool, register_tool
 
@@ -21,10 +22,8 @@ class ImageGen(BaseTool):
         '格式是 数字*数字，表示希望生成的图像的分辨率大小，选项有[1024*1024, 720*1280, 1280*720]'
     }]
 
-    def call(self, params: str, **kwargs) -> str:
-        params = self._verify_args(params)
-        if isinstance(params, str):
-            return 'Parameter Error'
+    def call(self, params: Union[str, dict], **kwargs) -> str:
+        params = self._verify_json_format_args(params)
 
         prompt = params['prompt']
         prompt = urllib.parse.quote(prompt)

@@ -3,7 +3,7 @@ import datetime
 import json
 import os
 import re
-from typing import Dict, List
+from typing import Dict, Optional, Union
 from urllib.parse import unquote, urlparse
 
 import json5
@@ -11,13 +11,15 @@ from pydantic import BaseModel
 
 from qwen_agent.log import logger
 from qwen_agent.tools.base import BaseTool, register_tool
-from qwen_agent.tools.similarity_search import (RefMaterialInput,
-                                                RefMaterialInputItem)
 from qwen_agent.tools.storage import Storage
 from qwen_agent.utils.doc_parser import parse_doc, parse_html_bs
 from qwen_agent.utils.tokenization_qwen import count_tokens
-from qwen_agent.utils.utils import (get_basename_from_url, print_traceback,
-                                    save_text_to_file)
+from qwen_agent.utils.utils import (get_file_type, print_traceback,
+                                    save_url_to_local_work_dir)
+
+
+class FileTypeNotImplError(NotImplementedError):
+    pass
 
 
 class Record(BaseModel):
@@ -69,14 +71,11 @@ def sanitize_chrome_file_path(file_path: str) -> str:
     return file_path
 
 
-def process_file(url: str, content: str, source: str, db: Storage = None):
+def process_file(url: str, db: Storage = None):
     logger.info('Starting cache pages...')
     url = url
     if url.split('.')[-1].lower() in ['pdf', 'docx', 'pptx']:
         date1 = datetime.datetime.now()
-
-        # generate one processing record
-        db.put(url, 'Empty')
 
         if url.startswith('https://') or url.startswith('http://'):
             pdf_path = url
@@ -90,32 +89,27 @@ def process_file(url: str, content: str, source: str, db: Storage = None):
             date2 = datetime.datetime.now()
             logger.info('Parsing pdf time: ' + str(date2 - date1))
             content = pdf_content
-            source = 'pdf'
+            source = 'doc'
             title = pdf_path.split('/')[-1].split('\\')[-1].split('.')[0]
         except Exception:
             print_traceback()
-            # del the processing record
-            db.delete(url)
-            return 'failed'
-    elif content and source == 'html':
-        # generate one processing record
-        db.put(url, 'Empty')
-
-        try:
-            tmp_html_file = os.path.join(db.root, 'tmp.html')
-            save_text_to_file(tmp_html_file, content)
-            content = parse_html_bs(tmp_html_file)
-            title = content[0]['metadata']['title']
-        except Exception:
-            print_traceback()
-            # del the processing record
-            db.delete(url)
             return 'failed'
     else:
-        logger.error(
-            'Only Support the Following File Types: [\'.html\', \'.pdf\', \'.docx\', \'.pptx\']'
-        )
-        raise NotImplementedError
+        try:
+            file_tmp_path = save_url_to_local_work_dir(url, db.root)
+        except Exception:
+            raise ValueError('Can not download this file')
+        file_source = get_file_type(file_tmp_path)
+        if file_source == 'html':
+            try:
+                content = parse_html_bs(file_tmp_path)
+                title = content[0]['metadata']['title']
+            except Exception:
+                print_traceback()
+                return 'failed'
+            source = 'html'
+        else:
+            raise FileTypeNotImplError
 
     # save real data
     now_time = str(datetime.date.today())
@@ -130,27 +124,7 @@ def process_file(url: str, content: str, source: str, db: Storage = None):
     new_record_str = json.dumps(new_record, ensure_ascii=False)
     db.put(url, new_record_str)
 
-    meta_info = db.get('meta_info')
-    if meta_info == '':
-        meta_info = {}
-    else:
-        meta_info = json5.loads(meta_info)
-    if isinstance(meta_info, list):
-        logger.info('update meta_info to new format')
-        new_meta_info = {}
-        for x in meta_info:
-            new_meta_info[x['url']] = x
-        meta_info = new_meta_info
-
-    meta_info[url] = {
-        'url': url,
-        'time': now_time,
-        'title': title,
-        'checked': True,
-    }
-    db.put('meta_info', json.dumps(meta_info, ensure_ascii=False))
-
-    return new_record_str
+    return new_record
 
 
 def token_counter_backup(records):
@@ -169,95 +143,39 @@ def token_counter_backup(records):
     return new_records
 
 
-def read_data_by_condition(db: Storage = None, **kwargs):
-    """
-    filter records from meta-data
-
-    """
-    meta_info = db.get('meta_info')
-    if meta_info == '':
-        records = []
-    else:
-        records = json5.loads(meta_info)
-        records = records.values()
-
-    if 'time_limit' in kwargs:
-        filter_records = []
-        for x in records:
-            if kwargs['time_limit'][0] <= x['time'] <= kwargs['time_limit'][1]:
-                filter_records.append(x)
-        records = filter_records
-    if 'checked' in kwargs:
-        filter_records = []
-        for x in records:
-            if x['checked']:
-                filter_records.append(x)
-        records = filter_records
-    if 'files' in kwargs:
-        filter_records = []
-        for x in records:
-            if x['url'] in kwargs['files']:
-                filter_records.append(x)
-        records = filter_records
-
-    return records
-
-
-def format_records(records: List[Dict]):
-    formatted_records = []
-    for record in records:
-        formatted_records.append(
-            RefMaterialInput(url=get_basename_from_url(record['url']),
-                             text=[
-                                 RefMaterialInputItem(
-                                     content=x['page_content'],
-                                     token=x['token']) for x in record['raw']
-                             ]).to_dict())
-    return formatted_records
-
-
 @register_tool('doc_parser')
 class DocParser(BaseTool):
-    description = '解析文件'
+    description = '解析并存储一个文件，返回解析后的文件内容'
     parameters = [{
         'name': 'url',
         'type': 'string',
-        'description': '待解析的文件的路径'
+        'description': '待解析的文件的路径',
+        'required': True
     }]
 
+    def __init__(self, cfg: Optional[Dict] = None):
+        super().__init__(cfg)
+        self.data_root = self.cfg.get(
+            'path', 'workspace/default_doc_parser_data_path')
+        self.db = Storage({'path': self.data_root})
+
     def call(self,
-             params: str,
-             db: Storage = None,
-             use_meta_info: bool = False,
-             ignore_cache: bool = False,
-             **kwargs) -> str:
-        params = self._verify_args(params)
-        if isinstance(params, str):
-            return 'Parameter Error'
-        if not db:
-            db = Storage()
-            db.init('default_data_path')
+             params: Union[str, dict],
+             ignore_cache: bool = False) -> dict:
+        """
+        Parse file by url, and return the formatted content
 
-        record = None
-        if 'url' in params:
-            record = db.get(params['url'])
-            # need to parse and save doc
-            if not record or ignore_cache:
-                record = process_file(url=params['url'],
-                                      content=kwargs.get('content', ''),
-                                      source=kwargs.get('type', 'pdf'),
-                                      db=db)
+        :param params: The url of the file
+        :param ignore_cache: When set to True, overwrite the same documents that have been parsed before.
+        :return: The parsed file content
+        """
 
-        if record is not None:
-            records = [json5.loads(record)]
+        params = self._verify_json_format_args(params)
+
+        record = self.db.get(params['url'])
+        if record and not ignore_cache:
+            record = json5.loads(record)
         else:
-            # load records by conditions
-            records = read_data_by_condition(db, **kwargs)
-            if use_meta_info:
-                return json.dumps(records, ensure_ascii=False)
-            records = [
-                json5.loads(db.get(record['url'])) for record in records
-            ]
-
-        formatted_records = format_records(records)
-        return json.dumps(formatted_records, ensure_ascii=False)
+            # The url has not been parsed or ignore_cache: need to parse and save doc
+            record = process_file(url=params['url'], db=self.db)
+        return record

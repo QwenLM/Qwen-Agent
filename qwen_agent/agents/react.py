@@ -35,14 +35,10 @@ class ReAct(Agent):
                  function_list: Optional[List[Union[str, Dict]]] = None,
                  llm: Optional[Union[Dict, BaseChatModel]] = None,
                  system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
-                 name: Optional[str] = None,
-                 description: Optional[str] = None,
                  **kwargs):
         super().__init__(function_list=function_list,
                          llm=llm,
-                         system_message=system_message,
-                         name=name,
-                         description=description)
+                         system_message=system_message)
         stop = self.llm.generate_cfg.get('stop', [])
         fn_stop = ['Observation:', 'Observation:\n']
         self.llm.generate_cfg['stop'] = stop + [

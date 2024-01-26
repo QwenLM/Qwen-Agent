@@ -5,13 +5,15 @@ from pathlib import Path
 
 import add_qwen_libs  # NOQA
 import gradio as gr
-import json5
+import jsonlines
 
 from qwen_agent.agents import DocQAAgent
 from qwen_agent.llm.base import ModelServiceError
 from qwen_agent.log import logger
 from qwen_server import output_beautify
 from qwen_server.schema import GlobalConfig
+from qwen_server.utils import (read_history, read_meta_data_by_condition,
+                               save_history)
 
 server_config_path = Path(__file__).resolve().parent / 'server_config.json'
 with open(server_config_path, 'r') as f:
@@ -33,14 +35,16 @@ if hasattr(server_config.server, 'functions'):
 if hasattr(server_config.path, 'database_root'):
     storage_path = server_config.path.database_root
 
-assistant = DocQAAgent(function_list=function_list,
-                       llm=llm_config,
-                       storage_path=storage_path)
+assistant = DocQAAgent(function_list=function_list, llm=llm_config)
 
 with open(Path(__file__).resolve().parent / 'css/main.css', 'r') as f:
     css = f.read()
 with open(Path(__file__).resolve().parent / 'js/main.js', 'r') as f:
     js = f.read()
+cache_file_popup_url = os.path.join(server_config.path.work_space_root,
+                                    'popup_url.jsonl')
+meta_file = os.path.join(server_config.path.work_space_root, 'meta_data.jsonl')
+history_dir = os.path.join(server_config.path.work_space_root, 'history')
 
 
 def add_text(history, text):
@@ -59,20 +63,14 @@ def rm_text(history):
 
 
 def set_url():
-    url = assistant.mem.db.get('browsing_url', re_load=True)
-    logger.info('The current access url is: ' + url)
-    return url
-
-
-def read_content(url):
-    return assistant.mem.db.get(url)
-
-
-def save_history(history, url):
-    history = history or []
-    content = json5.loads(read_content(url))
-    content['session'] = history
-    assistant.mem.db.put(url, json.dumps(content, ensure_ascii=False))
+    lines = []
+    if not os.path.exists(cache_file_popup_url):
+        gr.Error('Do not add any pages!')
+    assert os.path.exists(cache_file_popup_url)
+    for line in jsonlines.open(cache_file_popup_url):
+        lines.append(line)
+    logger.info('The current access page is: ' + lines[-1]['url'])
+    return lines[-1]['url']
 
 
 def bot(history):
@@ -103,26 +101,24 @@ def bot(history):
         except Exception as ex:
             raise ValueError(ex)
 
-        save_history(history, page_url)
+        save_history(history, page_url, history_dir)
 
 
-def load_history_session():
+def init_chatbot():
     time.sleep(0.5)
     page_url = set_url()
-    response = read_content(page_url)
+    response = read_meta_data_by_condition(meta_file, url=page_url)
     if not response:
         gr.Info("Please add this page to Qwen's Reading List first!")
-    elif response == 'Empty':
+    elif response == '[CACHING]':
         gr.Info('Please reopen later, Qwen is analyzing this page...')
     else:
-        return json5.loads(response)['session']
+        return read_history(page_url, history_dir)
 
 
 def clear_session(history):
     page_url = set_url()
-    if not history:
-        return None
-    save_history(None, page_url)
+    save_history(None, page_url, history_dir)
     return None
 
 
@@ -158,7 +154,7 @@ with gr.Blocks(css=css, theme='soft') as demo:
 
     stop_bt.click(None, None, None, cancels=[txt_msg, re_txt_msg], queue=False)
 
-    demo.load(load_history_session, None, chatbot)
+    demo.load(init_chatbot, None, chatbot)
 
 demo.queue().launch(server_name=server_config.server.server_host,
                     server_port=server_config.server.app_in_browser_port)

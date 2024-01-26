@@ -100,7 +100,6 @@ class QwenChatAsOAI(QwenChatModel):
                                                 functions=functions,
                                                 **self.generate_cfg)
         # TODO: error handling
-        print(response)
         if stream:
             return self._postprocess_iterator([response.choices[0].message])
         else:

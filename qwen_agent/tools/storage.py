@@ -1,6 +1,6 @@
 import hashlib
 import os
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 from qwen_agent.log import logger
 from qwen_agent.tools.base import BaseTool, register_tool
@@ -42,22 +42,20 @@ class Storage(BaseTool):
     }]
 
     def __init__(self, cfg: Optional[Dict] = None):
-        """
-
-        :param schema: Format of tools, default to oai format, in case there is a need for other formats
-        """
         super().__init__(cfg)
-        self.root = None
+        self.root = self.cfg.get('path', 'workspace/default_data_path')
+        os.makedirs(self.root, exist_ok=True)
         self.data = {}
+        # load all keys in this path
+        for file in os.listdir(self.root):
+            self.data[file] = None
 
-    def call(self, params: str, **kwargs):
+    def call(self, params: Union[str, dict], **kwargs):
         """
         init one database: one folder
-        :param path: str
+        :param params:
         """
-        params = self._verify_args(params)
-        if isinstance(params, str):
-            return 'Parameter Error'
+        params = self._verify_json_format_args(params)
 
         path = params['path']
         self.init(path)

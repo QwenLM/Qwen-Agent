@@ -1,11 +1,11 @@
-import json
-from typing import List
+from typing import List, Union
 
 from pydantic import BaseModel
 
 from qwen_agent.log import logger
 from qwen_agent.tools.base import BaseTool, register_tool
-from qwen_agent.utils.utils import get_keyword_by_llm, get_split_word
+from qwen_agent.utils.tokenization_qwen import count_tokens
+from qwen_agent.utils.utils import get_split_word, parse_keyword
 
 
 class RefMaterialOutput(BaseModel):
@@ -41,49 +41,59 @@ class RefMaterialInput(BaseModel):
         return {'url': self.url, 'text': [x.to_dict() for x in self.text]}
 
 
-@register_tool('retrieval')
+def format_input_doc(doc: List[str]) -> RefMaterialInput:
+    new_doc = []
+    for x in doc:
+        item = RefMaterialInputItem(content=x, token=count_tokens(x))
+        new_doc.append(item)
+    return RefMaterialInput(url='', text=new_doc)
+
+
+@register_tool('similarity_search')
 class SimilaritySearch(BaseTool):
-    description = '从文档中检索和问题相关的部分，从而辅助回答问题'
+    description = '从给定文档中检索和问题相关的部分'
     parameters = [{
         'name': 'query',
         'type': 'string',
-        'description': '待回答的问题',
+        'description': '问题，需要从文档中检索和这个问题有关的内容',
         'required': True
     }]
 
     def call(self,
-             params: str,
-             doc: RefMaterialInput = None,
-             max_token: int = 4000,
-             **kwargs) -> str:
+             params: Union[str, dict],
+             doc: Union[RefMaterialInput, str, List[str]] = None,
+             max_token: int = 4000) -> dict:
         """
         This tool is usually used by doc_parser tool
 
+        :param params: The params of
         :param doc: Knowledge base to be queried
-        :param query: the query to retrieve
         :param max_token: the max token number
         :return: RefMaterialOutput
         """
-        params = self._verify_args(params)
-        if isinstance(params, str):
-            return 'Parameter Error'
+        params = self._verify_json_format_args(params)
+
         query = params['query']
-        assert doc is not None, 'must provide doc object'
+        if not doc:
+            return None
+        if isinstance(doc, str):
+            doc = [doc]
+        if isinstance(doc, list):
+            doc = format_input_doc(doc)
 
         tokens = [page.token for page in doc.text]
         all_tokens = sum(tokens)
         logger.info(f'all tokens of {doc.url}: {all_tokens}')
         if all_tokens <= max_token:
             logger.info('use full ref')
-            return json.dumps(RefMaterialOutput(
-                url=doc.url, text=[x.content for x in doc.text]).to_dict(),
-                              ensure_ascii=False)
+            return RefMaterialOutput(url=doc.url,
+                                     text=[x.content
+                                           for x in doc.text]).to_dict()
 
-        wordlist = get_keyword_by_llm(query)
+        wordlist = parse_keyword(query)
         logger.info('wordlist: ' + ','.join(wordlist))
         if not wordlist:
-            return json.dumps(self.get_top(doc, max_token).to_dict(),
-                              ensure_ascii=False)
+            return self.get_top(doc, max_token)
 
         sims = []
         for i, page in enumerate(doc.text):
@@ -115,12 +125,9 @@ class SimilaritySearch(BaseTool):
                 max_token -= page.token
 
             logger.info(f'remaining slots: {max_token}')
-            return json.dumps(RefMaterialOutput(url=doc.url,
-                                                text=res).to_dict(),
-                              ensure_ascii=False)
+            return RefMaterialOutput(url=doc.url, text=res).to_dict()
         else:
-            return json.dumps(self.get_top(doc, max_token).to_dict(),
-                              ensure_ascii=False)
+            return self.get_top(doc, max_token)
 
     def filter_section(self, text: str, wordlist: list) -> int:
         page_list = get_split_word(text)
@@ -134,10 +141,7 @@ class SimilaritySearch(BaseTool):
         return len(s1.intersection(s2))  # avoid text length impact
         # return len(s1.intersection(s2)) / len(s1.union(s2))  # jaccard similarity
 
-    def get_top(self,
-                doc: RefMaterialInput,
-                max_token=4000,
-                **kwargs) -> RefMaterialOutput:
+    def get_top(self, doc: RefMaterialInput, max_token=4000, **kwargs):
         now_token = 0
         text = []
         for page in doc.text:
@@ -149,4 +153,4 @@ class SimilaritySearch(BaseTool):
                 text.append(page.content[:int(len(page.content) * use_rate)])
                 break
         logger.info(f'remaining slots: {max_token-now_token}')
-        return RefMaterialOutput(url=doc.url, text=text)
+        return RefMaterialOutput(url=doc.url, text=text).to_dict()

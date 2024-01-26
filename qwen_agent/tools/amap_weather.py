@@ -1,5 +1,5 @@
 import os
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 import pandas as pd
 import requests
@@ -39,10 +39,8 @@ class AmapWeather(BaseTool):
         else:
             return filtered_df['adcode'].values[0]
 
-    def call(self, params: str, **kwargs) -> str:
-        params = self._verify_args(params)
-        if isinstance(params, str):
-            return 'Parameter Error'
+    def call(self, params: Union[str, dict], **kwargs) -> str:
+        params = self._verify_json_format_args(params)
 
         location = params['location']
         response = requests.get(

@@ -1,3 +1,4 @@
+import json
 from typing import Dict, Iterator, List, Optional, Union
 
 from qwen_agent import Agent
@@ -12,17 +13,12 @@ class DocQAAgent(Agent):
     def __init__(self,
                  function_list: Optional[List[Union[str, Dict]]] = None,
                  llm: Optional[Union[Dict, BaseChatModel]] = None,
-                 system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
-                 name: Optional[str] = None,
-                 description: Optional[str] = None,
-                 storage_path: Optional[str] = None):
+                 system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE):
         super().__init__(function_list=function_list,
                          llm=llm,
-                         system_message=system_message,
-                         name=name,
-                         description=description)
+                         system_message=system_message)
 
-        self.mem = Memory(llm=self.llm, storage_path=storage_path)
+        self.mem = Memory(llm=self.llm)
 
         self.doc_qa = DocQA(llm=self.llm)
 
@@ -36,7 +32,8 @@ class DocQAAgent(Agent):
         *_, last = self.mem.run(messages=messages,
                                 max_ref_token=max_ref_token,
                                 **kwargs)
-        _ref = last[-1][CONTENT]
+        _ref = '\n\n'.join(
+            json.dumps(x, ensure_ascii=False) for x in last[-1][CONTENT])
 
         # use RetrievalQA agent
         response = self.doc_qa.run(messages=messages,

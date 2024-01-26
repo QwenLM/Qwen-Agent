@@ -33,9 +33,10 @@ class BaseTool(ABC):
         if not hasattr(self, 'args_format'):
             self.args_format = self.cfg.get('args_format', '此工具的输入应为JSON对象。')
         self.function = self._build_function()
+        self.file_access = False
 
     @abstractmethod
-    def call(self, params: str, **kwargs):
+    def call(self, params: Union[str, dict], **kwargs):
         """
         The interface for calling tools
 
@@ -45,7 +46,8 @@ class BaseTool(ABC):
         """
         raise NotImplementedError
 
-    def _verify_args(self, params: str) -> Union[str, dict]:
+    def _verify_json_format_args(self,
+                                 params: Union[str, dict]) -> Union[str, dict]:
         """
         Verify the parameters of the function call
 
@@ -53,14 +55,18 @@ class BaseTool(ABC):
         :return: the str params or the legal dict params
         """
         try:
-            params_json = json5.loads(params)
+            if isinstance(params, str):
+                params_json = json5.loads(params)
+            else:
+                params_json = params
             for param in self.parameters:
                 if 'required' in param and param['required']:
                     if param['name'] not in params_json:
-                        return params
+                        raise ValueError('Parameters %s is required!' %
+                                         param['name'])
             return params_json
         except Exception:
-            return params
+            raise ValueError('Parameters cannot be converted to Json Format!')
 
     def _build_function(self):
         """

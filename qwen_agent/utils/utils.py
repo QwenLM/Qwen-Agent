@@ -57,15 +57,21 @@ def save_url_to_local_work_dir(url, base_dir):
     new_path = os.path.join(base_dir, fn)
     if os.path.exists(new_path):
         os.remove(new_path)
+    logger.info(f'download {url} to {base_dir}')
     if is_local_path(url):
         shutil.copy(url, base_dir)
     else:
-        response = requests.get(url)
+        headers = {
+            'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+        }
+        response = requests.get(url, headers=headers)
         if response.status_code == 200:
             with open(new_path, 'wb') as file:
                 file.write(response.content)
         else:
             print_traceback()
+    return new_path
 
 
 def is_image(filename):
@@ -107,6 +113,21 @@ def save_text_to_file(path, text):
         return ex
 
 
+def contains_html_tags(text):
+    pattern = r'<(p|span|div|li|html|script)[^>]*?'
+    return bool(re.search(pattern, text))
+
+
+def get_file_type(path):
+    # This is a temporary plan
+
+    content = read_text_from_file(path)
+    if contains_html_tags(content):
+        return 'html'
+    else:
+        return 'Unknown'
+
+
 def read_text_from_file(path):
     with open(path, 'r', encoding='utf-8') as file:
         file_content = file.read()
@@ -133,7 +154,7 @@ def get_split_word(text):
     return wordlist
 
 
-def get_keyword_by_llm(text):
+def parse_keyword(text):
     try:
         res = json5.loads(text)
     except Exception:

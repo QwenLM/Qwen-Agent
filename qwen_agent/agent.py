@@ -16,8 +16,6 @@ class Agent(ABC):
                  function_list: Optional[List[Union[str, Dict]]] = None,
                  llm: Optional[Union[Dict, BaseChatModel]] = None,
                  system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
-                 name: Optional[str] = None,
-                 description: Optional[str] = None,
                  **kwargs):
         """
         init tools/llm for one agent
@@ -46,9 +44,6 @@ class Agent(ABC):
                 self._init_tool(function_name)
 
         self.system_message = system_message
-
-        self.name = name
-        self.description = description or system_message
 
     def run(self, messages: List[Dict], **kwargs) -> Iterator[List[Dict]]:
         assert messages[-1][ROLE] == USER, 'you must send the user message'
@@ -90,7 +85,10 @@ class Agent(ABC):
                              stream=stream,
                              delta_stream=delta_stream)
 
-    def _call_tool(self, tool_name: str, tool_args: str = '{}', **kwargs):
+    def _call_tool(self,
+                   tool_name: str,
+                   tool_args: Union[str, dict] = '{}',
+                   **kwargs):
         """
         Use when calling tools in bot()
 

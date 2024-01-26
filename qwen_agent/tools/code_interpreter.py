@@ -14,20 +14,20 @@ import sys
 import time
 import uuid
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, List, Optional, Union
 
+import json5
 import matplotlib
 import PIL.Image
 from jupyter_client import BlockingKernelClient
 
-sys.path.insert(0, str(Path(__file__).absolute().parent.parent.parent))  # NOQA
-
-from qwen_agent.log import logger  # NOQA
-from qwen_agent.tools.base import BaseTool, register_tool  # NOQA
-from qwen_agent.utils.utils import extract_code, print_traceback  # NOQA
+from qwen_agent.log import logger
+from qwen_agent.tools.base import BaseTool, register_tool
+from qwen_agent.utils.utils import (extract_code, print_traceback,
+                                    save_url_to_local_work_dir)
 
 WORK_DIR = os.getenv('M6_CODE_INTERPRETER_WORK_DIR',
-                     os.getcwd() + '/ci_workspace/')
+                     os.getcwd() + '/workspace/ci_workspace/')
 
 STATIC_URL = os.getenv('M6_CODE_INTERPRETER_STATIC_URL',
                        'http://127.0.0.1:7866/static')
@@ -202,21 +202,40 @@ def _execute_code(kc: BlockingKernelClient, code: str) -> str:
 @register_tool('code_interpreter')
 class CodeInterpreter(BaseTool):
     description = 'Python代码沙盒，可用于执行Python代码。'
-    parameters = [{'name': 'code', 'type': 'string', 'description': '待执行的代码'}]
+    parameters = [{
+        'name': 'code',
+        'type': 'string',
+        'description': '待执行的代码',
+        'required': True
+    }]
 
     def __init__(self, cfg: Optional[Dict] = None):
         self.args_format = '此工具的输入应为Markdown代码块。'
         super().__init__(cfg)
+        self.file_access = True
 
-    def call(self, params: str, timeout: Optional[int] = 30, **kwargs) -> str:
-        params = self._verify_args(params)
-        if isinstance(params, dict):
+    def call(self,
+             params: Union[str, dict],
+             files: List[str] = None,
+             timeout: Optional[int] = 30,
+             **kwargs) -> str:
+        try:
+            params = json5.loads(params)
             code = params['code']
-        else:
+        except Exception:
             code = extract_code(params)
 
         if not code.strip():
             return ''
+        # download file
+        if files:
+            for file in files:
+                try:
+                    save_url_to_local_work_dir(file, WORK_DIR)
+                except Exception:
+                    print_traceback()
+                    # Since the file may not be useful, do not directly report an error
+                    # logger.warning(f'Failed to download file {file}')
 
         pid: int = os.getpid()
         if pid in _KERNEL_CLIENTS:

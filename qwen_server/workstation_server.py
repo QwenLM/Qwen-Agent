@@ -9,6 +9,7 @@ import add_qwen_libs  # NOQA
 import gradio as gr
 
 from qwen_agent.agents import ArticleAgent, Assistant, DocQAAgent
+from qwen_agent.llm import get_chat_model
 from qwen_agent.llm.base import ModelServiceError
 from qwen_agent.memory import Memory
 from qwen_agent.utils.utils import (get_basename_from_url,
@@ -16,6 +17,8 @@ from qwen_agent.utils.utils import (get_basename_from_url,
                                     has_chinese_chars, save_text_to_file)
 from qwen_server import output_beautify
 from qwen_server.schema import GlobalConfig
+from qwen_server.utils import (read_meta_data_by_condition,
+                               save_browsing_meta_data)
 
 # Read config
 with open(Path(__file__).resolve().parent / 'server_config.json', 'r') as f:
@@ -36,19 +39,13 @@ if hasattr(server_config.server, 'functions'):
 if hasattr(server_config.path, 'database_root'):
     storage_path = server_config.path.database_root
 
-qa_assistant = DocQAAgent(function_list=function_list,
-                          llm=llm_config,
-                          storage_path=storage_path)
-writing_assistant = ArticleAgent(function_list=function_list,
-                                 llm=llm_config,
-                                 storage_path=storage_path)
-
 app_global_para = {
     'time': [str(datetime.date.today()),
              str(datetime.date.today())],
     'messages': [],
     'last_turn_msg_id': [],
     'is_first_upload': True,
+    'uploaded_ci_file': ''
 }
 
 DOC_OPTION = 'Document QA'
@@ -61,6 +58,8 @@ with open(Path(__file__).resolve().parent / 'css/main.css', 'r') as f:
     css = f.read()
 with open(Path(__file__).resolve().parent / 'js/main.js', 'r') as f:
     js = f.read()
+
+meta_file = os.path.join(server_config.path.work_space_root, 'meta_data.jsonl')
 
 
 def add_text(history, text):
@@ -96,23 +95,21 @@ def chat_clear_last():
 
 
 def add_file(file, chosen_plug):
-    # todo: Front end logic needs to be modified
-    output_filepath = server_config.path.code_interpreter_ws
-    fn = get_basename_from_url(file.name)
-    new_path = os.path.join(output_filepath, fn)
+    display_path = get_basename_from_url(file.name)
 
-    if chosen_plug == DOC_OPTION and (not file.name.lower().endswith(
-        ('pdf', 'docx', 'pptx'))):  # NOQA
-        new_path = (
+    if chosen_plug == CI_OPTION:
+        app_global_para['uploaded_ci_file'] = file.name
+        app_global_para['is_first_upload'] = True
+        return display_path
+
+    if not file.name.lower().endswith(('pdf', 'docx', 'pptx')):
+        display_path = (
             'Upload failed: only adding [\'.pdf\', \'.docx\', \'.pptx\'] documents as references is supported!'
         )
     else:
-        if chosen_plug == CI_OPTION:
-            app_global_para['is_first_upload'] = True
-
-        # upload file
+        # cache file
         try:
-            mem = Memory(storage_path=server_config.path.database_root)
+            mem = Memory()
             *_, last = mem.run([{
                 'role': 'user',
                 'content': [{
@@ -120,10 +117,17 @@ def add_file(file, chosen_plug):
                 }]
             }],
                                ignore_cache=True)
+            data = last[-1]['content']
+            if isinstance(data, str):
+                data.json5.loads(data)
+            assert len(data) == 1
+            title = data[-1]['title']
+            save_browsing_meta_data(file.name, title, meta_file)
+
         except Exception as ex:
             raise ValueError(ex)
 
-    return new_path
+    return display_path
 
 
 def update_app_global_para(date1, date2):
@@ -141,10 +145,8 @@ def refresh_date():
 
 
 def update_browser_list():
-    mem = Memory(storage_path=server_config.path.database_root)
-    br_list = json.loads(
-        output_beautify.convert_to_str(
-            mem.run(use_meta_info=True, time_limit=app_global_para['time'])))
+    br_list = read_meta_data_by_condition(meta_file,
+                                          time_limit=app_global_para['time'])
     if not br_list:
         return 'No browsing records'
 
@@ -204,7 +206,8 @@ def pure_bot(history):
             messages.append({'role': 'assistant', 'content': chat[1]})
         messages.append({'role': 'user', 'content': history[-1][0]})
         try:
-            response = qa_assistant.llm.chat(messages=messages)
+            llm = get_chat_model(llm_config)
+            response = llm.chat(messages=messages)
             for chunk in output_beautify.convert_to_full_str_stream(response):
                 history[-1][1] = chunk
                 yield history
@@ -215,27 +218,32 @@ def pure_bot(history):
             raise ValueError(ex)
 
 
-def bot(history, upload_file, chosen_plug):
+def bot(history, chosen_plug):
     if not history:
         yield history
     else:
         history[-1][1] = ''
         if chosen_plug == CI_OPTION:  # use code interpreter
-            prompt_upload_file = ''
-            if upload_file and app_global_para['is_first_upload']:
-                workspace_dir = server_config.path.code_interpreter_ws
-                file_relpath = os.path.relpath(path=upload_file,
-                                               start=workspace_dir)
-                if has_chinese_chars(history[-1][0]):
-                    prompt_upload_file = f'上传了[文件]({file_relpath})到当前目录，'
-                else:
-                    prompt_upload_file = f'Uploaded the [file]({file_relpath}) to the current directory. '
-                app_global_para['is_first_upload'] = False
-            history[-1][0] = prompt_upload_file + history[-1][0]
-            messages = app_global_para['messages'] + [{
-                'role': 'user',
-                'content': history[-1][0]
-            }]
+            if app_global_para['uploaded_ci_file'] and app_global_para[
+                    'is_first_upload']:
+                app_global_para[
+                    'is_first_upload'] = False  # only send file when first upload
+                messages = app_global_para['messages'] + [{
+                    'role':
+                    'user',
+                    'content': [{
+                        'text': history[-1][0]
+                    }, {
+                        'file': app_global_para['uploaded_ci_file']
+                    }]
+                }]
+            else:
+                messages = app_global_para['messages'] + [{
+                    'role':
+                    'user',
+                    'content':
+                    history[-1][0]
+                }]
             func_assistant = Assistant(function_list=['code_interpreter'],
                                        llm=llm_config)
             try:
@@ -251,14 +259,20 @@ def bot(history, upload_file, chosen_plug):
                 raise ValueError(ex)
         else:
             try:
+                content = [{'text': history[-1][0]}]
+                # checked files
+                for record in read_meta_data_by_condition(
+                        meta_file,
+                        time_limit=app_global_para['time'],
+                        checked=True):
+                    content.append({'file': record['url']})
+                qa_assistant = DocQAAgent(llm=llm_config)
                 response = qa_assistant.run(
                     messages=[{
                         'role': 'user',
-                        'content': history[-1][0]
+                        'content': content
                     }],
-                    max_ref_token=server_config.server.max_ref_token,
-                    time_limit=app_global_para['time'],
-                    checked=True)
+                    max_ref_token=server_config.server.max_ref_token)
                 for chunk in output_beautify.convert_to_full_str_stream(
                         response):
                     history[-1][1] = chunk
@@ -329,15 +343,22 @@ def generate(context):
         if TITLE_FLAG in sp_query:  # /title
             full_article = True
         try:
+            writing_assistant = ArticleAgent(llm=llm_config)
+
+            content = [{'text': sp_query_no_title}]
+            # checked files
+            for record in read_meta_data_by_condition(
+                    meta_file, time_limit=app_global_para['time'],
+                    checked=True):
+                content.append({'file': record['url']})
+
             response = writing_assistant.run(
                 messages=[{
                     'role': 'user',
-                    'content': sp_query_no_title
+                    'content': content
                 }],
                 max_ref_token=server_config.server.max_ref_token,
-                full_article=full_article,
-                time_limit=app_global_para['time'],
-                checked=True)
+                full_article=full_article)
             for chunk in output_beautify.convert_to_full_str_stream(response):
                 yield chunk
         except ModelServiceError:
@@ -525,21 +546,18 @@ with gr.Blocks(css=css, theme='soft') as demo:
                         interactive=False,
                         label='The uploaded file is displayed here')
 
-            txt_msg = chat_txt.submit(
-                add_text, [chatbot, chat_txt], [chatbot, chat_txt],
-                queue=False).then(bot, [chatbot, hidden_file_path, plug_bt],
-                                  chatbot)
+            txt_msg = chat_txt.submit(add_text, [chatbot, chat_txt],
+                                      [chatbot, chat_txt],
+                                      queue=False).then(
+                                          bot, [chatbot, plug_bt], chatbot)
             txt_msg.then(lambda: gr.update(interactive=True),
                          None, [chat_txt],
                          queue=False)
 
-            # txt_msg_bt = chat_smt_bt.click(add_text, [chatbot, chat_txt], [chatbot, chat_txt], queue=False).then(bot, chatbot, chatbot)
-            # txt_msg_bt.then(lambda: gr.update(interactive=True), None, [chat_txt], queue=False)
-            # (None, None, None, cancels=[txt_msg], queue=False).then
             re_txt_msg = (chat_re_bt.click(
                 rm_text, [chatbot], [chatbot, chat_txt],
-                queue=False).then(chat_clear_last, None, None).then(
-                    bot, [chatbot, hidden_file_path, plug_bt], chatbot))
+                queue=False).then(chat_clear_last, None,
+                                  None).then(bot, [chatbot, plug_bt], chatbot))
             re_txt_msg.then(lambda: gr.update(interactive=True),
                             None, [chat_txt],
                             queue=False)

@@ -1,8 +1,10 @@
 import json
 import multiprocessing
+import os
 from pathlib import Path
 
 import add_qwen_libs  # NOQA
+import jsonlines
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,8 +13,9 @@ from fastapi.staticfiles import StaticFiles
 
 from qwen_agent.log import logger
 from qwen_agent.memory import Memory
-from qwen_agent.utils.utils import get_local_ip, print_traceback
+from qwen_agent.utils.utils import get_local_ip
 from qwen_server.schema import GlobalConfig
+from qwen_server.utils import save_browsing_meta_data, save_history
 
 # Read config
 with open(Path(__file__).resolve().parent / 'server_config.json', 'r') as f:
@@ -20,7 +23,7 @@ with open(Path(__file__).resolve().parent / 'server_config.json', 'r') as f:
     server_config = GlobalConfig(**server_config)
 
 # This APP only requires storage capacity, so using the memory module alone
-mem = Memory(storage_path=server_config.path.database_root)
+mem = Memory()
 
 app = FastAPI()
 
@@ -45,33 +48,48 @@ app.mount('/static',
           StaticFiles(directory=server_config.path.code_interpreter_ws),
           name='static')
 
+cache_file_popup_url = os.path.join(server_config.path.work_space_root,
+                                    'popup_url.jsonl')
+meta_file = os.path.join(server_config.path.work_space_root, 'meta_data.jsonl')
+history_dir = os.path.join(server_config.path.work_space_root, 'history')
+
 
 def update_pop_url(url: str):
-    msg = mem.db.put('browsing_url', url)
-    if msg == 'SUCCESS':
-        response = 'Updated URL'
-    else:
-        print_traceback()
-        response = 'Failed to update URL'
-    return response
+    new_line = {'url': url}
+
+    with jsonlines.open(cache_file_popup_url, mode='w') as writer:
+        writer.write(new_line)
+
+    return 'Update URL'
 
 
 def change_checkbox_state(key):
-    meta_info = json.loads(mem.db.get('meta_info'))
+    with open(meta_file, 'r', encoding='utf-8') as file:
+        meta_info = json.load(file)
     meta_info[key[3:]]['checked'] = (not meta_info[key[3:]]['checked'])
-    mem.db.put('meta_info', json.dumps(meta_info, ensure_ascii=False))
+    with open(meta_file, 'w', encoding='utf-8') as file:
+        json.dump(meta_info, file, indent=4)
     return {'result': 'changed'}
 
 
 def cache_page(**kwargs):
+    url = kwargs.get('url', '')
+    save_browsing_meta_data(url, '[CACHING]', meta_file)
+    # rm history
+    save_history(None, url, history_dir)
     *_, last = mem.run([{
         'role': 'user',
         'content': [{
-            'file': kwargs.get('url', '')
+            'file': url
         }]
     }],
-                       ignore_cache=True,
-                       **kwargs)
+                       ignore_cache=True)
+    data = last[-1]['content']
+    if isinstance(data, str):
+        data.json5.loads(data)
+    assert len(data) == 1
+    title = data[-1]['title']
+    save_browsing_meta_data(url, title, meta_file)
 
 
 @app.post('/endpoint')

@@ -40,18 +40,13 @@ class Assistant(Agent):
                  function_list: Optional[List[Union[str, Dict]]] = None,
                  llm: Optional[Union[Dict, BaseChatModel]] = None,
                  system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
-                 name: Optional[str] = None,
-                 description: Optional[str] = None,
-                 storage_path: Optional[str] = None,
                  files: Optional[List[str]] = None):
         super().__init__(function_list=function_list,
                          llm=llm,
-                         system_message=system_message,
-                         name=name,
-                         description=description)
+                         system_message=system_message)
 
         # default to use Memory to manage files
-        self.mem = Memory(llm=self.llm, storage_path=storage_path, files=files)
+        self.mem = Memory(llm=self.llm, files=files)
 
     def _run(self,
              messages: List[Dict],
@@ -106,3 +101,17 @@ class Assistant(Agent):
                 yield response
             else:
                 break
+
+    def _call_tool(self,
+                   tool_name: str,
+                   tool_args: Union[str, dict] = '{}',
+                   **kwargs):
+        # Temporary plan: Check if it is necessary to transfer files to the tool
+        # Todo: This should be changed to parameter passing, and the file URL should be determined by the model
+        if self.function_map[tool_name].file_access:
+            return super()._call_tool(tool_name,
+                                      tool_args,
+                                      files=self.mem.files,
+                                      **kwargs)
+        else:
+            return super()._call_tool(tool_name, tool_args, **kwargs)
