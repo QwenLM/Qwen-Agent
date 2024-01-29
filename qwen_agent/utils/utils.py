@@ -58,6 +58,7 @@ def save_url_to_local_work_dir(url, base_dir):
     if os.path.exists(new_path):
         os.remove(new_path)
     logger.info(f'download {url} to {base_dir}')
+    start_time = datetime.datetime.now()
     if is_local_path(url):
         shutil.copy(url, base_dir)
     else:
@@ -71,6 +72,8 @@ def save_url_to_local_work_dir(url, base_dir):
                 file.write(response.content)
         else:
             print_traceback()
+    end_time = datetime.datetime.now()
+    logger.info(f'Time: {str(end_time - start_time)}')
     return new_path
 
 

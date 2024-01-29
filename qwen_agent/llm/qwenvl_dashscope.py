@@ -1,3 +1,4 @@
+import json
 import os
 from http import HTTPStatus
 from typing import Dict, Iterator, List, Optional
@@ -5,6 +6,8 @@ from typing import Dict, Iterator, List, Optional
 import dashscope
 
 from qwen_agent.llm.base import BaseChatModel, ModelServiceError
+
+from .schema import ASSISTANT, CONTENT, ROLE, USER
 
 
 class QwenVLChatAtDS(BaseChatModel):
@@ -37,6 +40,8 @@ class QwenVLChatAtDS(BaseChatModel):
                 err = '\nError code: %s. Error message: %s' % (trunk.code,
                                                                trunk.message)
                 raise ModelServiceError(err)
+        with open('debug.json', 'w', encoding='utf-8') as writer:
+            writer.write(json.dumps(trunk, ensure_ascii=False, indent=4))
 
     def _chat_no_stream(
         self,
@@ -58,4 +63,10 @@ class QwenVLChatAtDS(BaseChatModel):
             raise ModelServiceError(err)
 
     def _format_msg_for_llm(self, messages: List[Dict]) -> List[Dict]:
+        if messages and messages[-1][ROLE] == ASSISTANT:
+            # Change the text completion to chat mode
+            if len(messages) > 1 and messages[-2][ROLE] == USER:
+                messages[-2][CONTENT].extend(messages[-1][CONTENT])
+                messages.pop()
+
         return messages

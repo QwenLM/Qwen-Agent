@@ -21,6 +21,7 @@ llm_cfg_vl = {
 }
 functions = [{
     'name': 'image_gen',
+    'name_for_human': 'AI绘画',
     'description': 'AI绘画（图像生成）服务，输入文本描述和图像分辨率，返回根据文本信息绘制的图片URL。',
     'parameters': {
         'type': 'object',
@@ -32,6 +33,7 @@ functions = [{
         },
         'required': ['prompt'],
     },
+    'args_format': '参数为json格式'
 }]
 
 llm_vl = get_chat_model(llm_cfg_vl)

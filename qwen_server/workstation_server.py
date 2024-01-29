@@ -8,7 +8,7 @@ from pathlib import Path
 import add_qwen_libs  # NOQA
 import gradio as gr
 
-from qwen_agent.agents import ArticleAgent, Assistant, DocQAAgent
+from qwen_agent.agents import ArticleAgent, DocQAAgent, ReActChat
 from qwen_agent.llm import get_chat_model
 from qwen_agent.llm.base import ModelServiceError
 from qwen_agent.memory import Memory
@@ -244,7 +244,7 @@ def bot(history, chosen_plug):
                     'content':
                     history[-1][0]
                 }]
-            func_assistant = Assistant(function_list=['code_interpreter'],
+            func_assistant = ReActChat(function_list=['code_interpreter'],
                                        llm=llm_config)
             try:
                 response = func_assistant.run(messages=messages)
@@ -304,7 +304,7 @@ def generate(context):
         else:
             sp_query += ' (Please use code_interpreter.)'
 
-        func_assistant = Assistant(function_list=['code_interpreter'],
+        func_assistant = ReActChat(function_list=['code_interpreter'],
                                    llm=llm_config)
         try:
             response = func_assistant.run(messages=[{
@@ -320,7 +320,7 @@ def generate(context):
 
     elif PLUGIN_FLAG in sp_query:  # router to plugin
         sp_query = sp_query.split(PLUGIN_FLAG)[-1]
-        func_assistant = Assistant(
+        func_assistant = ReActChat(
             function_list=['code_interpreter', 'image_gen'], llm=llm_config)
         try:
             response = func_assistant.run(messages=[{

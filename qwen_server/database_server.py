@@ -15,7 +15,8 @@ from qwen_agent.log import logger
 from qwen_agent.memory import Memory
 from qwen_agent.utils.utils import get_local_ip
 from qwen_server.schema import GlobalConfig
-from qwen_server.utils import save_browsing_meta_data, save_history
+from qwen_server.utils import (rm_browsing_meta_data, save_browsing_meta_data,
+                               save_history)
 
 # Read config
 with open(Path(__file__).resolve().parent / 'server_config.json', 'r') as f:
@@ -77,19 +78,22 @@ def cache_page(**kwargs):
     save_browsing_meta_data(url, '[CACHING]', meta_file)
     # rm history
     save_history(None, url, history_dir)
-    *_, last = mem.run([{
-        'role': 'user',
-        'content': [{
-            'file': url
-        }]
-    }],
-                       ignore_cache=True)
-    data = last[-1]['content']
-    if isinstance(data, str):
-        data.json5.loads(data)
-    assert len(data) == 1
-    title = data[-1]['title']
-    save_browsing_meta_data(url, title, meta_file)
+    try:
+        *_, last = mem.run([{
+            'role': 'user',
+            'content': [{
+                'file': url
+            }]
+        }],
+                           ignore_cache=True)
+        data = last[-1]['content']
+        if isinstance(data, str):
+            data.json5.loads(data)
+        assert len(data) == 1
+        title = data[-1]['title']
+        save_browsing_meta_data(url, title, meta_file)
+    except Exception:
+        rm_browsing_meta_data(url, meta_file)
 
 
 @app.post('/endpoint')

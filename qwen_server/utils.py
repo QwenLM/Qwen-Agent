@@ -23,6 +23,19 @@ def save_browsing_meta_data(url: str, title: str, meta_file: str):
         json.dump(meta_info, file, indent=4)
 
 
+def rm_browsing_meta_data(url: str, meta_file: str):
+    if os.path.exists(meta_file):
+        with open(meta_file, 'r', encoding='utf-8') as file:
+            meta_info = json.load(file)
+    else:
+        meta_info = {}
+
+    if url in meta_info:
+        meta_info.pop(url)
+        with open(meta_file, 'w', encoding='utf-8') as file:
+            json.dump(meta_info, file, indent=4)
+
+
 def read_meta_data_by_condition(meta_file: str, **kwargs):
     if os.path.exists(meta_file):
         with open(meta_file, 'r', encoding='utf-8') as file:

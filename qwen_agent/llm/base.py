@@ -30,6 +30,12 @@ class BaseChatModel(ABC):
         self.generate_cfg = self.cfg.get('generate_cfg', {})
         self._flag_support_text_completion: Optional[bool] = None
 
+        stop = self.generate_cfg.get('stop', [])
+        fn_stop = [f'{FN_RESULT}:', f'{FN_RESULT}:\n']
+        self.generate_cfg['stop'] = stop + [
+            x for x in fn_stop if x not in stop
+        ]
+
     def chat(
         self,
         messages: List[Dict],
@@ -113,19 +119,13 @@ class BaseChatModel(ABC):
         messages = self._preprocess_convert_fncall_to_text(messages)
         messages = self._format_msg_for_llm(messages)
 
-        stop = self.generate_cfg.get('stop', [])
-        fn_stop = [f'{FN_RESULT}:', f'{FN_RESULT}:\n']
-        self.generate_cfg['stop'] = stop + [
-            x for x in fn_stop if x not in stop
-        ]
-
         # generate response
         if self._support_text_completion():
             output = self.text_completion(messages=messages,
                                           stream=stream,
                                           delta_stream=delta_stream)
         else:
-            logger.debug('==== Inputted messages ===')
+            logger.debug('==== Inputted messages: Using chat format ===')
             logger.debug(messages)
             if stream:
                 output = self._chat_stream(messages, delta_stream=delta_stream)
@@ -273,6 +273,17 @@ class BaseChatModel(ABC):
                 }]
             else:
                 raise TypeError
+
+        # remove ': ' for continued generation of function calling,
+        # because ': ' may form a single token with its following words
+        if new_messages[-1][ROLE] == ASSISTANT:
+            for i in range(len(new_messages[-1][CONTENT]) - 1, -1, -1):
+                if 'text' in new_messages[-1][CONTENT][i]:
+                    last_content = new_messages[-1][CONTENT][i]['text']
+                    if last_content.endswith(f'{FN_EXIT}: '):
+                        new_messages[-1][CONTENT][i][
+                            'text'] = last_content[:-2]
+                    break
         return new_messages
 
     def _postprocess_convert_text_to_fncall(
@@ -281,6 +292,15 @@ class BaseChatModel(ABC):
         If the model calls function by built-in function call template, convert and display it in function_call format in return.
         """
         messages = self._format_msg_to_list(messages)
+
+        # remove ': ' brought by continued generation of function calling
+        for i in range(len(messages[0][CONTENT])):
+            if 'text' in messages[0][CONTENT][i]:
+                first_content = messages[0][CONTENT][i]['text']
+                if first_content.startswith(': '):
+                    messages[0][CONTENT][i]['text'] = first_content[2:]
+                break
+
         new_messages = []
         for msg in messages:
             role, content = msg[ROLE], msg[CONTENT]
