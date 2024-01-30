@@ -5,22 +5,25 @@ from typing import Dict, Iterator, List, Optional, Union
 
 import dashscope
 
-from qwen_agent.llm.base import ModelServiceError
+from qwen_agent.llm.base import ModelServiceError, register_llm
 from qwen_agent.log import logger
 
-from .qwen_model import QwenChatModel
 from .schema import (ASSISTANT, CONTENT, DEFAULT_SYSTEM_MESSAGE, ROLE, SYSTEM,
                      USER)
+from .text_chat_model import BaseTextChatModel
 
 
-class QwenChatAtDS(QwenChatModel):
+@register_llm('qwen_dashscope')
+class QwenChatAtDS(BaseTextChatModel):
 
     def __init__(self, cfg: Optional[Dict] = None):
         super().__init__(cfg)
+
         self.model = self.cfg.get('model', 'qwen-max')
-        dashscope.api_key = os.getenv('DASHSCOPE_API_KEY',
-                                      default=self.cfg.get('api_key', ''))
-        assert dashscope.api_key, 'DASHSCOPE_API_KEY is required.'
+        if 'api_key' in cfg and cfg['api_key'].strip():
+            dashscope.api_key = cfg['api_key']
+        else:
+            dashscope.api_key = os.getenv('DASHSCOPE_API_KEY')
 
     def _chat_stream(
         self,

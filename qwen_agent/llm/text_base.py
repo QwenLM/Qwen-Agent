@@ -6,7 +6,7 @@ from qwen_agent.llm.base import BaseChatModel
 from .schema import ASSISTANT, CONTENT, FUNCTION, ROLE, SYSTEM, USER
 
 
-class QwenChatModel(BaseChatModel, ABC):
+class BaseTextChatModel(BaseChatModel, ABC):
 
     def _format_msg_for_llm(self, messages: List[Dict]) -> List[Dict]:
         new_messages = []

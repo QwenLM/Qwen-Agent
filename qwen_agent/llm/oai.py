@@ -4,22 +4,27 @@ from typing import Dict, Iterator, List, Optional, Union
 
 import openai
 
-from qwen_agent.llm.base import FnCallNotImplError
-from qwen_agent.llm.qwen_model import QwenChatModel
+from qwen_agent.llm.base import FnCallNotImplError, register_llm
+from qwen_agent.llm.text_chat_model import BaseTextChatModel
 from qwen_agent.log import logger
 from qwen_agent.utils.utils import print_traceback
 
 
-class QwenChatAsOAI(QwenChatModel):
+@register_llm('oai')
+class TextChatAtOAI(BaseTextChatModel):
 
     def __init__(self, cfg: Optional[Dict] = None):
         super().__init__(cfg)
-        self.model = self.cfg.get('model', '')
+
+        self.model = self.cfg.get('model', 'Qwen')
         if 'model_server' in self.cfg and self.cfg['model_server'].strip(
         ).lower() != 'openai':
             openai.api_base = self.cfg['model_server']
-        openai.api_key = os.getenv('OPENAI_API_KEY',
-                                   default=self.cfg.get('api_key', ''))
+        if 'api_key' in cfg and cfg['api_key'].strip():
+            openai.api_key = cfg['api_key']
+        else:
+            openai.api_key = os.getenv('OPENAI_API_KEY', 'None')
+
         self._support_fn_call: Optional[bool] = None
 
     def _chat_stream(

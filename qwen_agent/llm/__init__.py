@@ -1,8 +1,10 @@
 from typing import Dict, Optional
 
+from qwen_agent.llm.base import LLM_REGISTRY
+
 from .base import BaseChatModel
+from .oai import TextChatAtOAI
 from .qwen_dashscope import QwenChatAtDS
-from .qwen_oai import QwenChatAsOAI
 from .qwenvl_dashscope import QwenVLChatAtDS
 
 
@@ -17,22 +19,43 @@ def get_chat_model(cfg: Optional[Dict] = None) -> BaseChatModel:
             # Use your own model service compatible with OpenAI API:
             # 'model': 'Qwen',
             # 'model_server': 'http://127.0.0.1:7905/v1',
-
             # (Optional) LLM hyper-paramters:
             'generate_cfg': {
                 'top_p': 0.8
             }
         }
-    :return: BaseChatModel
+    :return: An llm object
     """
-    if 'model' in cfg and cfg['model'].strip().lower().startswith('qwen-vl'):
-        if 'model_server' in cfg:
-            assert cfg['model_server'].strip().lower(
-            ) == 'dashscope', 'Can only access qwen-vl through dashscope api'
-        llm = QwenVLChatAtDS(cfg)
-    elif 'model_server' in cfg and cfg['model_server'].strip().lower(
-    ) == 'dashscope':
-        llm = QwenChatAtDS(cfg)
-    else:
-        llm = QwenChatAsOAI(cfg)
-    return llm
+    cfg = cfg or {}
+    if 'model_type' in cfg:
+        model_type = cfg['model_type']
+        if model_type in LLM_REGISTRY:
+            return LLM_REGISTRY[model_type](cfg)
+        else:
+            ValueError(
+                f'Please set model_type from {str(LLM_REGISTRY.keys())}')
+
+    # Deduce model_type from model and model_server if model_type is not provided:
+
+    if 'model_server' in cfg:
+        if cfg['model_server'].startswith('http'):
+            model_type = 'oai'
+            return LLM_REGISTRY[model_type](cfg)
+
+    model = cfg.get('model', '')
+
+    if 'qwen-vl' in model:
+        model_type = 'qwenvl_dashscope'
+        return LLM_REGISTRY[model_type](cfg)
+
+    if 'qwen' in model:
+        model_type = 'qwen_dashscope'
+        return LLM_REGISTRY[model_type](cfg)
+
+    raise ValueError(f'Please set model_type from {str(LLM_REGISTRY.keys())}')
+
+
+__all__ = [
+    'BaseChatModel', 'QwenChatAtDS', 'TextChatAtOAI', 'QwenVLChatAtDS',
+    'get_chat_model'
+]

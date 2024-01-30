@@ -10,6 +10,17 @@ from .schema import (ASSISTANT, CONTENT, DEFAULT_SYSTEM_MESSAGE, FN_ARGS,
                      FN_CALL_TEMPLATE, FN_EXIT, FN_NAME, FN_RESULT, FUNCTION,
                      ROLE, SYSTEM, USER)
 
+LLM_REGISTRY = {}
+
+
+def register_llm(model_type):
+
+    def decorator(cls):
+        LLM_REGISTRY[model_type] = cls
+        return cls
+
+    return decorator
+
 
 class TextCompleteNotImplError(NotImplementedError):
     pass

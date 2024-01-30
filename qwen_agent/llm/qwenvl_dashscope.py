@@ -5,19 +5,22 @@ from typing import Dict, Iterator, List, Optional
 
 import dashscope
 
-from qwen_agent.llm.base import BaseChatModel, ModelServiceError
+from qwen_agent.llm.base import BaseChatModel, ModelServiceError, register_llm
 
 from .schema import ASSISTANT, CONTENT, ROLE, USER
 
 
+@register_llm('qwenvl_dashscope')
 class QwenVLChatAtDS(BaseChatModel):
 
     def __init__(self, cfg: Optional[Dict] = None):
         super().__init__(cfg)
-        self.model = self.cfg.get('model', 'qwen-vl-plus')
-        dashscope.api_key = os.getenv('DASHSCOPE_API_KEY',
-                                      default=self.cfg.get('api_key', ''))
-        assert dashscope.api_key, 'DASHSCOPE_API_KEY is required.'
+
+        self.model = self.cfg.get('model', 'qwen-vl-max')
+        if 'api_key' in cfg and cfg['api_key'].strip():
+            dashscope.api_key = cfg['api_key']
+        else:
+            dashscope.api_key = os.getenv('DASHSCOPE_API_KEY')
 
     def _chat_stream(
         self,
