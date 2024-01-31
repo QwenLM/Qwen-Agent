@@ -10,7 +10,7 @@ from qwen_agent.log import logger
 
 from .schema import (ASSISTANT, CONTENT, DEFAULT_SYSTEM_MESSAGE, ROLE, SYSTEM,
                      USER)
-from .text_chat_model import BaseTextChatModel
+from .text_base import BaseTextChatModel
 
 
 @register_llm('qwen_dashscope')

@@ -223,12 +223,13 @@ def bot(history, chosen_plug):
         yield history
     else:
         history[-1][1] = ''
+        message = []
         if chosen_plug == CI_OPTION:  # use code interpreter
             if app_global_para['uploaded_ci_file'] and app_global_para[
                     'is_first_upload']:
                 app_global_para[
                     'is_first_upload'] = False  # only send file when first upload
-                messages = app_global_para['messages'] + [{
+                message = [{
                     'role':
                     'user',
                     'content': [{
@@ -237,13 +238,10 @@ def bot(history, chosen_plug):
                         'file': app_global_para['uploaded_ci_file']
                     }]
                 }]
+                messages = app_global_para['messages'] + message
             else:
-                messages = app_global_para['messages'] + [{
-                    'role':
-                    'user',
-                    'content':
-                    history[-1][0]
-                }]
+                message = [{'role': 'user', 'content': history[-1][0]}]
+                messages = app_global_para['messages'] + message
             func_assistant = ReActChat(function_list=['code_interpreter'],
                                        llm=llm_config)
             try:
@@ -267,11 +265,9 @@ def bot(history, chosen_plug):
                         checked=True):
                     content.append({'file': record['url']})
                 qa_assistant = DocQAAgent(llm=llm_config)
+                message = [{'role': 'user', 'content': content}]
                 response = qa_assistant.run(
-                    messages=[{
-                        'role': 'user',
-                        'content': content
-                    }],
+                    messages=message,
                     max_ref_token=server_config.server.max_ref_token)
                 for chunk in output_beautify.convert_to_full_str_stream(
                         response):
@@ -284,10 +280,9 @@ def bot(history, chosen_plug):
                 raise ValueError(ex)
 
         # append message
-        message = {'role': 'user', 'content': history[-1][0]}
         app_global_para['last_turn_msg_id'].append(
             len(app_global_para['messages']))
-        app_global_para['messages'].append(message)
+        app_global_para['messages'].extend(message)
 
         message = {'role': 'assistant', 'content': history[-1][1]}
         app_global_para['last_turn_msg_id'].append(

@@ -1,25 +1,12 @@
 import json
-from typing import Dict, Iterator, List, Optional, Union
+from typing import Dict, Iterator, List, Union
 
-from qwen_agent import Agent
-from qwen_agent.llm.base import BaseChatModel
-from qwen_agent.llm.schema import (ASSISTANT, CONTENT, DEFAULT_SYSTEM_MESSAGE,
-                                   ROLE)
-from qwen_agent.memory import Memory
+from qwen_agent.agents.assistant import Assistant
+from qwen_agent.llm.schema import ASSISTANT, CONTENT, ROLE
 from qwen_agent.prompts import ContinueWriting, WriteFromScratch
 
 
-class ArticleAgent(Agent):
-
-    def __init__(self,
-                 function_list: Optional[List[Union[str, Dict]]] = None,
-                 llm: Optional[Union[Dict, BaseChatModel]] = None,
-                 system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE):
-        super().__init__(function_list=function_list,
-                         llm=llm,
-                         system_message=system_message)
-
-        self.mem = Memory(llm=self.llm)
+class ArticleAgent(Assistant):
 
     def _run(self,
              messages: List[Dict],

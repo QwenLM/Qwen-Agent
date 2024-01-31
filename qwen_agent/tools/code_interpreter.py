@@ -29,9 +29,6 @@ from qwen_agent.utils.utils import (extract_code, print_traceback,
 WORK_DIR = os.getenv('M6_CODE_INTERPRETER_WORK_DIR',
                      os.getcwd() + '/workspace/ci_workspace/')
 
-STATIC_URL = os.getenv('M6_CODE_INTERPRETER_STATIC_URL',
-                       'http://127.0.0.1:7866/static')
-
 LAUNCH_KERNEL_PY = """
 from ipykernel import kernelapp as app
 app.launch_new_instance()
@@ -115,7 +112,26 @@ def _serve_image(image_base64: str) -> str:
     bytes_io = io.BytesIO(png_bytes)
     PIL.Image.open(bytes_io).save(local_image_file, 'png')
 
+    STATIC_URL = os.getenv('M6_CODE_INTERPRETER_STATIC_URL',
+                           'http://127.0.0.1:7865/static')
+
+    # Hotfix: Temporarily generate image URL proxies for code interpreter to display in gradio
+    # Todo: Generate real url
+    if STATIC_URL == 'http://127.0.0.1:7865/static':
+        try:
+            # run a fastapi server for image show in gradio demo by http://127.0.0.1:7865/figure_name
+            subprocess.Popen([
+                'python',
+                Path(__file__).absolute().parent / 'resource' /
+                'image_service.py'
+            ])
+        except OSError as ex:
+            logger.warning(ex)
+        except Exception:
+            print_traceback()
+
     image_url = f'{STATIC_URL}/{image_file}'
+
     return image_url
 
 

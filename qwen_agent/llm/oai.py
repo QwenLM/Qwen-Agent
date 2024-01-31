@@ -5,7 +5,7 @@ from typing import Dict, Iterator, List, Optional, Union
 import openai
 
 from qwen_agent.llm.base import FnCallNotImplError, register_llm
-from qwen_agent.llm.text_chat_model import BaseTextChatModel
+from qwen_agent.llm.text_base import BaseTextChatModel
 from qwen_agent.log import logger
 from qwen_agent.utils.utils import print_traceback
 

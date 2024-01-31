@@ -1,24 +1,23 @@
 import json
 from typing import Dict, Iterator, List, Optional, Union
 
-from qwen_agent import Agent
+from qwen_agent.agents.assistant import Assistant
 from qwen_agent.llm.base import BaseChatModel
 from qwen_agent.llm.schema import CONTENT, DEFAULT_SYSTEM_MESSAGE
-from qwen_agent.memory import Memory
 from qwen_agent.prompts import DocQA
 
 
-class DocQAAgent(Agent):
+class DocQAAgent(Assistant):
 
     def __init__(self,
                  function_list: Optional[List[Union[str, Dict]]] = None,
                  llm: Optional[Union[Dict, BaseChatModel]] = None,
-                 system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE):
+                 system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
+                 files: Optional[List[str]] = None):
         super().__init__(function_list=function_list,
                          llm=llm,
-                         system_message=system_message)
-
-        self.mem = Memory(llm=self.llm)
+                         system_message=system_message,
+                         files=files)
 
         self.doc_qa = DocQA(llm=self.llm)
 

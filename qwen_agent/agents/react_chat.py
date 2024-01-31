@@ -52,7 +52,7 @@ class ReActChat(Assistant):
              messages: List[Dict],
              lang: str = 'en',
              **kwargs) -> Iterator[List[Dict]]:
-
+        *_, last = self.mem.run(messages=messages)
         messages = self._preprocess_react_prompt(messages)
 
         max_turn = 5
