@@ -1,0 +1,57 @@
+"""A doctor implemented by assistant"""
+import os
+
+from qwen_agent.agents import Assistant
+
+
+def create_agent():
+    # settings
+    llm_cfg_vl = {'model': 'qwen-vl-plus'}
+
+    # files: support web page / .pdf / .docx / .pptx to the knowledge base
+    bot = Assistant(
+        llm=llm_cfg_vl,
+        system_message='你扮演一个内科医生，你可以看懂血常规报告，' +
+        '然后参考知识库中教你的医学知识，列出对病人的诊断。请使用专业术语。',
+        files=[
+            os.path.abspath('resource/blood_routine.pdf'),
+            'https://www.hangzhou.gov.cn/art/2021/10/8/art_1228974667_59042672.html'
+        ])
+
+    return bot
+
+
+def main():
+    # define the agent
+    bot = create_agent()
+
+    # chat
+    messages = []
+    while True:
+        # query example: 医生，可以帮我看看我是否健康吗？
+        query = input('user question: ')
+        # file example: https://pic4.zhimg.com/80/v2-2c8eedf3e12386fedcd5589cf5575717_720w.webp
+        file = input('file url (press enter if no file): ')
+        if not query:
+            print('user question cannot be empty！')
+            continue
+        if not file:
+            messages.append({'role': 'user', 'content': query})
+        else:
+            messages.append({
+                'role': 'user',
+                'content': [{
+                    'text': query
+                }, {
+                    'file': file
+                }]
+            })
+
+        response = []
+        for response in bot.run(messages):
+            print('bot response:', response)
+        messages.extend(response)
+
+
+if __name__ == '__main__':
+    main()

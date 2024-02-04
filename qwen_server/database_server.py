@@ -120,5 +120,4 @@ async def web_listening(request: Request):
 if __name__ == '__main__':
     uvicorn.run(app='database_server:app',
                 host=server_config.server.server_host,
-                port=server_config.server.fast_api_port,
-                reload=True)
+                port=server_config.server.fast_api_port)

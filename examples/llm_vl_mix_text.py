@@ -1,24 +1,9 @@
-"""
-This is an example of call llm directly
-"""
+"""An example of calling text and vl llm interfaces alternately"""
 from qwen_agent.llm import get_chat_model
 
-system = '你扮演一个图文能力并存的助手。'
-llm_cfg = {
-    'model': 'qwen-plus',
-    'model_server': 'dashscope',
-    'generate_cfg': {
-        'top_p': 0.8
-    }
-}
-
-llm_cfg_vl = {
-    'model': 'qwen-vl-plus',
-    'model_server': 'dashscope',
-    'generate_cfg': {
-        'top_p': 0.8
-    }
-}
+# settings
+llm_cfg = {'model': 'qwen-plus', 'model_server': 'dashscope'}
+llm_cfg_vl = {'model': 'qwen-vl-plus', 'model_server': 'dashscope'}
 functions = [{
     'name': 'image_gen',
     'name_for_human': 'AI绘画',
@@ -36,11 +21,9 @@ functions = [{
     'args_format': '参数为json格式'
 }]
 
+# chat with vl llm
 llm_vl = get_chat_model(llm_cfg_vl)
 messages = [{
-    'role': 'system',
-    'content': system
-}, {
     'role':
     'user',
     'content': [{
@@ -61,6 +44,7 @@ for x in response:
     print(x)
 messages.extend(x)
 
+# chat with text llm
 llm = get_chat_model(llm_cfg)
 messages.append({'role': 'user', 'content': '你是？'})
 response = llm.chat(messages, stream=True)
@@ -74,7 +58,7 @@ for x in response:
     print(x)
 messages.extend(x)
 
-# Simulation results
+# Simulation function call results
 messages.append({
     'role':
     'function',
@@ -88,6 +72,7 @@ for x in response:
     print(x)
 messages.extend(x)
 
+# chat with vl llm
 messages.append({
     'role':
     'user',

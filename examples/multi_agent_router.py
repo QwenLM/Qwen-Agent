@@ -1,21 +1,11 @@
+"""A multi-agent cooperation example implemented by router and assistant"""
 from qwen_agent.agents import Assistant, Router
 
 
-def run_adapter(messages):
-    llm_cfg = {
-        'model': 'qwen-max',
-        'model_server': 'dashscope',
-        'generate_cfg': {
-            'top_p': 0.8
-        }
-    }
-    llm_cfg_vl = {
-        'model': 'qwen-vl-plus',
-        'model_server': 'dashscope',
-        'generate_cfg': {
-            'top_p': 0.8
-        }
-    }
+def create_agent():
+    # settings
+    llm_cfg = {'model': 'qwen-max'}
+    llm_cfg_vl = {'model': 'qwen-vl-plus'}
     tools = ['image_gen', 'code_interpreter']
 
     # define a vl agent
@@ -36,18 +26,20 @@ def run_adapter(messages):
                          'desc': '工具助手，可以使用画图工具和运行代码来解决问题'
                      }
                  })
-
-    for response in bot.run(messages=messages):
-        yield response
+    return bot
 
 
-if __name__ == '__main__':
+def main():
+    # define the agent
+    bot = create_agent()
+
+    # chat
     messages = []
     while True:
         query = input('user question: ')
-        # image example 'https://img01.sc115.com/uploads/sc/jpgs/1505/apic11540_sc115.com.jpg'
+        # image example: https://img01.sc115.com/uploads/sc/jpgs/1505/apic11540_sc115.com.jpg
         image = input('image url (press enter if no image): ')
-        # file example 'poem.pdf'
+        # file example: resource/poem.pdf
         file = input('file url (press enter if no file): ')
         if not query:
             print('user question cannot be empty！')
@@ -62,6 +54,10 @@ if __name__ == '__main__':
                 messages[-1]['content'].append({'file': file})
 
         response = []
-        for response in run_adapter(messages):
+        for response in bot.run(messages):
             print('bot response:', response)
         messages.extend(response)
+
+
+if __name__ == '__main__':
+    main()

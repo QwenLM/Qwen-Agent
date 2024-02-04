@@ -1,24 +1,12 @@
+"""A gpt @mentions gradio demo"""
 import gradio as gr
 
 from qwen_agent.agents import Assistant, DocQAAgent, ReActChat
-from qwen_agent.llm.base import ModelServiceError
 from qwen_server import output_beautify
 
 
-def run_adapter(messages):
-    llm_cfg = {
-        # Use the model service provided by DashScope:
-        'model': 'qwen-max',
-        'model_server': 'dashscope',
-        # Use your own model service compatible with OpenAI API:
-        # 'model': 'Qwen',
-        # 'model_server': 'http://127.0.0.1:7905/v1',
-
-        # (Optional) LLM hyper-paramters:
-        'generate_cfg': {
-            'top_p': 0.8
-        }
-    }
+def create_agent(messages):
+    llm_cfg = {'model': 'qwen-max'}
 
     agent_list = {
         'code_interpreter': {
@@ -44,21 +32,10 @@ def run_adapter(messages):
         }
     }
 
-    selected_agent_name = messages[-1]['content'][0]['text'].split(
-        '@')[-1].strip()
-    selected_agent = agent_list[selected_agent_name]['object'](
-        **agent_list[selected_agent_name]['params'])
+    agent = messages[-1]['content'][0]['text'].split('@')[-1].strip()
+    selected_agent = agent_list[agent]['object'](**agent_list[agent]['params'])
 
-    try:
-        for rsp in selected_agent.run(messages=messages):
-            yield rsp
-    except ModelServiceError:
-        yield [{
-            'role': 'assistant',
-            'content': '模型调用出错，可能的原因有：未正确配置模型参数，或输入数据不安全等'
-        }]
-    except Exception as ex:
-        raise ValueError(ex)
+    return selected_agent
 
 
 # =========================================================
@@ -72,6 +49,44 @@ app_global_para = {
 }
 
 AGENT_LIST_NAME = ['code_interpreter', 'doc_qa', 'assistant']
+
+
+def main(history, chosen_plug):
+    if not history:
+        yield history
+    else:
+        if '@' not in history[-1][0]:
+            history[-1][0] += ('@' + chosen_plug)
+        content = [{'text': history[-1][0]}]
+        if app_global_para['uploaded_file'] and app_global_para[
+                'is_first_upload']:
+            app_global_para[
+                'is_first_upload'] = False  # only send file when first upload
+            content.append({'file': app_global_para['uploaded_file']})
+        app_global_para['messages'].append({
+            'role': 'user',
+            'content': content
+        })
+
+        # define the agent
+        selected_agent = create_agent(messages=app_global_para['messages'])
+
+        # chat
+        history[-1][1] = ''
+        response = []
+        try:
+            for response in selected_agent.run(
+                    messages=app_global_para['messages']):
+                if response:
+                    display_response = output_beautify.convert_fncall_to_text(
+                        response)
+                    history[-1][1] = display_response[-1]['content']
+                    yield history
+        except Exception as ex:
+            raise ValueError(ex)
+
+        # append message
+        app_global_para['messages'].extend(response)
 
 
 def add_text(history, text):
@@ -90,44 +105,13 @@ def add_file(file):
     return file.name
 
 
-def bot(history, chosen_plug):
-    if not history:
-        yield history
-    else:
-        if '@' not in history[-1][0]:
-            history[-1][0] += ('@' + chosen_plug)
-
-        content = [{'text': history[-1][0]}]
-        if app_global_para['uploaded_file'] and app_global_para[
-                'is_first_upload']:
-            app_global_para[
-                'is_first_upload'] = False  # only send file when first upload
-            content.append({'file': app_global_para['uploaded_file']})
-        app_global_para['messages'].append({
-            'role': 'user',
-            'content': content
-        })
-
-        history[-1][1] = ''
-        response = []
-        for response in run_adapter(messages=app_global_para['messages']):
-            if response:
-                display_response = output_beautify.convert_fncall_to_text(
-                    response)
-                history[-1][1] = display_response[-1]['content']
-                yield history
-
-        # append message
-        app_global_para['messages'].extend(response)
-
-
 with gr.Blocks(theme='soft') as demo:
     with gr.Tab('Chat', elem_id='chat-tab'):
         with gr.Column():
             chatbot = gr.Chatbot(
                 [],
                 elem_id='chatbot',
-                height=1500,
+                height=750,
                 show_copy_button=True,
             )
             with gr.Row():
@@ -159,7 +143,7 @@ with gr.Blocks(theme='soft') as demo:
             txt_msg = chat_txt.submit(add_text, [chatbot, chat_txt],
                                       [chatbot, chat_txt],
                                       queue=False).then(
-                                          bot, [chatbot, plug_bt], chatbot)
+                                          main, [chatbot, plug_bt], chatbot)
             txt_msg.then(lambda: gr.update(interactive=True),
                          None, [chat_txt],
                          queue=False)

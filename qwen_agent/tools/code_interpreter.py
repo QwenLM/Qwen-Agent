@@ -245,6 +245,7 @@ class CodeInterpreter(BaseTool):
             return ''
         # download file
         if files:
+            os.makedirs(WORK_DIR, exist_ok=True)
             for file in files:
                 try:
                     save_url_to_local_work_dir(file, WORK_DIR)
