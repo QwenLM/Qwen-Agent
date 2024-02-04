@@ -29,7 +29,7 @@ class MyImageGen(BaseTool):
             ensure_ascii=False)
 
 
-def create_agent():
+def init_agent_service():
     # settings
     llm_cfg = {'model': 'qwen-max'}
     system = (
@@ -47,9 +47,9 @@ def create_agent():
     return bot
 
 
-def main():
+def app():
     # define the agent
-    bot = create_agent()
+    bot = init_agent_service()
 
     # chat
     messages = []
@@ -63,4 +63,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    app()

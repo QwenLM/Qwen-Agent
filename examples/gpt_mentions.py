@@ -5,7 +5,7 @@ from qwen_agent.agents import Assistant, DocQAAgent, ReActChat
 from qwen_server import output_beautify
 
 
-def create_agent(messages):
+def init_agent_service(messages):
     llm_cfg = {'model': 'qwen-max'}
 
     agent_list = {
@@ -51,7 +51,7 @@ app_global_para = {
 AGENT_LIST_NAME = ['code_interpreter', 'doc_qa', 'assistant']
 
 
-def main(history, chosen_plug):
+def app(history, chosen_plug):
     if not history:
         yield history
     else:
@@ -69,7 +69,8 @@ def main(history, chosen_plug):
         })
 
         # define the agent
-        selected_agent = create_agent(messages=app_global_para['messages'])
+        selected_agent = init_agent_service(
+            messages=app_global_para['messages'])
 
         # chat
         history[-1][1] = ''
@@ -143,7 +144,7 @@ with gr.Blocks(theme='soft') as demo:
             txt_msg = chat_txt.submit(add_text, [chatbot, chat_txt],
                                       [chatbot, chat_txt],
                                       queue=False).then(
-                                          main, [chatbot, plug_bt], chatbot)
+                                          app, [chatbot, plug_bt], chatbot)
             txt_msg.then(lambda: gr.update(interactive=True),
                          None, [chat_txt],
                          queue=False)

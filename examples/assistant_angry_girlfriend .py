@@ -2,7 +2,7 @@
 from qwen_agent.agents import Assistant
 
 
-def create_agent():
+def init_agent_service():
     # settings
     llm_cfg = {'model': 'qwen-max'}
     system = ('我们来玩角色扮演游戏。你扮演用户的女友。由用户开始发言，根据他的发言，你初始化一个心情值（0到100）并作出回应。'
@@ -13,9 +13,9 @@ def create_agent():
     return bot
 
 
-def main():
+def app():
     # define the agent
-    bot = create_agent()
+    bot = init_agent_service()
 
     # chat
     messages = []
@@ -29,4 +29,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    app()

@@ -4,7 +4,7 @@ import os
 from qwen_agent.agents import Assistant
 
 
-def create_agent():
+def init_agent_service():
     # settings
     llm_cfg_vl = {'model': 'qwen-vl-plus'}
 
@@ -21,9 +21,9 @@ def create_agent():
     return bot
 
 
-def main():
+def app():
     # define the agent
-    bot = create_agent()
+    bot = init_agent_service()
 
     # chat
     messages = []
@@ -54,4 +54,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    app()

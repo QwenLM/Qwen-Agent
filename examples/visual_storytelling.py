@@ -54,7 +54,7 @@ class VisualStorytelling(Agent):
             yield response + rsp
 
 
-def main():
+def app():
     # define a writer agent
     bot = VisualStorytelling(llm={'model': 'qwen-max'})
 
@@ -79,4 +79,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    app()

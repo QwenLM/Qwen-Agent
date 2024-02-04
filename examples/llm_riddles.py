@@ -31,7 +31,7 @@ class SurroundedByLLM(Agent):
         return self._call_llm(messages=messages)
 
 
-def main():
+def app():
     # define a writer agent
     bot = SurroundedByLLM(llm={'model': 'qwen-max'})
 
@@ -56,4 +56,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    app()

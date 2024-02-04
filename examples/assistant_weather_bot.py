@@ -2,7 +2,7 @@
 from qwen_agent.agents import Assistant
 
 
-def create_agent():
+def init_agent_service():
     llm_cfg = {'model': 'qwen-max'}
     system = (
         '你扮演一个天气预报助手，你具有查询天气和画图能力。'
@@ -14,9 +14,9 @@ def create_agent():
     return bot
 
 
-def main():
+def app():
     # define the agent
-    bot = create_agent()
+    bot = init_agent_service()
 
     # chat
     messages = []
@@ -47,4 +47,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    app()
