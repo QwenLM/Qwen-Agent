@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 
 import add_qwen_libs  # NOQA
+import json5
 import jsonlines
 import uvicorn
 from fastapi import FastAPI, Request
@@ -88,7 +89,7 @@ def cache_page(**kwargs):
                            ignore_cache=True)
         data = last[-1]['content']
         if isinstance(data, str):
-            data.json5.loads(data)
+            data = json5.loads(data)
         assert len(data) == 1
         title = data[-1]['title']
         save_browsing_meta_data(url, title, meta_file)

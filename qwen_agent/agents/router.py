@@ -1,7 +1,7 @@
 from typing import Dict, Iterator, List, Optional, Union
 
 from qwen_agent.llm import BaseChatModel
-from qwen_agent.llm.schema import ASSISTANT, ROLE
+from qwen_agent.llm.schema import ASSISTANT, ROLE, Message
 
 from ..log import logger
 from .assistant import Assistant
@@ -45,10 +45,10 @@ class Router(Assistant):
         ]
 
     def _run(self,
-             messages: List[Dict],
+             messages: List[Message],
              lang: str = 'zh',
              max_ref_token: int = 4000,
-             **kwargs) -> Iterator[List[Dict]]:
+             **kwargs) -> Iterator[List[Message]]:
         # this is a temporary plan to determine the source of a message
         messages_for_router = []
         for msg in messages:
@@ -79,7 +79,7 @@ class Router(Assistant):
 
     @staticmethod
     def supplement_name_special_token(message):
-        if 'name' not in message:
+        if not message.name:
             return message
 
         if isinstance(message['content'], str):
@@ -88,7 +88,7 @@ class Router(Assistant):
             return message
         assert isinstance(message['content'], list)
         for i, item in enumerate(message['content']):
-            for k, v in item.items():
+            for k, v in item.model_dump().items():
                 if k == 'text':
                     message['content'][i][k] = 'Call: ' + message[
                         'name'] + '\nReply:' + message['content'][i][k]

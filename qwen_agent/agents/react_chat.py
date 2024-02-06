@@ -3,7 +3,7 @@ from typing import Dict, Iterator, List, Optional, Tuple, Union
 from qwen_agent.agents import Assistant
 from qwen_agent.llm import BaseChatModel
 from qwen_agent.llm.schema import (ASSISTANT, CONTENT, DEFAULT_SYSTEM_MESSAGE,
-                                   ROLE)
+                                   ROLE, ContentItem, Message)
 from qwen_agent.utils.utils import parser_function
 
 PROMPT_REACT = """Answer the following questions as best you can. You have access to the following tools:
@@ -49,9 +49,9 @@ class ReActChat(Assistant):
             'qwen-vl'), 'Now this React format does not support VL LLM'
 
     def _run(self,
-             messages: List[Dict],
+             messages: List[Message],
              lang: str = 'en',
-             **kwargs) -> Iterator[List[Dict]]:
+             **kwargs) -> Iterator[List[Message]]:
         *_, last = self.mem.run(messages=messages)
         messages = self._preprocess_react_prompt(messages)
 
@@ -84,7 +84,7 @@ class ReActChat(Assistant):
                 yield response
                 if isinstance(messages[-1][CONTENT], list):
                     messages[-1][CONTENT].append(
-                        {'text': output + observation})
+                        ContentItem(text=output + observation))
                 else:
                     messages[-1][CONTENT] += output + observation
             else:
@@ -110,7 +110,8 @@ class ReActChat(Assistant):
 
         return (func_name is not None), func_name, func_args, text
 
-    def _preprocess_react_prompt(self, messages: List[Dict]) -> List[Dict]:
+    def _preprocess_react_prompt(self,
+                                 messages: List[Message]) -> List[Message]:
         tool_descs = '\n\n'.join(
             parser_function(func.function)
             for func in self.function_map.values())
@@ -126,7 +127,7 @@ class ReActChat(Assistant):
             query = ''
             new_content = []
             for item in messages[-1][CONTENT]:
-                for k, v in item.items():
+                for k, v in item.model_dump().items():
                     if k == 'text':
                         query += v
                     else:
@@ -134,6 +135,6 @@ class ReActChat(Assistant):
             prompt = PROMPT_REACT.format(tool_descs=tool_descs,
                                          tool_names=tool_names,
                                          query=query)
-            new_content.insert(0, {'text': prompt})
+            new_content.insert(0, ContentItem(text=prompt))
             messages[-1][CONTENT] = new_content
             return messages

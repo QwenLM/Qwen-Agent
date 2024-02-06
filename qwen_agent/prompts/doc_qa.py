@@ -1,7 +1,7 @@
-from typing import Dict, Iterator, List
+from typing import Iterator, List
 
 from qwen_agent import Agent
-from qwen_agent.llm.schema import CONTENT, ROLE, SYSTEM
+from qwen_agent.llm.schema import CONTENT, ROLE, SYSTEM, Message
 
 PROMPT_TEMPLATE_ZH = """
 请充分理解以下参考资料内容，组织出满足用户提问的条理清晰的回复。
@@ -26,14 +26,14 @@ PROMPT_TEMPLATE = {
 class DocQA(Agent):
 
     def _run(self,
-             messages: List[Dict],
+             messages: List[Message],
              knowledge: str = '',
              lang: str = 'en',
-             **kwargs) -> Iterator[List[Dict]]:
+             **kwargs) -> Iterator[List[Message]]:
         system_prompt = PROMPT_TEMPLATE[lang].format(ref_doc=knowledge)
         if messages[0][ROLE] == SYSTEM:
             messages[0][CONTENT] += system_prompt
         else:
-            messages.insert(0, {ROLE: SYSTEM, CONTENT: system_prompt})
+            messages.insert(0, Message(SYSTEM, system_prompt))
 
         return self._call_llm(messages=messages)

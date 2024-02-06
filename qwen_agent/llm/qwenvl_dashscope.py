@@ -7,7 +7,7 @@ import dashscope
 
 from qwen_agent.llm.base import BaseChatModel, ModelServiceError, register_llm
 
-from .schema import ASSISTANT, CONTENT, ROLE, USER
+from .schema import Message
 
 
 @register_llm('qwenvl_dashscope')
@@ -24,11 +24,12 @@ class QwenVLChatAtDS(BaseChatModel):
 
     def _chat_stream(
         self,
-        messages: List[Dict],
+        messages: List[Message],
         delta_stream: bool = False,
-    ) -> Iterator[List[Dict]]:
+    ) -> Iterator[List[Message]]:
         if delta_stream:
             raise NotImplementedError
+        messages = [msg.model_dump() for msg in messages]
         response = dashscope.MultiModalConversation.call(
             model=self.model,
             messages=messages,
@@ -38,7 +39,7 @@ class QwenVLChatAtDS(BaseChatModel):
 
         for trunk in response:
             if trunk.status_code == HTTPStatus.OK:
-                yield [trunk.output.choices[0].message]
+                yield [Message(**trunk.output.choices[0].message)]
             else:
                 err = '\nError code: %s. Error message: %s' % (trunk.code,
                                                                trunk.message)
@@ -48,8 +49,9 @@ class QwenVLChatAtDS(BaseChatModel):
 
     def _chat_no_stream(
         self,
-        messages: List[Dict],
-    ) -> List[Dict]:
+        messages: List[Message],
+    ) -> List[Message]:
+        messages = [msg.model_dump() for msg in messages]
         response = dashscope.MultiModalConversation.call(
             model=self.model,
             messages=messages,
@@ -57,7 +59,7 @@ class QwenVLChatAtDS(BaseChatModel):
             stream=False,
             **self.generate_cfg)
         if response.status_code == HTTPStatus.OK:
-            return [response.output.choices[0].message]
+            return [Message(**response.output.choices[0].message)]
         else:
             err = 'Error code: %s, error message: %s' % (
                 response.code,
@@ -65,11 +67,5 @@ class QwenVLChatAtDS(BaseChatModel):
             )
             raise ModelServiceError(err)
 
-    def _format_msg_for_llm(self, messages: List[Dict]) -> List[Dict]:
-        if messages and messages[-1][ROLE] == ASSISTANT:
-            # Change the text completion to chat mode
-            if len(messages) > 1 and messages[-2][ROLE] == USER:
-                messages[-2][CONTENT].extend(messages[-1][CONTENT])
-                messages.pop()
-
+    def _format_msg_for_llm(self, messages: List[Message]) -> List[Message]:
         return messages

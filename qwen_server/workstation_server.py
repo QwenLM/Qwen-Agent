@@ -7,6 +7,7 @@ from pathlib import Path
 
 import add_qwen_libs  # NOQA
 import gradio as gr
+import json5
 
 from qwen_agent.agents import ArticleAgent, DocQAAgent, ReActChat
 from qwen_agent.llm import get_chat_model
@@ -119,7 +120,7 @@ def add_file(file, chosen_plug):
                                ignore_cache=True)
             data = last[-1]['content']
             if isinstance(data, str):
-                data.json5.loads(data)
+                data = json5.loads(data)
             assert len(data) == 1
             title = data[-1]['title']
             save_browsing_meta_data(file.name, title, meta_file)

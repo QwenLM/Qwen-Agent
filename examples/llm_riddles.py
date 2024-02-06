@@ -1,3 +1,4 @@
+"""Customize an agent to implement llm riddles game"""
 from typing import Dict, Iterator, List, Optional, Union
 
 import json5
@@ -5,9 +6,10 @@ import json5
 from qwen_agent import Agent
 from qwen_agent.agents import Assistant
 from qwen_agent.llm import BaseChatModel
+from qwen_agent.llm.schema import Message
 
 
-class SurroundedByLLM(Agent):
+class LLMRiddles(Agent):
     """Customize an agent for game: Surrounded by LLM """
 
     def __init__(self, llm: Optional[Union[Dict, BaseChatModel]] = None):
@@ -21,19 +23,19 @@ class SurroundedByLLM(Agent):
                 '尽量类型丰富一些，包含数学、文学、地理、生物等领域。返回格式为字符串列表，不要返回其余任何内容。'))
 
         # Initialize the questions
-        *_, last = self.examiner_agent.run([{'role': 'user', 'content': '开始'}])
-        self.topics = json5.loads(last[-1]['content'])
+        *_, last = self.examiner_agent.run([Message('user', '开始')])
+        self.topics = json5.loads(last[-1].content)
 
     def _run(self,
-             messages: List[Dict],
+             messages: List[Message],
              lang: str = 'en',
-             **kwargs) -> Iterator[List[Dict]]:
+             **kwargs) -> Iterator[List[Message]]:
         return self._call_llm(messages=messages)
 
 
 def app():
     # define a writer agent
-    bot = SurroundedByLLM(llm={'model': 'qwen-max'})
+    bot = LLMRiddles(llm={'model': 'qwen-max'})
 
     # gaming
     for topic in bot.topics:
@@ -45,7 +47,7 @@ def app():
 
             if query == 'EXIT':
                 break
-            messages.append({'role': 'user', 'content': query})
+            messages.append(Message('user', query))
             response = []
             for response in bot.run(messages=messages):
                 print('bot response:', response)

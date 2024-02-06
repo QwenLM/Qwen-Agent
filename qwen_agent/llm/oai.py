@@ -9,6 +9,8 @@ from qwen_agent.llm.text_base import BaseTextChatModel
 from qwen_agent.log import logger
 from qwen_agent.utils.utils import print_traceback
 
+from .schema import ASSISTANT, Message
+
 
 @register_llm('oai')
 class TextChatAtOAI(BaseTextChatModel):
@@ -29,9 +31,10 @@ class TextChatAtOAI(BaseTextChatModel):
 
     def _chat_stream(
         self,
-        messages: List[Dict],
+        messages: List[Message],
         delta_stream: bool = False,
-    ) -> Iterator[List[Dict]]:
+    ) -> Iterator[List[Message]]:
+        messages = [msg.model_dump() for msg in messages]
         response = openai.ChatCompletion.create(model=self.model,
                                                 messages=messages,
                                                 stream=True,
@@ -40,31 +43,30 @@ class TextChatAtOAI(BaseTextChatModel):
         if delta_stream:
             for chunk in response:
                 if hasattr(chunk.choices[0].delta, 'content'):
-                    yield self._wrapper_text_to_message_list(
-                        chunk.choices[0].delta.content)
+                    yield [Message(ASSISTANT, chunk.choices[0].delta.content)]
         else:
             full_response = ''
             for chunk in response:
                 if hasattr(chunk.choices[0].delta, 'content'):
                     full_response += chunk.choices[0].delta.content
-                    yield self._wrapper_text_to_message_list(full_response)
+                    yield [Message(ASSISTANT, full_response)]
 
-    def _chat_no_stream(self, messages: List[Dict]) -> List[Dict]:
+    def _chat_no_stream(self, messages: List[Message]) -> List[Message]:
+        messages = [msg.model_dump() for msg in messages]
         response = openai.ChatCompletion.create(model=self.model,
                                                 messages=messages,
                                                 stream=False,
                                                 **self.generate_cfg)
         # TODO: error handling
-        return self._wrapper_text_to_message_list(
-            response.choices[0].message.content)
+        return [Message(ASSISTANT, response.choices[0].message.content)]
 
     def chat_with_functions(
-            self,
-            messages: List[Dict],
-            functions: Optional[List[Dict]] = None,
-            stream: bool = True,
-            delta_stream: bool = False
-    ) -> Union[List[Dict], Iterator[List[Dict]]]:
+        self,
+        messages: List[Union[Message, Dict]],
+        functions: Optional[List[Dict]] = None,
+        stream: bool = True,
+        delta_stream: bool = False
+    ) -> Union[List[Message], Iterator[List[Message]]]:
 
         if self._support_function_calling():
             return self._chat_with_functions(messages=messages,
@@ -80,12 +82,12 @@ class TextChatAtOAI(BaseTextChatModel):
                                                delta_stream=delta_stream)
 
     def _chat_with_functions(
-            self,
-            messages: List[Dict],
-            functions: Optional[List[Dict]] = None,
-            stream: bool = True,
-            delta_stream: bool = False
-    ) -> Union[List[Dict], Iterator[List[Dict]]]:
+        self,
+        messages: List[Union[Message, Dict]],
+        functions: Optional[List[Dict]] = None,
+        stream: bool = True,
+        delta_stream: bool = False
+    ) -> Union[List[Message], Iterator[List[Message]]]:
         assert not delta_stream, 'qwenoai only supports delta_stream=False for function call now'
         if stream:
             # Todo: support streaming
@@ -98,8 +100,13 @@ class TextChatAtOAI(BaseTextChatModel):
         logger.debug(functions)
 
         messages = copy.deepcopy(messages)
+        messages = [
+            Message(**msg) if isinstance(msg, dict) else msg
+            for msg in messages
+        ]
         messages = self._format_msg_for_llm(messages)
 
+        messages = [msg.model_dump() for msg in messages]
         response = openai.ChatCompletion.create(model=self.model,
                                                 messages=messages,
                                                 functions=functions,
@@ -108,7 +115,7 @@ class TextChatAtOAI(BaseTextChatModel):
         if stream:
             return self._postprocess_iterator([response.choices[0].message])
         else:
-            return [response.choices[0].message]
+            return [Message(**response.choices[0].message)]
 
     def _support_function_calling(self) -> bool:
         if self._support_fn_call is None:
@@ -132,17 +139,14 @@ class TextChatAtOAI(BaseTextChatModel):
                     'required': ['location'],
                 },
             }]
-            messages = [{
-                'role': 'user',
-                'content': 'What is the weather like in Boston?'
-            }]
+            messages = [Message('user', 'What is the weather like in Boston?')]
             self._support_fn_call = False
             try:
                 *_, last = self._chat_with_functions(messages=messages,
                                                      functions=functions,
                                                      stream=True)
                 response = last[-1]
-                if response.get('function_call', None):
+                if response.function_call:
                     logger.info('Support of function calling is detected.')
                     self._support_fn_call = True
             except FnCallNotImplError:

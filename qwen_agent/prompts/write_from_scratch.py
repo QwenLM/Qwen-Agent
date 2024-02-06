@@ -1,10 +1,10 @@
 import re
-from typing import Dict, Iterator, List
+from typing import Iterator, List
 
 import json5
 
 from qwen_agent import Agent
-from qwen_agent.llm.schema import ASSISTANT, CONTENT, ROLE, USER
+from qwen_agent.llm.schema import ASSISTANT, CONTENT, USER, Message
 from qwen_agent.prompts import DocQA, ExpandWriting, OutlineWriting
 
 default_plan = """{"action1": "summarize", "action2": "outline", "action3": "expand"}"""
@@ -19,18 +19,14 @@ def is_roman_numeral(s):
 class WriteFromScratch(Agent):
 
     def _run(self,
-             messages: List[Dict],
+             messages: List[Message],
              knowledge: str = '',
-             lang: str = 'zh') -> Iterator[List[Dict]]:
+             lang: str = 'zh') -> Iterator[List[Message]]:
         response = []
 
         # plan
-        response.append({
-            ROLE:
-            ASSISTANT,
-            CONTENT:
-            f'\n========================= \n> Use Default plans: \n{default_plan}'
-        })
+        response.append(
+            Message(ASSISTANT, f'>\n> Use Default plans: \n{default_plan}'))
         yield response
         res_plans = json5.loads(default_plan)
 
@@ -39,12 +35,8 @@ class WriteFromScratch(Agent):
         for plan_id in sorted(res_plans.keys()):
             plan = res_plans[plan_id]
             if plan == 'summarize':
-                response.append({
-                    ROLE:
-                    ASSISTANT,
-                    CONTENT:
-                    '\n========================= \n> Summarize Browse Content: \n'
-                })
+                response.append(
+                    Message(ASSISTANT, '>\n> Summarize Browse Content: \n'))
                 yield response
 
                 if lang == 'zh':
@@ -52,10 +44,7 @@ class WriteFromScratch(Agent):
                 elif lang == 'en':
                     user_request = 'Summarize the main content of reference materials.'
                 sum_agent = DocQA(llm=self.llm)
-                res_sum = sum_agent.run(messages=[{
-                    ROLE: USER,
-                    CONTENT: user_request
-                }],
+                res_sum = sum_agent.run(messages=[Message(USER, user_request)],
                                         knowledge=knowledge,
                                         lang=lang)
                 for trunk in res_sum:
@@ -63,12 +52,8 @@ class WriteFromScratch(Agent):
                 response.extend(trunk)
                 summ = trunk[-1][CONTENT]
             elif plan == 'outline':
-                response.append({
-                    ROLE:
-                    ASSISTANT,
-                    CONTENT:
-                    '\n========================= \n> Generate Outline: \n'
-                })
+                response.append(Message(ASSISTANT,
+                                        '>\n> Generate Outline: \n'))
                 yield response
 
                 otl_agent = OutlineWriting(llm=self.llm)
@@ -80,12 +65,7 @@ class WriteFromScratch(Agent):
                 response.extend(trunk)
                 outline = trunk[-1][CONTENT]
             elif plan == 'expand':
-                response.append({
-                    ROLE:
-                    ASSISTANT,
-                    CONTENT:
-                    '\n========================= \n> Writing Text: \n'
-                })
+                response.append(Message(ASSISTANT, '>\n> Writing Text: \n'))
                 yield response
 
                 outline_list_all = outline.split('\n')
@@ -96,7 +76,7 @@ class WriteFromScratch(Agent):
 
                 otl_num = len(outline_list)
                 for i, v in enumerate(outline_list):
-                    response.append({ROLE: ASSISTANT, CONTENT: '\n# '})
+                    response.append(Message(ASSISTANT, '>\n# '))
                     yield response
 
                     index = i + 1

@@ -1,9 +1,11 @@
+"""Customize an agent to implement visual storytelling"""
 import copy
 from typing import Dict, Iterator, List, Optional, Union
 
 from qwen_agent import Agent
 from qwen_agent.agents import Assistant
 from qwen_agent.llm import BaseChatModel
+from qwen_agent.llm.schema import ContentItem, Message
 
 
 class VisualStorytelling(Agent):
@@ -26,19 +28,20 @@ class VisualStorytelling(Agent):
             files=['https://www.jianshu.com/p/cdf82ff33ef8'])
 
     def _run(self,
-             messages: List[Dict],
+             messages: List[Message],
              lang: str = 'zh',
              max_ref_token: int = 4000,
-             **kwargs) -> Iterator[List[Dict]]:
+             **kwargs) -> Iterator[List[Message]]:
         """Define the workflow"""
 
         assert isinstance(messages[-1]['content'], list) and any([
-            'image' in item.keys() for item in messages[-1]['content']
+            item.image for item in messages[-1]['content']
         ]), 'This agent requires input of images'
 
         # image understanding
         new_messages = copy.deepcopy(messages)
-        new_messages[-1]['content'].append({'text': '请详细描述这张图片的所有细节内容'})
+        new_messages[-1]['content'].append(
+            ContentItem(text='请详细描述这张图片的所有细节内容'))
         response = []
         for rsp in self.image_agent.run(new_messages):
             yield response + rsp
@@ -46,7 +49,7 @@ class VisualStorytelling(Agent):
         new_messages.extend(rsp)
 
         # writing article
-        new_messages.append({'role': 'user', 'content': '开始根据以上图片内容编写你的记叙文吧！'})
+        new_messages.append(Message('user', '开始根据以上图片内容编写你的记叙文吧！'))
         for rsp in self.writing_agent.run(new_messages,
                                           lang=lang,
                                           max_ref_token=max_ref_token,
@@ -68,9 +71,9 @@ def app():
         if not image:
             print('image cannot be empty！')
             continue
-        messages = [{'role': 'user', 'content': [{'image': image}]}]
+        messages = [Message('user', [ContentItem(image=image)])]
         if query:
-            messages[-1]['content'].append({'text': query})
+            messages[-1]['content'].append(ContentItem(text=query))
 
         response = []
         for response in bot.run(messages):

@@ -1,4 +1,3 @@
-import json
 from typing import Dict, Iterator, List, Optional, Union
 
 from qwen_agent import Agent
@@ -87,7 +86,6 @@ class Assistant(Agent):
                 yield response + output
             response.extend(output)
             messages.extend(output)
-            logger.debug(json.dumps(response, ensure_ascii=False, indent=4))
             use_tool, action, action_input, _ = self._detect_tool(response[-1])
             if use_tool:
                 observation = self._call_tool(action, action_input)
