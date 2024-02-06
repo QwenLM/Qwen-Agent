@@ -22,33 +22,11 @@ pip install -e ./
 
 ## Preparation: Model Service
 
-You can either use the model service provided
-by [DashScope](https://help.aliyun.com/zh/dashscope/developer-reference/quick-start) from Alibaba Cloud, or deploy your
-own model service using the open-source Qwen models.
+You can either use the model service provided by Alibaba Cloud's [DashScope](https://help.aliyun.com/zh/dashscope/developer-reference/quick-start), or deploy and use your own model service using the open-source Qwen models.
 
-If you want to use the model service provided by DashScope, please configure the environment variable:
+If you choose to use the model service offered by DashScope, please ensure that you set the environment variable `DASHSCOPE_API_KEY` to your unique DashScope API key.
 
-```bash
-# You need to replace YOUR_DASHSCOPE_API_KEY with your real DASHSCOPE_API_KEY.
-export DASHSCOPE_API_KEY=YOUR_DASHSCOPE_API_KEY
-````
-
-If you want to deploy and use your own model service, please follow the instruction below, which is provided by
-the <a href="https://github.com/QwenLM/Qwen">Qwen</a> project, to deploy a service compatible with the OpenAI API:
-
-```bash
-# Install dependencies.
-git clone git@github.com:QwenLM/Qwen.git
-cd Qwen
-pip install -r requirements.txt
-pip install fastapi uvicorn "openai<1.0.0" "pydantic>=2.3.0" sse_starlette
-
-# Start the model service
-#   -c to specify any open-source model listed at https://huggingface.co/Qwen
-#   --server-name 0.0.0.0 allows other machines to access your service.
-#   --server-name 127.0.0.1 only allows the machine deploying the model to access the service.
-python openai_api.py --server-name 0.0.0.0 --server-port 7905 -c Qwen/Qwen-72B-Chat
-```
+Alternatively, if you prefer to deploy and utilize your own model service, kindly follow the instructions outlined in the [Deployment](https://github.com/QwenLM/Qwen1.5?tab=readme-ov-file#deployment) section of Qwen1.5's README to start an OpenAI-compatible API service.
 
 ## Developing Your Own Agent
 
@@ -69,11 +47,15 @@ llm_cfg = {
     # Use the model service provided by DashScope:
     'model': 'qwen-max',
     'model_server': 'dashscope',
-    # Use your own model service compatible with OpenAI API:
-    # 'model': 'Qwen',
-    # 'model_server': 'http://127.0.0.1:7905/v1',
+    # 'api_key': 'YOUR_DASHSCOPE_API_KEY',
+    # It will use the `DASHSCOPE_API_KEY' environment variable if 'api_key' is not set here.
 
-    # (Optional) LLM hyper-paramters:
+    # Use your own model service compatible with OpenAI API:
+    # 'model': 'Qwen/Qwen1.5-72B-Chat',
+    # 'model_server': 'http://localhost:8000/v1',  # api_base
+    # 'api_key': 'EMPTY',
+
+    # (Optional) LLM hyperparameters for generation:
     'generate_cfg': {
         'top_p': 0.8
     }
@@ -194,21 +176,19 @@ If you are using DashScope's model service, then please execute the following co
 ```bash
 # Start the database service, specifying the model on DashScope by using the --llm flag.
 # The value of --llm can be one of the following, in increasing order of resource consumption:
-#   - qwen-7b/14b/72b-chat (the same as the open-sourced 7B/14B/72B-Chat model)
-#   - qwen-turbo, qwen-plus, qwen-max
+#   - qwen1.5-7b/14b/72b-chat (the same as the open-sourced Qwen1.5 7B/14B/72B Chat model)
+#   - qwen-turbo, qwen-plus, qwen-max (qwen-max is recommended)
 # "YOUR_DASHSCOPE_API_KEY" is a placeholder. The user should replace it with their actual key.
-python run_server.py --api_key YOUR_DASHSCOPE_API_KEY --model_server dashscope --llm qwen-max --workstation_port 7864
+python run_server.py --llm qwen-max --model_server dashscope --workstation_port 7864 --api_key YOUR_DASHSCOPE_API_KEY
 ```
 
 If you are using your own model service instead of DashScope, then please execute the following command:
 
 ```bash
-# Start the database service, specifying the model service deployed with --model_server.
-# If the IP address of the model service is 123.45.67.89,
-#     you can specify --model_server http://123.45.67.89:7905/v1
-# If the model service and the database service are on the same machine,
-#     you can specify --model_server http://127.0.0.1:7905/v1
-python run_server.py --model_server http://{MODEL_SERVER_IP}:7905/v1 --workstation_port 7864
+# Specify the model service, and start the database service.
+# Example: Assuming Qwen/Qwen1.5-72B-Chat is deployed at http://localhost:8000 using vLLM, you can specify the model service as:
+#   --llm Qwen/Qwen1.5-72B-Chat --model_server http://localhost:8000/v1 --api_key EMPTY
+python run_server.py --llm {MODEL} --model_server {API_BASE} --workstation_port 7864 --api_key {API_KEY}
 ```
 
 Now you can access [http://127.0.0.1:7864/](http://127.0.0.1:7864/) to use the Workstation's Editor mode and Chat mode.
@@ -229,100 +209,9 @@ When you want Qwen to read the content of the current webpage:
 - Click the `Add to Qwen's Reading List` button on the screen to authorize Qwen to analyze the page in the background.
 - Click the Qwen icon in the browser's top right corner to start interacting with Qwen about the current page's content.
 
-# Evaluation Benchmark
-
-We have also open-sourced a benchmark for evaluating the performance of a model in writing Python code and using Code
-Interpreter for mathematical problem solving, data analysis, and other general tasks. The benchmark can be found in
-the [benchmark](benchmark/README.md) directory. The current evaluation results are as follows:
-
-<table>
-    <tr>
-        <th colspan="5" align="center">In-house Code Interpreter Benchmark (Version 20231206)</th>
-    </tr>
-    <tr>
-        <th rowspan="2" align="center">Model</th>
-        <th colspan="3" align="center">Accuracy of Code Execution Results (%)</th>
-        <th colspan="1" align="center">Executable Rate of Code (%)</th>
-    </tr>
-    <tr>
-        <th align="center">Math↑</th><th align="center">Visualization-Hard↑</th><th align="center">Visualization-Easy↑</th><th align="center">General↑</th>
-    </tr>
-    <tr>
-        <td>GPT-4</td>
-        <td align="center">82.8</td>
-        <td align="center">66.7</td>
-        <td align="center">60.8</td>
-        <td align="center">82.8</td>
-    </tr>
-    <tr>
-        <td>GPT-3.5</td>
-        <td align="center">47.3</td>
-        <td align="center">33.3</td>
-        <td align="center">55.7</td>
-        <td align="center">74.1</td>
-    </tr>
-    <tr>
-        <td>LLaMA2-13B-Chat</td>
-        <td align="center">8.3</td>
-        <td align="center">1.2</td>
-        <td align="center">15.2</td>
-        <td align="center">48.3</td>
-    </tr>
-    <tr>
-        <td>CodeLLaMA-13B-Instruct</td>
-        <td align="center">28.2</td>
-        <td align="center">15.5</td>
-        <td align="center">21.5</td>
-        <td align="center">74.1</td>
-    </tr>
-    <tr>
-        <td>InternLM-20B-Chat</td>
-        <td align="center">34.6</td>
-        <td align="center">10.7</td>
-        <td align="center">24.1</td>
-        <td align="center">65.5</td>
-    </tr>
-    <tr>
-        <td>ChatGLM3-6B</td>
-        <td align="center">54.2</td>
-        <td align="center">4.8</td>
-        <td align="center">15.2</td>
-        <td align="center">62.1</td>
-    </tr>
-    <tr>
-        <td>Qwen-1.8B-Chat</td>
-        <td align="center">25.6</td>
-        <td align="center">21.4</td>
-        <td align="center">22.8</td>
-        <td align="center">65.5</td>
-    </tr>
-    <tr>
-        <td>Qwen-7B-Chat</td>
-        <td align="center">41.9</td>
-        <td align="center">23.8</td>
-        <td align="center">38.0</td>
-        <td align="center">67.2</td>
-    </tr>
-    <tr>
-        <td>Qwen-14B-Chat</td>
-        <td align="center">58.4</td>
-        <td align="center">31.0</td>
-        <td align="center">45.6</td>
-        <td align="center">65.5</td>
-    </tr>
-    <tr>
-        <td>Qwen-72B-Chat</td>
-        <td align="center">72.7</td>
-        <td align="center">41.7</td>
-        <td align="center">43.0</td>
-        <td align="center">82.8</td>
-    </tr>
-</table>
-
 # Disclaimer
 
-This project is not intended to be an official product, rather it serves as a proof-of-concept project that highlights
-the capabilities of the Qwen series models.
+This project is currently under active development, and backward compatibility may occasionally be broken.
 
 > Important: The code interpreter is not sandboxed, and it executes code in your own environment. Please do not ask Qwen
 > to perform dangerous tasks, and do not directly use the code interpreter for production purposes.

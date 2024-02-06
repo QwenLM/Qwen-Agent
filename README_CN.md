@@ -22,29 +22,9 @@ pip install -e ./
 
 Qwen-Agent支持接入阿里云[DashScope](https://help.aliyun.com/zh/dashscope/developer-reference/quick-start)服务提供的Qwen模型服务，也支持通过OpenAI API方式接入开源的Qwen模型服务。
 
-如果希望接入DashScope提供的模型服务，只需配置相应的环境变量：
+如果希望接入DashScope提供的模型服务，只需配置相应的环境变量`DASHSCOPE_API_KEY`为您的DashScope API Key。
 
-```bash
-# 您需要将YOUR_DASHSCOPE_API_KEY替换为您的真实API-KEY。
-export DASHSCOPE_API_KEY=YOUR_DASHSCOPE_API_KEY
-```
-
-如果希望自行部署OpenAI API模型服务，可以参考<a href="https://github.com/QwenLM/Qwen/blob/main/README_CN.md#api">Qwen</a>
-项目，部署一个兼容OpenAI API的模型服务：
-
-```bash
-# 安装依赖
-git clone git@github.com:QwenLM/Qwen.git
-cd Qwen
-pip install -r requirements.txt
-pip install fastapi uvicorn "openai<1.0.0" "pydantic>=2.3.0" sse_starlette
-
-# 启动模型服务
-# - 通过 -c 参数指定模型版本，支持 https://huggingface.co/Qwen 上列出的开源模型
-# - 指定 --server-name 0.0.0.0 将允许其他机器访问您的模型服务
-# - 指定 --server-name 127.0.0.1 则只允许部署模型的机器自身访问该模型服务
-python openai_api.py --server-name 0.0.0.0 --server-port 7905 -c Qwen/Qwen-72B-Chat
-```
+如果希望自行部署OpenAI API模型服务，请参考Qwen1.5项目README中的[部署](https://github.com/QwenLM/Qwen1.5?tab=readme-ov-file#deployment)章节，启动一个与OpenAI兼容的API服务。
 
 ## 快速开发
 
@@ -64,9 +44,13 @@ llm_cfg = {
     # 如果使用DashScope提供的模型服务：
     'model': 'qwen-max',
     'model_server': 'dashscope',
+    # 'api_key': 'YOUR_DASHSCOPE_API_KEY',
+    # 如果此处未设置`api_key`，则它将从`DASHSCOPE_API_KEY`环境变量读取。
+
     # 如果使用自行部署的OpenAI API模型服务：
-    # 'model': 'Qwen',
-    # 'model_server': 'http://127.0.0.1:7905/v1',
+    # 'model': 'Qwen/Qwen1.5-72B-Chat',
+    # 'model_server': 'http://localhost:8000/v1',  # api_base
+    # 'api_key': 'EMPTY',
 
     # （可选）模型的推理超参：
     'generate_cfg': {
@@ -184,19 +168,19 @@ while True:
 ```bash
 # 启动数据库服务，通过 --llm 参数指定您希望通过DashScope使用的具体模型
 # 参数 --llm 可以是如下之一，按资源消耗从小到大排序：
-#   - qwen-7b/14b/72b-chat （与开源的Qwen-7B/14B/72B-Chat相同模型）
-#   - qwen-turbo, qwen-plus, qwen-max
+#   - qwen1.5-7b/14b/72b-chat （与开源的Qwen1.5-7B/14B/72B-Chat相同模型）
+#   - qwen-turbo, qwen-plus, qwen-max （推荐使用qwen-max）
 # 您需要将YOUR_DASHSCOPE_API_KEY替换为您的真实API-KEY。
-python run_server.py --api_key YOUR_DASHSCOPE_API_KEY --model_server dashscope --llm qwen-max --workstation_port 7864
+python run_server.py --llm qwen-max --model_server dashscope --workstation_port 7864 --api_key YOUR_DASHSCOPE_API_KEY
 ```
 
 如果您没有在使用DashScope、而是部署了自己的模型服务的话，请执行以下命令：
 
 ```bash
-# 启动数据库服务，通过 --model_server 参数指定部署好的模型服务
-# - 若部署模型的机器 IP 为 123.45.67.89，则可指定 --model_server http://123.45.67.89:7905/v1
-# - 若模型服务和数据库服务是同一台机器，则可指定 --model_server http://127.0.0.1:7905/v1
-python run_server.py --model_server http://{MODEL_SERVER_IP}:7905/v1 --workstation_port 7864
+# 指定模型服务，并启动数据库服务。
+# 示例: 假设Qwen/Qwen1.5-72B-Chat已经通过vLLM部署于http://localhost:8000，则可用以下参数指定模型服务：
+#   --llm Qwen/Qwen1.5-72B-Chat --model_server http://localhost:8000/v1 --api_key EMPTY
+python run_server.py --llm {MODEL} --model_server {API_BASE} --workstation_port 7864 --api_key {API_KEY}
 ```
 
 现在您可以访问 [http://127.0.0.1:7864/](http://127.0.0.1:7864/) 来使用工作台（Workstation）的创作模式（Editor模式）和对话模式（Chat模式）了。
@@ -216,97 +200,8 @@ python run_server.py --model_server http://{MODEL_SERVER_IP}:7905/v1 --workstati
 1. 请先点击屏幕上的 `Add to Qwen's Reading List` 按钮，以授权Qwen在后台分析本页面。
 2. 再单击浏览器右上角扩展程序栏的Qwen图标，便可以和Qwen交流当前页面的内容了。
 
-# 评测基准
-
-我们也开源了一个评测基准，用于评估一个模型写Python代码并使用Code
-Interpreter进行数学解题、数据分析、及其他通用任务时的表现。评测基准见 [benchmark](benchmark/README.md) 目录，当前的评测结果如下：
-
-<table>
-    <tr>
-        <th colspan="5" align="center">In-house Code Interpreter Benchmark (Version 20231206)</th>
-    </tr>
-    <tr>
-        <th rowspan="2" align="center">Model</th>
-        <th colspan="3" align="center">代码执行结果正确性 (%)</th>
-        <th colspan="1" align="center">生成代码的可执行率 (%)</th>
-    </tr>
-    <tr>
-        <th align="center">Math↑</th><th align="center">Visualization-Hard↑</th><th align="center">Visualization-Easy↑</th><th align="center">General↑</th>
-    </tr>
-    <tr>
-        <td>GPT-4</td>
-        <td align="center">82.8</td>
-        <td align="center">66.7</td>
-        <td align="center">60.8</td>
-        <td align="center">82.8</td>
-    </tr>
-    <tr>
-        <td>GPT-3.5</td>
-        <td align="center">47.3</td>
-        <td align="center">33.3</td>
-        <td align="center">55.7</td>
-        <td align="center">74.1</td>
-    </tr>
-    <tr>
-        <td>LLaMA2-13B-Chat</td>
-        <td align="center">8.3</td>
-        <td align="center">1.2</td>
-        <td align="center">15.2</td>
-        <td align="center">48.3</td>
-    </tr>
-    <tr>
-        <td>CodeLLaMA-13B-Instruct</td>
-        <td align="center">28.2</td>
-        <td align="center">15.5</td>
-        <td align="center">21.5</td>
-        <td align="center">74.1</td>
-    </tr>
-    <tr>
-        <td>InternLM-20B-Chat</td>
-        <td align="center">34.6</td>
-        <td align="center">10.7</td>
-        <td align="center">24.1</td>
-        <td align="center">65.5</td>
-    </tr>
-    <tr>
-        <td>ChatGLM3-6B</td>
-        <td align="center">54.2</td>
-        <td align="center">4.8</td>
-        <td align="center">15.2</td>
-        <td align="center">62.1</td>
-    </tr>
-    <tr>
-        <td>Qwen-1.8B-Chat</td>
-        <td align="center">25.6</td>
-        <td align="center">21.4</td>
-        <td align="center">22.8</td>
-        <td align="center">65.5</td>
-    </tr>
-    <tr>
-        <td>Qwen-7B-Chat</td>
-        <td align="center">41.9</td>
-        <td align="center">23.8</td>
-        <td align="center">38.0</td>
-        <td align="center">67.2</td>
-    </tr>
-    <tr>
-        <td>Qwen-14B-Chat</td>
-        <td align="center">58.4</td>
-        <td align="center">31.0</td>
-        <td align="center">45.6</td>
-        <td align="center">65.5</td>
-    </tr>
-    <tr>
-        <td>Qwen-72B-Chat</td>
-        <td align="center">72.7</td>
-        <td align="center">41.7</td>
-        <td align="center">43.0</td>
-        <td align="center">82.8</td>
-    </tr>
-</table>
-
 # 免责声明
 
-本项目并非正式产品，而是一个概念验证项目，用于演示Qwen系列模型的能力。
+本项目正处于快速迭代中，可能会偶尔出现不兼容旧版本的情况。
 
 > 重要提示：代码解释器未进行沙盒隔离，会在部署环境中执行代码。请避免向Qwen发出危险指令，切勿将该代码解释器直接用于生产目的。
