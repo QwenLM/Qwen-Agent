@@ -45,7 +45,7 @@ class Storage(BaseTool):
         super().__init__(cfg)
         self.root = self.cfg.get('path', 'workspace/default_data_path')
         os.makedirs(self.root, exist_ok=True)
-        self.data = {}
+        self.data: Dict[str, Optional[str]] = {}
         # load all keys in this path
         for file in os.listdir(self.root):
             self.data[file] = None
@@ -96,11 +96,6 @@ class Storage(BaseTool):
             print_traceback()
 
     def get(self, key: str, re_load: bool = True):
-        """
-        get one value by key
-        :param key: str
-        :return: value: str
-        """
         key = hash_sha256(key)
         if key in self.data and self.data[key] and (not re_load):
             return self.data[key]

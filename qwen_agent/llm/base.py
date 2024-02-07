@@ -83,9 +83,9 @@ class BaseChatModel(ABC):
                                                stream=stream,
                                                delta_stream=delta_stream)
             if isinstance(output, list):
-                output = self._postprocess_messages_for_func_call(output)
+                output = self._postprocess_messages_for_fn_call(output)
             else:
-                output = self._postprocess_messages_iterator_for_func_call(
+                output = self._postprocess_messages_iterator_for_fn_call(
                     output)
         else:
             messages = self._preprocess_messages(messages)
@@ -108,7 +108,7 @@ class BaseChatModel(ABC):
         delta_stream: bool = False
     ) -> Union[List[Message], Iterator[List[Message]]]:
 
-        messages = self._prepend_tool_message(messages, functions)
+        messages = self._prepend_fn_call_system(messages, functions)
         messages = self._preprocess_messages(messages)
 
         if messages and messages[-1][ROLE] == ASSISTANT:
@@ -147,8 +147,9 @@ class BaseChatModel(ABC):
     ) -> List[Message]:
         raise NotImplementedError
 
-    def _prepend_tool_message(
-            self, messages: List[Message],
+    @staticmethod
+    def _prepend_fn_call_system(
+            messages: List[Message],
             functions: Optional[List[Dict]]) -> List[Message]:
         # prepend tool react prompt
         tool_desc_template = FN_CALL_TEMPLATE['en']
@@ -173,19 +174,19 @@ class BaseChatModel(ABC):
     @staticmethod
     def _format_as_multimodal_messages(
             messages: List[Message]) -> List[Message]:
-        new_messages = []
+        multimodal_messages = []
         for msg in messages:
             role = msg[ROLE]
             assert role in (USER, ASSISTANT, SYSTEM, FUNCTION)
             if role == FUNCTION:
-                new_messages.append(msg)
+                multimodal_messages.append(msg)
                 continue
 
             content = []
-            if isinstance(msg[CONTENT], str):
+            if isinstance(msg[CONTENT], str):  # if text content
                 if msg[CONTENT]:
                     content = [ContentItem(text=msg[CONTENT])]
-            elif isinstance(msg[CONTENT], list):
+            elif isinstance(msg[CONTENT], list):  # if multimodal content
                 files = []
                 for item in msg[CONTENT]:
                     for k, v in item.model_dump().items():
@@ -195,7 +196,7 @@ class BaseChatModel(ABC):
                             content.append(item)
                         if k in ('file', 'image'):
                             files.append(v)
-                if files:
+                if (msg[ROLE] in (SYSTEM, USER)) and files:
                     has_zh = has_chinese_chars(content)
                     upload = []
                     for f in [get_basename_from_url(f) for f in files]:
@@ -211,20 +212,20 @@ class BaseChatModel(ABC):
                                 upload.append(f'[file]({f})')
                     upload = ' '.join(upload)
                     if has_zh:
-                        upload = f'（上传了 {upload}）'
+                        upload = f'（上传了 {upload}）\n\n'
                     else:
-                        upload = f'(Uploaded {upload})'
+                        upload = f'(Uploaded {upload})\n\n'
                     content = [ContentItem(text=upload)
                                ] + content  # insert a text
             else:
                 raise TypeError
 
-            new_messages.append(
+            multimodal_messages.append(
                 Message(role=role,
                         content=content,
                         function_call=msg.function_call))
 
-        return new_messages
+        return multimodal_messages
 
     def _preprocess_messages(self, messages: List[Message]) -> List[Message]:
         """
@@ -274,7 +275,7 @@ class BaseChatModel(ABC):
                     break
         return new_messages
 
-    def _postprocess_messages_for_func_call(
+    def _postprocess_messages_for_fn_call(
             self, messages: List[Message]) -> List[Message]:
         """
         If the model calls function by built-in function call template, convert and display it in function_call format in return.
@@ -371,11 +372,11 @@ class BaseChatModel(ABC):
                                                 new_content))  # no func call
         return new_messages
 
-    def _postprocess_messages_iterator_for_func_call(
+    def _postprocess_messages_iterator_for_fn_call(
             self,
             messages: Iterator[List[Message]]) -> Iterator[List[Message]]:
         for m in messages:
-            yield self._postprocess_messages_for_func_call(m)
+            yield self._postprocess_messages_for_fn_call(m)
 
     def _convert_messages_to_target_type(
             self, messages: List[Message],

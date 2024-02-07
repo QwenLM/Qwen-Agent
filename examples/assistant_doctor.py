@@ -31,7 +31,7 @@ def app():
         # query example: 医生，可以帮我看看我是否健康吗？
         query = input('user question: ')
         # file example: https://pic4.zhimg.com/80/v2-2c8eedf3e12386fedcd5589cf5575717_720w.webp
-        file = input('file url (press enter if no file): ')
+        file = input('file url (press enter if no file): ').strip()
         if not query:
             print('user question cannot be empty！')
             continue

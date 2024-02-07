@@ -22,11 +22,10 @@ class WriteFromScratch(Agent):
              messages: List[Message],
              knowledge: str = '',
              lang: str = 'zh') -> Iterator[List[Message]]:
-        response = []
-
         # plan
-        response.append(
-            Message(ASSISTANT, f'>\n> Use Default plans: \n{default_plan}'))
+        response = [
+            Message(ASSISTANT, f'>\n> Use Default plans: \n{default_plan}')
+        ]
         yield response
         res_plans = json5.loads(default_plan)
 
@@ -43,14 +42,18 @@ class WriteFromScratch(Agent):
                     user_request = '总结参考资料的主要内容'
                 elif lang == 'en':
                     user_request = 'Summarize the main content of reference materials.'
+                else:
+                    raise NotImplementedError
                 sum_agent = DocQA(llm=self.llm)
                 res_sum = sum_agent.run(messages=[Message(USER, user_request)],
                                         knowledge=knowledge,
                                         lang=lang)
+                trunk = None
                 for trunk in res_sum:
                     yield response + trunk
-                response.extend(trunk)
-                summ = trunk[-1][CONTENT]
+                if trunk:
+                    response.extend(trunk)
+                    summ = trunk[-1][CONTENT]
             elif plan == 'outline':
                 response.append(Message(ASSISTANT,
                                         '>\n> Generate Outline: \n'))
@@ -60,10 +63,12 @@ class WriteFromScratch(Agent):
                 res_otl = otl_agent.run(messages=messages,
                                         knowledge=summ,
                                         lang=lang)
+                trunk = None
                 for trunk in res_otl:
                     yield response + trunk
-                response.extend(trunk)
-                outline = trunk[-1][CONTENT]
+                if trunk:
+                    response.extend(trunk)
+                    outline = trunk[-1][CONTENT]
             elif plan == 'expand':
                 response.append(Message(ASSISTANT, '>\n> Writing Text: \n'))
                 yield response
@@ -94,8 +99,10 @@ class WriteFromScratch(Agent):
                         capture_later=capture_later,
                         lang=lang,
                     )
+                    trunk = None
                     for trunk in res_exp:
                         yield response + trunk
-                    response.extend(trunk)
+                    if trunk:
+                        response.extend(trunk)
             else:
                 pass

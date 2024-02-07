@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import Dict, List, Optional, Union
 
 from pydantic import BaseModel
 
@@ -60,9 +60,9 @@ class SimilaritySearch(BaseTool):
     }]
 
     def call(self,
-             params: Union[str, dict],
+             params: Union[str, Dict],
              doc: Union[RefMaterialInput, str, List[str]] = None,
-             max_token: int = 4000) -> dict:
+             max_token: int = 4000) -> Optional[Dict]:
         """
         This tool is usually used by doc_parser tool
 
@@ -135,13 +135,15 @@ class SimilaritySearch(BaseTool):
 
         return sim
 
-    def jaccard_similarity(self, list1: list, list2: list) -> int:
+    @staticmethod
+    def jaccard_similarity(list1: list, list2: list) -> int:
         s1 = set(list1)
         s2 = set(list2)
         return len(s1.intersection(s2))  # avoid text length impact
         # return len(s1.intersection(s2)) / len(s1.union(s2))  # jaccard similarity
 
-    def get_top(self, doc: RefMaterialInput, max_token=4000, **kwargs):
+    @staticmethod
+    def get_top(doc: RefMaterialInput, max_token=4000):
         now_token = 0
         text = []
         for page in doc.text:

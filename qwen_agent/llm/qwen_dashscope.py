@@ -1,4 +1,3 @@
-import json
 import os
 from http import HTTPStatus
 from typing import Dict, Iterator, List, Optional, Union
@@ -71,7 +70,7 @@ class QwenChatAtDS(BaseTextChatModel):
         stream: bool = True,
         delta_stream: bool = False
     ) -> Union[List[Message], Iterator[List[Message]]]:
-        messages = self._prepend_tool_message(messages, functions)
+        messages = self._prepend_fn_call_system(messages, functions)
         messages = self._preprocess_messages(messages)
 
         # using text completion
@@ -122,7 +121,8 @@ class QwenChatAtDS(BaseTextChatModel):
         else:
             return self._full_stream_output(response)
 
-    def _build_text_completion_prompt(self, messages: List[Message]) -> str:
+    @staticmethod
+    def _build_text_completion_prompt(messages: List[Message]) -> str:
         im_start = '<|im_start|>'
         im_end = '<|im_end|>'
         if messages[0][ROLE] == SYSTEM:
@@ -150,7 +150,8 @@ class QwenChatAtDS(BaseTextChatModel):
         prompt = prompt[:-len(f'{im_end}')]
         return prompt
 
-    def _delta_stream_output(self, response) -> Iterator[List[Message]]:
+    @staticmethod
+    def _delta_stream_output(response) -> Iterator[List[Message]]:
         last_len = 0
         delay_len = 5
         in_delay = False
@@ -171,12 +172,11 @@ class QwenChatAtDS(BaseTextChatModel):
                 err = '\nError code: %s. Error message: %s' % (trunk.code,
                                                                trunk.message)
                 raise ModelServiceError(err)
-        # with open('debug.json', 'w', encoding='utf-8') as writer:
-        #     writer.write(json.dumps(trunk, ensure_ascii=False))
         if text and (in_delay or (last_len != len(text))):
             yield [Message(ASSISTANT, text[last_len:])]
 
-    def _full_stream_output(self, response) -> Iterator[List[Message]]:
+    @staticmethod
+    def _full_stream_output(response) -> Iterator[List[Message]]:
         for trunk in response:
             if trunk.status_code == HTTPStatus.OK:
                 yield [
@@ -186,5 +186,3 @@ class QwenChatAtDS(BaseTextChatModel):
                 err = '\nError code: %s. Error message: %s' % (trunk.code,
                                                                trunk.message)
                 raise ModelServiceError(err)
-        with open('debug.json', 'w', encoding='utf-8') as writer:
-            writer.write(json.dumps(trunk, ensure_ascii=False))

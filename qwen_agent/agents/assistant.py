@@ -1,8 +1,10 @@
+import copy
 from typing import Dict, Iterator, List, Optional, Union
 
 from qwen_agent import Agent
 from qwen_agent.llm import BaseChatModel
-from qwen_agent.llm.schema import CONTENT, DEFAULT_SYSTEM_MESSAGE, ROLE, SYSTEM
+from qwen_agent.llm.schema import (CONTENT, DEFAULT_SYSTEM_MESSAGE, FUNCTION,
+                                   ROLE, SYSTEM, Message)
 from qwen_agent.log import logger
 from qwen_agent.memory import Memory
 from qwen_agent.utils.utils import format_knowledge_to_source_and_content
@@ -48,11 +50,12 @@ class Assistant(Agent):
         self.mem = Memory(llm=self.llm, files=files)
 
     def _run(self,
-             messages: List[Dict],
+             messages: List[Message],
              lang: str = 'zh',
              max_ref_token: int = 4000,
              **kwargs) -> Iterator[List[Dict]]:
-        system_prompt = ''
+        messages = copy.deepcopy(messages)
+        knowledge_prompt = ''
 
         # retrieval knowledge from files
         *_, last = self.mem.run(messages=messages, max_ref_token=max_ref_token)
@@ -64,13 +67,13 @@ class Assistant(Agent):
             for k in knowledge:
                 snippets.append(KNOWLEDGE_SNIPPET[lang].format(
                     source=k['source'], content=k['content']))
-            system_prompt += KNOWLEDGE_TEMPLATE[lang].format(
+            knowledge_prompt += KNOWLEDGE_TEMPLATE[lang].format(
                 knowledge='\n\n'.join(snippets))
 
         if messages[0][ROLE] == SYSTEM:
-            messages[0][CONTENT] += system_prompt
+            messages[0][CONTENT] += knowledge_prompt
         else:
-            messages.insert(0, {ROLE: SYSTEM, CONTENT: system_prompt})
+            messages.insert(0, Message(role=SYSTEM, content=knowledge_prompt))
 
         max_turn = 5
         response = []
@@ -81,7 +84,7 @@ class Assistant(Agent):
                 functions=[
                     func.function for func in self.function_map.values()
                 ])
-            output = []
+            output: List[Message] = []
             for output in output_stream:
                 yield response + output
             response.extend(output)
@@ -89,11 +92,11 @@ class Assistant(Agent):
             use_tool, action, action_input, _ = self._detect_tool(response[-1])
             if use_tool:
                 observation = self._call_tool(action, action_input)
-                fn_msg = {
-                    'role': 'function',
-                    'name': action,
-                    'content': observation,
-                }
+                fn_msg = Message(
+                    role=FUNCTION,
+                    name=action,
+                    content=observation,
+                )
                 messages.append(fn_msg)
                 response.append(fn_msg)
                 yield response

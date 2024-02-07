@@ -24,7 +24,7 @@ def app():
         # query example: 海淀区天气
         query = input('user question: ')
         # file example: resource/poem.pdf
-        file = input('file url (press enter if no file): ')
+        file = input('file url (press enter if no file): ').strip()
         if not query:
             print('user question cannot be empty！')
             continue

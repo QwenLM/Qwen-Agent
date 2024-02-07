@@ -1,4 +1,3 @@
-import json
 import os
 from http import HTTPStatus
 from typing import Dict, Iterator, List, Optional
@@ -44,8 +43,6 @@ class QwenVLChatAtDS(BaseChatModel):
                 err = '\nError code: %s. Error message: %s' % (trunk.code,
                                                                trunk.message)
                 raise ModelServiceError(err)
-        with open('debug.json', 'w', encoding='utf-8') as writer:
-            writer.write(json.dumps(trunk, ensure_ascii=False, indent=4))
 
     def _chat_no_stream(
         self,

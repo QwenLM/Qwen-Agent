@@ -112,12 +112,12 @@ def _serve_image(image_base64: str) -> str:
     bytes_io = io.BytesIO(png_bytes)
     PIL.Image.open(bytes_io).save(local_image_file, 'png')
 
-    STATIC_URL = os.getenv('M6_CODE_INTERPRETER_STATIC_URL',
+    static_url = os.getenv('M6_CODE_INTERPRETER_STATIC_URL',
                            'http://127.0.0.1:7865/static')
 
     # Hotfix: Temporarily generate image URL proxies for code interpreter to display in gradio
     # Todo: Generate real url
-    if STATIC_URL == 'http://127.0.0.1:7865/static':
+    if static_url == 'http://127.0.0.1:7865/static':
         try:
             # run a fastapi server for image show in gradio demo by http://127.0.0.1:7865/figure_name
             subprocess.Popen([
@@ -130,7 +130,7 @@ def _serve_image(image_base64: str) -> str:
         except Exception:
             print_traceback()
 
-    image_url = f'{STATIC_URL}/{image_file}'
+    image_url = f'{static_url}/{image_file}'
 
     return image_url
 
@@ -251,8 +251,6 @@ class CodeInterpreter(BaseTool):
                     save_url_to_local_work_dir(file, WORK_DIR)
                 except Exception:
                     print_traceback()
-                    # Since the file may not be useful, do not directly report an error
-                    # logger.warning(f'Failed to download file {file}')
 
         pid: int = os.getpid()
         if pid in _KERNEL_CLIENTS:
@@ -286,7 +284,7 @@ class CodeInterpreter(BaseTool):
         return result if result.strip() else 'Finished execution.'
 
 
-def _get_multiline_input(hint: str) -> str:
+def _get_multiline_input() -> str:
     logger.info(
         '// Press ENTER to make a new line. Press CTRL-D to end input.')
     lines = []
@@ -306,4 +304,4 @@ def _get_multiline_input(hint: str) -> str:
 if __name__ == '__main__':
     tool = CodeInterpreter()
     while True:
-        logger.info(tool.call(_get_multiline_input('Enter python code:')))
+        logger.info(tool.call(_get_multiline_input()))

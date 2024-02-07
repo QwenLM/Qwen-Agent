@@ -86,9 +86,6 @@ def convert_to_full_str_stream(
             new_message_list) == 1 and new_message_list[0][ROLE] == ASSISTANT
         yield new_message_list[0][CONTENT]
 
-    # logger.debug('==== Outputted the last of message_list iter ===')
-    # logger.debug(json.dumps(message_list, ensure_ascii=False))
-
 
 def convert_to_delta_str_stream(
         message_list_stream: Iterator[List[Dict]]) -> Iterator[str]:

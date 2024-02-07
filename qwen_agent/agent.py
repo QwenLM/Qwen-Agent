@@ -32,8 +32,7 @@ class Agent(ABC):
         :param kwargs: other potential parameters
         """
         if isinstance(llm, dict):
-            self.llm_config = llm
-            self.llm = get_chat_model(self.llm_config)
+            self.llm = get_chat_model(llm)
         else:
             self.llm = llm
 

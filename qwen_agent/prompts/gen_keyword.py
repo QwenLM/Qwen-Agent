@@ -1,20 +1,26 @@
-from typing import Iterator, List
+import copy
+from typing import Dict, Iterator, List, Optional, Union
 
 from qwen_agent import Agent
-from qwen_agent.llm.schema import CONTENT, Message
+from qwen_agent.llm import get_chat_model
+from qwen_agent.llm.base import BaseChatModel
+from qwen_agent.llm.schema import CONTENT, DEFAULT_SYSTEM_MESSAGE, Message
 
 PROMPT_TEMPLATE_ZH = """请提取问题中的关键词，需要中英文均有，可以适量补充不在问题中但相关的关键词。关键词尽量切分为动词/名词/形容词等类型，不要长词组。关键词以JSON的格式给出，比如{{"keywords_zh": ["关键词1", "关键词2"], "keywords_en": ["keyword 1", "keyword 2"]}}
 
-Question:这篇文章的作者是谁？
-Keywords:{{"keywords_zh": ["作者"], "keywords_en": ["author"]}}
+Question: 这篇文章的作者是谁？
+Keywords: {{"keywords_zh": ["作者"], "keywords_en": ["author"]}}
+Observation: ...
 
-Question:解释下图一
-Keywords:{{"keywords_zh": ["图一", "图 1"], "keywords_en": ["Figure 1"]}}
+Question: 解释下图一
+Keywords: {{"keywords_zh": ["图一", "图 1"], "keywords_en": ["Figure 1"]}}
+Observation: ...
 
-Question:核心公式
-Keywords:{{"keywords_zh": ["核心公式", "公式"], "keywords_en": ["core formula", "formula", "equation"]}}
+Question: 核心公式
+Keywords: {{"keywords_zh": ["核心公式", "公式"], "keywords_en": ["core formula", "formula", "equation"]}}
+Observation: ...
 
-Question:{user_request}
+Question: {user_request}
 Keywords:
 """
 
@@ -22,15 +28,18 @@ PROMPT_TEMPLATE_EN = """Please extract keywords from the question, both in Chine
 Keywords are provided in JSON format, such as {{"keywords_zh": ["关键词1", "关键词2"], "keywords_en": ["keyword 1", "keyword 2"]}}
 
 Question: Who are the authors of this article?
-Keywords:{{"keywords_zh": ["作者"], "keywords_en": ["author"]}}
+Keywords: {{"keywords_zh": ["作者"], "keywords_en": ["author"]}}
+Observation: ...
 
 Question: Explain Figure 1
-Keywords:{{"keywords_zh": ["图一", "图 1"], "keywords_en": ["Figure 1"]}}
+Keywords: {{"keywords_zh": ["图一", "图 1"], "keywords_en": ["Figure 1"]}}
+Observation: ...
 
 Question: core formula
-Keywords:{{"keywords_zh": ["核心公式", "公式"], "keywords_en": ["core formula", "formula", "equation"]}}
+Keywords: {{"keywords_zh": ["核心公式", "公式"], "keywords_en": ["core formula", "formula", "equation"]}}
+Observation: ...
 
-Question:{user_request}
+Question: {user_request}
 Keywords:
 """
 
@@ -41,6 +50,18 @@ PROMPT_TEMPLATE = {
 
 
 class GenKeyword(Agent):
+
+    # TODO: Adding a stop word is not conveient! We should fix this later.
+    def __init__(self,
+                 function_list: Optional[List[Union[str, Dict]]] = None,
+                 llm: Optional[Union[Dict, BaseChatModel]] = None,
+                 system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
+                 **kwargs):
+        llm = copy.deepcopy(llm)
+        if isinstance(llm, dict):
+            llm = get_chat_model(llm)
+        llm.generate_cfg['stop'].append('Observation:')
+        super().__init__(function_list, llm, system_message, **kwargs)
 
     def _run(self,
              messages: List[Message],

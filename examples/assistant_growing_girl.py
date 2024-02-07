@@ -23,7 +23,7 @@ def app():
         # query example: 请开始创作！
         query = input('user question: ')
         # file example: resource/growing_girl.pdf
-        file = input('file url (press enter if no file): ')
+        file = input('file url (press enter if no file): ').strip()
         if not query:
             print('user question cannot be empty！')
             continue

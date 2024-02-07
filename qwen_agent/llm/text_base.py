@@ -10,23 +10,24 @@ class BaseTextChatModel(BaseChatModel, ABC):
 
     def _preprocess_messages(self, messages: List[Message]) -> List[Message]:
         messages = super()._preprocess_messages(messages)
-        messages = self._convert_to_text_messages(messages)
+        messages = self._format_as_text_messages(messages)
         return messages
 
-    def _postprocess_messages_for_func_call(
+    def _postprocess_messages_for_fn_call(
             self, messages: List[Message]) -> List[Message]:
-        messages = super()._postprocess_messages_for_func_call(messages)
-        messages = self._convert_to_text_messages(messages)
+        messages = super()._postprocess_messages_for_fn_call(messages)
+        messages = self._format_as_text_messages(messages)
         return messages
 
-    def _convert_to_text_messages(self,
-                                  messages: List[Message]) -> List[Message]:
-        new_messages = []
-        for msg in messages:
+    @staticmethod
+    def _format_as_text_messages(
+            multimodal_messages: List[Message]) -> List[Message]:
+        text_messages = []
+        for msg in multimodal_messages:
             role = msg[ROLE]
             assert role in (USER, ASSISTANT, SYSTEM, FUNCTION)
             if role == FUNCTION:
-                new_messages.append(msg)
+                text_messages.append(msg)
                 continue
             content = ''
             if isinstance(msg[CONTENT], str):
@@ -35,12 +36,13 @@ class BaseTextChatModel(BaseChatModel, ABC):
                 for item in msg[CONTENT]:
                     if item.text:
                         content += item.text
+                    # discard multimodal content such as files and images
             else:
                 raise TypeError
 
-            new_messages.append(
+            text_messages.append(
                 Message(role=role,
                         content=content,
                         function_call=msg.function_call))
 
-        return new_messages
+        return text_messages

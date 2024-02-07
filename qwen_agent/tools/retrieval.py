@@ -86,7 +86,7 @@ class Retrieval(BaseTool):
     def _retrieve_content(self,
                           query: str,
                           records: List[RefMaterialInput],
-                          max_token=4000) -> str:
+                          max_token=4000) -> List[Dict]:
         single_max_token = int(max_token / len(records))
         _ref_list = []
         for record in records:

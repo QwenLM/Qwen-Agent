@@ -66,7 +66,7 @@ def app():
     while True:
         query = input('user question: ')
         # image example: https://img01.sc115.com/uploads3/sc/vector/201809/51413-20180914205509.jpg
-        image = input('image url: ')
+        image = input('image url: ').strip()
 
         if not image:
             print('image cannot be empty！')

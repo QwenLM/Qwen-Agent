@@ -67,7 +67,7 @@ class AddedToken:
         return self.__dict__
 
 
-class QWenTokenizer():
+class QWenTokenizer:
     """QWen tokenizer."""
 
     vocab_files_names = VOCAB_FILES_NAMES

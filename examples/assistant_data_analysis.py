@@ -17,10 +17,10 @@ def app():
     # chat
     messages = []
     while True:
-        # query example: Help me draw a line chart to show the changes in stock prices
+        # query example: pd.head the file first and then help me draw a line chart to show the changes in stock prices
         query = input('user question: ')
         # file example: resource/stock_prices.csv
-        file = input('file url (press enter if no file): ')
+        file = input('file url (press enter if no file): ').strip()
         if not query:
             print('user question cannot be empty！')
             continue
