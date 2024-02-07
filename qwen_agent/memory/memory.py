@@ -48,7 +48,7 @@ class Memory(Agent):
         # process files in messages
         files = self._get_all_files_of_messages(messages)
         self.files.extend(files)
-        print('self.files, ', self.files)
+
         if not self.files:
             yield [Message(ASSISTANT, '', name='memory')]
         else:

@@ -46,7 +46,7 @@ class Agent(ABC):
         self.system_message = system_message
 
     def run(self, messages: List[Union[Dict, Message]],
-            **kwargs) -> Iterator[List[Union[Dict, Message]]]:
+            **kwargs) -> Union[Iterator[List[Message]], Iterator[List[Dict]]]:
         assert messages[-1][ROLE] == USER, 'you must send the user message'
         messages = copy.deepcopy(messages)
         _return_message_type = 'dict'

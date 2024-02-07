@@ -66,6 +66,3 @@ class QwenVLChatAtDS(BaseChatModel):
                 response.message,
             )
             raise ModelServiceError(err)
-
-    def _format_msg_for_llm(self, messages: List[Message]) -> List[Message]:
-        return messages

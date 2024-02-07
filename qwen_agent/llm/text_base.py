@@ -8,7 +8,19 @@ from .schema import ASSISTANT, CONTENT, FUNCTION, ROLE, SYSTEM, USER, Message
 
 class BaseTextChatModel(BaseChatModel, ABC):
 
-    def _format_msg_for_llm(self, messages: List[Message]) -> List[Message]:
+    def _preprocess_messages(self, messages: List[Message]) -> List[Message]:
+        messages = super()._preprocess_messages(messages)
+        messages = self._convert_to_text_messages(messages)
+        return messages
+
+    def _postprocess_messages_for_func_call(
+            self, messages: List[Message]) -> List[Message]:
+        messages = super()._postprocess_messages_for_func_call(messages)
+        messages = self._convert_to_text_messages(messages)
+        return messages
+
+    def _convert_to_text_messages(self,
+                                  messages: List[Message]) -> List[Message]:
         new_messages = []
         for msg in messages:
             role = msg[ROLE]

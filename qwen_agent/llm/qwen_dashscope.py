@@ -1,4 +1,3 @@
-import copy
 import json
 import os
 from http import HTTPStatus
@@ -65,17 +64,17 @@ class QwenChatAtDS(BaseTextChatModel):
             )
             raise ModelServiceError(err)
 
-    def _text_completion(
+    def _chat_with_functions(
         self,
-        messages: List[Union[Message, Dict]],
+        messages: List[Message],
+        functions: Optional[List[Dict]] = None,
         stream: bool = True,
-        delta_stream: bool = False,
+        delta_stream: bool = False
     ) -> Union[List[Message], Iterator[List[Message]]]:
-        messages = copy.deepcopy(messages)
-        messages = [
-            Message(**msg) if isinstance(msg, dict) else msg
-            for msg in messages
-        ]
+        messages = self._prepend_tool_message(messages, functions)
+        messages = self._preprocess_messages(messages)
+
+        # using text completion
         prompt = self._build_text_completion_prompt(messages)
         logger.debug('==== Inputted prompt ===')
         logger.debug(prompt)
@@ -96,8 +95,6 @@ class QwenChatAtDS(BaseTextChatModel):
                                              use_raw_prompt=True,
                                              **self.generate_cfg)
         if response.status_code == HTTPStatus.OK:
-            # with open('debug.json', 'w', encoding='utf-8') as writer:
-            #     writer.write(json.dumps(response, ensure_ascii=False))
             return [
                 Message(ASSISTANT, response.output.choices[0].message.content)
             ]

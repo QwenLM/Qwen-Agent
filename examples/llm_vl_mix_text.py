@@ -1,5 +1,6 @@
 """An example of calling text and vl llm interfaces alternately"""
 from qwen_agent.llm import get_chat_model
+from qwen_agent.llm.schema import ContentItem, Message
 
 # settings
 llm_cfg = {'model': 'qwen-plus', 'model_server': 'dashscope'}
@@ -38,7 +39,7 @@ for x in response:
     print(x)
 messages.extend(x)
 
-messages.append({'role': 'user', 'content': [{'text': '描述更详细一点'}]})
+messages.append(Message('user', [ContentItem(text='描述更详细一点')]))
 response = llm_vl.chat(messages, stream=True)
 for x in response:
     print(x)

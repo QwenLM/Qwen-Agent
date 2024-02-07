@@ -22,15 +22,7 @@ def register_llm(model_type):
     return decorator
 
 
-class TextCompleteNotImplError(NotImplementedError):
-    pass
-
-
 class ModelServiceError(Exception):
-    pass
-
-
-class FnCallNotImplError(NotImplementedError):
     pass
 
 
@@ -39,7 +31,6 @@ class BaseChatModel(ABC):
     def __init__(self, cfg: Optional[Dict] = None):
         self.cfg = cfg or {}
         self.generate_cfg = self.cfg.get('generate_cfg', {})
-        self._flag_support_text_completion: Optional[bool] = None
 
         stop = self.generate_cfg.get('stop', [])
         fn_stop = [f'{FN_RESULT}:', f'{FN_RESULT}:\n']
@@ -53,7 +44,8 @@ class BaseChatModel(ABC):
         functions: Optional[List[Dict]] = None,
         stream: bool = True,
         delta_stream: bool = False,
-    ) -> Union[List[Message], Iterator[List[Message]]]:
+    ) -> Union[List[Message], List[Dict], Iterator[List[Message]],
+               Iterator[List[Dict]]]:
         """
         llm chat interface
 
@@ -67,106 +59,78 @@ class BaseChatModel(ABC):
             - When List[Message]: stream=False
             - When Iterator[List[Message]]]: stream=True
         """
-        if functions:
-            return self.chat_with_functions(messages=messages,
-                                            functions=functions,
-                                            stream=stream,
-                                            delta_stream=delta_stream)
         messages = copy.deepcopy(messages)
-        messages = [
-            Message(**msg) if isinstance(msg, dict) else msg
-            for msg in messages
-        ]
-        messages = self._format_msg_to_list(messages)
+        _return_message_type = 'dict'
+        new_messages = []
+        for msg in messages:
+            if isinstance(msg, dict):
+                new_messages.append(Message(**msg))
+            else:
+                new_messages.append(msg)
+                _return_message_type = 'message'
+        messages = new_messages
 
+        # prepend the system message
         if messages[0][ROLE] != SYSTEM:
             messages.insert(
                 0,
                 Message(role=SYSTEM,
                         content=[ContentItem(text=DEFAULT_SYSTEM_MESSAGE)]))
 
-        messages = self._preprocess_convert_fncall_to_text(messages)
-        messages = self._format_msg_for_llm(messages)
-        logger.debug('==== Preprocessed Inputted messages ===')
-        logger.debug(messages)
-        if stream:
-            return self._chat_stream(messages, delta_stream=delta_stream)
+        if functions:
+            output = self._chat_with_functions(messages=messages,
+                                               functions=functions,
+                                               stream=stream,
+                                               delta_stream=delta_stream)
+            if isinstance(output, list):
+                output = self._postprocess_messages_for_func_call(output)
+            else:
+                output = self._postprocess_messages_iterator_for_func_call(
+                    output)
         else:
-            return self._chat_no_stream(messages)
+            messages = self._preprocess_messages(messages)
+            output = self._chat(messages,
+                                stream=stream,
+                                delta_stream=delta_stream)
 
-    def chat_with_functions(
+        if isinstance(output, list):
+            return self._convert_messages_to_target_type(
+                output, _return_message_type)
+        else:
+            return self._convert_messages_iterator_to_target_type(
+                output, _return_message_type)
+
+    def _chat_with_functions(
         self,
         messages: List[Union[Message, Dict]],
         functions: Optional[List[Dict]] = None,
         stream: bool = True,
         delta_stream: bool = False
     ) -> Union[List[Message], Iterator[List[Message]]]:
-        messages = copy.deepcopy(messages)
-        messages = [
-            Message(**msg) if isinstance(msg, dict) else msg
-            for msg in messages
-        ]
 
-        # prepend tool react prompt
-        tool_desc_template = FN_CALL_TEMPLATE['en']
-        for message in messages[::-1]:
-            if message[ROLE] == USER:
-                if has_chinese_chars(message[CONTENT]):
-                    tool_desc_template = FN_CALL_TEMPLATE['zh']
-                break
-        tool_descs = '\n\n'.join(
-            parser_function(function) for function in functions)
-        tool_names = ','.join(function['name'] for function in functions)
-        tool_system = tool_desc_template.format(tool_descs=tool_descs,
-                                                tool_names=tool_names)
-        # preprocess
-        messages = self._format_msg_to_list(messages)
+        messages = self._prepend_tool_message(messages, functions)
+        messages = self._preprocess_messages(messages)
 
-        if messages[0][ROLE] == SYSTEM:
-            messages[0][CONTENT].append(ContentItem(text=tool_system))
-        else:
-            messages.insert(
-                0,
-                Message(role=SYSTEM,
-                        content=[
-                            ContentItem(text=DEFAULT_SYSTEM_MESSAGE +
-                                        tool_system)
-                        ]))
+        if messages and messages[-1][ROLE] == ASSISTANT:
+            # Change the text completion to chat mode
+            assert len(messages) > 1 and messages[-2][ROLE] == USER
+            messages[-2][CONTENT] += messages[-1][CONTENT]
+            messages.pop()
 
-        messages = self._preprocess_convert_fncall_to_text(messages)
-        messages = self._format_msg_for_llm(messages)
+        logger.debug('==== Using chat format for function call===')
+        logger.debug(messages)
+        return self._chat(messages, stream=stream, delta_stream=delta_stream)
 
-        # generate response
-        if self._support_text_completion():
-            output = self._text_completion(messages=messages,
-                                           stream=stream,
-                                           delta_stream=delta_stream)
-        else:
-            logger.debug('==== Inputted messages: Using chat format ===')
-            if messages and messages[-1][ROLE] == ASSISTANT:
-                # Change the text completion to chat mode
-                if len(messages) > 1 and messages[-2][ROLE] == USER:
-                    messages[-2][CONTENT] += messages[-1][CONTENT]
-                    messages.pop()
-            logger.debug(messages)
-            if stream:
-                output = self._chat_stream(messages, delta_stream=delta_stream)
-            else:
-                output = self._chat_no_stream(messages)
-
-        # convert to fn call format
-        if isinstance(output, list):
-            return self._postprocess_convert_text_to_fncall(output)
-        else:
-            return self._postprocess_iterator(output)
-
-    def _text_completion(
+    def _chat(
         self,
         messages: List[Union[Message, Dict]],
         stream: bool = True,
         delta_stream: bool = False,
     ) -> Union[List[Message], Iterator[List[Message]]]:
-        raise TextCompleteNotImplError
+        if stream:
+            return self._chat_stream(messages, delta_stream=delta_stream)
+        else:
+            return self._chat_no_stream(messages)
 
     @abstractmethod
     def _chat_stream(
@@ -183,32 +147,32 @@ class BaseChatModel(ABC):
     ) -> List[Message]:
         raise NotImplementedError
 
-    @abstractmethod
-    def _format_msg_for_llm(self, messages: List[Message]) -> List[Message]:
-        raise NotImplementedError
+    def _prepend_tool_message(
+            self, messages: List[Message],
+            functions: Optional[List[Dict]]) -> List[Message]:
+        # prepend tool react prompt
+        tool_desc_template = FN_CALL_TEMPLATE['en']
+        for message in messages[::-1]:
+            if message[ROLE] == USER:
+                if has_chinese_chars(message[CONTENT]):
+                    tool_desc_template = FN_CALL_TEMPLATE['zh']
+                break
+        tool_descs = '\n\n'.join(
+            parser_function(function) for function in functions)
+        tool_names = ','.join(function['name'] for function in functions)
+        tool_system = tool_desc_template.format(tool_descs=tool_descs,
+                                                tool_names=tool_names)
+        assert messages[0].role == SYSTEM
+        if isinstance(messages[0].content, str):
+            messages[0].content += tool_system
+        else:
+            messages[0].content.append(ContentItem(text=tool_system))
 
-    def _support_text_completion(self) -> bool:
-        if self._flag_support_text_completion is None:
-            try:
-                messages = [Message(role=USER, content='hello')]
-                response = self._text_completion(messages)
-                if not isinstance(response, list):
-                    *_, last = response
-                self._flag_support_text_completion = True
-            except TextCompleteNotImplError:
-                self._flag_support_text_completion = False
-            except Exception:
-                self._flag_support_text_completion = False
-        return self._flag_support_text_completion
-
-    def _postprocess_iterator(
-            self,
-            messages: Iterator[List[Message]]) -> Iterator[List[Message]]:
-        for m in messages:
-            yield self._postprocess_convert_text_to_fncall(m)
+        return messages
 
     @staticmethod
-    def _format_msg_to_list(messages: List[Message]) -> List[Message]:
+    def _format_as_multimodal_messages(
+            messages: List[Message]) -> List[Message]:
         new_messages = []
         for msg in messages:
             role = msg[ROLE]
@@ -262,13 +226,13 @@ class BaseChatModel(ABC):
 
         return new_messages
 
-    @staticmethod
-    def _preprocess_convert_fncall_to_text(
-            messages: List[Message]) -> List[Message]:
+    def _preprocess_messages(self, messages: List[Message]) -> List[Message]:
         """
         Convert messages with function_call key and function role to assistant's content, which is
             for chat interface or text_completion interface that do not support functions.
         """
+        messages = self._format_as_multimodal_messages(messages)
+
         new_messages = []
         for msg in messages:
             role, content = msg[ROLE], msg[CONTENT]
@@ -310,12 +274,12 @@ class BaseChatModel(ABC):
                     break
         return new_messages
 
-    def _postprocess_convert_text_to_fncall(
+    def _postprocess_messages_for_func_call(
             self, messages: List[Message]) -> List[Message]:
         """
         If the model calls function by built-in function call template, convert and display it in function_call format in return.
         """
-        messages = self._format_msg_to_list(messages)
+        messages = self._format_as_multimodal_messages(messages)
 
         # remove ': ' brought by continued generation of function calling
         for i in range(len(messages[0][CONTENT])):
@@ -405,5 +369,31 @@ class BaseChatModel(ABC):
                 if new_content:
                     new_messages.append(Message(role,
                                                 new_content))  # no func call
-        new_messages = self._format_msg_for_llm(new_messages)
         return new_messages
+
+    def _postprocess_messages_iterator_for_func_call(
+            self,
+            messages: Iterator[List[Message]]) -> Iterator[List[Message]]:
+        for m in messages:
+            yield self._postprocess_messages_for_func_call(m)
+
+    def _convert_messages_to_target_type(
+            self, messages: List[Message],
+            target_type: str) -> Union[List[Message], List[Dict]]:
+        if target_type == 'message':
+            return [
+                Message(**x) if isinstance(x, dict) else x for x in messages
+            ]
+        elif target_type == 'dict':
+            return [
+                x.model_dump() if not isinstance(x, dict) else x
+                for x in messages
+            ]
+        else:
+            raise NotImplementedError
+
+    def _convert_messages_iterator_to_target_type(
+        self, messages_iter: Iterator[List[Message]], target_type: str
+    ) -> Union[Iterator[List[Message]], Iterator[List[Dict]]]:
+        for messages in messages_iter:
+            yield self._convert_messages_to_target_type(messages, target_type)
