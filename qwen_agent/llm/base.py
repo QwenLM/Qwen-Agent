@@ -114,7 +114,7 @@ class BaseChatModel(ABC):
         if messages and messages[-1][ROLE] == ASSISTANT:
             # Change the text completion to chat mode
             assert len(messages) > 1 and messages[-2][ROLE] == USER
-            messages[-2][CONTENT] += messages[-1][CONTENT]
+            messages[-2][CONTENT] += '\n\n' + messages[-1][CONTENT]
             messages.pop()
 
         logger.debug('==== Using chat format for function call===')

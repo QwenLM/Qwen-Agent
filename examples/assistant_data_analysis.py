@@ -1,10 +1,20 @@
 """A data analysis example implemented by assistant"""
+import os
+
 from qwen_agent.agents import Assistant
 
 
 def init_agent_service():
     # settings
-    llm_cfg = {'model': 'qwen-max'}
+    llm_cfg = {
+        'model': 'Qwen/Qwen1.5-14B-Chat',
+        'model_server': 'https://api.together.xyz',
+        'api_key': os.getenv('TOGETHER_API_KEY'),
+
+        # 'model': 'qwen-max',
+        # 'model_server': 'dashscope',
+        # 'api_key': os.getenv('DASHSCOPE_API_KEY'),
+    }
     tools = ['code_interpreter']
     bot = Assistant(llm=llm_cfg, function_list=tools)
     return bot
