@@ -32,7 +32,7 @@ def get_chat_model(cfg: Optional[Dict] = None) -> BaseChatModel:
         if model_type in LLM_REGISTRY:
             return LLM_REGISTRY[model_type](cfg)
         else:
-            ValueError(
+            raise ValueError(
                 f'Please set model_type from {str(LLM_REGISTRY.keys())}')
 
     # Deduce model_type from model and model_server if model_type is not provided:
@@ -52,7 +52,7 @@ def get_chat_model(cfg: Optional[Dict] = None) -> BaseChatModel:
         model_type = 'qwen_dashscope'
         return LLM_REGISTRY[model_type](cfg)
 
-    raise ValueError(f'Please set model_type from {str(LLM_REGISTRY.keys())}')
+    raise ValueError(f'Invalid model cfg: {cfg}')
 
 
 __all__ = [

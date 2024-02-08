@@ -20,7 +20,7 @@ def app():
     # chat
     messages = []
     while True:
-        # query example: 请开始创作！
+        # query example: 请用image_gen开始创作！
         query = input('user question: ')
         # file example: resource/growing_girl.pdf
         file = input('file url (press enter if no file): ').strip()

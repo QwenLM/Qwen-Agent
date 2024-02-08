@@ -55,25 +55,28 @@ class Assistant(Agent):
              max_ref_token: int = 4000,
              **kwargs) -> Iterator[List[Dict]]:
         messages = copy.deepcopy(messages)
-        knowledge_prompt = ''
 
         # retrieval knowledge from files
         *_, last = self.mem.run(messages=messages, max_ref_token=max_ref_token)
         knowledge = last[-1][CONTENT]
-        logger.debug(knowledge)
+        logger.debug(f'{type(knowledge)}: {knowledge}')
         if knowledge:
             knowledge = format_knowledge_to_source_and_content(knowledge)
-            snippets = []
-            for k in knowledge:
-                snippets.append(KNOWLEDGE_SNIPPET[lang].format(
-                    source=k['source'], content=k['content']))
-            knowledge_prompt += KNOWLEDGE_TEMPLATE[lang].format(
-                knowledge='\n\n'.join(snippets))
-
-        if messages[0][ROLE] == SYSTEM:
-            messages[0][CONTENT] += knowledge_prompt
+            logger.debug(f'{type(knowledge)}: {knowledge}')
         else:
-            messages.insert(0, Message(role=SYSTEM, content=knowledge_prompt))
+            knowledge = []
+        snippets = []
+        for k in knowledge:
+            snippets.append(KNOWLEDGE_SNIPPET[lang].format(
+                source=k['source'], content=k['content']))
+        if snippets:
+            knowledge_prompt = KNOWLEDGE_TEMPLATE[lang].format(
+                knowledge='\n\n'.join(snippets))
+            if messages[0][ROLE] == SYSTEM:
+                messages[0][CONTENT] += knowledge_prompt
+            else:
+                messages.insert(0,
+                                Message(role=SYSTEM, content=knowledge_prompt))
 
         max_turn = 5
         response = []

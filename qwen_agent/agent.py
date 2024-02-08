@@ -36,11 +36,10 @@ class Agent(ABC):
         else:
             self.llm = llm
 
-        self.function_list = []
         self.function_map = {}
         if function_list:
-            for function_name in function_list:
-                self._init_tool(function_name)
+            for tool in function_list:
+                self._init_tool(tool)
 
         self.system_message = system_message
 
@@ -87,6 +86,7 @@ class Agent(ABC):
         """
         for an agent, default to call llm using full stream interfaces
         """
+        messages = copy.deepcopy(messages)
         if messages[0][ROLE] != SYSTEM:
             messages.insert(0, Message(role=SYSTEM,
                                        content=self.system_message))
@@ -125,8 +125,7 @@ class Agent(ABC):
             tool_cfg = tool
         if tool_name not in TOOL_REGISTRY:
             raise NotImplementedError
-        if tool not in self.function_list:
-            self.function_list.append(tool)
+        if tool_name not in self.function_map:
             self.function_map[tool_name] = TOOL_REGISTRY[tool_name](tool_cfg)
 
     def _detect_tool(self, message: Message) -> Tuple[bool, str, str, str]:

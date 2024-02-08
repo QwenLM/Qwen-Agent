@@ -1,5 +1,6 @@
 import os
 from http import HTTPStatus
+from pprint import pformat
 from typing import Dict, Iterator, List, Optional, Union
 
 import dashscope
@@ -30,6 +31,7 @@ class QwenChatAtDS(BaseTextChatModel):
         delta_stream: bool = False,
     ) -> Iterator[List[Message]]:
         messages = [msg.model_dump() for msg in messages]
+        logger.debug(f'*{pformat(messages, indent=2)}*')
         response = dashscope.Generation.call(
             self.model,
             messages=messages,  # noqa
@@ -46,6 +48,7 @@ class QwenChatAtDS(BaseTextChatModel):
         messages: List[Message],
     ) -> List[Message]:
         messages = [msg.model_dump() for msg in messages]
+        logger.debug(f'*{pformat(messages, indent=2)}*')
         response = dashscope.Generation.call(
             self.model,
             messages=messages,  # noqa
@@ -76,7 +79,7 @@ class QwenChatAtDS(BaseTextChatModel):
         # using text completion
         prompt = self._build_text_completion_prompt(messages)
         logger.debug('==== Inputted prompt ===')
-        logger.debug(prompt)
+        logger.debug(f'*{prompt}*')
         if stream:
             return self._text_completion_stream(prompt, delta_stream)
         else:
@@ -86,7 +89,6 @@ class QwenChatAtDS(BaseTextChatModel):
         self,
         prompt: str,
     ) -> List[Message]:
-        logger.debug(prompt)
         response = dashscope.Generation.call(self.model,
                                              prompt=prompt,
                                              result_format='message',
