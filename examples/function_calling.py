@@ -1,5 +1,6 @@
 # Reference: https://platform.openai.com/docs/guides/function-calling
 import json
+import os
 
 from qwen_agent.llm import get_chat_model
 
@@ -35,8 +36,12 @@ def run_conversation():
         # Use the model service provided by DashScope:
         'model': 'qwen-max',
         'model_server': 'dashscope',
-        # 'api_key': 'YOUR_DASHSCOPE_API_KEY',
-        # It will use the `DASHSCOPE_API_KEY' environment variable if 'api_key' is not set.
+        'api_key': os.getenv('DASHSCOPE_API_KEY'),
+
+        # Use the model service provided by Together.AI:
+        # 'model': 'Qwen/Qwen1.5-14B-Chat',
+        # 'model_server': 'https://api.together.xyz',  # api_base
+        # 'api_key': os.getenv('TOGETHER_API_KEY'),
 
         # Use your own model service compatible with OpenAI API:
         # 'model': 'Qwen/Qwen1.5-72B-Chat',

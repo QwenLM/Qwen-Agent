@@ -38,8 +38,6 @@ class TextChatAtOAI(BaseTextChatModel):
                 openai.api_key = api_key
             self._chat_complete_create = openai.ChatCompletion.create
         else:
-            from openai import OpenAI
-
             api_kwargs = {}
             if api_base:
                 api_kwargs['base_url'] = api_base
@@ -47,7 +45,7 @@ class TextChatAtOAI(BaseTextChatModel):
                 api_kwargs['api_key'] = api_key
 
             def _chat_complete_create(*args, **kwargs):
-                client = OpenAI(**api_kwargs)
+                client = openai.OpenAI(**api_kwargs)
                 return client.chat.completions.create(*args, **kwargs)
 
             self._chat_complete_create = _chat_complete_create

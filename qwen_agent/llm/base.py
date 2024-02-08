@@ -111,10 +111,19 @@ class BaseChatModel(ABC):
         messages = self._prepend_fn_call_system(messages, functions)
         messages = self._preprocess_messages(messages)
 
-        if messages and messages[-1][ROLE] == ASSISTANT:
+        if messages and messages[-1].role == ASSISTANT:
             # Change the text completion to chat mode
-            assert len(messages) > 1 and messages[-2][ROLE] == USER
-            messages[-2][CONTENT] += '\n\n' + messages[-1][CONTENT]
+            assert len(messages) > 1 and messages[-2].role == USER
+            assert messages[-1].function_call is None
+            usr = messages[-2].content
+            bot = messages[-1].content
+            if isinstance(usr, str) and isinstance(bot, str):
+                usr = usr + '\n\n' + bot
+            elif isinstance(usr, list) and isinstance(bot, list):
+                usr = usr + [ContentItem(text='\n\n')] + bot
+            else:
+                raise NotImplementedError
+            messages[-2].content = usr
             messages.pop()
 
         logger.debug('==== Using chat format for function call===')
