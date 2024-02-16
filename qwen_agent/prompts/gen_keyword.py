@@ -57,10 +57,11 @@ class GenKeyword(Agent):
                  llm: Optional[Union[Dict, BaseChatModel]] = None,
                  system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
                  **kwargs):
-        llm = copy.deepcopy(llm)
-        if isinstance(llm, dict):
-            llm = get_chat_model(llm)
-        llm.generate_cfg['stop'].append('Observation:')
+        if llm is not None:  # TODO: Why this happens?
+            llm = copy.deepcopy(llm)
+            if isinstance(llm, dict):
+                llm = get_chat_model(llm)
+            llm.generate_cfg['stop'].append('Observation:')
         super().__init__(function_list, llm, system_message, **kwargs)
 
     def _run(self,
