@@ -1,3 +1,4 @@
+import copy
 from typing import Dict, Iterator, List, Optional, Tuple, Union
 
 from qwen_agent.agents import Assistant
@@ -61,9 +62,19 @@ class ReActChat(Assistant):
             max_turn -= 1
             output_stream = self._call_llm(messages=messages)
             output = []
+
+            response_tmp = copy.deepcopy(response)
             for output in output_stream:
-                yield response + output
-            response.extend(output)
+                if not response_tmp:
+                    yield output
+                else:
+                    response_tmp[-1][
+                        CONTENT] = response[-1][CONTENT] + output[-1][CONTENT]
+                    yield response_tmp
+            if not response:
+                response += output
+            else:
+                response[-1][CONTENT] += output[-1][CONTENT]
             assert len(output) == 1 and output[-1][ROLE] == ASSISTANT
             output = output[-1][CONTENT]
 

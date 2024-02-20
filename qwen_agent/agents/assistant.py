@@ -53,7 +53,7 @@ class Assistant(Agent):
              messages: List[Message],
              lang: str = 'zh',
              max_ref_token: int = 4000,
-             **kwargs) -> Iterator[List[Dict]]:
+             **kwargs) -> Iterator[List[Message]]:
         messages = copy.deepcopy(messages)
 
         # retrieval knowledge from files

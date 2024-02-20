@@ -6,7 +6,7 @@ import dashscope
 
 from qwen_agent.llm.base import BaseChatModel, ModelServiceError, register_llm
 
-from .schema import Message
+from .schema import CONTENT, Message
 
 
 @register_llm('qwenvl_dashscope')
@@ -38,7 +38,18 @@ class QwenVLChatAtDS(BaseChatModel):
 
         for trunk in response:
             if trunk.status_code == HTTPStatus.OK:
-                yield [Message(**trunk.output.choices[0].message)]
+                output = trunk.output.choices[0].message
+                new_content = []
+                for item in output[CONTENT]:
+                    for k, v in item.items():
+                        if k == 'box':
+                            new_content.append({'text': v})
+                        elif k == 'result_image':
+                            continue
+                        else:
+                            new_content.append({k: v})
+                output[CONTENT] = new_content
+                yield [Message(**output)]
             else:
                 err = '\nError code: %s. Error message: %s' % (trunk.code,
                                                                trunk.message)
@@ -56,7 +67,18 @@ class QwenVLChatAtDS(BaseChatModel):
             stream=False,
             **self.generate_cfg)
         if response.status_code == HTTPStatus.OK:
-            return [Message(**response.output.choices[0].message)]
+            output = response.output.choices[0].message
+            new_content = []
+            for item in output[CONTENT]:
+                for k, v in item.items():
+                    if k == 'box':
+                        new_content.append({'text': v})
+                    elif k == 'result_image':
+                        continue
+                    else:
+                        new_content.append({k: v})
+            output[CONTENT] = new_content
+            return [Message(**output)]
         else:
             err = 'Error code: %s, error message: %s' % (
                 response.code,
