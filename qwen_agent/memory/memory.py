@@ -9,6 +9,7 @@ from qwen_agent.llm.schema import (ASSISTANT, CONTENT, DEFAULT_SYSTEM_MESSAGE,
                                    ROLE, USER, Message)
 from qwen_agent.log import logger
 from qwen_agent.prompts import GenKeyword
+from qwen_agent.utils.utils import get_file_type, is_local_path
 
 
 class Memory(Agent):
@@ -29,7 +30,7 @@ class Memory(Agent):
 
         self.keygen = GenKeyword(llm=llm)
 
-        self.files = files or []
+        self.system_files = files or []
 
     def _run(self,
              messages: List[Message],
@@ -46,10 +47,16 @@ class Memory(Agent):
         :return:
         """
         # process files in messages
-        files = self._get_all_files_of_messages(messages)
-        self.files.extend(files)
+        session_files = self.get_all_files_of_messages(messages)
+        files = self.system_files + session_files
+        rag_files = []
+        for file in files:
+            if (file.split('.')[-1].lower() in [
+                    'pdf', 'docx', 'pptx'
+            ]) or (not is_local_path(file) and get_file_type(file) == 'html'):
+                rag_files.append(file)
 
-        if not self.files:
+        if not rag_files:
             yield [Message(ASSISTANT, '', name='memory')]
         else:
             query = ''
@@ -75,7 +82,7 @@ class Memory(Agent):
 
             content = self._call_tool('retrieval', {
                 'query': query,
-                'files': self.files
+                'files': rag_files
             },
                                       ignore_cache=ignore_cache,
                                       max_token=max_ref_token)
@@ -87,7 +94,7 @@ class Memory(Agent):
             ]
 
     @staticmethod
-    def _get_all_files_of_messages(messages: List[Message]):
+    def get_all_files_of_messages(messages: List[Message]):
         files = []
         for msg in messages:
             if isinstance(msg[CONTENT], list):

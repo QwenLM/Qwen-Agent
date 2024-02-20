@@ -94,7 +94,9 @@ class Assistant(Agent):
             messages.extend(output)
             use_tool, action, action_input, _ = self._detect_tool(response[-1])
             if use_tool:
-                observation = self._call_tool(action, action_input)
+                observation = self._call_tool(action,
+                                              action_input,
+                                              messages=messages)
                 fn_msg = Message(
                     role=FUNCTION,
                     name=action,
@@ -113,9 +115,12 @@ class Assistant(Agent):
         # Temporary plan: Check if it is necessary to transfer files to the tool
         # Todo: This should be changed to parameter passing, and the file URL should be determined by the model
         if self.function_map[tool_name].file_access:
+            assert 'messages' in kwargs
+            files = self.mem.get_all_files_of_messages(
+                kwargs['messages']) + self.mem.system_files
             return super()._call_tool(tool_name,
                                       tool_args,
-                                      files=self.mem.files,
+                                      files=files,
                                       **kwargs)
         else:
             return super()._call_tool(tool_name, tool_args, **kwargs)

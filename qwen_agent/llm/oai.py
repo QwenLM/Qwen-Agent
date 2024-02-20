@@ -26,9 +26,10 @@ class TextChatAtOAI(BaseTextChatModel):
             ),
         ).strip()
 
-        api_key = self.cfg.get('api_key', '').strip()
+        api_key = self.cfg.get('api_key', '')
         if not api_key:
-            api_key = os.getenv('OPENAI_API_KEY', 'EMPTY').strip()
+            api_key = os.getenv('OPENAI_API_KEY', 'EMPTY')
+        api_key = api_key.strip()
 
         if openai.__version__.startswith('0.'):
             if api_base:

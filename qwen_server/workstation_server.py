@@ -219,6 +219,29 @@ def pure_bot(history):
             raise ValueError(ex)
 
 
+def keep_only_files_for_name(messages, name):
+    new_messages = []
+    for message in messages:
+        if message['role'] == 'user' and ('name' not in message
+                                          or message['name'] != name):
+            # rm files
+            if isinstance(message['content'], list):
+                new_content = []
+                for item in message['content']:
+                    for k, v in item.items():
+                        if k != 'file':  # rm files
+                            new_content.append(item)
+                new_messages.append({
+                    'role': message['role'],
+                    'content': new_content
+                })
+            else:
+                new_messages.append(message)
+        else:
+            new_messages.append(message)
+    return new_messages
+
+
 def bot(history, chosen_plug):
     if not history:
         yield history
@@ -237,12 +260,18 @@ def bot(history, chosen_plug):
                         'text': history[-1][0]
                     }, {
                         'file': app_global_para['uploaded_ci_file']
-                    }]
+                    }],
+                    'name':
+                    'ci'
                 }]
-                messages = app_global_para['messages'] + message
             else:
-                message = [{'role': 'user', 'content': history[-1][0]}]
-                messages = app_global_para['messages'] + message
+                message = [{
+                    'role': 'user',
+                    'content': history[-1][0],
+                    'name': 'ci'
+                }]
+            messages = keep_only_files_for_name(app_global_para['messages'],
+                                                'ci') + message
             func_assistant = ReActChat(function_list=['code_interpreter'],
                                        llm=llm_config)
             try:

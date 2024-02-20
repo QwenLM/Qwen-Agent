@@ -124,11 +124,26 @@ def contains_html_tags(text):
 def get_file_type(path):
     # This is a temporary plan
 
-    content = read_text_from_file(path)
-    if contains_html_tags(content):
-        return 'html'
+    if is_local_path(path):
+        content = read_text_from_file(path)
+        if contains_html_tags(content):
+            return 'html'
+        else:
+            return 'Unknown'
     else:
-        return 'Unknown'
+        headers = {
+            'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+        }
+        response = requests.get(path, headers=headers)
+        if response.status_code == 200:
+            if contains_html_tags(response.text):
+                return 'html'
+            else:
+                return 'Unknown'
+        else:
+            print_traceback()
+            return 'Unknown'
 
 
 def read_text_from_file(path):

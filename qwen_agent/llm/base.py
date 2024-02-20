@@ -372,7 +372,9 @@ class BaseChatModel(ABC):
                             ),
                         ))
 
-                    if result or answer:  # result[1:] == '' is possible and allowed
+                    if (
+                            result and result[1:]
+                    ) or answer:  # result[1:] == '' is possible and allowed
                         new_messages.append(
                             Message(
                                 role=FUNCTION,

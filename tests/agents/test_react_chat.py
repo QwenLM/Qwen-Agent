@@ -11,8 +11,8 @@ def test_react_chat():
 
     *_, last = agent.run(messages)
 
-    assert 'Action:' in last[-1].content
-    assert 'Action Input:' in last[-1].content
-    assert 'Observation:' in last[-1].content
-    assert 'Thought:' in last[-1].content
-    assert 'Final Answer:' in last[-1].content
+    assert '\nAction: ' in last[-1].content
+    assert '\nAction Input: ' in last[-1].content
+    assert '\nObservation: ' in last[-1].content
+    assert '\nThought: ' in last[-1].content
+    assert '\nFinal Answer: ' in last[-1].content

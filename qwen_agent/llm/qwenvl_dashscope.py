@@ -16,9 +16,10 @@ class QwenVLChatAtDS(BaseChatModel):
         super().__init__(cfg)
 
         self.model = self.cfg.get('model', 'qwen-vl-max')
-        api_key = self.cfg.get('api_key', '').strip()
+        api_key = self.cfg.get('api_key', '')
         if not api_key:
-            api_key = os.getenv('DASHSCOPE_API_KEY', 'EMPTY').strip()
+            api_key = os.getenv('DASHSCOPE_API_KEY', 'EMPTY')
+        api_key = api_key.strip()
         dashscope.api_key = api_key
 
     def _chat_stream(
