@@ -75,8 +75,11 @@ def run_conversation():
     }]
 
     print('# Assistant Response 1:')
-    responses = llm.chat(messages=messages, functions=functions, stream=False)
-    print(responses)
+    responses = []
+    for responses in llm.chat(messages=messages,
+                              functions=functions,
+                              stream=True):
+        print(responses)
 
     messages.extend(responses)  # extend conversation with assistant's reply
 
@@ -107,12 +110,12 @@ def run_conversation():
         })  # extend conversation with function response
 
         print('# Assistant Response 2:')
-        responses = llm.chat(
-            messages=messages,
-            functions=functions,
-            stream=False,
-        )  # get a new response from the model where it can see the function response
-        print(responses)
+        for responses in llm.chat(
+                messages=messages,
+                functions=functions,
+                stream=True,
+        ):  # get a new response from the model where it can see the function response
+            print(responses)
 
 
 if __name__ == '__main__':

@@ -9,6 +9,7 @@ import queue
 import re
 import shutil
 import signal
+import stat
 import subprocess
 import sys
 import time
@@ -28,6 +29,23 @@ from qwen_agent.utils.utils import (extract_code, print_traceback,
 
 WORK_DIR = os.getenv('M6_CODE_INTERPRETER_WORK_DIR',
                      os.getcwd() + '/workspace/ci_workspace/')
+
+
+def _fix_secure_write_for_code_interpreter():
+    if 'linux' in sys.platform.lower():
+        fname = os.path.join(WORK_DIR, 'test_file_permission.txt')
+        if os.path.exists(fname):
+            os.remove(fname)
+        with os.fdopen(
+                os.open(fname, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o0600),
+                'w') as f:
+            f.write('test')
+        file_mode = stat.S_IMODE(os.stat(fname).st_mode) & 0o6677
+        if file_mode != 0o0600:
+            os.environ['JUPYTER_ALLOW_INSECURE_WRITES'] = '1'
+
+
+_fix_secure_write_for_code_interpreter()
 
 LAUNCH_KERNEL_PY = """
 from ipykernel import kernelapp as app

@@ -2,7 +2,6 @@ import argparse
 import json
 import os
 import signal
-import stat
 import subprocess
 import sys
 from pathlib import Path
@@ -45,20 +44,6 @@ def parse_args():
     args = parser.parse_args()
     args.model_server = args.model_server.replace('0.0.0.0', '127.0.0.1')
     return args
-
-
-def _fix_secure_write_for_code_interpreter(code_interpreter_ws):
-    if 'linux' in sys.platform.lower():
-        fname = os.path.join(code_interpreter_ws, 'test_file_permission.txt')
-        if os.path.exists(fname):
-            os.remove(fname)
-        with os.fdopen(
-                os.open(fname, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o0600),
-                'w') as f:
-            f.write('test')
-        file_mode = stat.S_IMODE(os.stat(fname).st_mode) & 0o6677
-        if file_mode != 0o0600:
-            os.environ['JUPYTER_ALLOW_INSECURE_WRITES'] = '1'
 
 
 def update_config(server_config, args, server_config_path):
@@ -105,9 +90,6 @@ def main():
         static_url = args.server_host
     static_url = f'http://{static_url}:{server_config.server.fast_api_port}/static'
     os.environ['M6_CODE_INTERPRETER_STATIC_URL'] = static_url
-
-    _fix_secure_write_for_code_interpreter(
-        server_config.path.code_interpreter_ws)
 
     servers = {
         'database':

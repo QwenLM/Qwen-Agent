@@ -112,11 +112,19 @@ class Message(BaseModelCompatibleDict):
         return value
 
 
-# For llm models that do not support function_call, use this built-in react template to implement
-FN_NAME = 'Action'
-FN_ARGS = 'Action Input'
-FN_RESULT = 'Observation'
-FN_EXIT = 'Answer'
+# For llm models that do not support function_call, use the following react template to implement.
+
+# Classic ReAct tokens:
+# FN_NAME = 'Action'
+# FN_ARGS = 'Action Input'
+# FN_RESULT = 'Observation'
+# FN_EXIT = 'Answer'
+
+# Add special char ✿ to avoid conflict with user inputs:
+FN_NAME = '✿FUNCTION✿'
+FN_ARGS = '✿ARGS✿'
+FN_RESULT = '✿RESULT✿'
+FN_EXIT = '✿RETURN✿'
 
 FN_CALL_TEMPLATE_ZH = """
 
@@ -162,3 +170,21 @@ FN_CALL_TEMPLATE = {
     'zh': FN_CALL_TEMPLATE_ZH,
     'en': FN_CALL_TEMPLATE_EN,
 }
+
+
+# mainly for removing incomplete trailing special tokens when streaming the output
+def remove_special_tokens(text: str, strip: bool = True) -> str:
+    text = text.replace('✿:', '✿')
+    text = text.replace('✿：', '✿')
+    out = ''
+    is_special = False
+    for c in text:
+        if c == '✿':
+            is_special = not is_special
+            continue
+        if is_special:
+            continue
+        out += c
+    if strip:
+        out = out.lstrip('\n').rstrip()
+    return out

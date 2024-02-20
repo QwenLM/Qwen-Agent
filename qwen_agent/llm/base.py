@@ -8,7 +8,8 @@ from qwen_agent.utils.utils import (get_basename_from_url, has_chinese_chars,
 from ..log import logger
 from .schema import (ASSISTANT, CONTENT, DEFAULT_SYSTEM_MESSAGE, FN_ARGS,
                      FN_CALL_TEMPLATE, FN_EXIT, FN_NAME, FN_RESULT, FUNCTION,
-                     ROLE, SYSTEM, USER, ContentItem, FunctionCall, Message)
+                     ROLE, SYSTEM, USER, ContentItem, FunctionCall, Message,
+                     remove_special_tokens)
 
 LLM_REGISTRY = {}
 
@@ -303,82 +304,94 @@ class BaseChatModel(ABC):
         for msg in messages:
             role, content = msg[ROLE], msg[CONTENT]
             assert isinstance(content, list)
-            if role in (SYSTEM,
-                        USER):  # Currently, it is not possible to occur
+
+            if role in (SYSTEM, USER):
                 new_messages.append(Message(role=role, content=content))
-            else:
-                new_content = []
-                for item in content:
-                    for k, v in item.model_dump().items():
-                        if k == 'text':
-                            tmp_content = v
-                            i = tmp_content.find(f'{FN_NAME}:')
-                            if i < 0:
-                                new_content.append(item)
-                                continue
-                            elif i > 0:
-                                answer = tmp_content[:i].lstrip('\n').rstrip()
-                                if answer.endswith('\n'):
-                                    answer = answer[:-1]
-                                new_content.append(ContentItem(text=answer))
-                                new_messages.append(
-                                    Message(
-                                        role=role,
-                                        content=new_content))  # split message
-                                new_content = []
-                                tmp_content = tmp_content[i:]
+                continue
 
-                            for part in tmp_content.split(f'{FN_NAME}:'):
-                                if not part:
-                                    continue
-                                if part.endswith('\n'):
-                                    part = part[:-1]
-                                i = part.find(f'\n{FN_ARGS}:')
-                                j = part.find(f'\n{FN_RESULT}:')
-                                k = part.find(f'\n{FN_EXIT}:')
-                                fn_name, fn_args, result, answer = '', '', '', ''
-                                if i < 0:
-                                    fn_name = part.strip()
-                                else:
-                                    fn_name = part[:i].strip()
-                                    if j < i:
-                                        fn_args = part[i + len(f'\n{FN_ARGS}:'
-                                                               ):].strip()
-                                    else:
-                                        fn_args = part[i + len(f'\n{FN_ARGS}:'
-                                                               ):j].strip()
-                                        if k < j:
-                                            result = part[j +
-                                                          len(f'\n{FN_RESULT}:'
-                                                              ):]
-                                        else:
-                                            result = part[j +
-                                                          len(f'\n{FN_RESULT}:'
-                                                              ):k]
-                                            answer = part[k +
-                                                          len(f'\n{FN_EXIT}:'
-                                                              ):]
-                                new_messages.append(
-                                    Message(ASSISTANT, [],
-                                            function_call=FunctionCall(
-                                                name=fn_name,
-                                                arguments=fn_args)))
+            new_content = []
+            for item in content:
+                (item_type, item_text), = item.model_dump().items()
 
-                                if result or answer:  # result[1:] == '' is possible and allowed
-                                    new_messages.append(
-                                        Message(FUNCTION,
-                                                result[1:],
-                                                name=fn_name))
-                                if answer and answer[1:]:
-                                    new_messages.append(
-                                        Message(
-                                            ASSISTANT,
-                                            [ContentItem(text=answer[1:])]))
+                if item_type != 'text':  # multimodal
+                    new_content.append(item)
+                    continue
+
+                i = item_text.find(f'{FN_NAME}:')
+                if i < 0:  # no function call
+                    show_text = remove_special_tokens(item_text)
+                    if show_text:
+                        new_content.append(ContentItem(text=show_text))
+                    continue
+
+                if i > 0:
+                    answer = item_text[:i].lstrip('\n').rstrip()
+                    if answer.endswith('\n'):
+                        answer = answer[:-1]
+                    show_text = remove_special_tokens(answer)
+                    if show_text:
+                        new_content.append(ContentItem(text=show_text))
+                    if new_content:
+                        new_messages.append(
+                            Message(
+                                role=role,
+                                content=new_content,
+                            ))  # split thought and function call
+                        new_content = []
+                    item_text = item_text[i:]
+
+                for part in item_text.split(f'{FN_NAME}:'):
+                    if not part:
+                        continue
+                    if part.endswith('\n'):
+                        part = part[:-1]
+                    i = part.find(f'\n{FN_ARGS}:')
+                    j = part.find(f'\n{FN_RESULT}:')
+                    k = part.find(f'\n{FN_EXIT}:')
+                    fn_name, fn_args, result, answer = '', '', '', ''
+                    if i < 0:
+                        fn_name = part.strip()
+                    else:
+                        fn_name = part[:i].strip()
+                        if j < i:
+                            fn_args = part[i + len(f'\n{FN_ARGS}:'):].strip()
                         else:
-                            new_content.append(item)
-                if new_content:
-                    new_messages.append(Message(role,
-                                                new_content))  # no func call
+                            fn_args = part[i + len(f'\n{FN_ARGS}:'):j].strip()
+                            if k < j:
+                                result = part[j + len(f'\n{FN_RESULT}:'):]
+                            else:
+                                result = part[j + len(f'\n{FN_RESULT}:'):k]
+                                answer = part[k + len(f'\n{FN_EXIT}:'):]
+                    new_messages.append(
+                        Message(
+                            role=ASSISTANT,
+                            content=[],
+                            function_call=FunctionCall(
+                                name=remove_special_tokens(fn_name),
+                                arguments=remove_special_tokens(fn_args),
+                            ),
+                        ))
+
+                    if result or answer:  # result[1:] == '' is possible and allowed
+                        new_messages.append(
+                            Message(
+                                role=FUNCTION,
+                                content=remove_special_tokens(
+                                    result[1:]),  # rm the ' ' after ':'
+                                name=remove_special_tokens(fn_name),
+                            ))
+                    if answer and answer[1:]:
+                        show_text = remove_special_tokens(
+                            answer[1:])  # rm the ' ' after ':'
+                        if show_text:
+                            new_messages.append(
+                                Message(
+                                    role=ASSISTANT,
+                                    content=[ContentItem(text=show_text)],
+                                ))
+            if new_content:
+                new_messages.append(Message(role=role, content=new_content))
+
         return new_messages
 
     def _postprocess_messages_iterator_for_fn_call(
