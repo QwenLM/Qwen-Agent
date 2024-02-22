@@ -34,7 +34,8 @@ WORK_DIR = os.getenv('M6_CODE_INTERPRETER_WORK_DIR',
 def _fix_secure_write_for_code_interpreter():
     if 'linux' in sys.platform.lower():
         os.makedirs(WORK_DIR, exist_ok=True)
-        fname = os.path.join(WORK_DIR, 'test_file_permission.txt')
+        fname = os.path.join(WORK_DIR,
+                             f'test_file_permission_{os.getpid()}.txt')
         if os.path.exists(fname):
             os.remove(fname)
         with os.fdopen(
@@ -44,6 +45,8 @@ def _fix_secure_write_for_code_interpreter():
         file_mode = stat.S_IMODE(os.stat(fname).st_mode) & 0o6677
         if file_mode != 0o0600:
             os.environ['JUPYTER_ALLOW_INSECURE_WRITES'] = '1'
+        if os.path.exists(fname):
+            os.remove(fname)
 
 
 _fix_secure_write_for_code_interpreter()
