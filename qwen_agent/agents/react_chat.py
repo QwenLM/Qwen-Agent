@@ -54,7 +54,7 @@ class ReActChat(Assistant):
              messages: List[Message],
              lang: str = 'en',
              **kwargs) -> Iterator[List[Message]]:
-
+        ori_messages = messages
         messages = self._preprocess_react_prompt(messages)
 
         max_turn = 5
@@ -87,7 +87,7 @@ class ReActChat(Assistant):
             if use_tool:
                 observation = self._call_tool(action,
                                               action_input,
-                                              messages=messages)
+                                              messages=ori_messages)
                 observation = f'\nObservation: {observation}\nThought: '
                 response[-1][CONTENT] += observation
                 yield response
@@ -129,6 +129,7 @@ class ReActChat(Assistant):
 
     def _preprocess_react_prompt(self,
                                  messages: List[Message]) -> List[Message]:
+        messages = copy.deepcopy(messages)
         tool_descs = '\n\n'.join(
             parser_function(func.function)
             for func in self.function_map.values())
