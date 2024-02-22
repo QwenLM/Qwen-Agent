@@ -33,6 +33,7 @@ WORK_DIR = os.getenv('M6_CODE_INTERPRETER_WORK_DIR',
 
 def _fix_secure_write_for_code_interpreter():
     if 'linux' in sys.platform.lower():
+        os.makedirs(WORK_DIR, exist_ok=True)
         fname = os.path.join(WORK_DIR, 'test_file_permission.txt')
         if os.path.exists(fname):
             os.remove(fname)

@@ -5,6 +5,7 @@ import signal
 import subprocess
 import sys
 from pathlib import Path
+
 from qwen_server.schema import GlobalConfig
 
 
@@ -69,20 +70,19 @@ def main():
         server_config = GlobalConfig(**server_config)
     server_config = update_config(server_config, args, server_config_path)
 
-
-
     os.makedirs(server_config.path.work_space_root, exist_ok=True)
     os.makedirs(server_config.path.database_root, exist_ok=True)
     os.makedirs(server_config.path.download_root, exist_ok=True)
 
     os.makedirs(server_config.path.code_interpreter_ws, exist_ok=True)
-    from qwen_agent.log import logger
-    from qwen_agent.utils.utils import get_local_ip
-    logger.info(server_config)
     code_interpreter_work_dir = str(
         Path(__file__).resolve().parent /
         server_config.path.code_interpreter_ws)
     os.environ['M6_CODE_INTERPRETER_WORK_DIR'] = code_interpreter_work_dir
+
+    from qwen_agent.log import logger
+    from qwen_agent.utils.utils import get_local_ip
+    logger.info(server_config)
 
     if args.server_host == '0.0.0.0':
         static_url = get_local_ip()
