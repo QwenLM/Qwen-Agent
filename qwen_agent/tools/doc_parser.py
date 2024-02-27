@@ -77,7 +77,8 @@ def process_file(url: str, db: Storage = None):
     if url.split('.')[-1].lower() in ['pdf', 'docx', 'pptx']:
         date1 = datetime.datetime.now()
 
-        if url.startswith('https://') or url.startswith('http://'):
+        if url.startswith('https://') or url.startswith('http://') or re.match(
+                r'^[A-Za-z]:\\', url) or re.match(r'^[A-Za-z]:/', url):
             pdf_path = url
         else:
             parsed_url = urlparse(url)
