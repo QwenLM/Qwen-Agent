@@ -61,8 +61,9 @@ history_dir = os.path.join(server_config.path.work_space_root, 'history')
 
 
 def update_pop_url(url: str):
-    url = os.path.join(server_config.path.download_root,
-                       get_basename_from_url(url))
+    if not url.lower().endswith('.pdf'):
+        url = os.path.join(server_config.path.download_root,
+                           get_basename_from_url(url))
     new_line = {'url': url}
 
     with jsonlines.open(cache_file_popup_url, mode='w') as writer:
@@ -84,7 +85,7 @@ def cache_page(**kwargs):
     url = kwargs.get('url', '')
 
     page_content = kwargs.get('content', '')
-    if page_content:
+    if page_content and not url.lower().endswith('.pdf'):
         # map to local url
         url = os.path.join(server_config.path.download_root,
                            get_basename_from_url(url))
