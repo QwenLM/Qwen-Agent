@@ -3,7 +3,11 @@ import os
 import time
 from pathlib import Path
 
-import add_qwen_libs  # NOQA
+try:
+    import add_qwen_libs  # NOQA
+except ImportError:
+    pass
+
 import gradio as gr
 import jsonlines
 
@@ -105,7 +109,7 @@ def bot(history):
 
 
 def init_chatbot():
-    time.sleep(0.5)
+    time.sleep(1)
     page_url = set_url()
     response = read_meta_data_by_condition(meta_file, url=page_url)
     if not response:

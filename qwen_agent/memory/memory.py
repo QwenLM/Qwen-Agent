@@ -9,7 +9,7 @@ from qwen_agent.llm.schema import (ASSISTANT, CONTENT, DEFAULT_SYSTEM_MESSAGE,
                                    ROLE, USER, Message)
 from qwen_agent.log import logger
 from qwen_agent.prompts import GenKeyword
-from qwen_agent.utils.utils import get_file_type, is_local_path
+from qwen_agent.utils.utils import get_file_type
 
 
 class Memory(Agent):
@@ -53,7 +53,7 @@ class Memory(Agent):
         for file in files:
             if (file.split('.')[-1].lower() in [
                     'pdf', 'docx', 'pptx'
-            ]) or (not is_local_path(file) and get_file_type(file) == 'html'):
+            ]) or get_file_type(file) == 'html':
                 rag_files.append(file)
 
         if not rag_files:

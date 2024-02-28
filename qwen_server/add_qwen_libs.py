@@ -1,5 +1,5 @@
 import sys
 from pathlib import Path
 
-# A temporary solution. We should use `python setup.py develop` in the future.
+# This can be removed, if install qwen_agent by `pip install -e ./`
 sys.path.insert(0, str(Path(__file__).absolute().parent.parent))

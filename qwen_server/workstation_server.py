@@ -1,14 +1,15 @@
-# need refactor
-
 import datetime
 import json
 import os
 from pathlib import Path
 
-import add_qwen_libs  # NOQA
 import gradio as gr
 import json5
 
+try:
+    import add_qwen_libs  # NOQA
+except ImportError:
+    pass
 from qwen_agent.agents import ArticleAgent, DocQAAgent, ReActChat
 from qwen_agent.llm import get_chat_model
 from qwen_agent.llm.base import ModelServiceError
