@@ -4,7 +4,7 @@ from typing import Dict, Iterator, List, Optional
 
 import openai
 
-from qwen_agent.llm.base import register_llm
+from qwen_agent.llm.base import ModelServiceError, register_llm
 from qwen_agent.llm.text_base import BaseTextChatModel
 from qwen_agent.log import logger
 
@@ -61,16 +61,25 @@ class TextChatAtOAI(BaseTextChatModel):
                                               messages=messages,
                                               stream=True,
                                               **self.generate_cfg)
-        # TODO: error handling
         if delta_stream:
             for chunk in response:
-                if hasattr(chunk.choices[0].delta, 'content'):
-                    yield [Message(ASSISTANT, chunk.choices[0].delta.content)]
+                if hasattr(chunk.choices[0].delta,
+                           'content') and chunk.choices[0].delta.content:
+                    try:
+                        yield [
+                            Message(ASSISTANT, chunk.choices[0].delta.content)
+                        ]
+                    except Exception as ex:
+                        raise ModelServiceError(ex)
         else:
             full_response = ''
             for chunk in response:
-                if hasattr(chunk.choices[0].delta, 'content'):
-                    full_response += chunk.choices[0].delta.content
+                if hasattr(chunk.choices[0].delta,
+                           'content') and chunk.choices[0].delta.content:
+                    try:
+                        full_response += chunk.choices[0].delta.content
+                    except Exception as ex:
+                        raise ModelServiceError(ex)
                     yield [Message(ASSISTANT, full_response)]
 
     def _chat_no_stream(self, messages: List[Message]) -> List[Message]:
@@ -80,5 +89,7 @@ class TextChatAtOAI(BaseTextChatModel):
                                               messages=messages,
                                               stream=False,
                                               **self.generate_cfg)
-        # TODO: error handling
-        return [Message(ASSISTANT, response.choices[0].message.content)]
+        try:
+            return [Message(ASSISTANT, response.choices[0].message.content)]
+        except Exception as ex:
+            raise ModelServiceError(ex)

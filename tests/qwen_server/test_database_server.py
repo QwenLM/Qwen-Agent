@@ -3,7 +3,7 @@ import os
 import shutil
 from pathlib import Path
 
-from qwen_agent.utils.utils import get_basename_from_url
+from qwen_agent.utils.utils import hash_sha256
 from qwen_server.schema import GlobalConfig
 from qwen_server.utils import read_meta_data_by_condition
 
@@ -33,7 +33,7 @@ def test_database_server():
     cache_page(**data)
 
     new_url = os.path.join(server_config.path.download_root,
-                           get_basename_from_url(data['url']))
+                           hash_sha256(data['url']))
     assert os.path.exists(new_url)
 
     meta_file = os.path.join(server_config.path.work_space_root,
