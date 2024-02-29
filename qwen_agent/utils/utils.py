@@ -1,4 +1,5 @@
 import datetime
+import hashlib
 import json
 import os
 import re
@@ -29,6 +30,12 @@ def get_local_ip():
     finally:
         s.close()
     return ip
+
+
+def hash_sha256(key):
+    hash_object = hashlib.sha256(key.encode())
+    key = hash_object.hexdigest()
+    return key
 
 
 def print_traceback():

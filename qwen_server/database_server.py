@@ -17,8 +17,7 @@ from fastapi.staticfiles import StaticFiles
 
 from qwen_agent.log import logger
 from qwen_agent.memory import Memory
-from qwen_agent.utils.utils import (get_basename_from_url, get_local_ip,
-                                    save_text_to_file)
+from qwen_agent.utils.utils import get_local_ip, hash_sha256, save_text_to_file
 from qwen_server.schema import GlobalConfig
 from qwen_server.utils import (rm_browsing_meta_data, save_browsing_meta_data,
                                save_history)
@@ -62,8 +61,7 @@ history_dir = os.path.join(server_config.path.work_space_root, 'history')
 
 def update_pop_url(url: str):
     if not url.lower().endswith('.pdf'):
-        url = os.path.join(server_config.path.download_root,
-                           get_basename_from_url(url))
+        url = os.path.join(server_config.path.download_root, hash_sha256(url))
     new_line = {'url': url}
 
     with jsonlines.open(cache_file_popup_url, mode='w') as writer:
@@ -87,13 +85,15 @@ def cache_page(**kwargs):
     page_content = kwargs.get('content', '')
     if page_content and not url.lower().endswith('.pdf'):
         # map to local url
-        url = os.path.join(server_config.path.download_root,
-                           get_basename_from_url(url))
+        url = os.path.join(server_config.path.download_root, hash_sha256(url))
+        save_browsing_meta_data(url, '[CACHING]', meta_file)
+        # rm history
+        save_history(None, url, history_dir)
         save_text_to_file(url, page_content)
-
-    save_browsing_meta_data(url, '[CACHING]', meta_file)
-    # rm history
-    save_history(None, url, history_dir)
+    else:
+        save_browsing_meta_data(url, '[CACHING]', meta_file)
+        # rm history
+        save_history(None, url, history_dir)
     try:
         *_, last = mem.run([{
             'role': 'user',

@@ -114,7 +114,7 @@ def init_chatbot():
     response = read_meta_data_by_condition(meta_file, url=page_url)
     if not response:
         gr.Info(
-            "Please add this page to Qwen's Reading List first! If you have already added it, it may be due to network or permission issues that caused failure"
+            "Please add this page to Qwen's Reading List first! If you have already added it, please reopen later..."
         )
     elif response == '[CACHING]':
         gr.Info('Please reopen later, Qwen is analyzing this page...')

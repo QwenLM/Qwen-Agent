@@ -1,17 +1,10 @@
-import hashlib
 import os
 from typing import Dict, Optional, Union
 
 from qwen_agent.log import logger
 from qwen_agent.tools.base import BaseTool, register_tool
-from qwen_agent.utils.utils import (print_traceback, read_text_from_file,
-                                    save_text_to_file)
-
-
-def hash_sha256(key):
-    hash_object = hashlib.sha256(key.encode())
-    key = hash_object.hexdigest()
-    return key
+from qwen_agent.utils.utils import (hash_sha256, print_traceback,
+                                    read_text_from_file, save_text_to_file)
 
 
 @register_tool('storage')
