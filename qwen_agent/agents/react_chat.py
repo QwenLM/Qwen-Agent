@@ -6,7 +6,7 @@ from qwen_agent.llm import BaseChatModel
 from qwen_agent.llm.schema import (ASSISTANT, CONTENT, DEFAULT_SYSTEM_MESSAGE,
                                    ROLE, ContentItem, Message)
 from qwen_agent.utils.utils import (get_basename_from_url, has_chinese_chars,
-                                    parser_function)
+                                    get_function_description)
 
 PROMPT_REACT = """Answer the following questions as best you can. You have access to the following tools:
 
@@ -26,6 +26,8 @@ Final Answer: the final answer to the original input question
 Begin!
 
 Question: {query}"""
+
+MAX_LLM_CALL_PER_RUN = 8
 
 
 class ReActChat(Assistant):
@@ -57,22 +59,22 @@ class ReActChat(Assistant):
         ori_messages = messages
         messages = self._preprocess_react_prompt(messages)
 
-        max_turn = 5
+        num_llm_calls_available = MAX_LLM_CALL_PER_RUN
         response = []
-        while True and max_turn > 0:
-            max_turn -= 1
+        while True and num_llm_calls_available > 0:
+            num_llm_calls_available -= 1
             output_stream = self._call_llm(messages=messages)
             output = []
 
             # yield the streaming response
             response_tmp = copy.deepcopy(response)
             for output in output_stream:
-                if not response_tmp:
-                    yield output
-                else:
-                    response_tmp[-1][
-                        CONTENT] = response[-1][CONTENT] + output[-1][CONTENT]
-                    yield response_tmp
+                if output:
+                    if not response_tmp:
+                        yield output
+                    else:
+                        response_tmp[-1][CONTENT] += output[-1][CONTENT]
+                        yield response_tmp
             # record the incremental response
             assert len(output) == 1 and output[-1][ROLE] == ASSISTANT
             if not response:
@@ -131,7 +133,7 @@ class ReActChat(Assistant):
                                  messages: List[Message]) -> List[Message]:
         messages = copy.deepcopy(messages)
         tool_descs = '\n\n'.join(
-            parser_function(func.function)
+            get_function_description(func.function)
             for func in self.function_map.values())
         tool_names = ','.join(tool.name for tool in self.function_map.values())
 

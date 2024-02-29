@@ -34,6 +34,8 @@ KNOWLEDGE_TEMPLATE_EN = """
 KNOWLEDGE_SNIPPET = {'zh': KNOWLEDGE_SNIPPET_ZH, 'en': KNOWLEDGE_SNIPPET_EN}
 KNOWLEDGE_TEMPLATE = {'zh': KNOWLEDGE_TEMPLATE_ZH, 'en': KNOWLEDGE_TEMPLATE_EN}
 
+MAX_LLM_CALL_PER_RUN = 8
+
 
 class Assistant(Agent):
 
@@ -78,10 +80,10 @@ class Assistant(Agent):
                 messages.insert(0,
                                 Message(role=SYSTEM, content=knowledge_prompt))
 
-        max_turn = 5
+        num_llm_calls_available = MAX_LLM_CALL_PER_RUN
         response = []
-        while True and max_turn > 0:
-            max_turn -= 1
+        while True and num_llm_calls_available > 0:
+            num_llm_calls_available -= 1
             output_stream = self._call_llm(
                 messages=messages,
                 functions=[

@@ -269,7 +269,7 @@ def parse_latest_plugin_call(text):
     return plugin_name, plugin_args, text
 
 
-def parser_function(function: Dict) -> str:
+def get_function_description(function: Dict) -> str:
     """
     Text description of function
     """

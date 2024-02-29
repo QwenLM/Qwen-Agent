@@ -61,12 +61,13 @@ class GenKeyword(Agent):
             llm = copy.deepcopy(llm)
             if isinstance(llm, dict):
                 llm = get_chat_model(llm)
-            llm.generate_cfg['stop'].append('Observation:')
+            llm.generate_cfg['stop'].extend(['Observation:', 'Observation:\n'])
         super().__init__(function_list, llm, system_message, **kwargs)
 
     def _run(self,
              messages: List[Message],
-             lang: str = 'en') -> Iterator[List[Message]]:
+             lang: str = 'en',
+             **kwargs) -> Iterator[List[Message]]:
         messages[-1][CONTENT] = PROMPT_TEMPLATE[lang].format(
             user_request=messages[-1][CONTENT])
         return self._call_llm(messages)

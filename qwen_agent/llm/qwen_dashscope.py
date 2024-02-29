@@ -8,7 +8,7 @@ import dashscope
 from qwen_agent.llm.base import ModelServiceError, register_llm
 from qwen_agent.log import logger
 
-from .schema import (ASSISTANT, CONTENT, DEFAULT_SYSTEM_MESSAGE, ROLE, SYSTEM,
+from .schema import (ASSISTANT, DEFAULT_SYSTEM_MESSAGE, ROLE, SYSTEM,
                      USER, Message)
 from .text_base import BaseTextChatModel
 
@@ -18,9 +18,10 @@ class QwenChatAtDS(BaseTextChatModel):
 
     def __init__(self, cfg: Optional[Dict] = None):
         super().__init__(cfg)
+        self.model = self.model or 'qwen-max'
 
-        self.model = self.cfg.get('model', 'qwen-max')
-        api_key = self.cfg.get('api_key', '')
+        cfg = cfg or {}
+        api_key = cfg.get('api_key', '')
         if not api_key:
             api_key = os.getenv('DASHSCOPE_API_KEY', 'EMPTY')
         api_key = api_key.strip()
@@ -61,7 +62,7 @@ class QwenChatAtDS(BaseTextChatModel):
                 Message(ASSISTANT, response.output.choices[0].message.content)
             ]
         else:
-            err = 'Error code: %s, error message: %s' % (
+            err = '\nError code: %s, error message: %s' % (
                 response.code,
                 response.message,
             )
@@ -70,17 +71,17 @@ class QwenChatAtDS(BaseTextChatModel):
     def _chat_with_functions(
         self,
         messages: List[Message],
-        functions: Optional[List[Dict]] = None,
+        functions: List[Dict],
         stream: bool = True,
         delta_stream: bool = False
     ) -> Union[List[Message], Iterator[List[Message]]]:
-        messages = self._prepend_fn_call_system(messages, functions)
-        messages = self._preprocess_messages(messages)
+        if delta_stream:
+            raise NotImplementedError
+
+        messages = self._prepend_fncall_system(messages, functions)
 
         # using text completion
         prompt = self._build_text_completion_prompt(messages)
-        logger.debug('==== Inputted prompt ===')
-        logger.debug(f'*{prompt}*')
         if stream:
             return self._text_completion_stream(prompt, delta_stream)
         else:
@@ -90,6 +91,7 @@ class QwenChatAtDS(BaseTextChatModel):
         self,
         prompt: str,
     ) -> List[Message]:
+        logger.debug(f'*{prompt}*')
         response = dashscope.Generation.call(self.model,
                                              prompt=prompt,
                                              result_format='message',
@@ -101,7 +103,7 @@ class QwenChatAtDS(BaseTextChatModel):
                 Message(ASSISTANT, response.output.choices[0].message.content)
             ]
         else:
-            err = 'Error code: %s, error message: %s' % (
+            err = '\nError code: %s, error message: %s' % (
                 response.code,
                 response.message,
             )
@@ -112,6 +114,7 @@ class QwenChatAtDS(BaseTextChatModel):
         prompt: str,
         delta_stream: bool = False,
     ) -> Iterator[List[Message]]:
+        logger.debug(f'*{prompt}*')
         response = dashscope.Generation.call(
             self.model,
             prompt=prompt,  # noqa
@@ -128,29 +131,24 @@ class QwenChatAtDS(BaseTextChatModel):
     def _build_text_completion_prompt(messages: List[Message]) -> str:
         im_start = '<|im_start|>'
         im_end = '<|im_end|>'
-        if messages[0][ROLE] == SYSTEM:
-            sys = messages[0][CONTENT]
-            assert isinstance(
-                sys,
-                str), 'text completion does not support vl format messages'
+        if messages[0].role == SYSTEM:
+            sys = messages[0].content
+            assert isinstance(sys, str)
             prompt = f'{im_start}{SYSTEM}\n{sys}{im_end}'
         else:
             prompt = f'{im_start}{SYSTEM}\n{DEFAULT_SYSTEM_MESSAGE}{im_end}'
         if messages[-1][ROLE] != ASSISTANT:
-            # add one empty reply for the last round of ASSISTANT
             messages.append(Message(ASSISTANT, ''))
-        for message in messages:
-            assert isinstance(
-                message[CONTENT],
-                str), 'text completion does not support vl format messages'
-            if message[ROLE] == USER:
-                query = message[CONTENT].lstrip('\n').rstrip()
+        for msg in messages:
+            assert isinstance(msg.content, str)
+            if msg.role == USER:
+                query = msg.content.lstrip('\n').rstrip()
                 prompt += f'\n{im_start}{USER}\n{query}{im_end}'
-            elif message[ROLE] == ASSISTANT:
-                response = message[CONTENT].lstrip('\n').rstrip()
+            elif msg.role == ASSISTANT:
+                response = msg.content.lstrip('\n').rstrip()
                 prompt += f'\n{im_start}{ASSISTANT}\n{response}{im_end}'
-
-        prompt = prompt[:-len(f'{im_end}')]
+        assert prompt.endswith(im_end)
+        prompt = prompt[:-len(im_end)]
         return prompt
 
     @staticmethod

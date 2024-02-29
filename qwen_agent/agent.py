@@ -78,11 +78,12 @@ class Agent(ABC):
              **kwargs) -> Iterator[List[Message]]:
         raise NotImplementedError
 
-    def _call_llm(self,
-                  messages: List[Message],
-                  functions: Optional[List[Dict]] = None,
-                  stream: bool = True,
-                  delta_stream: bool = False) -> Iterator[List[Message]]:
+    def _call_llm(
+        self,
+        messages: List[Message],
+        functions: Optional[List[Dict]] = None,
+        stream: bool = True,
+    ) -> Iterator[List[Message]]:
         """
         for an agent, default to call llm using full stream interfaces
         """
@@ -98,8 +99,7 @@ class Agent(ABC):
                                     ] + messages[0][CONTENT]
         return self.llm.chat(messages=messages,
                              functions=functions,
-                             stream=stream,
-                             delta_stream=delta_stream)
+                             stream=stream)
 
     def _call_tool(self,
                    tool_name: str,

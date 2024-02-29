@@ -16,17 +16,18 @@ class TextChatAtOAI(BaseTextChatModel):
 
     def __init__(self, cfg: Optional[Dict] = None):
         super().__init__(cfg)
-        self.model = self.cfg.get('model', 'gpt-3.5-turbo')
+        self.model = self.model or 'gpt-3.5-turbo'
+        cfg = cfg or {}
 
-        api_base = self.cfg.get(
+        api_base = cfg.get(
             'api_base',
-            self.cfg.get(
+            cfg.get(
                 'base_url',
-                self.cfg.get('model_server', ''),
+                cfg.get('model_server', ''),
             ),
         ).strip()
 
-        api_key = self.cfg.get('api_key', '')
+        api_key = cfg.get('api_key', '')
         if not api_key:
             api_key = os.getenv('OPENAI_API_KEY', 'EMPTY')
         api_key = api_key.strip()
