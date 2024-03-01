@@ -84,6 +84,11 @@ class ContentItem(BaseModelCompatibleDict):
     def __repr__(self):
         return f'ContentItem({self.model_dump()})'
 
+    def get_type_and_value(self):
+        (t, v), = self.model_dump().items()
+        assert t in ('text', 'image', 'file')
+        return t, v
+
 
 class Message(BaseModelCompatibleDict):
     role: str

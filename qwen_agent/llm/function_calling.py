@@ -127,7 +127,7 @@ class BaseFnCallModel(BaseChatModel, ABC):
         if new_messages[-1].role == ASSISTANT:
             last_msg = new_messages[-1].content
             for i in range(len(last_msg) - 1, -1, -1):
-                (item_type, item_text), = last_msg[i].model_dump().items()
+                item_type, item_text = last_msg[i].get_type_and_value()
                 if item_type == 'text':
                     if item_text.endswith(f'{FN_EXIT}: '):
                         last_msg[i].text = item_text[:-2]
@@ -145,7 +145,7 @@ class BaseFnCallModel(BaseChatModel, ABC):
         # remove ': ' brought by continued generation of function calling
         last_msg = messages[-1][CONTENT]
         for i in range(len(last_msg)):
-            (item_type, item_text), = last_msg[i].model_dump().items()
+            item_type, item_text = last_msg[i].get_type_and_value()
             if item_type == 'text':
                 if item_text.startswith(': '):
                     last_msg[i].text = item_text[2:]
@@ -164,7 +164,7 @@ class BaseFnCallModel(BaseChatModel, ABC):
 
             new_content = []
             for item in content:
-                (item_type, item_text), = item.model_dump().items()
+                item_type, item_text = item.get_type_and_value()
 
                 if item_type != 'text':  # multimodal
                     new_content.append(item)
@@ -307,6 +307,7 @@ FN_CALL_TEMPLATE = {
 }
 
 
+# TODO: This affects users who use the ✿ character accidentally.
 # mainly for removing incomplete trailing special tokens when streaming the output
 def remove_special_tokens(text: str, strip: bool = True) -> str:
     text = text.replace('✿:', '✿')
