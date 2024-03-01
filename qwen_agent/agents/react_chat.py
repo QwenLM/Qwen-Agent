@@ -73,7 +73,8 @@ class ReActChat(Assistant):
                     if not response_tmp:
                         yield output
                     else:
-                        response_tmp[-1][CONTENT] += output[-1][CONTENT]
+                        response_tmp[-1][
+                            CONTENT] = response[-1][CONTENT] + output[-1][CONTENT]
                         yield response_tmp
             # record the incremental response
             assert len(output) == 1 and output[-1][ROLE] == ASSISTANT
