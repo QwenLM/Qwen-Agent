@@ -36,7 +36,7 @@ def test_assistant_files():
 
 
 def test_assistant_vl():
-    llm_cfg = {'model': 'qwen-vl-plus'}
+    llm_cfg = {'model': 'qwen-vl-max'}
     agent = Assistant(llm=llm_cfg)
 
     messages = [

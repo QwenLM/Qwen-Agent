@@ -1,3 +1,4 @@
+import copy
 from typing import Iterator, List
 
 from qwen_agent import Agent
@@ -35,6 +36,7 @@ class ContinueWriting(Agent):
              knowledge: str = '',
              lang: str = 'en',
              **kwargs) -> Iterator[List[Message]]:
+        messages = copy.deepcopy(messages)
         messages[-1][CONTENT] = PROMPT_TEMPLATE[lang].format(
             ref_doc=knowledge,
             user_request=messages[-1][CONTENT],

@@ -21,7 +21,7 @@ class WriteFromScratch(Agent):
     def _run(self,
              messages: List[Message],
              knowledge: str = '',
-             lang: str = 'zh') -> Iterator[List[Message]]:
+             lang: str = 'en') -> Iterator[List[Message]]:
         # plan
         response = [
             Message(ASSISTANT, f'>\n> Use Default plans: \n{default_plan}')

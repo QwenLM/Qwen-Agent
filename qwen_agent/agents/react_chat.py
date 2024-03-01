@@ -5,8 +5,9 @@ from qwen_agent.agents import Assistant
 from qwen_agent.llm import BaseChatModel
 from qwen_agent.llm.schema import (ASSISTANT, CONTENT, DEFAULT_SYSTEM_MESSAGE,
                                    ROLE, ContentItem, Message)
-from qwen_agent.utils.utils import (get_basename_from_url, has_chinese_chars,
-                                    get_function_description)
+from qwen_agent.utils.utils import (get_basename_from_url,
+                                    get_function_description,
+                                    has_chinese_chars)
 
 PROMPT_REACT = """Answer the following questions as best you can. You have access to the following tools:
 
@@ -39,10 +40,14 @@ class ReActChat(Assistant):
                  function_list: Optional[List[Union[str, Dict]]] = None,
                  llm: Optional[Union[Dict, BaseChatModel]] = None,
                  system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
+                 name: Optional[str] = None,
+                 description: Optional[str] = None,
                  files: Optional[List[str]] = None):
         super().__init__(function_list=function_list,
                          llm=llm,
                          system_message=system_message,
+                         name=name,
+                         description=description,
                          files=files)
         stop = self.llm.generate_cfg.get('stop', [])
         fn_stop = ['Observation:', 'Observation:\n']
@@ -73,8 +78,8 @@ class ReActChat(Assistant):
                     if not response_tmp:
                         yield output
                     else:
-                        response_tmp[-1][
-                            CONTENT] = response[-1][CONTENT] + output[-1][CONTENT]
+                        response_tmp[-1][CONTENT] = response[-1][
+                            CONTENT] + output[-1][CONTENT]
                         yield response_tmp
             # record the incremental response
             assert len(output) == 1 and output[-1][ROLE] == ASSISTANT

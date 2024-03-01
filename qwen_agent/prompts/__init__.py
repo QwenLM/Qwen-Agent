@@ -8,11 +8,7 @@ from .doc_qa import DocQA
 from .expand_writing import ExpandWriting
 from .gen_keyword import GenKeyword
 from .outline_writing import OutlineWriting
-from .write_from_scratch import WriteFromScratch
-
-DEFAULT_SYSTEM = 'You are a helpful assistant.'
 
 __all__ = [
-    'DocQA', 'ContinueWriting', 'OutlineWriting', 'ExpandWriting',
-    'WriteFromScratch', 'GenKeyword'
+    'DocQA', 'ContinueWriting', 'OutlineWriting', 'ExpandWriting', 'GenKeyword'
 ]

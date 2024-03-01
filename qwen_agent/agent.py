@@ -5,7 +5,7 @@ from typing import Dict, Iterator, List, Optional, Tuple, Union
 from qwen_agent.llm import get_chat_model
 from qwen_agent.llm.base import BaseChatModel
 from qwen_agent.llm.schema import (CONTENT, DEFAULT_SYSTEM_MESSAGE, ROLE,
-                                   SYSTEM, USER, ContentItem, Message)
+                                   SYSTEM, ContentItem, Message)
 from qwen_agent.tools import TOOL_REGISTRY
 from qwen_agent.utils.utils import has_chinese_chars
 
@@ -16,6 +16,8 @@ class Agent(ABC):
                  function_list: Optional[List[Union[str, Dict]]] = None,
                  llm: Optional[Union[Dict, BaseChatModel]] = None,
                  system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
+                 name: Optional[str] = None,
+                 description: Optional[str] = None,
                  **kwargs):
         """
         init tools/llm for one agent
@@ -42,13 +44,17 @@ class Agent(ABC):
                 self._init_tool(tool)
 
         self.system_message = system_message
+        self.name = name
+        self.description = description
 
     def run(self, messages: List[Union[Dict, Message]],
             **kwargs) -> Union[Iterator[List[Message]], Iterator[List[Dict]]]:
-        assert messages[-1][ROLE] == USER, 'you must send the user message'
         messages = copy.deepcopy(messages)
         _return_message_type = 'dict'
         new_messages = []
+        # Only return dict when all input messages are dict
+        if not messages:
+            _return_message_type = 'message'
         for msg in messages:
             if isinstance(msg, dict):
                 new_messages.append(Message(**msg))
@@ -56,13 +62,16 @@ class Agent(ABC):
                 new_messages.append(msg)
                 _return_message_type = 'message'
 
-        if 'lang' not in kwargs:
+        if new_messages and 'lang' not in kwargs:
             if has_chinese_chars([new_messages[-1][CONTENT], kwargs]):
                 kwargs['lang'] = 'zh'
             else:
                 kwargs['lang'] = 'en'
 
         for rsp in self._run(messages=new_messages, **kwargs):
+            for i in range(len(rsp)):
+                if not rsp[i].name and self.name:
+                    rsp[i].name = self.name
             if _return_message_type == 'message':
                 yield [Message(**x) if isinstance(x, dict) else x for x in rsp]
             else:
@@ -110,7 +119,7 @@ class Agent(ABC):
 
         """
         if tool_name not in self.function_map:
-            raise ValueError(f'This agent cannot call tool {tool_name}.')
+            return f'Tool {tool_name} does not exists.'
         return self.function_map[tool_name].call(tool_args, **kwargs)
 
     def _init_tool(self, tool: Union[str, Dict]):

@@ -6,7 +6,7 @@ from qwen_agent.agents import Assistant
 
 def init_agent_service():
     # settings
-    llm_cfg_vl = {'model': 'qwen-vl-plus'}
+    llm_cfg_vl = {'model': 'qwen-vl-max'}
 
     # files: support web page / .pdf / .docx / .pptx to the knowledge base
     bot = Assistant(

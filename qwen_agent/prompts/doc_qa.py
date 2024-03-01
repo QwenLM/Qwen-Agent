@@ -1,3 +1,4 @@
+import copy
 from typing import Iterator, List
 
 from qwen_agent import Agent
@@ -30,6 +31,7 @@ class DocQA(Agent):
              knowledge: str = '',
              lang: str = 'en',
              **kwargs) -> Iterator[List[Message]]:
+        messages = copy.deepcopy(messages)
         system_prompt = PROMPT_TEMPLATE[lang].format(ref_doc=knowledge)
         if messages[0][ROLE] == SYSTEM:
             messages[0][CONTENT] += system_prompt

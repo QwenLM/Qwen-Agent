@@ -12,10 +12,14 @@ class DocQAAgent(Assistant):
                  function_list: Optional[List[Union[str, Dict]]] = None,
                  llm: Optional[Union[Dict, BaseChatModel]] = None,
                  system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
+                 name: Optional[str] = None,
+                 description: Optional[str] = None,
                  files: Optional[List[str]] = None):
         super().__init__(function_list=function_list,
                          llm=llm,
                          system_message=system_message,
+                         name=name,
+                         description=description,
                          files=files)
 
         self.doc_qa = DocQA(llm=self.llm)

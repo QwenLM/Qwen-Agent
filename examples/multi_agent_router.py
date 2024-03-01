@@ -1,18 +1,18 @@
 """A multi-agent cooperation example implemented by router and assistant"""
-from qwen_agent.agents import Assistant, Router
+from qwen_agent.agents import Assistant, ReActChat, Router
 
 
 def init_agent_service():
     # settings
     llm_cfg = {'model': 'qwen-max'}
-    llm_cfg_vl = {'model': 'qwen-vl-plus'}
+    llm_cfg_vl = {'model': 'qwen-vl-max'}
     tools = ['image_gen', 'code_interpreter']
 
     # define a vl agent
     bot_vl = Assistant(llm=llm_cfg_vl)
 
     # define a tool agent
-    bot_tool = Assistant(llm=llm_cfg, function_list=tools)
+    bot_tool = ReActChat(llm=llm_cfg, function_list=tools)
 
     # define a router (Simultaneously serving as a text agent)
     bot = Router(llm=llm_cfg,

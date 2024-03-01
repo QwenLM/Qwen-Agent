@@ -43,17 +43,21 @@ class Assistant(Agent):
                  function_list: Optional[List[Union[str, Dict]]] = None,
                  llm: Optional[Union[Dict, BaseChatModel]] = None,
                  system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
+                 name: Optional[str] = None,
+                 description: Optional[str] = None,
                  files: Optional[List[str]] = None):
         super().__init__(function_list=function_list,
                          llm=llm,
-                         system_message=system_message)
+                         system_message=system_message,
+                         name=name,
+                         description=description)
 
         # default to use Memory to manage files
         self.mem = Memory(llm=self.llm, files=files)
 
     def _run(self,
              messages: List[Message],
-             lang: str = 'zh',
+             lang: str = 'en',
              max_ref_token: int = 4000,
              **kwargs) -> Iterator[List[Message]]:
         messages = copy.deepcopy(messages)
@@ -77,8 +81,8 @@ class Assistant(Agent):
             if messages[0][ROLE] == SYSTEM:
                 messages[0][CONTENT] += knowledge_prompt
             else:
-                messages.insert(0,
-                                Message(role=SYSTEM, content=knowledge_prompt))
+                messages = [Message(role=SYSTEM, content=knowledge_prompt)
+                            ] + messages
 
         num_llm_calls_available = MAX_LLM_CALL_PER_RUN
         response = []
@@ -91,9 +95,11 @@ class Assistant(Agent):
                 ])
             output: List[Message] = []
             for output in output_stream:
-                yield response + output
-            response.extend(output)
-            messages.extend(output)
+                if output:
+                    yield response + output
+            if output:
+                response.extend(output)
+                messages.extend(output)
             use_tool, action, action_input, _ = self._detect_tool(response[-1])
             if use_tool:
                 observation = self._call_tool(action,

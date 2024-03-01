@@ -1,9 +1,6 @@
-import pytest
-
 from qwen_agent.agents import DocQAAgent
 
 
-@pytest.mark.skip()
 def test_doc_qa():
     llm_cfg = {
         'model': 'qwen-plus',
@@ -15,9 +12,10 @@ def test_doc_qa():
         'role':
         'user',
         'content': [{
-            'text': 'How to install'
+            'text': 'Summarize a title'
         }, {
-            'file': 'https://github.com/QwenLM/Qwen-Agent'
+            'file':
+            'https://www.runoob.com/fastapi/fastapi-tutorial.html'
         }]
     }]
     *_, last = agent.run(messages)

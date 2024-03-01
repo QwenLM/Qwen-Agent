@@ -1,8 +1,9 @@
 from typing import Iterator, List
 
 from qwen_agent.agents.assistant import Assistant
+from qwen_agent.agents.write_from_scratch import WriteFromScratch
 from qwen_agent.llm.schema import ASSISTANT, CONTENT, Message
-from qwen_agent.prompts import ContinueWriting, WriteFromScratch
+from qwen_agent.prompts import ContinueWriting
 
 
 class ArticleAgent(Assistant):
@@ -33,6 +34,9 @@ class ArticleAgent(Assistant):
             writing_agent = ContinueWriting(llm=self.llm)
             response.append(Message(ASSISTANT, '>\n> Writing Text: \n'))
             yield response
-        res = writing_agent.run(messages=messages, lang=lang, knowledge=_ref)
-        for trunk in res:
-            yield response + trunk
+
+        for trunk in writing_agent.run(messages=messages,
+                                       lang=lang,
+                                       knowledge=_ref):
+            if trunk:
+                yield response + trunk

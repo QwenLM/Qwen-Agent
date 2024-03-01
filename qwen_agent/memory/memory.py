@@ -5,8 +5,8 @@ import json5
 
 from qwen_agent import Agent
 from qwen_agent.llm import BaseChatModel
-from qwen_agent.llm.schema import (ASSISTANT, CONTENT, DEFAULT_SYSTEM_MESSAGE,
-                                   ROLE, USER, Message)
+from qwen_agent.llm.schema import (ASSISTANT, DEFAULT_SYSTEM_MESSAGE, USER,
+                                   Message)
 from qwen_agent.log import logger
 from qwen_agent.prompts import GenKeyword
 from qwen_agent.utils.utils import get_file_type
@@ -61,17 +61,17 @@ class Memory(Agent):
         else:
             query = ''
             # only retrieval content according to the last user query if exists
-            if messages and messages[-1][ROLE] == USER:
-                if isinstance(messages[-1][CONTENT], str):
-                    query = messages[-1][CONTENT]
+            if messages and messages[-1].role == USER:
+                if isinstance(messages[-1].content, str):
+                    query = messages[-1].content
                 else:
-                    for item in messages[-1][CONTENT]:
+                    for item in messages[-1].content:
                         if item.text:
                             query += item.text
             if query:
                 # gen keyword
                 *_, last = self.keygen.run([Message(USER, query)])
-                keyword = last[-1][CONTENT]
+                keyword = last[-1].content
                 try:
                     logger.info(keyword)
                     keyword_dict = json5.loads(keyword)
@@ -97,8 +97,8 @@ class Memory(Agent):
     def get_all_files_of_messages(messages: List[Message]):
         files = []
         for msg in messages:
-            if isinstance(msg[CONTENT], list):
-                for item in msg[CONTENT]:
-                    if item.file:
+            if isinstance(msg.content, list):
+                for item in msg.content:
+                    if item.file and item.file not in files:
                         files.append(item.file)
         return files

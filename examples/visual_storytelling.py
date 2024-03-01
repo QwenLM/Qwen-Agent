@@ -17,7 +17,7 @@ class VisualStorytelling(Agent):
         super().__init__(llm=llm)
 
         # Nest one vl assistant for image understanding
-        self.image_agent = Assistant(llm={'model': 'qwen-vl-plus'})
+        self.image_agent = Assistant(llm={'model': 'qwen-vl-max'})
 
         # Nest one assistant for article writing
         self.writing_agent = Assistant(

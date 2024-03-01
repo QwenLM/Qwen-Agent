@@ -4,7 +4,7 @@ from qwen_agent.llm.schema import ContentItem, Message
 
 def test_router():
     llm_cfg = {'model': 'qwen-max'}
-    llm_cfg_vl = {'model': 'qwen-vl-plus'}
+    llm_cfg_vl = {'model': 'qwen-vl-max'}
     tools = ['image_gen', 'amap_weather']
 
     # define a vl agent

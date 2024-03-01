@@ -1,3 +1,4 @@
+import copy
 from typing import Iterator, List
 
 from qwen_agent import Agent
@@ -47,7 +48,7 @@ class ExpandWriting(Agent):
              capture_later: str = '',
              lang: str = 'en',
              **kwargs) -> Iterator[List[Message]]:
-
+        messages = copy.deepcopy(messages)
         prompt = PROMPT_TEMPLATE[lang].format(
             ref_doc=knowledge,
             user_request=messages[-1][CONTENT],

@@ -68,6 +68,7 @@ class GenKeyword(Agent):
              messages: List[Message],
              lang: str = 'en',
              **kwargs) -> Iterator[List[Message]]:
+        messages = copy.deepcopy(messages)
         messages[-1][CONTENT] = PROMPT_TEMPLATE[lang].format(
             user_request=messages[-1][CONTENT])
         return self._call_llm(messages)

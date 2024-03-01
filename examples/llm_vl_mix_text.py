@@ -4,7 +4,7 @@ from qwen_agent.llm.schema import ContentItem, Message
 
 # settings
 llm_cfg = {'model': 'qwen-plus', 'model_server': 'dashscope'}
-llm_cfg_vl = {'model': 'qwen-vl-plus', 'model_server': 'dashscope'}
+llm_cfg_vl = {'model': 'qwen-vl-max', 'model_server': 'dashscope'}
 functions = [{
     'name': 'image_gen',
     'name_for_human': 'AI绘画',
