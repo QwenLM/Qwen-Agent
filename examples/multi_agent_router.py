@@ -1,5 +1,10 @@
 """A multi-agent cooperation example implemented by router and assistant"""
+import os
+from typing import Optional
+
 from qwen_agent.agents import Assistant, ReActChat, Router
+
+ROOT_RESOURCE = os.path.join(os.path.dirname(__file__), 'resource')
 
 
 def init_agent_service():
@@ -57,6 +62,30 @@ def app():
         for response in bot.run(messages):
             print('bot response:', response)
         messages.extend(response)
+
+
+def test(
+    query: str = 'hello',
+    image: Optional[
+        str] = 'https://img01.sc115.com/uploads/sc/jpgs/1505/apic11540_sc115.com.jpg',
+    file: Optional[str] = os.path.join(ROOT_RESOURCE, 'poem.pdf')):
+    # define the agent
+    bot = init_agent_service()
+
+    # chat
+    messages = []
+
+    if not image and not file:
+        messages.append({'role': 'user', 'content': query})
+    else:
+        messages.append({'role': 'user', 'content': [{'text': query}]})
+        if image:
+            messages[-1]['content'].append({'image': image})
+        if file:
+            messages[-1]['content'].append({'file': file})
+
+    for response in bot.run(messages):
+        print('bot response:', response)
 
 
 if __name__ == '__main__':

@@ -153,6 +153,10 @@ def app(cfgs):
         app_global_para['messages'].extend(response)
 
 
+def test():
+    app(cfgs=CFGS)
+
+
 def app_create(history, now_cfgs):
     now_cfgs = json5.loads(now_cfgs)
     if not history:
@@ -336,4 +340,5 @@ with gr.Blocks(theme='soft') as demo:
                               queue=False)
         demo.load(chat_clear_create, None, [chatbot, chat_txt], queue=False)
 
-demo.queue().launch()
+if __name__ == '__main__':
+    demo.queue().launch()

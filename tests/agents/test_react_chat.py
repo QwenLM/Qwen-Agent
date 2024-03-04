@@ -26,9 +26,13 @@ def test_react_chat_with_file():
     if os.path.exists('workspace'):
         shutil.rmtree('workspace')
     llm_cfg = {
-        'model': 'Qwen/Qwen1.5-72B-Chat',
-        'model_server': 'https://api.together.xyz',
-        'api_key': os.getenv('TOGETHER_API_KEY'),
+        'model': 'qwen-max',
+        'model_server': 'dashscope',
+        'api_key': os.getenv('DASHSCOPE_API_KEY'),
+
+        # 'model': 'Qwen/Qwen1.5-72B-Chat',
+        # 'model_server': 'https://api.together.xyz',
+        # 'api_key': os.getenv('TOGETHER_API_KEY'),
     }
     tools = ['code_interpreter']
     agent = ReActChat(llm=llm_cfg, function_list=tools)

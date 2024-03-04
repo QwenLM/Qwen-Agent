@@ -28,5 +28,16 @@ def app():
         messages.extend(response)
 
 
+def test(query: str = '你今天真好看'):
+    # define the agent
+    bot = init_agent_service()
+
+    # chat
+    messages = []
+    messages.append({'role': 'user', 'content': query})
+    for response in bot.run(messages=messages):
+        print('bot response:', response)
+
+
 if __name__ == '__main__':
     app()

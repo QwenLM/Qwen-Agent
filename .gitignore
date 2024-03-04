@@ -34,3 +34,4 @@ dist/*
 examples/*.ipynb
 **/workspace/*
 test/*
+tests/env.sh

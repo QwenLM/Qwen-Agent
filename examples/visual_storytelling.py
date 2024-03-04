@@ -81,5 +81,24 @@ def app():
         messages.extend(response)
 
 
+def test(
+    query: Optional[str] = '看图说话',
+    image:
+    str = 'https://img01.sc115.com/uploads3/sc/vector/201809/51413-20180914205509.jpg'
+):
+    # define a writer agent
+    bot = VisualStorytelling(llm={'model': 'qwen-max'})
+
+    # chat
+    messages = []
+
+    messages = [Message('user', [ContentItem(image=image)])]
+    if query:
+        messages[-1]['content'].append(ContentItem(text=query))
+
+    for response in bot.run(messages):
+        print('bot response:', response)
+
+
 if __name__ == '__main__':
     app()

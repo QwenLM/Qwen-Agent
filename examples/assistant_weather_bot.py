@@ -1,5 +1,10 @@
 """A weather forecast assistant implemented by assistant"""
+import os
+from typing import Optional
+
 from qwen_agent.agents import Assistant
+
+ROOT_RESOURCE = os.path.join(os.path.dirname(__file__), 'resource')
 
 
 def init_agent_service():
@@ -44,6 +49,30 @@ def app():
         for response in bot.run(messages):
             print('bot response:', response)
         messages.extend(response)
+
+
+def test(query='海淀区天气',
+         file: Optional[str] = os.path.join(ROOT_RESOURCE, 'poem.pdf')):
+    # define the agent
+    bot = init_agent_service()
+
+    # chat
+    messages = []
+
+    if not file:
+        messages.append({'role': 'user', 'content': query})
+    else:
+        messages.append({
+            'role': 'user',
+            'content': [{
+                'text': query
+            }, {
+                'file': file
+            }]
+        })
+
+    for response in bot.run(messages):
+        print('bot response:', response)
 
 
 if __name__ == '__main__':

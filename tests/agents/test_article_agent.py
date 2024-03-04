@@ -5,11 +5,7 @@ from qwen_agent.agents import ArticleAgent
 
 @pytest.mark.skip()
 def test_article_agent_full_article():
-    llm_cfg = {
-        'model': 'qwen-plus',
-        'api_key': '',
-        'model_server': 'dashscope'
-    }
+    llm_cfg = {'model': 'qwen-max', 'api_key': '', 'model_server': 'dashscope'}
     agent = ArticleAgent(llm=llm_cfg)
     messages = [{
         'role':

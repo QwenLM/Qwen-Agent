@@ -8,6 +8,8 @@ import json5
 from qwen_agent.agents import Assistant
 from qwen_agent.tools.base import BaseTool, register_tool
 
+ROOT_RESOURCE = os.path.join(os.path.dirname(__file__), 'resource')
+
 
 # Add a custom tool named my_image_gen：
 @register_tool('my_image_gen')
@@ -42,7 +44,7 @@ def init_agent_service():
     bot = Assistant(llm=llm_cfg,
                     system_message=system,
                     function_list=tools,
-                    files=[os.path.abspath('resource/doc.pdf')])
+                    files=[os.path.join(ROOT_RESOURCE, 'doc.pdf')])
 
     return bot
 
@@ -60,6 +62,17 @@ def app():
         for response in bot.run(messages=messages):
             print('bot response:', response)
         messages.extend(response)
+
+
+def test(query: str = 'draw a dog'):
+    # define the agent
+    bot = init_agent_service()
+
+    # chat
+    messages = []
+    messages.append({'role': 'user', 'content': query})
+    for response in bot.run(messages=messages):
+        print('bot response:', response)
 
 
 if __name__ == '__main__':

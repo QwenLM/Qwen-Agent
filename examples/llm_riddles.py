@@ -57,5 +57,24 @@ def app():
             messages.extend(response)
 
 
+def test():
+    # define a writer agent
+    bot = LLMRiddles(llm={'model': 'qwen-max'})
+
+    # gaming
+    for topic in bot.topics:
+        print(f'请你构造一个问题使模型的回答是一字不差的“{topic}”（不需要引号）。')
+
+        messages = []
+        query = f'请直接输出“{topic}”（不需要引号），不要说其他内容'
+
+        messages.append(Message('user', query))
+
+        for response in bot.run(messages=messages):
+            print('bot response:', response)
+        if response[-1]['content'] == topic:
+            print('You win!')
+
+
 if __name__ == '__main__':
     app()

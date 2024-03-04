@@ -1,27 +1,35 @@
+import pytest
+
 from qwen_agent.llm import get_chat_model
 from qwen_agent.llm.schema import Message
 
-
-def test_llm_dashscope_vl_mix_text():
-    # settings
-    llm_cfg = {'model': 'qwen-plus', 'model_server': 'dashscope'}
-    llm_cfg_vl = {'model': 'qwen-vl-max', 'model_server': 'dashscope'}
-    functions = [{
-        'name': 'image_gen',
-        'name_for_human': 'AI绘画',
-        'description': 'AI绘画（图像生成）服务，输入文本描述和图像分辨率，返回根据文本信息绘制的图片URL。',
-        'parameters': {
-            'type': 'object',
-            'properties': {
-                'prompt': {
-                    'type': 'string',
-                    'description': '详细描述了希望生成的图像具有什么内容，例如人物、环境、动作等细节描述，使用英文',
-                },
+functions = [{
+    'name': 'image_gen',
+    'name_for_human': 'AI绘画',
+    'description': 'AI绘画（图像生成）服务，输入文本描述和图像分辨率，返回根据文本信息绘制的图片URL。',
+    'parameters': {
+        'type': 'object',
+        'properties': {
+            'prompt': {
+                'type': 'string',
+                'description': '详细描述了希望生成的图像具有什么内容，例如人物、环境、动作等细节描述，使用英文',
             },
-            'required': ['prompt'],
         },
-        'args_format': '参数为json格式'
-    }]
+        'required': ['prompt'],
+    },
+    'args_format': '参数为json格式'
+}]
+
+
+@pytest.mark.parametrize('functions', [None, functions])
+@pytest.mark.parametrize('stream', [True, False])
+@pytest.mark.parametrize('delta_stream', [True, False])
+def test_vl_mix_text(functions, stream, delta_stream):
+    if delta_stream:
+        pytest.skip('Skipping this combination')
+
+    # setting
+    llm_cfg_vl = {'model': 'qwen-vl-max', 'model_server': 'dashscope'}
 
     # chat with vl llm
     llm_vl = get_chat_model(llm_cfg_vl)
@@ -35,13 +43,40 @@ def test_llm_dashscope_vl_mix_text():
             'https://img01.sc115.com/uploads/sc/jpgs/1505/apic11540_sc115.com.jpg'
         }]
     }]
-    *_, last = llm_vl.chat(messages, stream=True)
-    assert isinstance(last[-1]['content'], list)
-    messages.extend(last)
+    response = llm_vl.chat(messages=messages,
+                           functions=None,
+                           stream=stream,
+                           delta_stream=delta_stream)
+    if stream:
+        response = list(response)[-1]
+
+    assert isinstance(response[-1]['content'], list)
+
+
+@pytest.mark.parametrize('functions', [None, functions])
+@pytest.mark.parametrize('stream', [True, False])
+@pytest.mark.parametrize('delta_stream', [False])
+def test_llm_dashscope(functions, stream, delta_stream):
+    if not stream and delta_stream:
+        pytest.skip('Skipping this combination')
+
+    if delta_stream and functions:
+        pytest.skip('Skipping this combination')
+
+    # setting
+    llm_cfg = {'model': 'qwen-max', 'model_server': 'dashscope'}
 
     # chat with text llm
     llm = get_chat_model(llm_cfg)
-    messages.append(Message('user', 'draw a cute cat'))
-    *_, last = llm.chat(messages, functions=functions, stream=True)
-    assert isinstance(last[-1]['content'], str)
-    assert last[-1].function_call.name == 'image_gen'
+    messages = [Message('user', 'draw a cute cat')]
+    response = llm.chat(messages=messages,
+                        functions=functions,
+                        stream=stream,
+                        delta_stream=delta_stream)
+    if stream:
+        response = list(response)[-1]
+    assert isinstance(response[-1]['content'], str)
+    if functions:
+        assert response[-1].function_call.name == 'image_gen'
+    else:
+        assert response[-1].function_call is None

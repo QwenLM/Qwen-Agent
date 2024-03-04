@@ -2,11 +2,7 @@ from qwen_agent.agents import DocQAAgent
 
 
 def test_doc_qa():
-    llm_cfg = {
-        'model': 'qwen-plus',
-        'api_key': '',
-        'model_server': 'dashscope'
-    }
+    llm_cfg = {'model': 'qwen-max', 'api_key': '', 'model_server': 'dashscope'}
     agent = DocQAAgent(llm=llm_cfg)
     messages = [{
         'role':

@@ -31,7 +31,7 @@ def get_current_weather(location, unit='fahrenheit'):
         return json.dumps({'location': location, 'temperature': 'unknown'})
 
 
-def run_conversation():
+def test():
     llm = get_chat_model({
         # Use the model service provided by DashScope:
         'model': 'qwen-max',
@@ -119,4 +119,4 @@ def run_conversation():
 
 
 if __name__ == '__main__':
-    run_conversation()
+    test()

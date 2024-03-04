@@ -90,6 +90,10 @@ def app(history, chosen_plug):
         app_global_para['messages'].extend(response)
 
 
+def test(history: list = [('你好', None)], chosen_plug: str = 'assistant'):
+    app(history=history, chosen_plug=chosen_plug)
+
+
 def add_text(history, text):
     history = history + [(text, None)]
     return history, gr.update(value='', interactive=False)
@@ -157,4 +161,5 @@ with gr.Blocks(theme='soft') as demo:
                               None, [chatbot, hidden_file_path],
                               queue=False)
 
-demo.queue().launch()
+if __name__ == '__main__':
+    demo.queue().launch()

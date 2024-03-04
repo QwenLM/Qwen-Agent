@@ -42,5 +42,14 @@ def app():
         messages.extend(response)
 
 
+def test(query: str):
+    bot = GroupChat(agents=CFGS, llm={'model': 'qwen-max'})
+
+    messages = []
+    messages.append(Message('user', query, name=USER_NAME))
+    for response in bot.run(messages=messages):
+        print('bot response:', response)
+
+
 if __name__ == '__main__':
     app()
