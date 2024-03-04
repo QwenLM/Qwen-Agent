@@ -71,6 +71,7 @@ class BaseChatModel(ABC):
 
         messages = self._preprocess_messages(messages)
         if functions:
+            fncall_mode = True
             output = self._chat_with_functions(
                 messages=messages,
                 functions=functions,
@@ -78,6 +79,7 @@ class BaseChatModel(ABC):
                 delta_stream=delta_stream,
             )
         else:
+            fncall_mode = False
             output = self._chat(
                 messages,
                 stream=stream,
@@ -85,11 +87,13 @@ class BaseChatModel(ABC):
             )
 
         if isinstance(output, list):
-            output = self._postprocess_messages(output)
+            output = self._postprocess_messages(output,
+                                                fncall_mode=fncall_mode)
             return self._convert_messages_to_target_type(
                 output, _return_message_type)
         else:
-            output = self._postprocess_messages_iterator(output)
+            output = self._postprocess_messages_iterator(
+                output, fncall_mode=fncall_mode)
             return self._convert_messages_iterator_to_target_type(
                 output, _return_message_type)
 
@@ -132,16 +136,19 @@ class BaseChatModel(ABC):
     def _preprocess_messages(self, messages: List[Message]) -> List[Message]:
         return self._format_as_multimodal_messages(messages)
 
-    def _postprocess_messages(self, messages: List[Message]) -> List[Message]:
+    def _postprocess_messages(self, messages: List[Message],
+                              fncall_mode: bool) -> List[Message]:
         messages = self._format_as_multimodal_messages(messages)
         messages = self._postprocess_stop_words(messages)
         return messages
 
     def _postprocess_messages_iterator(
-            self,
-            messages: Iterator[List[Message]]) -> Iterator[List[Message]]:
+        self,
+        messages: Iterator[List[Message]],
+        fncall_mode: bool,
+    ) -> Iterator[List[Message]]:
         for m in messages:
-            m = self._postprocess_messages(m)
+            m = self._postprocess_messages(m, fncall_mode=fncall_mode)
             if m:
                 yield m
 
@@ -219,7 +226,8 @@ class BaseChatModel(ABC):
 
         return multimodal_messages
 
-    def _postprocess_stop_words(self, messages: List[Message]) -> List[Message]:
+    def _postprocess_stop_words(self,
+                                messages: List[Message]) -> List[Message]:
         messages = copy.deepcopy(messages)
         stop = self.generate_cfg.get('stop', [])
 
@@ -231,7 +239,8 @@ class BaseChatModel(ABC):
             for i, item in enumerate(msg.content):
                 item_type, item_text = item.get_type_and_value()
                 if item_type == 'text':
-                    truncated, item.text = _truncate_at_stop_word(text=item_text, stop=stop)
+                    truncated, item.text = _truncate_at_stop_word(
+                        text=item_text, stop=stop)
                 trunc_content.append(item)
                 if truncated:
                     break
@@ -260,6 +269,7 @@ class BaseChatModel(ABC):
                 break
 
         return messages
+
 
 def _truncate_at_stop_word(text: str, stop: List[str]):
     truncated = False

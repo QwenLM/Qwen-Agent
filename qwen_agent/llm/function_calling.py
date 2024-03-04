@@ -52,9 +52,11 @@ class BaseFnCallModel(BaseChatModel, ABC):
         messages = self._preprocess_fncall_messages(messages)
         return messages
 
-    def _postprocess_messages(self, messages: List[Message]) -> List[Message]:
-        messages = super()._postprocess_messages(messages)
-        messages = self._postprocess_fncall_messages(messages)
+    def _postprocess_messages(self, messages: List[Message],
+                              fncall_mode: bool) -> List[Message]:
+        messages = super()._postprocess_messages(messages, fncall_mode=fncall_mode)
+        if fncall_mode:
+            messages = self._postprocess_fncall_messages(messages)
         return messages
 
     def _prepend_fncall_system(self, messages: List[Message],

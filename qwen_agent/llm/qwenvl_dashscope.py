@@ -1,11 +1,13 @@
 import os
 from http import HTTPStatus
+from pprint import pformat
 from typing import Dict, Iterator, List, Optional
 
 import dashscope
 
 from qwen_agent.llm.base import ModelServiceError, register_llm
 from qwen_agent.llm.function_calling import BaseFnCallModel
+from qwen_agent.log import logger
 
 from .schema import CONTENT, ROLE, ContentItem, Message
 
@@ -33,6 +35,7 @@ class QwenVLChatAtDS(BaseFnCallModel):
             raise NotImplementedError
 
         messages = [msg.model_dump() for msg in messages]
+        logger.debug(f'*{pformat(messages, indent=2)}*')
         response = dashscope.MultiModalConversation.call(
             model=self.model,
             messages=messages,
@@ -55,6 +58,7 @@ class QwenVLChatAtDS(BaseFnCallModel):
         messages: List[Message],
     ) -> List[Message]:
         messages = [msg.model_dump() for msg in messages]
+        logger.debug(f'*{pformat(messages, indent=2)}*')
         response = dashscope.MultiModalConversation.call(
             model=self.model,
             messages=messages,

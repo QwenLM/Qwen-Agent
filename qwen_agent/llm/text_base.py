@@ -13,8 +13,9 @@ class BaseTextChatModel(BaseFnCallModel, ABC):
         messages = self._format_as_text_messages(messages)
         return messages
 
-    def _postprocess_messages(self, messages: List[Message]) -> List[Message]:
-        messages = super()._postprocess_messages(messages)
+    def _postprocess_messages(self, messages: List[Message],
+                              fncall_mode: bool) -> List[Message]:
+        messages = super()._postprocess_messages(messages, fncall_mode=fncall_mode)
         messages = self._format_as_text_messages(messages)
         return messages
 
