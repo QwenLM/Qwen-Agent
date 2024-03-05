@@ -59,15 +59,16 @@ def is_local_path(path):
     return True
 
 
-def save_url_to_local_work_dir(url, base_dir):
-    fn = get_basename_from_url(url)
-    new_path = os.path.join(base_dir, fn)
+def save_url_to_local_work_dir(url, base_dir, new_name=''):
+    if not new_name:
+        new_name = get_basename_from_url(url)
+    new_path = os.path.join(base_dir, new_name)
     if os.path.exists(new_path):
         os.remove(new_path)
-    logger.info(f'download {url} to {base_dir}')
+    logger.info(f'download {url} to {new_path}')
     start_time = datetime.datetime.now()
     if is_local_path(url):
-        shutil.copy(url, base_dir)
+        shutil.copy(url, new_path)
     else:
         headers = {
             'User-Agent':
@@ -78,7 +79,9 @@ def save_url_to_local_work_dir(url, base_dir):
             with open(new_path, 'wb') as file:
                 file.write(response.content)
         else:
-            print_traceback()
+            raise ValueError(
+                'Can not download this file. Please check your network or the file link.'
+            )
     end_time = datetime.datetime.now()
     logger.info(f'Time: {str(end_time - start_time)}')
     return new_path

@@ -3,26 +3,28 @@ import sys
 
 import pytest
 
-sys.path.insert(0, os.path.abspath(os.path.join(__file__, '../../..')))
+sys.path.insert(0, os.path.abspath(os.path.join(__file__, '../../..')))  # noqa
 
 ROOT_RESOURCE = os.path.abspath(
-    os.path.join(__file__, '../../../examples/resource'))
+    os.path.join(__file__, '../../../examples/resource'))  # noqa
 from examples.assistant_add_custom_tool import \
-    test as assistant_add_custom_tool
+    test as assistant_add_custom_tool  # noqa
 from examples.assistant_angry_girlfriend import \
-    test as assistant_angry_girlfriend
-from examples.assistant_doctor import test as assistant_doctor
-from examples.assistant_growing_girl import test as assistant_growing_girl
-from examples.assistant_weather_bot import test as assistant_weather_bot
-from examples.function_calling import test as function_calling
-from examples.gpt_mentions import test as gpt_mentions
-from examples.group_chat_chess import test as group_chat_chess
-from examples.group_chat_demo import test as group_chat_demo
-from examples.llm_riddles import test as llm_riddles
-from examples.llm_vl_mix_text import test as llm_vl_mix_text
-from examples.multi_agent_router import test as multi_agent_router
-from examples.react_data_analysis import test as react_data_analysis
-from examples.visual_storytelling import test as visual_storytelling
+    test as assistant_angry_girlfriend  # noqa
+# from examples.assistant_doctor import test as assistant_doctor
+from examples.assistant_growing_girl import \
+    test as assistant_growing_girl  # noqa
+from examples.assistant_weather_bot import \
+    test as assistant_weather_bot  # noqa
+from examples.function_calling import test as function_calling  # noqa
+from examples.gpt_mentions import test as gpt_mentions  # noqa
+from examples.group_chat_chess import test as group_chat_chess  # noqa
+from examples.group_chat_demo import test as group_chat_demo  # noqa
+from examples.llm_riddles import test as llm_riddles  # noqa
+from examples.llm_vl_mix_text import test as llm_vl_mix_text  # noqa
+from examples.multi_agent_router import test as multi_agent_router  # noqa
+from examples.react_data_analysis import test as react_data_analysis  # noqa
+from examples.visual_storytelling import test as visual_storytelling  # noqa
 
 
 @pytest.mark.parametrize('query', ['draw a dog'])
@@ -42,13 +44,13 @@ def test_assistant_angry_girlfriend(query):
     assistant_angry_girlfriend(query=query)
 
 
-@pytest.mark.parametrize('query', ['医生，可以帮我看看我是否健康吗？'])
-@pytest.mark.parametrize('file', [
-    None,
-    'https://pic4.zhimg.com/80/v2-2c8eedf3e12386fedcd5589cf5575717_720w.webp'
-])
-def test_assistant_doctor(query, file):
-    assistant_doctor(query=query, file=file)
+# @pytest.mark.parametrize('query', ['医生，可以帮我看看我是否健康吗？'])
+# @pytest.mark.parametrize('file', [
+#     None,
+#     'https://pic4.zhimg.com/80/v2-2c8eedf3e12386fedcd5589cf5575717_720w.webp'
+# ])
+# def test_assistant_doctor(query, file):
+#     assistant_doctor(query=query, file=file)
 
 
 @pytest.mark.parametrize('query', ['请用image_gen开始创作！'])

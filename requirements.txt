@@ -1,4 +1,5 @@
 anyio>=3.7.1
+beautifulsoup4
 dashscope>=1.11.0
 docx2txt
 fastapi>=0.103.1
@@ -9,8 +10,6 @@ jieba
 json5
 jsonlines
 jupyter>=1.0.0
-langchain-community
-langchain-text-splitters
 matplotlib
 numpy
 openai

@@ -14,7 +14,8 @@ from qwen_agent.tools.base import BaseTool, register_tool
 from qwen_agent.tools.storage import Storage
 from qwen_agent.utils.doc_parser import parse_doc, parse_html_bs
 from qwen_agent.utils.tokenization_qwen import count_tokens
-from qwen_agent.utils.utils import (get_file_type, print_traceback,
+from qwen_agent.utils.utils import (get_file_type, hash_sha256, is_local_path,
+                                    print_traceback,
                                     save_url_to_local_work_dir)
 
 
@@ -86,7 +87,16 @@ def process_file(url: str, db: Storage = None):
             pdf_path = sanitize_chrome_file_path(pdf_path)
 
         try:
-            pdf_content = parse_doc(pdf_path)
+            if not is_local_path(url):
+                # download
+                file_tmp_path = save_url_to_local_work_dir(
+                    pdf_path,
+                    db.root,
+                    new_name=hash_sha256(url) + '.' +
+                    pdf_path.split('.')[-1].lower())
+                pdf_content = parse_doc(file_tmp_path)
+            else:
+                pdf_content = parse_doc(pdf_path)
             date2 = datetime.datetime.now()
             logger.info('Parsing pdf time: ' + str(date2 - date1))
             content = pdf_content
@@ -96,10 +106,11 @@ def process_file(url: str, db: Storage = None):
             print_traceback()
             return 'failed'
     else:
-        try:
-            file_tmp_path = save_url_to_local_work_dir(url, db.root)
-        except Exception:
-            raise ValueError('Can not download this file')
+        if not is_local_path(url):
+            file_tmp_path = save_url_to_local_work_dir(
+                url, db.root, new_name=hash_sha256(url))
+        else:
+            file_tmp_path = url
         file_source = get_file_type(file_tmp_path)
         if file_source == 'html':
             try:
