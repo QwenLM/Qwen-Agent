@@ -9,7 +9,8 @@ jieba
 json5
 jsonlines
 jupyter>=1.0.0
-langchain
+langchain-community
+langchain-text-splitters
 matplotlib
 numpy
 openai
