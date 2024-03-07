@@ -31,7 +31,7 @@ def test_vl_mix_text(functions, stream, delta_stream):
     # setting
     llm_cfg_vl = {'model': 'qwen-vl-max', 'model_server': 'dashscope'}
 
-    # chat with vl llm
+    # Chat with vl llm
     llm_vl = get_chat_model(llm_cfg_vl)
     messages = [{
         'role':
@@ -66,7 +66,7 @@ def test_llm_dashscope(functions, stream, delta_stream):
     # setting
     llm_cfg = {'model': 'qwen-max', 'model_server': 'dashscope'}
 
-    # chat with text llm
+    # Chat with text llm
     llm = get_chat_model(llm_cfg)
     messages = [Message('user', 'draw a cute cat')]
     response = llm.chat(messages=messages,

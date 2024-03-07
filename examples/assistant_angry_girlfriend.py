@@ -3,7 +3,6 @@ from qwen_agent.agents import Assistant
 
 
 def init_agent_service():
-    # settings
     llm_cfg = {'model': 'qwen-max'}
     system = ('我们来玩角色扮演游戏。你扮演用户的女友。由用户开始发言，根据他的发言，你初始化一个心情值（0到100）并作出回应。'
               '用户的任务是哄你开心，你根据每次用户说的话调整心情，每次回复开头加上（当前心情：分数）。')
@@ -14,10 +13,10 @@ def init_agent_service():
 
 
 def app():
-    # define the agent
+    # Define the agent
     bot = init_agent_service()
 
-    # chat
+    # Chat
     messages = []
     while True:
         query = input('user question: ')
@@ -29,12 +28,11 @@ def app():
 
 
 def test(query: str = '你今天真好看'):
-    # define the agent
+    # Define the agent
     bot = init_agent_service()
 
-    # chat
-    messages = []
-    messages.append({'role': 'user', 'content': query})
+    # Chat
+    messages = [{'role': 'user', 'content': query}]
     for response in bot.run(messages=messages):
         print('bot response:', response)
 

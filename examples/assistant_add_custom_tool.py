@@ -32,7 +32,6 @@ class MyImageGen(BaseTool):
 
 
 def init_agent_service():
-    # settings
     llm_cfg = {'model': 'qwen-max'}
     system = (
         'According to the user\'s request, you first draw a picture and then automatically '
@@ -50,10 +49,10 @@ def init_agent_service():
 
 
 def app():
-    # define the agent
+    # Define the agent
     bot = init_agent_service()
 
-    # chat
+    # Chat
     messages = []
     while True:
         query = input('user question: ')
@@ -65,12 +64,11 @@ def app():
 
 
 def test(query: str = 'draw a dog'):
-    # define the agent
+    # Define the agent
     bot = init_agent_service()
 
-    # chat
-    messages = []
-    messages.append({'role': 'user', 'content': query})
+    # Chat
+    messages = [{'role': 'user', 'content': query}]
     for response in bot.run(messages=messages):
         print('bot response:', response)
 

@@ -2,6 +2,8 @@
 from qwen_agent.agents import GroupChat
 from qwen_agent.llm.schema import Message
 
+# Define a configuration file for a multi-agent:
+# one real player, one NPC player, and one chessboard
 NPC_NAME = '小明'
 USER_NAME = '小塘'
 CFGS = {
@@ -29,9 +31,9 @@ CFGS = {
 
 
 def app():
-    # define a group chat agent from the CFGS
+    # Define a group chat agent from the CFGS
     bot = GroupChat(agents=CFGS, llm={'model': 'qwen-max'})
-
+    # Chat
     messages = []
     while True:
         query = input('user question: ')
@@ -45,8 +47,7 @@ def app():
 def test(query: str):
     bot = GroupChat(agents=CFGS, llm={'model': 'qwen-max'})
 
-    messages = []
-    messages.append(Message('user', query, name=USER_NAME))
+    messages = [Message('user', query, name=USER_NAME)]
     for response in bot.run(messages=messages):
         print('bot response:', response)
 

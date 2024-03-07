@@ -50,14 +50,18 @@ class Retrieval(BaseTool):
              params: Union[str, dict],
              ignore_cache: bool = False,
              max_token: int = 4000) -> List[dict]:
-        """
+        """RAG tool.
+
         Step1: Parse and save files
         Step2: Retrieval related content according to query
 
-        :param params: files and query
-        :param ignore_cache: When set to True, overwrite the same documents that have been parsed before.
-        :param max_token: Maximum retrieval length.
-        :return: The parsed file content
+        Args:
+            params: The files and query.
+            ignore_cache: When set to True, overwrite the same documents that have been parsed before.
+            max_token: Maximum retrieval length.
+
+        Returns:
+            The retrieved file content.
         """
 
         params = self._verify_json_format_args(params)
@@ -90,7 +94,7 @@ class Retrieval(BaseTool):
         single_max_token = int(max_token / len(records))
         _ref_list = []
         for record in records:
-            # retrieval for query
+            # Retrieval for query
             now_ref_list = self.search.call(params={'query': query},
                                             doc=record,
                                             max_token=single_max_token)

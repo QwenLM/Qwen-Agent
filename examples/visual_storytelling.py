@@ -38,7 +38,7 @@ class VisualStorytelling(Agent):
             item.image for item in messages[-1]['content']
         ]), 'This agent requires input of images'
 
-        # image understanding
+        # Image understanding
         new_messages = copy.deepcopy(messages)
         new_messages[-1]['content'].append(
             ContentItem(text='请详细描述这张图片的所有细节内容'))
@@ -48,7 +48,7 @@ class VisualStorytelling(Agent):
         response.extend(rsp)
         new_messages.extend(rsp)
 
-        # writing article
+        # Writing article
         new_messages.append(Message('user', '开始根据以上图片内容编写你的记叙文吧！'))
         for rsp in self.writing_agent.run(new_messages,
                                           lang=lang,
@@ -58,10 +58,10 @@ class VisualStorytelling(Agent):
 
 
 def app():
-    # define a writer agent
+    # Define a writer agent
     bot = VisualStorytelling(llm={'model': 'qwen-max'})
 
-    # chat
+    # Chat
     messages = []
     while True:
         query = input('user question: ')
@@ -71,7 +71,7 @@ def app():
         if not image:
             print('image cannot be empty！')
             continue
-        messages = [Message('user', [ContentItem(image=image)])]
+        messages.append(Message('user', [ContentItem(image=image)]))
         if query:
             messages[-1]['content'].append(ContentItem(text=query))
 
@@ -89,9 +89,7 @@ def test(
     # define a writer agent
     bot = VisualStorytelling(llm={'model': 'qwen-max'})
 
-    # chat
-    messages = []
-
+    # Chat
     messages = [Message('user', [ContentItem(image=image)])]
     if query:
         messages[-1]['content'].append(ContentItem(text=query))

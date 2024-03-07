@@ -38,6 +38,7 @@ MAX_LLM_CALL_PER_RUN = 8
 
 
 class Assistant(Agent):
+    """This is a widely applicable agent integrated with RAG capabilities and tool use ability."""
 
     def __init__(self,
                  function_list: Optional[List[Union[str, Dict]]] = None,
@@ -46,13 +47,25 @@ class Assistant(Agent):
                  name: Optional[str] = None,
                  description: Optional[str] = None,
                  files: Optional[List[str]] = None):
+        """Initialization the agent.
+
+        Args:
+            function_list: One list of tool name of tool configuration,
+              such as 'code_interpreter' or {'name': 'code_interpreter', 'timeout': 10}.
+            llm: The LLM model configuration or LLM model object.
+              Set the configuration as {'model': '', 'api_key': '', 'model_server': ''}.
+            system_message: The specified system message for LLM chat.
+            name: The name of this agent.
+            description: The description of this agent, which will be used for multi_agent.
+            files: A file url list. The initialized knowledge base for the agent.
+        """
         super().__init__(function_list=function_list,
                          llm=llm,
                          system_message=system_message,
                          name=name,
                          description=description)
 
-        # default to use Memory to manage files
+        # Default to use Memory to manage files
         self.mem = Memory(llm=self.llm, files=files)
 
     def _run(self,
@@ -62,7 +75,7 @@ class Assistant(Agent):
              **kwargs) -> Iterator[List[Message]]:
         messages = copy.deepcopy(messages)
 
-        # retrieval knowledge from files
+        # Retrieval knowledge from files
         *_, last = self.mem.run(messages=messages, max_ref_token=max_ref_token)
         knowledge = last[-1][CONTENT]
         logger.debug(f'{type(knowledge)}: {knowledge}')

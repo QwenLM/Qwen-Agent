@@ -50,7 +50,7 @@ class Router(Assistant):
              lang: str = 'en',
              max_ref_token: int = 4000,
              **kwargs) -> Iterator[List[Message]]:
-        # this is a temporary plan to determine the source of a message
+        # This is a temporary plan to determine the source of a message
         messages_for_router = []
         for msg in messages:
             if msg[ROLE] == ASSISTANT:
@@ -64,7 +64,7 @@ class Router(Assistant):
             yield response
 
         if 'Call:' in response[-1].content:
-            # according to the rule in prompt to selected agent
+            # According to the rule in prompt to selected agent
             selected_agent_name = response[-1].content.split(
                 'Call:')[-1].strip()
             logger.info(f'Need help from {selected_agent_name}')

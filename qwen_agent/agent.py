@@ -11,6 +11,11 @@ from qwen_agent.utils.utils import has_chinese_chars
 
 
 class Agent(ABC):
+    """A base class for Agent.
+
+    An agent can receive messages and provide response by LLM or Tools.
+    Different agents have distinct workflows for processing messages and generating responses in the `_run` method.
+    """
 
     def __init__(self,
                  function_list: Optional[List[Union[str, Dict]]] = None,
@@ -19,19 +24,16 @@ class Agent(ABC):
                  name: Optional[str] = None,
                  description: Optional[str] = None,
                  **kwargs):
-        """
-        init tools/llm for one agent
+        """Initialization the agent.
 
-        :param function_list: Optional[List[Union[str, Dict]]] :
-            (1)When str: tool names
-            (2)When Dict: tool cfg
-        :param llm: Optional[Union[Dict, BaseChatModel]]:
-            (1) When Dict: set the config of llm as {'model': '', 'api_key': '', 'model_server': ''}
-            (2) When BaseChatModel: llm is sent by another agent
-        :param system_message: If not specified during the conversation, using this default system message for llm chat
-        :param name: the name of agent
-        :param description: the description of agent, which is used for multi_agent
-        :param kwargs: other potential parameters
+        Args:
+            function_list: One list of tool name of tool configuration,
+              such as 'code_interpreter' or {'name': 'code_interpreter', 'timeout': 10}.
+            llm: The LLM model configuration or LLM model object.
+              Set the configuration as {'model': '', 'api_key': '', 'model_server': ''}.
+            system_message: The specified system message for LLM chat.
+            name: The name of this agent.
+            description: The description of this agent, which will be used for multi_agent.
         """
         if isinstance(llm, dict):
             self.llm = get_chat_model(llm)
@@ -49,6 +51,17 @@ class Agent(ABC):
 
     def run(self, messages: List[Union[Dict, Message]],
             **kwargs) -> Union[Iterator[List[Message]], Iterator[List[Dict]]]:
+        """Return one response generator based on the received messages.
+
+        This method performs a uniform type conversion for the inputted messages,
+        and calls the _run method to generate a reply.
+
+        Args:
+            messages: A list of messages.
+
+        Yields:
+            The response generator.
+        """
         messages = copy.deepcopy(messages)
         _return_message_type = 'dict'
         new_messages = []
@@ -85,6 +98,19 @@ class Agent(ABC):
              messages: List[Message],
              lang: str = 'en',
              **kwargs) -> Iterator[List[Message]]:
+        """Return one response generator based on the received messages.
+
+        The workflow for an agent to generate a reply.
+        Each agent subclass needs to implement this method.
+
+        Args:
+            messages: A list of messages.
+            lang: Language, which will be used to select the language of the prompt
+              during the agent's execution process.
+
+        Yields:
+            The response generator.
+        """
         raise NotImplementedError
 
     def _call_llm(
@@ -93,8 +119,18 @@ class Agent(ABC):
         functions: Optional[List[Dict]] = None,
         stream: bool = True,
     ) -> Iterator[List[Message]]:
-        """
-        for an agent, default to call llm using full stream interfaces
+        """The interface of calling LLM for the agent.
+
+        We prepend the system_message of this agent to the messages, and call LLM.
+
+        Args:
+            messages: A list of messages.
+            functions: The list of functions provided to LLM.
+            stream: LLM streaming output or non-streaming output.
+              For consistency, we default to using streaming output across all agents.
+
+        Yields:
+            The response generator of LLM.
         """
         messages = copy.deepcopy(messages)
         if messages[0][ROLE] != SYSTEM:
@@ -114,19 +150,20 @@ class Agent(ABC):
                    tool_name: str,
                    tool_args: Union[str, dict] = '{}',
                    **kwargs):
-        """
-        Use when calling tools in bot()
+        """The interface of calling tools for the agent.
 
+        Args:
+            tool_name: The name of one tool.
+            tool_args: Model generated or user given tool parameters.
+
+        Returns:
+            The output of tools.
         """
         if tool_name not in self.function_map:
             return f'Tool {tool_name} does not exists.'
         return self.function_map[tool_name].call(tool_args, **kwargs)
 
     def _init_tool(self, tool: Union[str, Dict]):
-        """
-        Instantiate the global tool for the agent
-
-        """
         tool_name = tool
         tool_cfg = None
         if isinstance(tool, dict):
@@ -138,14 +175,13 @@ class Agent(ABC):
             self.function_map[tool_name] = TOOL_REGISTRY[tool_name](tool_cfg)
 
     def _detect_tool(self, message: Message) -> Tuple[bool, str, str, str]:
-        """
-        A built-in tool call detection for func_call format
-        :param message: one message
-        :return:
-            - bool: need to call tool or not
-            - str: tool name
-            - str: tool args
-            - str: text replies except for tool calls
+        """A built-in tool call detection for func_call format message.
+
+        Args:
+            message: one message generated by LLM.
+
+        Returns:
+            Need to call tool or not, tool name, tool args, text replies.
         """
         func_name = None
         func_args = None

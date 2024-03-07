@@ -68,11 +68,11 @@ def app(history, chosen_plug):
             'content': content
         })
 
-        # define the agent
+        # Define the agent
         selected_agent = init_agent_service(
             messages=app_global_para['messages'])
 
-        # chat
+        # Chat
         history[-1][1] = ''
         response = []
         try:
@@ -86,7 +86,6 @@ def app(history, chosen_plug):
         except Exception as ex:
             raise ValueError(ex)
 
-        # append message
         app_global_para['messages'].extend(response)
 
 

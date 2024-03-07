@@ -8,8 +8,8 @@ import dashscope
 from qwen_agent.llm.base import ModelServiceError, register_llm
 from qwen_agent.log import logger
 
-from .schema import (ASSISTANT, DEFAULT_SYSTEM_MESSAGE, ROLE, SYSTEM,
-                     USER, Message)
+from .schema import (ASSISTANT, DEFAULT_SYSTEM_MESSAGE, ROLE, SYSTEM, USER,
+                     Message)
 from .text_base import BaseTextChatModel
 
 
@@ -80,7 +80,7 @@ class QwenChatAtDS(BaseTextChatModel):
 
         messages = self._prepend_fncall_system(messages, functions)
 
-        # using text completion
+        # Using text completion
         prompt = self._build_text_completion_prompt(messages)
         if stream:
             return self._text_completion_stream(prompt, delta_stream)

@@ -26,6 +26,7 @@ class ModelServiceError(Exception):
 
 
 class BaseChatModel(ABC):
+    """The base class of LLM"""
 
     def __init__(self, cfg: Optional[Dict] = None):
         cfg = cfg or {}
@@ -40,18 +41,18 @@ class BaseChatModel(ABC):
         delta_stream: bool = False,
     ) -> Union[List[Message], List[Dict], Iterator[List[Message]],
                Iterator[List[Dict]]]:
-        """
-        llm chat interface
+        """LLM chat interface.
 
-        :param messages: input List[Message] formatted messages
-        :param functions: input functions
-        :param stream: whether to use streaming generation
-        :param delta_stream: Whether to return incrementally
-            - When False: Use full return
-            - When True: Use incremental return
-        :return: the generated message list response by llm
-            - When List[Message]: stream=False
-            - When Iterator[List[Message]]]: stream=True
+        Args:
+            messages: Inputted messages.
+            functions: Inputted functions, which supports OpenAI format.
+            stream: Whether to use streaming generation.
+            delta_stream: Whether to return incrementally.
+              (1) When False: Use full return.
+              (2) When True: Use incremental return.
+
+        Returns:
+            the generated message list response by llm.
         """
         messages = copy.deepcopy(messages)
 

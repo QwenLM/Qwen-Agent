@@ -8,7 +8,6 @@ ROOT_RESOURCE = os.path.join(os.path.dirname(__file__), 'resource')
 
 
 def init_agent_service():
-    # settings
     llm_cfg = {'model': 'qwen-max'}
     tools = ['image_gen']
     bot = Assistant(llm=llm_cfg,
@@ -19,15 +18,15 @@ def init_agent_service():
 
 
 def app():
-    # define the agent
+    # Define the agent
     bot = init_agent_service()
 
-    # chat
+    # Chat
     messages = []
     while True:
-        # query example: 请用image_gen开始创作！
+        # Query example: 请用image_gen开始创作！
         query = input('user question: ')
-        # file example: resource/growing_girl.pdf
+        # File example: resource/growing_girl.pdf
         file = input('file url (press enter if no file): ').strip()
         if not query:
             print('user question cannot be empty！')
@@ -53,10 +52,10 @@ def app():
 def test(query='请用image_gen开始创作！',
          file: Optional[str] = os.path.join(ROOT_RESOURCE,
                                             'growing_girl.pdf')):
-    # define the agent
+    # Define the agent
     bot = init_agent_service()
 
-    # chat
+    # Chat
     messages = []
 
     if not file:

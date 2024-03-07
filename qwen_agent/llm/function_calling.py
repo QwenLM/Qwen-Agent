@@ -29,7 +29,7 @@ class BaseFnCallModel(BaseChatModel, ABC):
 
         messages = self._prepend_fncall_system(messages, functions)
 
-        # simulate text completion with chat completion
+        # Simulate text completion with chat completion
         if messages and messages[-1].role == ASSISTANT:
             assert len(messages) > 1 and messages[-2].role == USER
             assert messages[-1].function_call is None
@@ -54,7 +54,8 @@ class BaseFnCallModel(BaseChatModel, ABC):
 
     def _postprocess_messages(self, messages: List[Message],
                               fncall_mode: bool) -> List[Message]:
-        messages = super()._postprocess_messages(messages, fncall_mode=fncall_mode)
+        messages = super()._postprocess_messages(messages,
+                                                 fncall_mode=fncall_mode)
         if fncall_mode:
             messages = self._postprocess_fncall_messages(messages)
         return messages
@@ -86,8 +87,7 @@ class BaseFnCallModel(BaseChatModel, ABC):
 
     def _preprocess_fncall_messages(self,
                                     messages: List[Message]) -> List[Message]:
-        """
-        Convert messages with function_call key and function role to assistant's content, which is
+        """Convert messages with function_call key and function role to assistant's content, which is
             for chat interface or text_completion interface that do not support functions.
         """
         new_messages = []
@@ -124,7 +124,7 @@ class BaseFnCallModel(BaseChatModel, ABC):
             else:
                 raise TypeError
 
-        # remove ': ' for continued generation of function calling,
+        # Remove ': ' for continued generation of function calling,
         # because ': ' may form a single token with its following words
         if new_messages[-1].role == ASSISTANT:
             last_msg = new_messages[-1].content
@@ -141,10 +141,11 @@ class BaseFnCallModel(BaseChatModel, ABC):
             messages: List[Message],
             stop_at_fncall: bool = True) -> List[Message]:
         """
-        If the model calls function by built-in function call template, convert and display it in function_call format.
+        If the model calls function by built-in function call template,
+        convert and display it in function_call format.
         """
 
-        # remove ': ' brought by continued generation of function calling
+        # Remove ': ' brought by continued generation of function calling
         last_msg = messages[-1][CONTENT]
         for i in range(len(last_msg)):
             item_type, item_text = last_msg[i].get_type_and_value()
@@ -228,7 +229,7 @@ class BaseFnCallModel(BaseChatModel, ABC):
                         ))
 
                     if stop_at_fncall:
-                        # discard the text after the first function_call
+                        # Discard the text after the first function_call
                         return new_messages
 
                     if (
@@ -310,7 +311,7 @@ FN_CALL_TEMPLATE = {
 
 
 # TODO: This affects users who use the ✿ character accidentally.
-# mainly for removing incomplete trailing special tokens when streaming the output
+# Mainly for removing incomplete trailing special tokens when streaming the output
 def remove_special_tokens(text: str, strip: bool = True) -> str:
     text = text.replace('✿:', '✿')
     text = text.replace('✿：', '✿')

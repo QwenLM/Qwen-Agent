@@ -13,9 +13,9 @@ from qwen_agent.utils.utils import get_file_type
 
 
 class Memory(Agent):
-    """
-    Memory is special agent for data management
-    By default, this memory can use tool: retrieval
+    """Memory is special agent for file management.
+
+    By default, this memory can use retrieval tool for RAG.
     """
 
     def __init__(self,
@@ -37,14 +37,20 @@ class Memory(Agent):
              max_ref_token: int = 4000,
              lang: str = 'en',
              ignore_cache: bool = False) -> Iterator[List[Message]]:
-        """
-        :param messages:
-        - there are files: need parse and save
-        - there are query(in last message): need retrieve and return retrieved text
-        :param max_ref_token: the max tokens for retrieved text
-        :param lang: point the language if necessary
-        :param ignore_cache: parse again
-        :return:
+        """This agent is responsible for processing the input files in the message.
+
+         This method stores the files in the knowledge base, and retrievals the relevant parts
+         based on the query and returning them.
+         The currently supported file types include: .pdf, .docx, .pptx, and html.
+
+         Args:
+             messages: A list of messages.
+             max_ref_token: Search window for reference materials.
+             lang: Language.
+             ignore_cache: Whether to reparse the same files.
+
+        Yields:
+            The message of retrieved documents.
         """
         # process files in messages
         session_files = self.get_all_files_of_messages(messages)
@@ -60,7 +66,7 @@ class Memory(Agent):
             yield [Message(ASSISTANT, '', name='memory')]
         else:
             query = ''
-            # only retrieval content according to the last user query if exists
+            # Only retrieval content according to the last user query if exists
             if messages and messages[-1].role == USER:
                 if isinstance(messages[-1].content, str):
                     query = messages[-1].content
@@ -69,7 +75,7 @@ class Memory(Agent):
                         if item.text:
                             query += item.text
             if query:
-                # gen keyword
+                # Gen keyword
                 *_, last = self.keygen.run([Message(USER, query)])
                 keyword = last[-1].content
                 try:

@@ -1,7 +1,4 @@
-"""
-    Prompts are special agents: Using a prompt template to complete one QA.
-
-"""
+"""Prompts are special agents: using a prompt template to complete one QA."""
 
 from .continue_writing import ContinueWriting
 from .doc_qa import DocQA

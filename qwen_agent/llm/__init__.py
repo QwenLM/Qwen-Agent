@@ -9,10 +9,11 @@ from .qwenvl_dashscope import QwenVLChatAtDS
 
 
 def get_chat_model(cfg: Optional[Dict] = None) -> BaseChatModel:
-    """
+    """The interface of instantiating LLM objects.
 
-    :param cfg: cfg example:
-            llm_cfg = {
+    Args:
+        cfg: The LLM configuration, one example is:
+          llm_cfg = {
             # Use the model service provided by DashScope:
             'model': 'qwen-max',
             'model_server': 'dashscope',
@@ -23,8 +24,10 @@ def get_chat_model(cfg: Optional[Dict] = None) -> BaseChatModel:
             'generate_cfg': {
                 'top_p': 0.8
             }
-        }
-    :return: An llm object
+          }
+
+    Returns:
+        LLM object.
     """
     cfg = cfg or {}
     if 'model_type' in cfg:

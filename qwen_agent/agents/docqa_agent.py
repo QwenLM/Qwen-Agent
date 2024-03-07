@@ -7,6 +7,7 @@ from qwen_agent.prompts import DocQA
 
 
 class DocQAAgent(Assistant):
+    """This is an agent for doc QA."""
 
     def __init__(self,
                  function_list: Optional[List[Union[str, Dict]]] = None,
@@ -30,13 +31,13 @@ class DocQAAgent(Assistant):
              max_ref_token: int = 4000,
              **kwargs) -> Iterator[List[Message]]:
 
-        # need to use Memory agent for data management
+        # Need to use Memory agent for data management
         *_, last = self.mem.run(messages=messages,
                                 max_ref_token=max_ref_token,
                                 **kwargs)
         _ref = last[-1][CONTENT]
 
-        # use RetrievalQA agent
+        # Use RetrievalQA agent
         response = self.doc_qa.run(messages=messages,
                                    lang=lang,
                                    knowledge=_ref)

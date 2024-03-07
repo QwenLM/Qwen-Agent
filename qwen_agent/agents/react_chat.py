@@ -32,9 +32,7 @@ MAX_LLM_CALL_PER_RUN = 8
 
 
 class ReActChat(Assistant):
-    """
-        Using ReAct format to call tools
-    """
+    """This agent use ReAct format to call tools"""
 
     def __init__(self,
                  function_list: Optional[List[Union[str, Dict]]] = None,
@@ -71,7 +69,7 @@ class ReActChat(Assistant):
             output_stream = self._call_llm(messages=messages)
             output = []
 
-            # yield the streaming response
+            # Yield the streaming response
             response_tmp = copy.deepcopy(response)
             for output in output_stream:
                 if output:
@@ -81,7 +79,7 @@ class ReActChat(Assistant):
                         response_tmp[-1][CONTENT] = response[-1][
                             CONTENT] + output[-1][CONTENT]
                         yield response_tmp
-            # record the incremental response
+            # Record the incremental response
             assert len(output) == 1 and output[-1][ROLE] == ASSISTANT
             if not response:
                 response += output

@@ -20,15 +20,15 @@ def init_agent_service():
 
 
 def app():
-    # define the agent
+    # Define the agent
     bot = init_agent_service()
 
-    # chat
+    # Chat
     messages = []
     while True:
-        # query example: 海淀区天气
+        # Query example: 海淀区天气
         query = input('user question: ')
-        # file example: resource/poem.pdf
+        # File example: resource/poem.pdf
         file = input('file url (press enter if no file): ').strip()
         if not query:
             print('user question cannot be empty！')
@@ -53,10 +53,10 @@ def app():
 
 def test(query='海淀区天气',
          file: Optional[str] = os.path.join(ROOT_RESOURCE, 'poem.pdf')):
-    # define the agent
+    # Define the agent
     bot = init_agent_service()
 
-    # chat
+    # Chat
     messages = []
 
     if not file:

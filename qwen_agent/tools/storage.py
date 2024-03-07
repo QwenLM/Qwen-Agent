@@ -9,9 +9,7 @@ from qwen_agent.utils.utils import (hash_sha256, print_traceback,
 
 @register_tool('storage')
 class Storage(BaseTool):
-    """
-    This is a special tool for data storage
-    """
+    """This is a special tool for data storage"""
     description = '数据在文件系统中存储和读取'
     parameters = [{
         'name': 'path',
@@ -44,10 +42,7 @@ class Storage(BaseTool):
             self.data[file] = None
 
     def call(self, params: Union[str, dict], **kwargs):
-        """
-        init one database: one folder
-        :param params:
-        """
+
         params = self._verify_json_format_args(params)
 
         path = params['path']
@@ -72,12 +67,6 @@ class Storage(BaseTool):
             self.data[file] = None
 
     def put(self, key: str, value: str):
-        """
-        save one key value pair
-        :param key: str
-        :param value: str
-
-        """
         # one file for one key value pair
         key = hash_sha256(key)
 
@@ -101,11 +90,6 @@ class Storage(BaseTool):
             return ''
 
     def delete(self, key):
-        """
-        delete one key value pair
-        :param key: str
-
-        """
         key = hash_sha256(key)
         try:
             if key in self.data:

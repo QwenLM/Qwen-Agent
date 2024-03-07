@@ -15,7 +15,8 @@ class BaseTextChatModel(BaseFnCallModel, ABC):
 
     def _postprocess_messages(self, messages: List[Message],
                               fncall_mode: bool) -> List[Message]:
-        messages = super()._postprocess_messages(messages, fncall_mode=fncall_mode)
+        messages = super()._postprocess_messages(messages,
+                                                 fncall_mode=fncall_mode)
         messages = self._format_as_text_messages(messages)
         return messages
 
@@ -31,7 +32,7 @@ class BaseTextChatModel(BaseFnCallModel, ABC):
                 for item in msg.content:
                     if item.text:
                         content += item.text
-                    # discard multimodal content such as files and images
+                    # Discard multimodal content such as files and images
             else:
                 raise TypeError
             text_messages.append(

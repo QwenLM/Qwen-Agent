@@ -9,9 +9,7 @@ from qwen_agent.utils.utils import get_split_word, parse_keyword
 
 
 class RefMaterialOutput(BaseModel):
-    """
-    The knowledge data format output from the retrieval
-    """
+    """The knowledge data format output from the retrieval"""
     url: str
     text: list
 
@@ -31,9 +29,7 @@ class RefMaterialInputItem(BaseModel):
 
 
 class RefMaterialInput(BaseModel):
-    """
-    The knowledge data format input to the retrieval
-    """
+    """The knowledge data format input to the retrieval"""
     url: str
     text: List[RefMaterialInputItem]
 
@@ -63,14 +59,6 @@ class SimilaritySearch(BaseTool):
              params: Union[str, Dict],
              doc: Union[RefMaterialInput, str, List[str]] = None,
              max_token: int = 4000) -> Optional[Dict]:
-        """
-        This tool is usually used by doc_parser tool
-
-        :param params: The params of
-        :param doc: Knowledge base to be queried
-        :param max_token: the max token number
-        :return: RefMaterialOutput
-        """
         params = self._verify_json_format_args(params)
 
         query = params['query']

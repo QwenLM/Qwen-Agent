@@ -33,7 +33,7 @@ app_global_para = {
     'user_interrupt': True
 }
 
-# Initialized group chat
+# Initialized group chat configuration
 CFGS = {
     'background':
     '一个陌生人互帮互助群聊',
@@ -76,14 +76,14 @@ def app(cfgs):
     cfgs = json5.loads(cfgs)
     bot = init_agent_service(cfgs=cfgs)
 
-    # record all mentioned agents: reply in order
+    # Record all mentioned agents: reply in order
     mentioned_agents_name = []
 
     for i in range(MAX_ROUND):
         messages = app_global_para['messages']
         print(i, messages)
 
-        # interrupt: there is new input from user
+        # Interrupt: there is new input from user
         if i == 0:
             app_global_para['user_interrupt'] = False
         if i > 0 and app_global_para['user_interrupt']:
@@ -93,7 +93,7 @@ def app(cfgs):
             for rsp in app(json.dumps(cfgs, ensure_ascii=False)):
                 yield rsp
             break
-        # record mentions into mentioned_agents_name list
+        # Record mentions into mentioned_agents_name list
         content = ''
         if messages:
             if isinstance(messages[-1].content, list):
@@ -109,7 +109,7 @@ def app(cfgs):
                         if agent['name'] not in mentioned_agents_name:
                             mentioned_agents_name.append(agent['name'])
                         break
-        # get one response from groupchat
+        # Get one response from groupchat
         response = []
         try:
             display_history = _get_display_history_from_message()
@@ -120,7 +120,7 @@ def app(cfgs):
                     mentioned_agents_name=mentioned_agents_name):
                 if response:
                     if response[-1].content == PENDING_USER_INPUT:
-                        # stop printing the special message for mention human
+                        # Stop printing the special message for mention human
                         break
                     incremental_history = []
                     for x in response:
@@ -149,7 +149,7 @@ def app(cfgs):
             print('Waiting for user input!')
             break
 
-        # append message
+        # Record the response to messages
         app_global_para['messages'].extend(response)
 
 
@@ -165,7 +165,7 @@ def app_create(history, now_cfgs):
 
         if len(history) == 1:
             new_cfgs = {'background': '', 'agents': []}
-            # the first time to create grouchat
+            # The first time to create grouchat
             exist_cfgs = now_cfgs['agents']
             for cfg in exist_cfgs:
                 if 'is_human' in cfg and cfg['is_human']:
@@ -211,7 +211,7 @@ def app_create(history, now_cfgs):
 
 
 def _get_display_history_from_message():
-    # get display history from messages
+    # Get display history from messages
     display_history = []
     for msg in app_global_para['messages']:
         if isinstance(msg.content, list):

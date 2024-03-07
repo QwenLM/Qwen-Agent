@@ -37,23 +37,22 @@ class BaseTool(ABC):
 
     @abstractmethod
     def call(self, params: Union[str, dict], **kwargs):
-        """
-        The interface for calling tools
+        """The interface for calling tools.
 
-        :param params: the parameters of func_call
-        :param kwargs: additional parameters for calling tools
-        :return: the result returned by the tool, implemented in the subclass
+        Each tool needs to implement this function, which is the workflow of the tool.
+
+        Args:
+            params: The parameters of func_call.
+            kwargs: Additional parameters for calling tools.
+
+        Returns:
+            The result returned by the tool, implemented in the subclass.
         """
         raise NotImplementedError
 
     def _verify_json_format_args(self,
                                  params: Union[str, dict]) -> Union[str, dict]:
-        """
-        Verify the parameters of the function call
-
-        :param params: the parameters of func_call
-        :return: the str params or the legal dict params
-        """
+        """Verify the parameters of the function call"""
         try:
             if isinstance(params, str):
                 params_json = json5.loads(params)
@@ -69,10 +68,6 @@ class BaseTool(ABC):
             raise ValueError('Parameters cannot be converted to Json Format!')
 
     def _build_function(self):
-        """
-        The dict format after applying the template to the function, such as oai format
-
-        """
         return {
             'name_for_human': self.name_for_human,
             'name': self.name,

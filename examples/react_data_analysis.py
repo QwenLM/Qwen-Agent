@@ -8,7 +8,6 @@ ROOT_RESOURCE = os.path.join(os.path.dirname(__file__), 'resource')
 
 
 def init_agent_service():
-    # settings
     llm_cfg = {
         # 'model': 'Qwen/Qwen1.5-72B-Chat',
         # 'model_server': 'https://api.together.xyz',
@@ -23,15 +22,15 @@ def init_agent_service():
 
 
 def app():
-    # define the agent
+    # Define the agent
     bot = init_agent_service()
 
-    # chat
+    # Chat
     messages = []
     while True:
-        # query example: pd.head the file first and then help me draw a line chart to show the changes in stock prices
+        # Query example: pd.head the file first and then help me draw a line chart to show the changes in stock prices
         query = input('user question: ')
-        # file example: resource/stock_prices.csv
+        # File example: resource/stock_prices.csv
         file = input('file url (press enter if no file): ').strip()
         if not query:
             print('user question cannot be empty！')
@@ -55,13 +54,14 @@ def app():
 
 
 def test(
-    query:
+    query:  # noqa
     str = 'pd.head the file first and then help me draw a line chart to show the changes in stock prices',
-    file: Optional[str] = os.path.join(ROOT_RESOURCE, 'stock_prices.csv')):
-    # define the agent
+    file: Optional[str] = os.path.join(ROOT_RESOURCE,
+                                       'stock_prices.csv')):  # noqa
+    # Define the agent
     bot = init_agent_service()
 
-    # chat
+    # Chat
     messages = []
 
     if not file:

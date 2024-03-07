@@ -174,13 +174,7 @@ class DocParser(BaseTool):
     def call(self,
              params: Union[str, dict],
              ignore_cache: bool = False) -> dict:
-        """
-        Parse file by url, and return the formatted content
-
-        :param params: The url of the file
-        :param ignore_cache: When set to True, overwrite the same documents that have been parsed before.
-        :return: The parsed file content
-        """
+        """Parse file by url, and return the formatted content."""
 
         params = self._verify_json_format_args(params)
 

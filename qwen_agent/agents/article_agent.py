@@ -7,6 +7,10 @@ from qwen_agent.prompts import ContinueWriting
 
 
 class ArticleAgent(Assistant):
+    """This is an agent for writing articles.
+
+    It can write a thematic essay or continue writing an article based on reference materials
+    """
 
     def _run(self,
              messages: List[Message],
@@ -15,7 +19,7 @@ class ArticleAgent(Assistant):
              full_article: bool = False,
              **kwargs) -> Iterator[List[Message]]:
 
-        # need to use Memory agent for data management
+        # Need to use Memory agent for data management
         *_, last = self.mem.run(messages=messages,
                                 max_ref_token=max_ref_token,
                                 **kwargs)

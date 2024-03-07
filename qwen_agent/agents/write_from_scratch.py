@@ -22,7 +22,7 @@ class WriteFromScratch(Agent):
              messages: List[Message],
              knowledge: str = '',
              lang: str = 'en') -> Iterator[List[Message]]:
-        # plan
+
         response = [
             Message(ASSISTANT, f'>\n> Use Default plans: \n{default_plan}')
         ]

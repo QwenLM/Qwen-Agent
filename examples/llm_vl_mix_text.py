@@ -4,7 +4,6 @@ from qwen_agent.llm.schema import ContentItem, Message
 
 
 def test():
-    # settings
     llm_cfg = {'model': 'qwen-max', 'model_server': 'dashscope'}
     llm_cfg_vl = {'model': 'qwen-vl-max', 'model_server': 'dashscope'}
     functions = [{
@@ -24,7 +23,7 @@ def test():
         'args_format': '参数为json格式'
     }]
 
-    # chat with vl llm
+    # Chat with vl llm
     llm_vl = get_chat_model(llm_cfg_vl)
     messages = [{
         'role':
@@ -47,7 +46,7 @@ def test():
         print(x)
     messages.extend(x)
 
-    # chat with text llm
+    # Chat with text llm
     llm = get_chat_model(llm_cfg)
     messages.append({'role': 'user', 'content': '你是？'})
     response = llm.chat(messages, stream=True)
@@ -75,7 +74,7 @@ def test():
         print(x)
     messages.extend(x)
 
-    # chat with vl llm
+    # Chat with vl llm
     messages.append({
         'role':
         'user',
