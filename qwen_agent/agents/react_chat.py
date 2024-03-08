@@ -52,8 +52,6 @@ class ReActChat(Assistant):
         self.llm.generate_cfg['stop'] = stop + [
             x for x in fn_stop if x not in stop
         ]
-        assert not self.llm.model.startswith(
-            'qwen-vl'), 'Now this React format does not support VL LLM'
 
     def _run(self,
              messages: List[Message],

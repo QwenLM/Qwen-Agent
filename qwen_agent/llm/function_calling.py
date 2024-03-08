@@ -3,8 +3,8 @@ from abc import ABC
 from typing import Dict, Iterator, List, Optional, Union
 
 from qwen_agent.llm.base import BaseChatModel
-from qwen_agent.llm.schema import (ASSISTANT, CONTENT, FUNCTION, ROLE, SYSTEM,
-                                   USER, ContentItem, FunctionCall, Message)
+from qwen_agent.llm.schema import (ASSISTANT, FUNCTION, SYSTEM, USER,
+                                   ContentItem, FunctionCall, Message)
 from qwen_agent.utils.utils import get_function_description, has_chinese_chars
 
 
@@ -107,18 +107,18 @@ class BaseFnCallModel(BaseChatModel, ABC):
                     func_content += f'\n{FN_NAME}: {f_name}'
                     func_content += f'\n{FN_ARGS}: {f_args}'
                     content.append(ContentItem(text=func_content))
-                if new_messages[-1][ROLE] == ASSISTANT:
-                    new_messages[-1][CONTENT] += content
+                if new_messages[-1].role == ASSISTANT:
+                    new_messages[-1].content += content
                 else:
                     new_messages.append(Message(role=role, content=content))
             elif role == FUNCTION:
-                assert new_messages[-1][ROLE] == ASSISTANT
+                assert new_messages[-1].role == ASSISTANT
                 assert isinstance(content, list)
                 assert len(content) == 1
                 assert isinstance(content[0], ContentItem)
                 f_result = content[0].text
                 assert f_result is not None
-                new_messages[-1][CONTENT] += [
+                new_messages[-1].content += [
                     ContentItem(text=f'\n{FN_RESULT}: {f_result}\n{FN_EXIT}: ')
                 ]
             else:
@@ -146,7 +146,7 @@ class BaseFnCallModel(BaseChatModel, ABC):
         """
 
         # Remove ': ' brought by continued generation of function calling
-        last_msg = messages[-1][CONTENT]
+        last_msg = messages[-1].content
         for i in range(len(last_msg)):
             item_type, item_text = last_msg[i].get_type_and_value()
             if item_type == 'text':
@@ -158,7 +158,7 @@ class BaseFnCallModel(BaseChatModel, ABC):
 
         new_messages = []
         for msg in messages:
-            role, content = msg[ROLE], msg[CONTENT]
+            role, content = msg.role, msg.content
             assert isinstance(content, list)
 
             if role in (SYSTEM, USER):

@@ -38,7 +38,7 @@ def test_router():
     ]
 
     *_, last = bot.run(messages)
-    assert isinstance(last[-1].content, list)
+    assert isinstance(last[-1].content, str)
 
     messages = [Message('user', '海淀区天气')]
 

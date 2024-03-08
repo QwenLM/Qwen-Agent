@@ -50,7 +50,7 @@ def test_vl_mix_text(functions, stream, delta_stream):
     if stream:
         response = list(response)[-1]
 
-    assert isinstance(response[-1]['content'], list)
+    assert isinstance(response[-1]['content'], str)
 
 
 @pytest.mark.parametrize('functions', [None, functions])

@@ -6,8 +6,8 @@ from qwen_agent.utils.tokenization_qwen import tokenizer
 from qwen_agent.utils.utils import (get_basename_from_url, has_chinese_chars,
                                     is_image)
 
-from .schema import (ASSISTANT, CONTENT, DEFAULT_SYSTEM_MESSAGE, FUNCTION,
-                     ROLE, SYSTEM, USER, ContentItem, Message)
+from .schema import (ASSISTANT, DEFAULT_SYSTEM_MESSAGE, FUNCTION, SYSTEM, USER,
+                     ContentItem, Message)
 
 LLM_REGISTRY = {}
 
@@ -66,7 +66,7 @@ class BaseChatModel(ABC):
                 _return_message_type = 'message'
         messages = new_messages
 
-        if messages[0][ROLE] != SYSTEM:
+        if messages[0].role != SYSTEM:
             messages = [Message(role=SYSTEM, content=DEFAULT_SYSTEM_MESSAGE)
                         ] + messages
 
@@ -135,7 +135,8 @@ class BaseChatModel(ABC):
         raise NotImplementedError
 
     def _preprocess_messages(self, messages: List[Message]) -> List[Message]:
-        return self._format_as_multimodal_messages(messages)
+        messages = self._format_as_multimodal_messages(messages)
+        return messages
 
     def _postprocess_messages(self, messages: List[Message],
                               fncall_mode: bool) -> List[Message]:
@@ -184,7 +185,7 @@ class BaseChatModel(ABC):
             content = []
             if isinstance(msg.content, str):  # if text content
                 if msg.content:
-                    content = [ContentItem(text=msg[CONTENT])]
+                    content = [ContentItem(text=msg.content)]
             elif isinstance(msg.content, list):  # if multimodal content
                 files = []
                 for item in msg.content:

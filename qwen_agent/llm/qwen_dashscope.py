@@ -8,8 +8,7 @@ import dashscope
 from qwen_agent.llm.base import ModelServiceError, register_llm
 from qwen_agent.log import logger
 
-from .schema import (ASSISTANT, DEFAULT_SYSTEM_MESSAGE, ROLE, SYSTEM, USER,
-                     Message)
+from .schema import ASSISTANT, DEFAULT_SYSTEM_MESSAGE, SYSTEM, USER, Message
 from .text_base import BaseTextChatModel
 
 
@@ -137,7 +136,7 @@ class QwenChatAtDS(BaseTextChatModel):
             prompt = f'{im_start}{SYSTEM}\n{sys}{im_end}'
         else:
             prompt = f'{im_start}{SYSTEM}\n{DEFAULT_SYSTEM_MESSAGE}{im_end}'
-        if messages[-1][ROLE] != ASSISTANT:
+        if messages[-1].role != ASSISTANT:
             messages.append(Message(ASSISTANT, ''))
         for msg in messages:
             assert isinstance(msg.content, str)
