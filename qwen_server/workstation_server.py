@@ -14,7 +14,7 @@ from qwen_agent.agents import ArticleAgent, DocQAAgent, ReActChat
 from qwen_agent.llm import get_chat_model
 from qwen_agent.llm.base import ModelServiceError
 from qwen_agent.memory import Memory
-from qwen_agent.utils.utils import (get_basename_from_url,
+from qwen_agent.utils.utils import (SUCCESS_MESSAGE, get_basename_from_url,
                                     get_last_one_line_context,
                                     has_chinese_chars, save_text_to_file)
 from qwen_server import output_beautify
@@ -180,7 +180,7 @@ def download_text(text):
     filename = f'file_{current_time}.md'
     save_path = os.path.join(server_config.path.download_root, filename)
     rsp = save_text_to_file(save_path, text)
-    if rsp == 'SUCCESS':
+    if rsp == SUCCESS_MESSAGE:
         gr.Info(f'Saved to {save_path}')
     else:
         gr.Error("Can't Save: ", rsp)

@@ -1,4 +1,3 @@
-import copy
 import datetime
 import json
 import os
@@ -13,7 +12,6 @@ from qwen_agent.log import logger
 from qwen_agent.tools.base import BaseTool, register_tool
 from qwen_agent.tools.storage import Storage
 from qwen_agent.utils.doc_parser import parse_doc, parse_html_bs
-from qwen_agent.utils.tokenization_qwen import count_tokens
 from qwen_agent.utils.utils import (get_file_type, hash_sha256, is_local_path,
                                     print_traceback,
                                     save_url_to_local_work_dir)
@@ -134,25 +132,9 @@ def process_file(url: str, db: Storage = None):
                         checked=True,
                         session=[]).to_dict()
     new_record_str = json.dumps(new_record, ensure_ascii=False)
-    db.put(url, new_record_str)
+    db.put(hash_sha256(url), new_record_str)
 
     return new_record
-
-
-def token_counter_backup(records):
-    new_records = []
-    for record in records:
-        if not record['raw']:
-            continue
-        if 'token' not in record['raw'][0]['page_content']:
-            tmp = []
-            for page in record['raw']:
-                new_page = copy.deepcopy(page)
-                new_page['token'] = count_tokens(page['page_content'])
-                tmp.append(new_page)
-            record['raw'] = tmp
-        new_records.append(record)
-    return new_records
 
 
 @register_tool('doc_parser')
@@ -169,7 +151,7 @@ class DocParser(BaseTool):
         super().__init__(cfg)
         self.data_root = self.cfg.get(
             'path', 'workspace/default_doc_parser_data_path')
-        self.db = Storage({'path': self.data_root})
+        self.db = Storage({'storage_root_path': self.data_root})
 
     def call(self,
              params: Union[str, dict],
@@ -178,10 +160,14 @@ class DocParser(BaseTool):
 
         params = self._verify_json_format_args(params)
 
-        record = self.db.get(params['url'])
-        if record and not ignore_cache:
-            record = json5.loads(record)
-        else:
-            # The url has not been parsed or ignore_cache: need to parse and save doc
+        if ignore_cache:
             record = process_file(url=params['url'], db=self.db)
+        else:
+            try:
+                record = self.db.get(hash_sha256(params['url']))
+                record = json5.loads(record)
+
+            except Exception:
+                record = process_file(url=params['url'], db=self.db)
+
         return record

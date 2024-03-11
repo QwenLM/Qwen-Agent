@@ -1,22 +1,20 @@
 import os
 from typing import Dict, Optional, Union
 
-from qwen_agent.log import logger
 from qwen_agent.tools.base import BaseTool, register_tool
-from qwen_agent.utils.utils import (hash_sha256, print_traceback,
-                                    read_text_from_file, save_text_to_file)
+from qwen_agent.utils.utils import (print_traceback, read_text_from_file,
+                                    save_text_to_file)
+
+DEFAULT_STORAGE_PATH = 'workspace/default_data_path'
 
 
 @register_tool('storage')
 class Storage(BaseTool):
-    """This is a special tool for data storage"""
-    description = '数据在文件系统中存储和读取'
+    """
+    This is a special tool for data storage
+    """
+    description = '存储和读取数据的工具'
     parameters = [{
-        'name': 'path',
-        'type': 'string',
-        'description': '数据存储的目录',
-        'required': True
-    }, {
         'name': 'operate',
         'type': 'string',
         'description':
@@ -25,7 +23,9 @@ class Storage(BaseTool):
     }, {
         'name': 'key',
         'type': 'string',
-        'description': '数据的名称，是一份数据的唯一标识'
+        'description':
+        '数据的路径，类似于文件路径，是一份数据的唯一标识，不能为空，默认根目录为`/`。存数据时，应该合理的设计路径，保证路径含义清晰且唯一。',
+        'default': '/'
     }, {
         'name': 'value',
         'type': 'string',
@@ -34,72 +34,73 @@ class Storage(BaseTool):
 
     def __init__(self, cfg: Optional[Dict] = None):
         super().__init__(cfg)
-        self.root = self.cfg.get('path', 'workspace/default_data_path')
+        self.root = self.cfg.get('storage_root_path', DEFAULT_STORAGE_PATH)
         os.makedirs(self.root, exist_ok=True)
-        self.data: Dict[str, Optional[str]] = {}
-        # load all keys in this path
-        for file in os.listdir(self.root):
-            self.data[file] = None
 
-    def call(self, params: Union[str, dict], **kwargs):
-
+    def call(self, params: Union[str, dict], **kwargs) -> str:
         params = self._verify_json_format_args(params)
-
-        path = params['path']
-        self.init(path)
-
         operate = params['operate']
+        key = params.get('key', '/')
+        if key.startswith('/'):
+            key = key[1:]
+
         if operate == 'put':
-            return self.put(params['key'], params['value'])
+            assert 'value' in params
+            return self.put(key, params['value'])
         elif operate == 'get':
-            return self.get(params['key'])
+            return self.get(key)
         elif operate == 'delete':
-            return self.delete(params['key'])
+            return self.delete(key)
         else:
-            return self.scan()
+            return self.scan(key)
 
-    def init(self, path: str):
-        os.makedirs(path, exist_ok=True)
-        self.root = path
-        # load all keys
-        self.data = {}
-        for file in os.listdir(path):
-            self.data[file] = None
+    def put(self, key: str, value: str, path: Optional[str] = None) -> str:
+        path = path or self.root
 
-    def put(self, key: str, value: str):
         # one file for one key value pair
-        key = hash_sha256(key)
+        path = os.path.join(path, key)
 
-        msg = save_text_to_file(os.path.join(self.root, key), value)
-        if msg == 'SUCCESS':
-            self.data[key] = value
-            return msg
-        else:
+        path_dir = path[:path.rfind('/') + 1]
+        if path_dir:
+            os.makedirs(path_dir, exist_ok=True)
+
+        return save_text_to_file(path, value)
+
+    def get(self, key: str, path: Optional[str] = None) -> str:
+        path = path or self.root
+        return read_text_from_file(os.path.join(path, key))
+
+    def delete(self, key, path: Optional[str] = None) -> str:
+        path = path or self.root
+        try:
+            path = os.path.join(path, key)
+            if os.path.exists(path):
+                os.remove(path)
+                return f'Successfully deleted{key}'
+            else:
+                return f'Delete Failed: {key} does not exist'
+        except Exception as ex:
             print_traceback()
+            return ex
 
-    def get(self, key: str, re_load: bool = True):
-        key = hash_sha256(key)
-        if key in self.data and self.data[key] and (not re_load):
-            return self.data[key]
+    def scan(self, key: str, path: Optional[str] = None) -> str:
         try:
-            # lazy reading
-            content = read_text_from_file(os.path.join(self.root, key))
-            self.data[key] = content
-            return content
+            assert key.endswith('/') or not key
         except Exception:
-            return ''
+            return 'Scan Failed: The scan operation requires passing in a key to a path'
 
-    def delete(self, key):
-        key = hash_sha256(key)
-        try:
-            if key in self.data:
-                os.remove(os.path.join(self.root, key))
-                self.data.pop(key)
-
-            logger.info(f"Remove '{key}'")
-        except OSError as ex:
-            logger.error(f'Failed to remove: {ex}')
-
-    def scan(self):
-        for key in self.data.keys():
-            yield [key, self.get(key)]
+        path = path or self.root
+        path = os.path.join(path, key)
+        if os.path.exists(path):
+            # All key-value pairs
+            kvs = {}
+            for root, dirs, files in os.walk(path):
+                for file in files:
+                    k = os.path.join(root, file)[len(path):]
+                    if not k.startswith('/'):
+                        k = '/' + k
+                    v = read_text_from_file(os.path.join(root, file))
+                    kvs[k] = v
+            return '\n'.join([f'{k}: {v}' for k, v in kvs.items()])
+        else:
+            return f'Scan Failed: {key} does not exist.'

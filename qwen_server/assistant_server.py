@@ -122,7 +122,7 @@ def init_chatbot():
         return read_history(page_url, history_dir)
 
 
-def clear_session(history):
+def clear_session():
     page_url = set_url()
     save_history(None, page_url, history_dir)
     return None
