@@ -71,7 +71,7 @@ class TextChatAtOAI(BaseTextChatModel):
                             Message(ASSISTANT, chunk.choices[0].delta.content)
                         ]
                     except Exception as ex:
-                        raise ModelServiceError(ex)
+                        raise ModelServiceError(exception=ex)
         else:
             full_response = ''
             for chunk in response:
@@ -80,7 +80,7 @@ class TextChatAtOAI(BaseTextChatModel):
                     try:
                         full_response += chunk.choices[0].delta.content
                     except Exception as ex:
-                        raise ModelServiceError(ex)
+                        raise ModelServiceError(exception=ex)
                     yield [Message(ASSISTANT, full_response)]
 
     def _chat_no_stream(self, messages: List[Message]) -> List[Message]:
@@ -93,4 +93,4 @@ class TextChatAtOAI(BaseTextChatModel):
         try:
             return [Message(ASSISTANT, response.choices[0].message.content)]
         except Exception as ex:
-            raise ModelServiceError(ex)
+            raise ModelServiceError(exception=ex)

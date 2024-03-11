@@ -1,6 +1,6 @@
 import pytest
 
-from qwen_agent.llm import get_chat_model
+from qwen_agent.llm import ModelServiceError, get_chat_model
 from qwen_agent.llm.schema import Message
 
 functions = [{
@@ -80,3 +80,26 @@ def test_llm_dashscope(functions, stream, delta_stream):
         assert response[-1].function_call.name == 'image_gen'
     else:
         assert response[-1].function_call is None
+
+
+@pytest.mark.parametrize('stream', [True, False])
+@pytest.mark.parametrize('delta_stream', [True, False])
+def test_llm_retry_failure(stream, delta_stream):
+    llm_cfg = {
+        'model': 'qwen-turbo',
+        'api_key': 'invalid',
+        'generate_cfg': {
+            'max_retries': 3
+        }
+    }
+
+    llm = get_chat_model(llm_cfg)
+    assert llm.max_retries == 3
+
+    messages = [Message('user', 'hello')]
+    with pytest.raises(ModelServiceError):
+        response = llm.chat(messages=messages,
+                            stream=stream,
+                            delta_stream=delta_stream)
+        if stream:
+            list(response)

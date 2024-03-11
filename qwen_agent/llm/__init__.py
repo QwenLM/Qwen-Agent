@@ -2,7 +2,7 @@ from typing import Dict, Optional
 
 from qwen_agent.llm.base import LLM_REGISTRY
 
-from .base import BaseChatModel
+from .base import BaseChatModel, ModelServiceError
 from .oai import TextChatAtOAI
 from .qwen_dashscope import QwenChatAtDS
 from .qwenvl_dashscope import QwenVLChatAtDS
@@ -59,6 +59,10 @@ def get_chat_model(cfg: Optional[Dict] = None) -> BaseChatModel:
 
 
 __all__ = [
-    'BaseChatModel', 'QwenChatAtDS', 'TextChatAtOAI', 'QwenVLChatAtDS',
-    'get_chat_model'
+    'BaseChatModel',
+    'QwenChatAtDS',
+    'TextChatAtOAI',
+    'QwenVLChatAtDS',
+    'get_chat_model',
+    'ModelServiceError',
 ]

@@ -3,16 +3,23 @@ from typing import Dict, List, Optional, Union
 
 import json5
 
+from qwen_agent.utils.utils import logger
+
 TOOL_REGISTRY = {}
 
 
-def register_tool(name):
+def register_tool(name, allow_overwrite=False):
 
     def decorator(cls):
         if name in TOOL_REGISTRY:
-            raise ValueError(
-                f'tool {name} has a duplicate name! Please ensure that the tool name is unique.'
-            )
+            if allow_overwrite:
+                logger.warning(
+                    f'Tool `{name}` already exists! Overwriting with class {cls}.'
+                )
+            else:
+                raise ValueError(
+                    f'Tool `{name}` already exists! Please ensure that the tool name is unique.'
+                )
         cls.name = name
         TOOL_REGISTRY[name] = cls
 

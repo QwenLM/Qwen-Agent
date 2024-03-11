@@ -1,10 +1,12 @@
 import copy
+import random
+import time
 from abc import ABC, abstractmethod
 from typing import Dict, Iterator, List, Optional, Union
 
 from qwen_agent.utils.tokenization_qwen import tokenizer
 from qwen_agent.utils.utils import (get_basename_from_url, has_chinese_chars,
-                                    is_image)
+                                    is_image, print_traceback)
 
 from .schema import (ASSISTANT, DEFAULT_SYSTEM_MESSAGE, FUNCTION, SYSTEM, USER,
                      ContentItem, Message)
@@ -22,7 +24,18 @@ def register_llm(model_type):
 
 
 class ModelServiceError(Exception):
-    pass
+
+    def __init__(self,
+                 exception: Optional[Exception] = None,
+                 code: Optional[str] = None,
+                 message: Optional[str] = None):
+        if exception is not None:
+            super().__init__(exception)
+        else:
+            super().__init__(f'\nError code: {code}. Error message: {message}')
+        self.exception = exception
+        self.code = code
+        self.message = message
 
 
 class BaseChatModel(ABC):
@@ -31,7 +44,9 @@ class BaseChatModel(ABC):
     def __init__(self, cfg: Optional[Dict] = None):
         cfg = cfg or {}
         self.model = cfg.get('model', '')
-        self.generate_cfg = cfg.get('generate_cfg', {})
+        generate_cfg = copy.deepcopy(cfg.get('generate_cfg', {}))
+        self.max_retries = generate_cfg.pop('max_retries', 0)
+        self.generate_cfg = generate_cfg
 
     def chat(
         self,
@@ -71,21 +86,36 @@ class BaseChatModel(ABC):
                         ] + messages
 
         messages = self._preprocess_messages(messages)
+
         if functions:
             fncall_mode = True
-            output = self._chat_with_functions(
-                messages=messages,
-                functions=functions,
-                stream=stream,
-                delta_stream=delta_stream,
-            )
         else:
             fncall_mode = False
-            output = self._chat(
-                messages,
-                stream=stream,
-                delta_stream=delta_stream,
-            )
+
+        def _call_model_service():
+            if fncall_mode:
+                return self._chat_with_functions(
+                    messages=messages,
+                    functions=functions,
+                    stream=stream,
+                    delta_stream=delta_stream,
+                )
+            else:
+                return self._chat(
+                    messages,
+                    stream=stream,
+                    delta_stream=delta_stream,
+                )
+
+        if stream and delta_stream:
+            # No retry for delta streaming
+            output = _call_model_service()
+        elif stream and (not delta_stream):
+            output = retry_model_service_iterator(_call_model_service,
+                                                  max_retries=self.max_retries)
+        else:
+            output = retry_model_service(_call_model_service,
+                                         max_retries=self.max_retries)
 
         if isinstance(output, list):
             output = self._postprocess_messages(output,
@@ -281,3 +311,70 @@ def _truncate_at_stop_word(text: str, stop: List[str]):
             truncated = True
             text = text[:k]
     return truncated, text
+
+
+def retry_model_service(
+    fn,
+    max_retries: int = 10,
+    exponential_base: float = 1.0,
+):
+    """Retry a function with exponential backoff"""
+
+    num_retries = 0
+    delay = 1.0
+    while True:
+        try:
+            return fn()
+
+        except ModelServiceError as e:
+            if max_retries <= 0:  # no retry
+                raise e
+
+            # If harmful input or output detected, let it fail
+            if e.code == 'DataInspectionFailed':
+                raise e
+
+            print_traceback(is_error=False)
+
+            if num_retries >= max_retries:
+                raise ModelServiceError(exception=Exception(
+                    f'Maximum number of retries ({max_retries}) exceeded.'))
+
+            num_retries += 1
+            delay *= exponential_base * (1.0 + random.random())
+            time.sleep(delay)
+
+
+def retry_model_service_iterator(
+    it_fn,
+    max_retries: int = 10,
+    exponential_base: float = 1.0,
+):
+    """Retry an iterator with exponential backoff"""
+
+    num_retries = 0
+    delay = 1.0
+
+    while True:
+        try:
+            for rsp in it_fn():
+                yield rsp
+            break
+
+        except ModelServiceError as e:
+            if max_retries <= 0:  # no retry
+                raise e
+
+            # If harmful input or output detected, let it fail
+            if e.code == 'DataInspectionFailed':
+                raise e
+
+            print_traceback(is_error=False)
+
+            if num_retries >= max_retries:
+                raise ModelServiceError(exception=Exception(
+                    f'Maximum number of retries ({max_retries}) exceeded.'))
+
+            num_retries += 1
+            delay *= exponential_base * (1.0 + random.random())
+            time.sleep(delay)

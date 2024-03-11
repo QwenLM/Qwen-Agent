@@ -48,11 +48,7 @@ class QwenVLChatAtDS(BaseFnCallModel):
             if trunk.status_code == HTTPStatus.OK:
                 yield _extract_vl_response(trunk)
             else:
-                err = '\nError code: %s. Error message: %s' % (
-                    trunk.code,
-                    trunk.message,
-                )
-                raise ModelServiceError(err)
+                raise ModelServiceError(code=trunk.code, message=trunk.message)
 
     def _chat_no_stream(
         self,
@@ -69,11 +65,8 @@ class QwenVLChatAtDS(BaseFnCallModel):
         if response.status_code == HTTPStatus.OK:
             return _extract_vl_response(response=response)
         else:
-            err = '\nError code: %s, error message: %s' % (
-                response.code,
-                response.message,
-            )
-            raise ModelServiceError(err)
+            raise ModelServiceError(code=response.code,
+                                    message=response.message)
 
     def _postprocess_messages(self, messages: List[Message],
                               fncall_mode: bool) -> List[Message]:

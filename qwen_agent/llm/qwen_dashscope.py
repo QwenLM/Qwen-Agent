@@ -61,11 +61,8 @@ class QwenChatAtDS(BaseTextChatModel):
                 Message(ASSISTANT, response.output.choices[0].message.content)
             ]
         else:
-            err = '\nError code: %s, error message: %s' % (
-                response.code,
-                response.message,
-            )
-            raise ModelServiceError(err)
+            raise ModelServiceError(code=response.code,
+                                    message=response.message)
 
     def _chat_with_functions(
         self,
@@ -102,11 +99,8 @@ class QwenChatAtDS(BaseTextChatModel):
                 Message(ASSISTANT, response.output.choices[0].message.content)
             ]
         else:
-            err = '\nError code: %s, error message: %s' % (
-                response.code,
-                response.message,
-            )
-            raise ModelServiceError(err)
+            raise ModelServiceError(code=response.code,
+                                    message=response.message)
 
     def _text_completion_stream(
         self,
@@ -169,9 +163,7 @@ class QwenChatAtDS(BaseTextChatModel):
                     yield [Message(ASSISTANT, now_rsp)]
                     last_len = len(real_text)
             else:
-                err = '\nError code: %s. Error message: %s' % (trunk.code,
-                                                               trunk.message)
-                raise ModelServiceError(err)
+                raise ModelServiceError(code=trunk.code, message=trunk.message)
         if text and (in_delay or (last_len != len(text))):
             yield [Message(ASSISTANT, text[last_len:])]
 
@@ -183,6 +175,4 @@ class QwenChatAtDS(BaseTextChatModel):
                     Message(ASSISTANT, trunk.output.choices[0].message.content)
                 ]
             else:
-                err = '\nError code: %s. Error message: %s' % (trunk.code,
-                                                               trunk.message)
-                raise ModelServiceError(err)
+                raise ModelServiceError(code=trunk.code, message=trunk.message)

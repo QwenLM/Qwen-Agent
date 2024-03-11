@@ -38,8 +38,11 @@ def hash_sha256(key):
     return key
 
 
-def print_traceback():
-    logger.error(''.join(traceback.format_exception(*sys.exc_info())))
+def print_traceback(is_error=True):
+    if is_error:
+        logger.error(''.join(traceback.format_exception(*sys.exc_info())))
+    else:
+        logger.warning(''.join(traceback.format_exception(*sys.exc_info())))
 
 
 def has_chinese_chars(data) -> bool:
