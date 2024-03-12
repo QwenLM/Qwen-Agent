@@ -61,7 +61,11 @@ class GenKeyword(Agent):
             llm = copy.deepcopy(llm)
             if isinstance(llm, dict):
                 llm = get_chat_model(llm)
-            llm.generate_cfg['stop'].extend(['Observation:', 'Observation:\n'])
+            stop = llm.generate_cfg.get('stop', [])
+            key_stop = ['Observation:', 'Observation:\n']
+            llm.generate_cfg['stop'] = stop + [
+                x for x in key_stop if x not in stop
+            ]
         super().__init__(function_list, llm, system_message, **kwargs)
 
     def _run(self,
