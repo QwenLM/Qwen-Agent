@@ -253,6 +253,7 @@ class BaseChatModel(ABC):
                 Message(
                     role=msg.role,
                     content=content,
+                    name=msg.name if msg.role == FUNCTION else None,
                     function_call=msg.function_call,
                 ))
 
