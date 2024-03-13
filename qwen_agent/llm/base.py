@@ -322,7 +322,7 @@ def retry_model_service(
     """Retry a function with exponential backoff"""
 
     num_retries = 0
-    delay = 1.0
+    delay = 2.0
     while True:
         try:
             return fn()
@@ -333,6 +333,10 @@ def retry_model_service(
 
             # If harmful input or output detected, let it fail
             if e.code == 'DataInspectionFailed':
+                raise e
+
+            # Retry is meaningless if the input is too long
+            if 'maximum context length' in str(e):
                 raise e
 
             print_traceback(is_error=False)
@@ -354,7 +358,7 @@ def retry_model_service_iterator(
     """Retry an iterator with exponential backoff"""
 
     num_retries = 0
-    delay = 1.0
+    delay = 2.0
 
     while True:
         try:
@@ -368,6 +372,10 @@ def retry_model_service_iterator(
 
             # If harmful input or output detected, let it fail
             if e.code == 'DataInspectionFailed':
+                raise e
+
+            # Retry is meaningless if the input is too long
+            if 'maximum context length' in str(e):
                 raise e
 
             print_traceback(is_error=False)
