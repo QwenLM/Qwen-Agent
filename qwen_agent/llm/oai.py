@@ -1,8 +1,14 @@
+import copy
 import os
 from pprint import pformat
 from typing import Dict, Iterator, List, Optional
 
 import openai
+
+if openai.__version__.startswith('0.'):
+    from openai.error import OpenAIError
+else:
+    from openai import OpenAIError
 
 from qwen_agent.llm.base import ModelServiceError, register_llm
 from qwen_agent.llm.text_base import BaseTextChatModel
@@ -45,6 +51,16 @@ class TextChatAtOAI(BaseTextChatModel):
             if api_key:
                 api_kwargs['api_key'] = api_key
 
+            # OpenAI API v1 does not allow the following args, must pass by extra_body
+            extra_params = ['top_k', 'repetition_penalty']
+            if any((k in self.generate_cfg) for k in extra_params):
+                self.generate_cfg = copy.deepcopy(self.generate_cfg)
+                self.generate_cfg['extra_body'] = {}
+                for k in extra_params:
+                    if k in self.generate_cfg:
+                        self.generate_cfg['extra_body'][
+                            k] = self.generate_cfg.pop(k)
+
             def _chat_complete_create(*args, **kwargs):
                 client = openai.OpenAI(**api_kwargs)
                 return client.chat.completions.create(*args, **kwargs)
@@ -58,39 +74,36 @@ class TextChatAtOAI(BaseTextChatModel):
     ) -> Iterator[List[Message]]:
         messages = [msg.model_dump() for msg in messages]
         logger.debug(f'*{pformat(messages, indent=2)}*')
-        response = self._chat_complete_create(model=self.model,
-                                              messages=messages,
-                                              stream=True,
-                                              **self.generate_cfg)
-        if delta_stream:
-            for chunk in response:
-                if hasattr(chunk.choices[0].delta,
-                           'content') and chunk.choices[0].delta.content:
-                    try:
+        try:
+            response = self._chat_complete_create(model=self.model,
+                                                  messages=messages,
+                                                  stream=True,
+                                                  **self.generate_cfg)
+            if delta_stream:
+                for chunk in response:
+                    if hasattr(chunk.choices[0].delta,
+                               'content') and chunk.choices[0].delta.content:
                         yield [
                             Message(ASSISTANT, chunk.choices[0].delta.content)
                         ]
-                    except Exception as ex:
-                        raise ModelServiceError(exception=ex)
-        else:
-            full_response = ''
-            for chunk in response:
-                if hasattr(chunk.choices[0].delta,
-                           'content') and chunk.choices[0].delta.content:
-                    try:
+            else:
+                full_response = ''
+                for chunk in response:
+                    if hasattr(chunk.choices[0].delta,
+                               'content') and chunk.choices[0].delta.content:
                         full_response += chunk.choices[0].delta.content
-                    except Exception as ex:
-                        raise ModelServiceError(exception=ex)
-                    yield [Message(ASSISTANT, full_response)]
+                        yield [Message(ASSISTANT, full_response)]
+        except OpenAIError as ex:
+            raise ModelServiceError(exception=ex)
 
     def _chat_no_stream(self, messages: List[Message]) -> List[Message]:
         messages = [msg.model_dump() for msg in messages]
         logger.debug(f'*{pformat(messages, indent=2)}*')
-        response = self._chat_complete_create(model=self.model,
-                                              messages=messages,
-                                              stream=False,
-                                              **self.generate_cfg)
         try:
+            response = self._chat_complete_create(model=self.model,
+                                                  messages=messages,
+                                                  stream=False,
+                                                  **self.generate_cfg)
             return [Message(ASSISTANT, response.choices[0].message.content)]
-        except Exception as ex:
+        except OpenAIError as ex:
             raise ModelServiceError(exception=ex)
