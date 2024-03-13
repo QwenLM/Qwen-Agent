@@ -54,12 +54,14 @@ class TextChatAtOAI(BaseTextChatModel):
             # OpenAI API v1 does not allow the following args, must pass by extra_body
             extra_params = ['top_k', 'repetition_penalty']
             if any((k in self.generate_cfg) for k in extra_params):
-                self.generate_cfg = copy.deepcopy(self.generate_cfg)
                 self.generate_cfg['extra_body'] = {}
                 for k in extra_params:
                     if k in self.generate_cfg:
                         self.generate_cfg['extra_body'][
                             k] = self.generate_cfg.pop(k)
+            if 'request_timeout' in self.generate_cfg:
+                self.generate_cfg['timeout'] = self.generate_cfg.pop(
+                    'request_timeout')
 
             def _chat_complete_create(*args, **kwargs):
                 client = openai.OpenAI(**api_kwargs)
