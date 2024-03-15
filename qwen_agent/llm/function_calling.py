@@ -114,10 +114,13 @@ class BaseFnCallModel(BaseChatModel, ABC):
             elif role == FUNCTION:
                 assert new_messages[-1].role == ASSISTANT
                 assert isinstance(content, list)
-                assert len(content) == 1
-                assert isinstance(content[0], ContentItem)
-                f_result = content[0].text
-                assert f_result is not None
+                if content:
+                    assert len(content) == 1
+                    assert isinstance(content[0], ContentItem)
+                    f_result = content[0].text
+                    assert f_result is not None
+                else:
+                    f_result = ''
                 new_messages[-1].content += [
                     ContentItem(text=f'\n{FN_RESULT}: {f_result}\n{FN_EXIT}: ')
                 ]

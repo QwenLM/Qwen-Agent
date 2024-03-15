@@ -119,25 +119,15 @@ def get_current_date_str(
     return date_str
 
 
-SUCCESS_MESSAGE = 'SUCCESS'
-
-
 def save_text_to_file(path, text):
-    try:
-        with open(path, 'w', encoding='utf-8') as fp:
-            fp.write(text)
-        return SUCCESS_MESSAGE
-    except Exception as ex:
-        return ex
+    with open(path, 'w', encoding='utf-8') as fp:
+        fp.write(text)
 
 
 def read_text_from_file(path):
-    try:
-        with open(path, 'r', encoding='utf-8') as file:
-            file_content = file.read()
-        return file_content
-    except Exception as ex:
-        return ex
+    with open(path, 'r', encoding='utf-8') as file:
+        file_content = file.read()
+    return file_content
 
 
 def contains_html_tags(text):
@@ -148,7 +138,12 @@ def contains_html_tags(text):
 def get_file_type(path):
     # This is a temporary plan
     if is_local_path(path):
-        content = read_text_from_file(path)
+        try:
+            content = read_text_from_file(path)
+        except Exception:
+            print_traceback()
+            return 'Unknown'
+
         if contains_html_tags(content):
             return 'html'
         else:

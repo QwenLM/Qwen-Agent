@@ -6,13 +6,15 @@ from qwen_agent import Agent
 from qwen_agent.agents import Assistant
 from qwen_agent.llm import BaseChatModel
 from qwen_agent.llm.schema import ContentItem, Message
+from qwen_agent.tools import BaseTool
 
 
 class VisualStorytelling(Agent):
     """Customize an agent for writing story from pictures"""
 
     def __init__(self,
-                 function_list: Optional[List[Union[str, Dict]]] = None,
+                 function_list: Optional[List[Union[str, Dict,
+                                                    BaseTool]]] = None,
                  llm: Optional[Union[Dict, BaseChatModel]] = None):
         super().__init__(llm=llm)
 

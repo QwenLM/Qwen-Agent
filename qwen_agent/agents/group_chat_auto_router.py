@@ -3,6 +3,7 @@ from typing import Dict, Iterator, List, Optional, Union
 from qwen_agent import Agent
 from qwen_agent.llm import BaseChatModel
 from qwen_agent.llm.schema import Message
+from qwen_agent.tools import BaseTool
 from qwen_agent.utils.utils import has_chinese_chars
 
 PROMPT_TEMPLATE_ZH = '''你扮演角色扮演游戏的上帝，你的任务是选择合适的发言角色。有如下角色：
@@ -33,7 +34,8 @@ PROMPT_TEMPLATE = {
 class GroupChatAutoRouter(Agent):
 
     def __init__(self,
-                 function_list: Optional[List[Union[str, Dict]]] = None,
+                 function_list: Optional[List[Union[str, Dict,
+                                                    BaseTool]]] = None,
                  llm: Optional[Union[Dict, BaseChatModel]] = None,
                  agents: List[Agent] = None,
                  name: Optional[str] = None,

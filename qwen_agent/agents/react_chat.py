@@ -5,6 +5,7 @@ from qwen_agent.agents import Assistant
 from qwen_agent.llm import BaseChatModel
 from qwen_agent.llm.schema import (ASSISTANT, CONTENT, DEFAULT_SYSTEM_MESSAGE,
                                    ROLE, ContentItem, Message)
+from qwen_agent.tools import BaseTool
 from qwen_agent.utils.utils import (get_basename_from_url,
                                     get_function_description,
                                     has_chinese_chars)
@@ -35,7 +36,8 @@ class ReActChat(Assistant):
     """This agent use ReAct format to call tools"""
 
     def __init__(self,
-                 function_list: Optional[List[Union[str, Dict]]] = None,
+                 function_list: Optional[List[Union[str, Dict,
+                                                    BaseTool]]] = None,
                  llm: Optional[Union[Dict, BaseChatModel]] = None,
                  system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
                  name: Optional[str] = None,

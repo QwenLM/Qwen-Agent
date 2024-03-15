@@ -4,13 +4,15 @@ from qwen_agent.agents.assistant import Assistant
 from qwen_agent.llm.base import BaseChatModel
 from qwen_agent.llm.schema import CONTENT, DEFAULT_SYSTEM_MESSAGE, Message
 from qwen_agent.prompts import DocQA
+from qwen_agent.tools import BaseTool
 
 
 class DocQAAgent(Assistant):
     """This is an agent for doc QA."""
 
     def __init__(self,
-                 function_list: Optional[List[Union[str, Dict]]] = None,
+                 function_list: Optional[List[Union[str, Dict,
+                                                    BaseTool]]] = None,
                  llm: Optional[Union[Dict, BaseChatModel]] = None,
                  system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
                  name: Optional[str] = None,

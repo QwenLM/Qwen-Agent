@@ -9,6 +9,7 @@ from qwen_agent.agents.user_agent import PENDING_USER_INPUT, UserAgent
 from qwen_agent.llm import BaseChatModel
 from qwen_agent.llm.schema import Message
 from qwen_agent.log import logger
+from qwen_agent.tools import BaseTool
 
 
 class GroupChat(Agent):
@@ -24,7 +25,8 @@ class GroupChat(Agent):
     def __init__(self,
                  agents: Union[List[Agent], Dict],
                  agent_selection_method: Optional[str] = 'auto',
-                 function_list: Optional[List[Union[str, Dict]]] = None,
+                 function_list: Optional[List[Union[str, Dict,
+                                                    BaseTool]]] = None,
                  llm: Optional[Union[Dict, BaseChatModel]] = None,
                  **kwargs):
         """Initialization the agent.

@@ -1,4 +1,3 @@
-import json
 from typing import Dict, Iterator, List, Optional, Union
 
 import json5
@@ -9,6 +8,7 @@ from qwen_agent.llm.schema import (ASSISTANT, DEFAULT_SYSTEM_MESSAGE, USER,
                                    Message)
 from qwen_agent.log import logger
 from qwen_agent.prompts import GenKeyword
+from qwen_agent.tools import BaseTool
 from qwen_agent.utils.utils import get_file_type
 
 
@@ -19,7 +19,8 @@ class Memory(Agent):
     """
 
     def __init__(self,
-                 function_list: Optional[List[Union[str, Dict]]] = None,
+                 function_list: Optional[List[Union[str, Dict,
+                                                    BaseTool]]] = None,
                  llm: Optional[Union[Dict, BaseChatModel]] = None,
                  system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
                  files: Optional[List[str]] = None):
@@ -63,7 +64,7 @@ class Memory(Agent):
                 rag_files.append(file)
 
         if not rag_files:
-            yield [Message(ASSISTANT, '', name='memory')]
+            yield [Message(role=ASSISTANT, content='', name='memory')]
         else:
             query = ''
             # Only retrieval content according to the last user query if exists
@@ -93,11 +94,7 @@ class Memory(Agent):
                                       ignore_cache=ignore_cache,
                                       max_token=max_ref_token)
 
-            yield [
-                Message(ASSISTANT,
-                        json.dumps(content, ensure_ascii=False),
-                        name='memory')
-            ]
+            yield [Message(role=ASSISTANT, content=content, name='memory')]
 
     @staticmethod
     def get_all_files_of_messages(messages: List[Message]):

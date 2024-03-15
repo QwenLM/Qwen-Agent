@@ -14,7 +14,7 @@ from qwen_agent.agents import ArticleAgent, DocQAAgent, ReActChat
 from qwen_agent.llm import get_chat_model
 from qwen_agent.llm.base import ModelServiceError
 from qwen_agent.memory import Memory
-from qwen_agent.utils.utils import (SUCCESS_MESSAGE, get_basename_from_url,
+from qwen_agent.utils.utils import (get_basename_from_url,
                                     get_last_one_line_context,
                                     has_chinese_chars, save_text_to_file)
 from qwen_server import output_beautify
@@ -179,11 +179,11 @@ def download_text(text):
     current_time = now.strftime('%Y-%m-%d_%H-%M-%S')
     filename = f'file_{current_time}.md'
     save_path = os.path.join(server_config.path.download_root, filename)
-    rsp = save_text_to_file(save_path, text)
-    if rsp == SUCCESS_MESSAGE:
+    try:
+        save_text_to_file(save_path, text)
         gr.Info(f'Saved to {save_path}')
-    else:
-        gr.Error("Can't Save: ", rsp)
+    except Exception as ex:
+        gr.Error(f'Failed to save this file.\n {str(ex)}')
 
 
 def choose_plugin(chosen_plugin):
@@ -213,8 +213,8 @@ def pure_bot(history):
             for chunk in output_beautify.convert_to_full_str_stream(response):
                 history[-1][1] = chunk
                 yield history
-        except ModelServiceError:
-            history[-1][1] = '模型调用出错，可能的原因有：未正确配置模型参数，或输入数据不安全等'
+        except ModelServiceError as ex:
+            history[-1][1] = str(ex)
             yield history
         except Exception as ex:
             raise ValueError(ex)
@@ -281,8 +281,8 @@ def bot(history, chosen_plug):
                         response):
                     history[-1][1] = chunk
                     yield history
-            except ModelServiceError:
-                history[-1][1] = '模型调用出错，可能的原因有：未正确配置模型参数，或输入数据不安全等'
+            except ModelServiceError as ex:
+                history[-1][1] = str(ex)
                 yield history
             except Exception as ex:
                 raise ValueError(ex)
@@ -304,8 +304,8 @@ def bot(history, chosen_plug):
                         response):
                     history[-1][1] = chunk
                     yield history
-            except ModelServiceError:
-                history[-1][1] = '模型调用出错，可能的原因有：未正确配置模型参数，或输入数据不安全等'
+            except ModelServiceError as ex:
+                history[-1][1] = str(ex)
                 yield history
             except Exception as ex:
                 raise ValueError(ex)
@@ -339,8 +339,8 @@ def generate(context):
             }])
             for chunk in output_beautify.convert_to_full_str_stream(response):
                 yield chunk
-        except ModelServiceError:
-            yield '模型调用出错，可能的原因有：未正确配置模型参数，或输入数据不安全等'
+        except ModelServiceError as ex:
+            yield str(ex)
         except Exception as ex:
             raise ValueError(ex)
 
@@ -355,8 +355,8 @@ def generate(context):
             }])
             for chunk in output_beautify.convert_to_full_str_stream(response):
                 yield chunk
-        except ModelServiceError:
-            yield '模型调用出错，可能的原因有：未正确配置模型参数，或输入数据不安全等'
+        except ModelServiceError as ex:
+            yield str(ex)
         except Exception as ex:
             raise ValueError(ex)
 
@@ -387,8 +387,8 @@ def generate(context):
                 full_article=full_article)
             for chunk in output_beautify.convert_to_full_str_stream(response):
                 yield chunk
-        except ModelServiceError:
-            yield '模型调用出错，可能的原因有：未正确配置模型参数，或输入数据不安全等'
+        except ModelServiceError as ex:
+            yield str(ex)
         except Exception as ex:
             raise ValueError(ex)
 

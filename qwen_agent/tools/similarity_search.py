@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Union
+from typing import List, Union
 
 from pydantic import BaseModel
 
@@ -56,14 +56,14 @@ class SimilaritySearch(BaseTool):
     }]
 
     def call(self,
-             params: Union[str, Dict],
+             params: Union[str, dict],
              doc: Union[RefMaterialInput, str, List[str]] = None,
-             max_token: int = 4000) -> Optional[Dict]:
+             max_token: int = 4000) -> dict:
         params = self._verify_json_format_args(params)
 
         query = params['query']
         if not doc:
-            return None
+            return {}
         if isinstance(doc, str):
             doc = [doc]
         if isinstance(doc, list):
@@ -131,7 +131,7 @@ class SimilaritySearch(BaseTool):
         # return len(s1.intersection(s2)) / len(s1.union(s2))  # jaccard similarity
 
     @staticmethod
-    def get_top(doc: RefMaterialInput, max_token=4000):
+    def get_top(doc: RefMaterialInput, max_token=4000) -> dict:
         now_token = 0
         text = []
         for page in doc.text:

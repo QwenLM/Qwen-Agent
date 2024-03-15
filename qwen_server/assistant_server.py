@@ -69,8 +69,11 @@ def rm_text(history):
 def set_url():
     lines = []
     if not os.path.exists(cache_file_popup_url):
-        gr.Error('Do not add any pages!')
-    assert os.path.exists(cache_file_popup_url)
+        # Only able to remind the situation of first browsing failure
+        gr.Error(
+            'Oops, it seems that the page cannot be opened due to network issues.'
+        )
+
     for line in jsonlines.open(cache_file_popup_url):
         lines.append(line)
     logger.info('The current access page is: ' + lines[-1]['url'])
@@ -99,8 +102,8 @@ def bot(history):
             for chunk in output_beautify.convert_to_full_str_stream(response):
                 history[-1][1] = chunk
                 yield history
-        except ModelServiceError:
-            history[-1][1] = '模型调用出错，可能的原因有：未正确配置模型参数，或输入数据不安全等'
+        except ModelServiceError as ex:
+            history[-1][1] = str(ex)
             yield history
         except Exception as ex:
             raise ValueError(ex)

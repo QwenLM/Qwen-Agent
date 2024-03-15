@@ -7,6 +7,7 @@ import json5
 from qwen_agent import Agent
 from qwen_agent.llm import BaseChatModel
 from qwen_agent.llm.schema import Message
+from qwen_agent.tools import BaseTool
 
 CONFIG_SCHEMA = {
     'name': '... # 角色名字，5字左右',
@@ -54,7 +55,8 @@ assert ANSWER_TOKEN in ROLE_CREATE_SYSTEM
 class GroupChatCreator(Agent):
 
     def __init__(self,
-                 function_list: Optional[List[Union[str, Dict]]] = None,
+                 function_list: Optional[List[Union[str, Dict,
+                                                    BaseTool]]] = None,
                  llm: Optional[Union[Dict, BaseChatModel]] = None,
                  name: Optional[str] = None,
                  description: Optional[str] = None,

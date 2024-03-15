@@ -2,10 +2,10 @@ import os
 from typing import Dict, Optional, Union
 
 from qwen_agent.tools.base import BaseTool, register_tool
-from qwen_agent.utils.utils import (print_traceback, read_text_from_file,
-                                    save_text_to_file)
+from qwen_agent.utils.utils import read_text_from_file, save_text_to_file
 
 DEFAULT_STORAGE_PATH = 'workspace/default_data_path'
+SUCCESS_MESSAGE = 'SUCCESS'
 
 
 @register_tool('storage')
@@ -64,7 +64,8 @@ class Storage(BaseTool):
         if path_dir:
             os.makedirs(path_dir, exist_ok=True)
 
-        return save_text_to_file(path, value)
+        save_text_to_file(path, value)
+        return SUCCESS_MESSAGE
 
     def get(self, key: str, path: Optional[str] = None) -> str:
         path = path or self.root
@@ -72,26 +73,19 @@ class Storage(BaseTool):
 
     def delete(self, key, path: Optional[str] = None) -> str:
         path = path or self.root
-        try:
-            path = os.path.join(path, key)
-            if os.path.exists(path):
-                os.remove(path)
-                return f'Successfully deleted{key}'
-            else:
-                return f'Delete Failed: {key} does not exist'
-        except Exception as ex:
-            print_traceback()
-            return ex
+        path = os.path.join(path, key)
+        if os.path.exists(path):
+            os.remove(path)
+            return f'Successfully deleted{key}'
+        else:
+            return f'Delete Failed: {key} does not exist'
 
     def scan(self, key: str, path: Optional[str] = None) -> str:
-        try:
-            assert key.endswith('/') or not key
-        except Exception:
-            return 'Scan Failed: The scan operation requires passing in a key to a path'
-
         path = path or self.root
         path = os.path.join(path, key)
         if os.path.exists(path):
+            if not os.path.isdir(path):
+                return 'Scan Failed: The scan operation requires passing in a key to a folder path'
             # All key-value pairs
             kvs = {}
             for root, dirs, files in os.walk(path):

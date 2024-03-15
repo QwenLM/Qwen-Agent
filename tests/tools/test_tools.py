@@ -1,6 +1,4 @@
 import json
-import os
-import shutil
 
 import pytest
 
@@ -59,12 +57,25 @@ def test_similarity_search():
     tool.call({'query': '这个模型要训练多久？'}, doc=doc)
 
 
-@pytest.mark.parametrize('operate', ['put', 'get', 'scan', 'delete'])
-def test_storage(operate):
-    if os.path.exists('workspace'):
-        shutil.rmtree('workspace')
-
+@pytest.mark.parametrize('operate', ['put'])
+def test_storage_put(operate):
     tool = Storage()
     tool.call({'operate': operate, 'key': '345/456/11', 'value': 'hello'})
 
     tool.call({'operate': operate, 'key': '/345/456/12', 'value': 'hello'})
+
+
+@pytest.mark.parametrize('operate', ['scan'])
+def test_storage_scan(operate):
+    tool = Storage()
+    tool.call({'operate': operate, 'key': '345/456/'})
+
+    tool.call({'operate': operate, 'key': '/345/456'})
+
+
+@pytest.mark.parametrize('operate', ['get', 'delete'])
+def test_storage_get_delete(operate):
+    tool = Storage()
+    tool.call({'operate': operate, 'key': '345/456/11'})
+
+    tool.call({'operate': operate, 'key': '/345/456/12'})

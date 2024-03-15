@@ -49,7 +49,7 @@ class Retrieval(BaseTool):
     def call(self,
              params: Union[str, dict],
              ignore_cache: bool = False,
-             max_token: int = 4000) -> List[dict]:
+             max_token: int = 4000) -> list:
         """RAG tool.
 
         Step1: Parse and save files
@@ -61,7 +61,7 @@ class Retrieval(BaseTool):
             max_token: Maximum retrieval length.
 
         Returns:
-            The retrieved file content.
+            The retrieved file list.
         """
 
         params = self._verify_json_format_args(params)

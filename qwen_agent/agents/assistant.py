@@ -7,6 +7,7 @@ from qwen_agent.llm.schema import (CONTENT, DEFAULT_SYSTEM_MESSAGE, FUNCTION,
                                    ROLE, SYSTEM, Message)
 from qwen_agent.log import logger
 from qwen_agent.memory import Memory
+from qwen_agent.tools import BaseTool
 from qwen_agent.utils.utils import format_knowledge_to_source_and_content
 
 KNOWLEDGE_SNIPPET_ZH = """## 来自 {source} 的内容：
@@ -41,7 +42,8 @@ class Assistant(Agent):
     """This is a widely applicable agent integrated with RAG capabilities and tool use ability."""
 
     def __init__(self,
-                 function_list: Optional[List[Union[str, Dict]]] = None,
+                 function_list: Optional[List[Union[str, Dict,
+                                                    BaseTool]]] = None,
                  llm: Optional[Union[Dict, BaseChatModel]] = None,
                  system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
                  name: Optional[str] = None,
@@ -50,8 +52,8 @@ class Assistant(Agent):
         """Initialization the agent.
 
         Args:
-            function_list: One list of tool name of tool configuration,
-              such as 'code_interpreter' or {'name': 'code_interpreter', 'timeout': 10}.
+            function_list: One list of tool name, tool configuration or Tool object,
+              such as 'code_interpreter', {'name': 'code_interpreter', 'timeout': 10}, or CodeInterpreter().
             llm: The LLM model configuration or LLM model object.
               Set the configuration as {'model': '', 'api_key': '', 'model_server': ''}.
             system_message: The specified system message for LLM chat.
@@ -132,7 +134,7 @@ class Assistant(Agent):
     def _call_tool(self,
                    tool_name: str,
                    tool_args: Union[str, dict] = '{}',
-                   **kwargs):
+                   **kwargs) -> str:
         # Temporary plan: Check if it is necessary to transfer files to the tool
         # Todo: This should be changed to parameter passing, and the file URL should be determined by the model
         if self.function_map[tool_name].file_access:

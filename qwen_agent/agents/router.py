@@ -3,6 +3,7 @@ from typing import Dict, Iterator, List, Optional, Union
 
 from qwen_agent.llm import BaseChatModel
 from qwen_agent.llm.schema import ASSISTANT, ROLE, Message
+from qwen_agent.tools import BaseTool
 
 from ..log import logger
 from .assistant import Assistant
@@ -20,7 +21,8 @@ Reply: ... # 选中的帮手的回复
 class Router(Assistant):
 
     def __init__(self,
-                 function_list: Optional[List[Union[str, Dict]]] = None,
+                 function_list: Optional[List[Union[str, Dict,
+                                                    BaseTool]]] = None,
                  llm: Optional[Union[Dict, BaseChatModel]] = None,
                  files: Optional[List[str]] = None,
                  name: Optional[str] = None,
