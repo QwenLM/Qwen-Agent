@@ -65,8 +65,9 @@ class Retrieval(BaseTool):
         """
 
         params = self._verify_json_format_args(params)
-
-        files = json5.loads(params.get('files', []))
+        files = params.get('files', [])
+        if isinstance(files, str):
+            files = json5.loads(files)
         records = []
         for file in files:
             try:
