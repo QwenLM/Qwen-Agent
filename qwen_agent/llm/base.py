@@ -334,6 +334,8 @@ def retry_model_service(
             # If harmful input or output detected, let it fail
             if e.code == 'DataInspectionFailed':
                 raise e
+            if 'inappropriate content' in str(e):
+                raise e
 
             # Retry is meaningless if the input is too long
             if 'maximum context length' in str(e):
@@ -372,6 +374,8 @@ def retry_model_service_iterator(
 
             # If harmful input or output detected, let it fail
             if e.code == 'DataInspectionFailed':
+                raise e
+            if 'inappropriate content' in str(e):
                 raise e
 
             # Retry is meaningless if the input is too long
