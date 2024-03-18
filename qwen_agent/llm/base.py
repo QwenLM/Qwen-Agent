@@ -75,6 +75,7 @@ class BaseChatModel(ABC):
         new_messages = []
         for msg in messages:
             if isinstance(msg, dict):
+                msg = remove_invalid_message_fields(msg)
                 new_messages.append(Message(**msg))
             else:
                 new_messages.append(msg)
@@ -391,3 +392,13 @@ def retry_model_service_iterator(
             num_retries += 1
             delay *= exponential_base * (1.0 + random.random())
             time.sleep(delay)
+
+
+def remove_invalid_message_fields(msg: Dict) -> Dict:
+    """
+    Remove invalid fields that are not in Message
+    """
+    assert isinstance(msg, Dict)
+    valid_fields = set(Message.model_fields.keys())
+    filtered_msg = {k: v for k, v in msg.items() if k in valid_fields}
+    return filtered_msg
