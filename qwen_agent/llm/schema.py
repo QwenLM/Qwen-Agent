@@ -100,7 +100,8 @@ class Message(BaseModelCompatibleDict):
                  role: str,
                  content: Union[str, List[ContentItem]],
                  name: Optional[str] = None,
-                 function_call: Optional[FunctionCall] = None):
+                 function_call: Optional[FunctionCall] = None,
+                 **kwargs):
         super().__init__(role=role,
                          content=content,
                          name=name,

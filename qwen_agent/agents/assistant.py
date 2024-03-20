@@ -80,10 +80,14 @@ class Assistant(Agent):
         # Retrieval knowledge from files
         *_, last = self.mem.run(messages=messages, max_ref_token=max_ref_token)
         knowledge = last[-1][CONTENT]
-        logger.debug(f'{type(knowledge)}: {knowledge}')
+        logger.debug(
+            f'Retrieved knowledge of type `{type(knowledge).__name__}`:\n{knowledge}'
+        )
         if knowledge:
             knowledge = format_knowledge_to_source_and_content(knowledge)
-            logger.debug(f'{type(knowledge)}: {knowledge}')
+            logger.debug(
+                f'Formatted knowledge into type `{type(knowledge).__name__}`:\n{knowledge}'
+            )
         else:
             knowledge = []
         snippets = []
