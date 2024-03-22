@@ -1,7 +1,7 @@
 import copy
 from typing import Dict, Iterator, List, Optional, Tuple, Union
 
-from qwen_agent.agents import Assistant
+from qwen_agent.agents.fncall_agent import MAX_LLM_CALL_PER_RUN, FnCallAgent
 from qwen_agent.llm import BaseChatModel
 from qwen_agent.llm.schema import (ASSISTANT, CONTENT, DEFAULT_SYSTEM_MESSAGE,
                                    ROLE, ContentItem, Message)
@@ -29,10 +29,8 @@ Begin!
 
 Question: {query}"""
 
-MAX_LLM_CALL_PER_RUN = 8
 
-
-class ReActChat(Assistant):
+class ReActChat(FnCallAgent):
     """This agent use ReAct format to call tools"""
 
     def __init__(self,
@@ -88,7 +86,7 @@ class ReActChat(Assistant):
 
             output = output[-1][CONTENT]
 
-            use_tool, action, action_input, output = self._detect_tool(output)
+            use_tool, action, action_input, text = self._detect_tool(output)
 
             if use_tool:
                 observation = self._call_tool(action,
@@ -101,15 +99,19 @@ class ReActChat(Assistant):
                     if not ('text' in messages[-1][CONTENT][-1]
                             and messages[-1][CONTENT][-1]['text'].endswith(
                                 '\nThought: ')):
-                        if not output.startswith('\n'):
-                            output = '\n' + output
+                        if not text.startswith('\n'):
+                            text = '\n' + text
                     messages[-1][CONTENT].append(
-                        ContentItem(text=output + observation))
+                        ContentItem(
+                            text=text +
+                            f'\nAction: {action}\nAction Input:{action_input}'
+                            + observation))
                 else:
                     if not (messages[-1][CONTENT].endswith('\nThought: ')):
-                        if not output.startswith('\n'):
-                            output = '\n' + output
-                    messages[-1][CONTENT] += output + observation
+                        if not text.startswith('\n'):
+                            text = '\n' + text
+                    messages[-1][
+                        CONTENT] += text + f'\nAction: {action}\nAction Input:{action_input}' + observation
             else:
                 break
 
@@ -129,7 +131,7 @@ class ReActChat(Assistant):
             k = text.rfind(special_obs_token)
             func_name = text[i + len(special_func_token):j].strip()
             func_args = text[j + len(special_args_token):k].strip()
-            text = text[:k]  # Discard '\nObservation:'.
+            text = text[:i]  # Return the response before tool call
 
         return (func_name is not None), func_name, func_args, text
 
