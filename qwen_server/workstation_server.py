@@ -197,7 +197,7 @@ def choose_plugin(chosen_plugin):
         return gr.update(interactive=False), None
 
 
-def pure_bot(history):
+def pure_bot(history,temperature):
     if not history:
         yield history
     else:
@@ -208,7 +208,9 @@ def pure_bot(history):
             messages.append({'role': 'assistant', 'content': chat[1]})
         messages.append({'role': 'user', 'content': history[-1][0]})
         try:
-            llm = get_chat_model(llm_config)
+            pure_llm_config = llm_config.copy()
+            pure_llm_config.update({"generate":{"temperature":temperature}})
+            llm = get_chat_model(pure_llm_config)
             response = llm.chat(messages=messages)
             for chunk in output_beautify.convert_to_full_str_stream(response):
                 history[-1][1] = chunk
@@ -243,7 +245,7 @@ def keep_only_files_for_name(messages, name):
     return new_messages
 
 
-def bot(history, chosen_plug):
+def bot(history, chosen_plug,temperature):
     if not history:
         yield history
     else:
@@ -273,8 +275,10 @@ def bot(history, chosen_plug):
                 }]
             messages = keep_only_files_for_name(app_global_para['messages'],
                                                 'ci') + message
+            func_assistant_llm_config = llm_config.copy()
+            func_assistant_llm_config.update({"generate":{"temperature":temperature}})
             func_assistant = ReActChat(function_list=['code_interpreter'],
-                                       llm=llm_config)
+                                       llm=func_assistant_llm_config)
             try:
                 response = func_assistant.run(messages=messages)
                 for chunk in output_beautify.convert_to_full_str_stream(
@@ -295,7 +299,9 @@ def bot(history, chosen_plug):
                         time_limit=app_global_para['time'],
                         checked=True):
                     content.append({'file': record['url']})
-                qa_assistant = DocQAAgent(llm=llm_config)
+                qa_assistant_llm_config = llm_config.copy()
+                qa_assistant_llm_config.update({"generate":{"temperature":temperature}})
+                qa_assistant = DocQAAgent(llm=qa_assistant_llm_config)
                 message = [{'role': 'user', 'content': content}]
                 response = qa_assistant.run(
                     messages=message,
@@ -321,7 +327,7 @@ def bot(history, chosen_plug):
         app_global_para['messages'].append(message)
 
 
-def generate(context):
+def generate(context,temperature):
     sp_query = get_last_one_line_context(context)
     if CODE_FLAG in sp_query:  # router to code interpreter
         sp_query = sp_query.split(CODE_FLAG)[-1]
@@ -329,9 +335,10 @@ def generate(context):
             sp_query += ', 必须使用code_interpreter工具'
         else:
             sp_query += ' (Please use code_interpreter.)'
-
+        func_assistant_llm_config = llm_config.copy()
+        func_assistant_llm_config.update({"generate":{"temperature":temperature}})
         func_assistant = ReActChat(function_list=['code_interpreter'],
-                                   llm=llm_config)
+                                   llm=func_assistant_llm_config)
         try:
             response = func_assistant.run(messages=[{
                 'role': 'user',
@@ -346,8 +353,10 @@ def generate(context):
 
     elif PLUGIN_FLAG in sp_query:  # router to plugin
         sp_query = sp_query.split(PLUGIN_FLAG)[-1]
+        func_assistant_llm_config = llm_config.copy()
+        func_assistant_llm_config.update({"generate":{"temperature":temperature}})
         func_assistant = ReActChat(
-            function_list=['code_interpreter', 'image_gen'], llm=llm_config)
+            function_list=['code_interpreter', 'image_gen'], llm=func_assistant_llm_config)
         try:
             response = func_assistant.run(messages=[{
                 'role': 'user',
@@ -369,7 +378,9 @@ def generate(context):
         if TITLE_FLAG in sp_query:  # /title
             full_article = True
         try:
-            writing_assistant = ArticleAgent(llm=llm_config)
+            writing_assistant_llm_config = llm_config.copy()
+            writing_assistant_llm_config.update({"generate":{"temperature":temperature}})
+            writing_assistant = ArticleAgent(llm=writing_assistant_llm_config)
 
             content = [{'text': sp_query_no_title}]
             # checked files
@@ -447,7 +458,9 @@ with gr.Blocks(css=css, theme='soft') as demo:
                         label='browser_list',
                         elem_classes=['div_tmp', 'add_scrollbar'],
                     )
-
+    with gr.Accordion(label="LLM参数",open=False) as llm_cfg_area:
+        with gr.Row():
+            temperature = gr.Slider(0.0, 1.0, value=0.5, step=0.1, label='Temperature', interactive=True)
     with gr.Tab('Editor', elem_id='default-tab'):
         with gr.Row():
             with gr.Column():
@@ -575,7 +588,7 @@ with gr.Blocks(css=css, theme='soft') as demo:
             txt_msg = chat_txt.submit(add_text, [chatbot, chat_txt],
                                       [chatbot, chat_txt],
                                       queue=False).then(
-                                          bot, [chatbot, plug_bt], chatbot)
+                                          bot, [chatbot, plug_bt,temperature], chatbot)
             txt_msg.then(lambda: gr.update(interactive=True),
                          None, [chat_txt],
                          queue=False)
@@ -583,7 +596,7 @@ with gr.Blocks(css=css, theme='soft') as demo:
             re_txt_msg = (chat_re_bt.click(
                 rm_text, [chatbot], [chatbot, chat_txt],
                 queue=False).then(chat_clear_last, None,
-                                  None).then(bot, [chatbot, plug_bt], chatbot))
+                                  None).then(bot, [chatbot, plug_bt,temperature], chatbot))
             re_txt_msg.then(lambda: gr.update(interactive=True),
                             None, [chat_txt],
                             queue=False)
@@ -643,7 +656,7 @@ with gr.Blocks(css=css, theme='soft') as demo:
             txt_msg = chat_txt.submit(pure_add_text, [pure_chatbot, chat_txt],
                                       [pure_chatbot, chat_txt],
                                       queue=False).then(
-                                          pure_bot, pure_chatbot, pure_chatbot)
+                                          pure_bot, [pure_chatbot,temperature], pure_chatbot)
             txt_msg.then(lambda: gr.update(interactive=True),
                          None, [chat_txt],
                          queue=False)
@@ -651,7 +664,7 @@ with gr.Blocks(css=css, theme='soft') as demo:
             re_txt_msg = chat_re_bt.click(rm_text, [pure_chatbot],
                                           [pure_chatbot, chat_txt],
                                           queue=False).then(
-                                              pure_bot, pure_chatbot,
+                                              pure_bot, [pure_chatbot,temperature],
                                               pure_chatbot)
             re_txt_msg.then(lambda: gr.update(interactive=True),
                             None, [chat_txt],
