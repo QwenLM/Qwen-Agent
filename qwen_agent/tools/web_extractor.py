@@ -16,6 +16,8 @@ class WebExtractor(BaseTool):
     }]
 
     def call(self, params: Union[str, dict], **kwargs) -> str:
+        only_text = self.cfg.get('only_text', False)
+
         params = self._verify_json_format_args(params)
 
         url = params['url']
@@ -25,6 +27,19 @@ class WebExtractor(BaseTool):
         }
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
-            return response.text
+            if only_text:
+
+                import justext
+
+                paragraphs = justext.justext(response.text,
+                                             justext.get_stoplist('English'))
+                content = '\n\n'.join(
+                    [paragraph.text for paragraph in paragraphs]).strip()
+                if content:
+                    return content
+                else:
+                    return response.text
+            else:
+                return response.text
         else:
             return ''
