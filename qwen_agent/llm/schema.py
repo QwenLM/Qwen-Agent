@@ -98,10 +98,12 @@ class Message(BaseModelCompatibleDict):
 
     def __init__(self,
                  role: str,
-                 content: Union[str, List[ContentItem]],
+                 content: Optional[Union[str, List[ContentItem]]],
                  name: Optional[str] = None,
                  function_call: Optional[FunctionCall] = None,
                  **kwargs):
+        if content is None:
+            content = ''
         super().__init__(role=role,
                          content=content,
                          name=name,
