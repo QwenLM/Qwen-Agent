@@ -109,11 +109,13 @@ def main():
         ]),
     }
 
-    def signal_handler(_sig, _frame):
+    def signal_handler(sig_num, _frame):
         for v in servers.values():
             v.terminate()
         for k in list(servers.keys()):
             del servers[k]
+        if sig_num == signal.SIGINT:
+            raise KeyboardInterrupt()
 
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)

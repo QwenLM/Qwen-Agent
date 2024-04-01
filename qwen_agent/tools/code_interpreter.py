@@ -65,6 +65,7 @@ ALIB_FONT_FILE = str(
     'AlibabaPuHuiTi-3-45-Light.ttf')
 
 _KERNEL_CLIENTS: Dict[int, BlockingKernelClient] = {}
+_MISC_SUBPROCESSES: Dict[str, subprocess.Popen] = {}
 
 
 def _start_kernel(pid) -> BlockingKernelClient:
@@ -80,15 +81,18 @@ def _start_kernel(pid) -> BlockingKernelClient:
     with open(launch_kernel_script, 'w') as fout:
         fout.write(LAUNCH_KERNEL_PY)
 
-    kernel_process = subprocess.Popen([
-        sys.executable,
-        launch_kernel_script,
-        '--IPKernelApp.connection_file',
-        connection_file,
-        '--matplotlib=inline',
-        '--quiet',
-    ],
-                                      cwd=WORK_DIR)
+    kernel_process = subprocess.Popen(
+        [
+            sys.executable,
+            launch_kernel_script,
+            '--IPKernelApp.connection_file',
+            connection_file,
+            '--matplotlib=inline',
+            '--quiet',
+        ],
+        cwd=WORK_DIR,
+    )
+    _MISC_SUBPROCESSES[f'kc_{kernel_process.pid}'] = kernel_process
     logger.info(f"INFO: kernel process's PID = {kernel_process.pid}")
 
     # Wait for kernel connection file to be written
@@ -113,16 +117,24 @@ def _start_kernel(pid) -> BlockingKernelClient:
     return kc
 
 
-def _kill_kernels():
+def _kill_kernels_and_subprocesses(sig_num=None, _frame=None):
     for v in _KERNEL_CLIENTS.values():
         v.shutdown()
     for k in list(_KERNEL_CLIENTS.keys()):
         del _KERNEL_CLIENTS[k]
 
+    for v in _MISC_SUBPROCESSES.values():
+        v.terminate()
+    for k in list(_MISC_SUBPROCESSES.keys()):
+        del _MISC_SUBPROCESSES[k]
 
-atexit.register(_kill_kernels)
-signal.signal(signal.SIGTERM, _kill_kernels)
-signal.signal(signal.SIGINT, _kill_kernels)
+    if sig_num == signal.SIGINT:
+        raise KeyboardInterrupt()
+
+
+atexit.register(_kill_kernels_and_subprocesses)
+signal.signal(signal.SIGTERM, _kill_kernels_and_subprocesses)
+signal.signal(signal.SIGINT, _kill_kernels_and_subprocesses)
 
 
 def _serve_image(image_base64: str) -> str:
@@ -140,17 +152,16 @@ def _serve_image(image_base64: str) -> str:
     # Hotfix: Temporarily generate image URL proxies for code interpreter to display in gradio
     # Todo: Generate real url
     if static_url == 'http://127.0.0.1:7865/static':
-        try:
-            # run a fastapi server for image show in gradio demo by http://127.0.0.1:7865/figure_name
-            subprocess.Popen([
-                'python',
-                Path(__file__).absolute().parent / 'resource' /
-                'image_service.py'
-            ])
-        except OSError as ex:
-            logger.warning(ex)
-        except Exception:
-            print_traceback()
+        if 'image_service' not in _MISC_SUBPROCESSES:
+            try:
+                # run a fastapi server for image show in gradio demo by http://127.0.0.1:7865/figure_name
+                _MISC_SUBPROCESSES['image_service'] = subprocess.Popen([
+                    'python',
+                    Path(__file__).absolute().parent / 'resource' /
+                    'image_service.py'
+                ])
+            except Exception:
+                print_traceback()
 
     image_url = f'{static_url}/{image_file}'
 
