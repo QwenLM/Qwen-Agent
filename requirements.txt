@@ -3,8 +3,6 @@ beautifulsoup4
 dashscope>=1.11.0
 docx2txt
 fastapi>=0.103.1
-gradio<4.0.0
-gradio-client>=0.5.0
 html2text
 jieba
 json5
@@ -14,15 +12,11 @@ matplotlib
 numpy
 openai
 pandas
-pdf2image
 pdfminer-six
 pillow
 pydantic>=2.3.0
-pypdf
 python-pptx
 seaborn
 sympy
 tiktoken
-unstructured==0.8.0
 uvicorn>=0.23.2
-wordcloud

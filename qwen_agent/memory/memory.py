@@ -1,3 +1,4 @@
+import json
 from typing import Dict, Iterator, List, Optional, Union
 
 import json5
@@ -83,7 +84,7 @@ class Memory(Agent):
                     logger.info(keyword)
                     keyword_dict = json5.loads(keyword)
                     keyword_dict['text'] = query
-                    query = keyword_dict
+                    query = json.dumps(keyword_dict, ensure_ascii=False)
                 except Exception:
                     query = query
 

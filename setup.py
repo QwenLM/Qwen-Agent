@@ -11,6 +11,11 @@ def read_requirements():
 setup(
     name='qwen_agent',
     version='0.0.1',
-    packages=find_packages(),
+    packages=find_packages(
+        exclude=['examples', 'examples.*', 'qwen_server', 'qwen_server.*']),
+    package_data={
+        'qwen_agent':
+        ['utils/qwen.tiktoken', 'tools/resource/*.ttf', 'tools/resource/*.py'],
+    },
     install_requires=read_requirements(),
-)
+    url='https://github.com/QwenLM/Qwen-Agent')

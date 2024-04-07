@@ -3,7 +3,16 @@ import json
 import os
 from pathlib import Path
 
-import gradio as gr
+try:
+    import gradio as gr
+    if gr.__version__ < '3.50' or gr.__version__ >= '4.0':
+        raise ImportError(
+            'Incompatible gradio version detected. '
+            'Please install the correct version with: pip install "gradio>=3.50,<4.0"'
+        )
+except (ModuleNotFoundError, AttributeError):
+    raise ImportError(
+        'Please install gradio by: pip install "gradio>=3.50,<4.0"')
 import json5
 
 try:
