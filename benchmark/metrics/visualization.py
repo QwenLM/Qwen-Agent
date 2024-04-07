@@ -1,7 +1,8 @@
+import base64
 import logging
 import os
 import re
-import base64
+
 import torch
 from config import get_model, get_react_parser
 from utils.data_utils import load_jsonl, save_jsonl
@@ -23,35 +24,38 @@ visualization_code_correctness = {
 
 
 def encode_image(image_path):
-    with open(image_path, "rb") as image_file:
+    with open(image_path, 'rb') as image_file:
         a = base64.b64encode(image_file.read()).decode('utf-8')
     return a
 
 
-def judger_model_inference(judger_model_name, judger_model, imgs=[], prompt=''):
-    output = ""
+def judger_model_inference(judger_model_name,
+                           judger_model,
+                           imgs=[],
+                           prompt=''):
+    output = ''
     if judger_model_name == 'gpt-4-vision-preview':
-        logging.warning("This is an example of `gpt-4-vision-preview`. "
-                        "Please set the API key and use according to your actual situation.")
+        logging.warning(
+            'This is an example of `gpt-4-vision-preview`. '
+            'Please set the API key and use according to your actual situation.'
+        )
         from openai import OpenAI
         client = OpenAI()
         content_list = []
-        content_list.append({"type": "text", "text": prompt})
+        content_list.append({'type': 'text', 'text': prompt})
         input_images = []
         for img in imgs:
             if 'http' not in img:
                 base64_image = encode_image(img)
-                img = f"data:image/jpeg;base64,{base64_image}"
-            input_images.append({"type": "image_url", 'image_url': img})
+                img = f'data:image/jpeg;base64,{base64_image}'
+            input_images.append({'type': 'image_url', 'image_url': img})
         content_list.extend(input_images)
         response = client.chat.completions.create(
-            model="gpt-4-vision-preview",
-            messages=[
-                {
-                    "role": "user",
-                    "content": content_list,
-                }
-            ],
+            model='gpt-4-vision-preview',
+            messages=[{
+                'role': 'user',
+                'content': content_list,
+            }],
             max_tokens=300,
         )
         output = response.choices[0]
@@ -59,7 +63,7 @@ def judger_model_inference(judger_model_name, judger_model, imgs=[], prompt=''):
         inputs = []
         for img in imgs:
             if 'http' not in img and judger_model_name == 'qwen-vl-plus':
-                img = "file://" + img
+                img = 'file://' + img
             inputs.append({'image': img})
         inputs.append({'text': prompt})
 
@@ -105,17 +109,21 @@ def check_images_observation(text, images, model_name):
 eval_visual_prompt = {'zh': EVAL_VISUAL_PROMPT_ZH, 'en': EVAL_VISUAL_PROMPT_EN}
 
 
-def eval_visualization_acc(output_fname, model_name, judger_model_name='gpt-4-vision-preview'):
+def eval_visualization_acc(output_fname,
+                           model_name,
+                           judger_model_name='gpt-4-vision-preview'):
     if judger_model_name == 'gpt-4-vision-preview':
         judger_model = None
     elif judger_model_name in ['qwen-vl-chat', 'qwen-vl-plus']:
         if judger_model_name == 'qwen-vl-chat':
-            logging.warning('In this benchmark of version 20231206, `Qwen-vl-chat` is no longer used as the '
-                            'evaluation model for `Visualization` task.. If you insist on using it, '
-                            'the evaluation results might differ from the official results.')
+            logging.warning(
+                'In this benchmark of version 20231206, `Qwen-vl-chat` is no longer used as the '
+                'evaluation model for `Visualization` task.. If you insist on using it, '
+                'the evaluation results might differ from the official results.'
+            )
         judger_model = get_model(judger_model_name)
     else:
-        raise Exception("Not supported judger model.")
+        raise Exception('Not supported judger model.')
 
     one_action, one_action_right = 0, 0
     zero_action, zero_action_right = 0, 0
@@ -139,7 +147,8 @@ def eval_visualization_acc(output_fname, model_name, judger_model_name='gpt-4-vi
                                                model_name):
             input_prompt = eval_visual_prompt[item.get('lang', 'en')]
             format_prompt = input_prompt.format(query=prompt)
-            output = judger_model_inference(judger_model_name, judger_model, images, format_prompt)
+            output = judger_model_inference(judger_model_name, judger_model,
+                                            images, format_prompt)
             if 'right' in output.lower():
                 item['vis_acc'] = True
                 if '<|im_end|>' in item['query']:

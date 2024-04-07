@@ -110,7 +110,7 @@ def _start_kernel(pid) -> BlockingKernelClient:
 
     # Client
     kc = BlockingKernelClient(connection_file=connection_file)
-    asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
+    asyncio.set_event_loop_policy(AnyThreadEventLoopPolicy())
     kc.load_connection_file()
     kc.start_channels()
     kc.wait_for_ready()
@@ -317,24 +317,36 @@ class CodeInterpreter(BaseTool):
         return result if result.strip() else 'Finished execution.'
 
 
-def _get_multiline_input() -> str:
-    logger.info(
-        '// Press ENTER to make a new line. Press CTRL-D to end input.')
-    lines = []
-    while True:
+#
+# The _BasePolicy and AnyThreadEventLoopPolicy below are borrowed from Tornado.
+# Ref: https://www.tornadoweb.org/en/stable/_modules/tornado/platform/asyncio.html#AnyThreadEventLoopPolicy
+#
+
+if sys.platform == 'win32' and hasattr(asyncio,
+                                       'WindowsSelectorEventLoopPolicy'):
+    _BasePolicy = asyncio.WindowsSelectorEventLoopPolicy  # type: ignore
+else:
+    _BasePolicy = asyncio.DefaultEventLoopPolicy
+
+
+class AnyThreadEventLoopPolicy(_BasePolicy):  # type: ignore
+    """Event loop policy that allows loop creation on any thread.
+
+    The default `asyncio` event loop policy only automatically creates
+    event loops in the main threads. Other threads must create event
+    loops explicitly or `asyncio.get_event_loop` (and therefore
+    `.IOLoop.current`) will fail. Installing this policy allows event
+    loops to be created automatically on any thread.
+
+    Usage::
+        asyncio.set_event_loop_policy(AnyThreadEventLoopPolicy())
+    """
+
+    def get_event_loop(self) -> asyncio.AbstractEventLoop:
         try:
-            line = input()
-        except EOFError:  # CTRL-D
-            break
-        lines.append(line)
-    logger.info('// Input received.')
-    if lines:
-        return '\n'.join(lines)
-    else:
-        return ''
-
-
-if __name__ == '__main__':
-    tool = CodeInterpreter()
-    while True:
-        logger.info(tool.call(_get_multiline_input()))
+            return super().get_event_loop()
+        except RuntimeError:
+            # "There is no current event loop in thread %r"
+            loop = self.new_event_loop()
+            self.set_event_loop(loop)
+            return loop

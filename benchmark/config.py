@@ -1,6 +1,6 @@
 from parser import InternLMReActParser, ReActParser
 
-from models import LLM, QwenVL, Qwen, QwenDashscopeVLModel
+from models import LLM, Qwen, QwenDashscopeVLModel, QwenVL
 from prompt import InternLMReAct, LlamaReAct, QwenReAct
 
 react_prompt_map = {
@@ -15,7 +15,12 @@ react_parser_map = {
     'internlm': InternLMReActParser,
 }
 
-model_map = {'qwen': Qwen, 'llama': LLM, 'internlm': LLM, 'qwen-vl-chat': QwenVL}
+model_map = {
+    'qwen': Qwen,
+    'llama': LLM,
+    'internlm': LLM,
+    'qwen-vl-chat': QwenVL
+}
 
 model_type_map = {
     'qwen-72b-chat': 'qwen',
@@ -59,7 +64,7 @@ def get_react_parser(model_name):
 
 
 def get_model(model_name):
-    if model_name in ["qwen-vl-plus"]:
+    if model_name in ['qwen-vl-plus']:
         return QwenDashscopeVLModel(model=model_name)
     model_path = model_path_map.get(model_name, None)
     model_cls = model_map.get(model_type_map[model_name], LLM)

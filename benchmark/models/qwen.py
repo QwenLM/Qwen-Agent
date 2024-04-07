@@ -26,11 +26,14 @@ class Qwen(HFModel):
 
 
 class QwenVL(HFModel):
+
     def __init__(self, model_path):
         super().__init__(model_path)
 
     def generate(self, inputs: list):
         query = self.tokenizer.from_list_format(inputs)
-        response, _ = self.model.chat(self.tokenizer, query=query, history=None)
+        response, _ = self.model.chat(self.tokenizer,
+                                      query=query,
+                                      history=None)
 
         return response
