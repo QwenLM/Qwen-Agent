@@ -282,7 +282,7 @@ def get_function_description(function: Dict) -> str:
         'zh':
         '### {name_for_human}\n\n{name_for_model}: {description_for_model} 输入参数：{parameters} {args_format}',
         'en':
-        '### {name_for_human}\n\n{name_for_model}: {description_for_model} Parameters：{parameters} {args_format}'
+        '### {name_for_human}\n\n{name_for_model}: {description_for_model} Parameters: {parameters} {args_format}'
     }
     if has_chinese_chars(function):
         tool_desc = tool_desc_template['zh']
