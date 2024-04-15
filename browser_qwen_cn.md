@@ -77,8 +77,8 @@ python run_server.py --llm qwen-max --model_server dashscope --workstation_port 
 
 ```bash
 # 指定模型服务，并启动数据库服务。
-# 示例: 假设Qwen/Qwen1.5-72B-Chat已经通过vLLM部署于http://localhost:8000，则可用以下参数指定模型服务：
-#   --llm Qwen/Qwen1.5-72B-Chat --model_server http://localhost:8000/v1 --api_key EMPTY
+# 示例: 假设Qwen1.5-72B-Chat已经通过vLLM部署于http://localhost:8000/v1，则可用以下参数指定模型服务：
+#   --llm Qwen1.5-72B-Chat --model_server http://localhost:8000/v1 --api_key EMPTY
 python run_server.py --llm {MODEL} --model_server {API_BASE} --workstation_port 7864 --api_key {API_KEY}
 ```
 

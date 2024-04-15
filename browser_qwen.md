@@ -83,8 +83,8 @@ If you are using your own model service instead of DashScope, then please execut
 
 ```bash
 # Specify the model service, and start the database service.
-# Example: Assuming Qwen/Qwen1.5-72B-Chat is deployed at http://localhost:8000 using vLLM, you can specify the model service as:
-#   --llm Qwen/Qwen1.5-72B-Chat --model_server http://localhost:8000/v1 --api_key EMPTY
+# Example: Assuming Qwen1.5-72B-Chat is deployed at http://localhost:8000/v1 using vLLM, you can specify the model service as:
+#   --llm Qwen1.5-72B-Chat --model_server http://localhost:8000/v1 --api_key EMPTY
 python run_server.py --llm {MODEL} --model_server {API_BASE} --workstation_port 7864 --api_key {API_KEY}
 ```
 

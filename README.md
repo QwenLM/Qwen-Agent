@@ -133,7 +133,5 @@ This project is currently under active development, and backward compatibility m
 
 > [!Warning]
 > <div align="center">
-> <b>
 > The code interpreter is not sandboxed, and it executes code in your own environment. Please do not ask Qwen to perform dangerous tasks, and do not directly use the code interpreter for production purposes.
-> </b>
 > </div>
