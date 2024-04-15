@@ -11,33 +11,56 @@ from qwen_server.schema import GlobalConfig
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-m', '--model_server', type=str, default='dashscope')
-    parser.add_argument('-k', '--api_key', type=str, default='')
+    parser.add_argument(
+        '-m',
+        '--model_server',
+        type=str,
+        default='dashscope',
+        help=
+        'Set it to `dashscope` if you are using the model service provided by DashScope.'
+        ' Set it to the base_url (aka api_base) if using an OpenAI API-compatible service such as vLLM or Ollama.'
+        ' Default: dashscope',
+    )
+    parser.add_argument(
+        '-k',
+        '--api_key',
+        type=str,
+        default='',
+        help='You API key to DashScope or the OpenAI API-compatible model service.',
+    )
     parser.add_argument(
         '-l',
         '--llm',
         type=str,
         default='qwen-plus',
-        help='DashScope: qwen-plus, qwen-turbo, qwen-14b-chat, qwen-7b-chat.',
+        help=
+        'Set it to one of {"qwen-max", "qwen-plus", "qwen-turbo"} if using DashScope.'
+        ' Set it to the model name using an OpenAI API-compatible model service.'
+        ' Default: qwen-plus',
     )
-    parser.add_argument('-s',
-                        '--server_host',
-                        type=str,
-                        default='127.0.0.1',
-                        choices=['127.0.0.1', '0.0.0.0'])
+    parser.add_argument(
+        '-s',
+        '--server_host',
+        type=str,
+        default='127.0.0.1',
+        choices=['127.0.0.1', '0.0.0.0'],
+        help=
+        'Set to 0.0.0.0 if you want to allow other machines to access the server. Default: 127.0.0.1',
+    )
     parser.add_argument(
         '-t',
         '--max_ref_token',
         type=int,
         default=4000,
-        help='the max token number of reference material',
+        help=
+        'The number of tokens reserved for the reference materials when doing retrieval-augmanted generation (RAG). Default: 4000',
     )
     parser.add_argument(
         '-w',
         '--workstation_port',
         type=int,
         default=7864,
-        help='the port of editing workstation',
+        help='The port of the creative writing workstation. Default: 7864',
     )
     args = parser.parse_args()
     args.model_server = args.model_server.replace('0.0.0.0', '127.0.0.1')
