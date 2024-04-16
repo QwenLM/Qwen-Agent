@@ -1,4 +1,6 @@
+import copy
 import os
+import re
 from http import HTTPStatus
 from pprint import pformat
 from typing import Dict, Iterator, List, Optional
@@ -35,6 +37,7 @@ class QwenVLChatAtDS(BaseFnCallModel):
         if delta_stream:
             raise NotImplementedError
 
+        messages = _format_local_files(messages)
         messages = [msg.model_dump() for msg in messages]
         logger.debug(f'*{pformat(messages, indent=2)}*')
         response = dashscope.MultiModalConversation.call(
@@ -54,6 +57,7 @@ class QwenVLChatAtDS(BaseFnCallModel):
         self,
         messages: List[Message],
     ) -> List[Message]:
+        messages = _format_local_files(messages)
         messages = [msg.model_dump() for msg in messages]
         logger.debug(f'*{pformat(messages, indent=2)}*')
         response = dashscope.MultiModalConversation.call(
@@ -75,6 +79,29 @@ class QwenVLChatAtDS(BaseFnCallModel):
         # Make VL return the same format as text models for easy usage
         messages = format_as_text_messages(messages)
         return messages
+
+
+# DashScope Qwen-VL requires the following format for local files:
+#   Linux & Mac: file:///home/images/test.png
+#   Windows: file://D:/images/abc.png
+def _format_local_files(messages: List[Message]) -> List[Message]:
+    messages = copy.deepcopy(messages)
+    for msg in messages:
+        if isinstance(msg.content, list):
+            for item in msg.content:
+                if item.image:
+                    fname = item.image
+                    if not fname.startswith((
+                            'http://',
+                            'https://',
+                            'file://',
+                    )):
+                        if fname.startswith('~'):
+                            fname = os.path.expanduser(fname)
+                        if re.match(r'^[A-Za-z]:\\', fname):
+                            fname = fname.replace('\\', '/')
+                        item.image = fname
+    return messages
 
 
 def _extract_vl_response(response) -> List[Message]:
