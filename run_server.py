@@ -16,8 +16,7 @@ def parse_args():
         '--model_server',
         type=str,
         default='dashscope',
-        help=
-        'Set it to `dashscope` if you are using the model service provided by DashScope.'
+        help='Set it to `dashscope` if you are using the model service provided by DashScope.'
         ' Set it to the base_url (aka api_base) if using an OpenAI API-compatible service such as vLLM or Ollama.'
         ' Default: dashscope',
     )
@@ -33,8 +32,7 @@ def parse_args():
         '--llm',
         type=str,
         default='qwen-plus',
-        help=
-        'Set it to one of {"qwen-max", "qwen-plus", "qwen-turbo"} if using DashScope.'
+        help='Set it to one of {"qwen-max", "qwen-plus", "qwen-turbo"} if using DashScope.'
         ' Set it to the model name using an OpenAI API-compatible model service.'
         ' Default: qwen-plus',
     )
@@ -44,16 +42,14 @@ def parse_args():
         type=str,
         default='127.0.0.1',
         choices=['127.0.0.1', '0.0.0.0'],
-        help=
-        'Set to 0.0.0.0 if you want to allow other machines to access the server. Default: 127.0.0.1',
+        help='Set to 0.0.0.0 if you want to allow other machines to access the server. Default: 127.0.0.1',
     )
     parser.add_argument(
         '-t',
         '--max_ref_token',
         type=int,
         default=4000,
-        help=
-        'The number of tokens reserved for the reference materials when doing retrieval-augmanted generation (RAG). Default: 4000',
+        help='The number of tokens reserved for the reference materials when doing retrieval-augmanted generation (RAG). Default: 4000',
     )
     parser.add_argument(
         '-w',

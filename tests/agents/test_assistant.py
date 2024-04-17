@@ -27,8 +27,7 @@ def test_assistant_files():
         Message('user', [
             ContentItem(text='总结一个文章标题'),
             ContentItem(
-                file=
-                'https://help.aliyun.com/zh/dashscope/developer-reference/api-details?disableWebsiteRedirect=true'
+                file='https://help.aliyun.com/zh/dashscope/developer-reference/api-details?disableWebsiteRedirect=true'
             )
         ])
     ]

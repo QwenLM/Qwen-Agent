@@ -11,8 +11,13 @@ Qwen-Agent是一个开发框架。开发者可基于本框架开发Agent应用�
 
 ## 安装
 
+- 安装稳定的版本：
 ```bash
-# 安装依赖
+pip install -U qwen-agent
+```
+
+- 或者，直接从源代码安装最新的版本：
+```bash
 git clone https://github.com/QwenLM/Qwen-Agent.git
 cd Qwen-Agent
 pip install -e ./
@@ -22,9 +27,9 @@ pip install -e ./
 
 Qwen-Agent支持接入阿里云[DashScope](https://help.aliyun.com/zh/dashscope/developer-reference/quick-start)服务提供的Qwen模型服务，也支持通过OpenAI API方式接入开源的Qwen模型服务。
 
-如果希望接入DashScope提供的模型服务，只需配置相应的环境变量`DASHSCOPE_API_KEY`为您的DashScope API Key。
+- 如果希望接入DashScope提供的模型服务，只需配置相应的环境变量`DASHSCOPE_API_KEY`为您的DashScope API Key。
 
-但如果您希望部署并使用您自己的模型服务，请按照Qwen1.5的README中提供的指导进行操作，以部署一个兼容OpenAI接口协议的API服务。
+- 或者，如果您希望部署并使用您自己的模型服务，请按照Qwen1.5的README中提供的指导进行操作，以部署一个兼容OpenAI接口协议的API服务。
 具体来说，请参阅[vLLM](https://github.com/QwenLM/Qwen1.5?tab=readme-ov-file#vllm)一节了解高并发的GPU部署方式，或者查看[Ollama](https://github.com/QwenLM/Qwen1.5?tab=readme-ov-file#ollama)一节了解本地CPU（+GPU）部署。
 
 ## 快速开发
@@ -115,15 +120,10 @@ while True:
 
 除了使用框架自带的智能体实现（如`class Assistant`），您也可以通过继承`class Agent`来自行开发您的智能体实现。更多使用示例，请参阅[examples](./examples)目录。
 
-# BrowserQwen
+# 应用：BrowserQwen
 
-BrowserQwen 是一款基于 Qwen-Agent 构建的浏览器助手应用程序。如需了解更多详情，请参阅其[文档](browser_qwen_cn.md)。
+BrowserQwen 是一款基于 Qwen-Agent 构建的浏览器助手。如需了解详情，请参阅其[文档](browser_qwen_cn.md)。
 
 # 免责声明
 
-本项目正处于快速迭代中，可能会偶尔出现不兼容旧版本的情况。
-
-> [!Warning]
-> <div align="center">
-> 代码解释器未进行沙盒隔离，会在部署环境中执行代码。请避免向Qwen发出危险指令，切勿将该代码解释器直接用于生产目的。
-> </div>
+代码解释器未进行沙盒隔离，会在部署环境中执行代码。请避免向Qwen发出危险指令，切勿将该代码解释器直接用于生产目的。

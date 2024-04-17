@@ -1,4 +1,4 @@
-[中文](./README_CN.md) ｜ English
+[中文](https://github.com/QwenLM/Qwen-Agent/blob/main/README_CN.md) ｜ English
 
 <p align="center">
     <img src="https://qianwen-res.oss-cn-beijing.aliyuncs.com/assets/qwen_agent/logo-qwen-agent.png" width="400"/>
@@ -13,8 +13,13 @@ It also comes with example applications such as Browser Assistant, Code Interpre
 
 ## Installation
 
+- Install the stable version from PyPI:
 ```bash
-# Install dependencies.
+pip install -U qwen-agent
+```
+
+- Alternatively, you can install the latest development version from the source:
+```bash
 git clone https://github.com/QwenLM/Qwen-Agent.git
 cd Qwen-Agent
 pip install -e ./
@@ -26,10 +31,10 @@ You can either use the model service provided by Alibaba
 Cloud's [DashScope](https://help.aliyun.com/zh/dashscope/developer-reference/quick-start), or deploy and use your own
 model service using the open-source Qwen models.
 
-If you choose to use the model service offered by DashScope, please ensure that you set the environment
+- If you choose to use the model service offered by DashScope, please ensure that you set the environment
 variable `DASHSCOPE_API_KEY` to your unique DashScope API key.
 
-Alternatively, if you prefer to deploy and use your own model service, please follow the instructions provided in the README of Qwen1.5 for deploying an OpenAI-compatible API service.
+- Alternatively, if you prefer to deploy and use your own model service, please follow the instructions provided in the README of Qwen1.5 for deploying an OpenAI-compatible API service.
 Specifically, consult the [vLLM](https://github.com/QwenLM/Qwen1.5?tab=readme-ov-file#vllm) section for high-throughput GPU deployment or the [Ollama](https://github.com/QwenLM/Qwen1.5?tab=readme-ov-file#ollama) section for local CPU (+GPU) deployment.
 
 ## Developing Your Own Agent
@@ -120,18 +125,12 @@ while True:
 ```
 
 In addition to using built-in agent implentations such as `class Assistant`, you can also develop your own agent implemetation by inheriting from `class Agent`.
-Please refer to the [examples](./examples) directory for more usage examples.
+Please refer to the [examples](https://github.com/QwenLM/Qwen-Agent/blob/main/examples) directory for more usage examples.
 
-# BrowserQwen
+# Application: BrowserQwen
 
-BrowserQwen is a browser assistant application built upon Qwen-Agent. Please refer to its [documentation](browser_qwen.md) for more
-details.
+BrowserQwen is a browser assistant built upon Qwen-Agent. Please refer to its [documentation](https://github.com/QwenLM/Qwen-Agent/blob/main/browser_qwen.md) for details.
 
 # Disclaimer
 
-This project is currently under active development, and backward compatibility may occasionally be broken.
-
-> [!Warning]
-> <div align="center">
-> The code interpreter is not sandboxed, and it executes code in your own environment. Please do not ask Qwen to perform dangerous tasks, and do not directly use the code interpreter for production purposes.
-> </div>
+The code interpreter is not sandboxed, and it executes code in your own environment. Please do not ask Qwen to perform dangerous tasks, and do not directly use the code interpreter for production purposes.

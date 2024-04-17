@@ -1,4 +1,3 @@
-import copy
 import os
 from pprint import pformat
 from typing import Dict, Iterator, List, Optional

@@ -80,6 +80,11 @@ class Memory(Agent):
                 # Gen keyword
                 *_, last = self.keygen.run([Message(USER, query)])
                 keyword = last[-1].content
+                keyword = keyword.strip()
+                if keyword.startswith('```json'):
+                    keyword = keyword[len('```json'):]
+                if keyword.endswith('```'):
+                    keyword = keyword[:-3]
                 try:
                     logger.info(keyword)
                     keyword_dict = json5.loads(keyword)
