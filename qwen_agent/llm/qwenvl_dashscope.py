@@ -108,7 +108,10 @@ def _extract_vl_response(response) -> List[Message]:
     output = response.output.choices[0].message
     text_content = []
     for item in output.content:
-        for k, v in item.items():
-            if k in ('text', 'box'):
-                text_content.append(ContentItem(text=v))
+        if isinstance(item, str):
+            text_content.append(ContentItem(text=item))
+        else:
+            for k, v in item.items():
+                if k in ('text', 'box'):
+                    text_content.append(ContentItem(text=v))
     return [Message(role=output.role, content=text_content)]
