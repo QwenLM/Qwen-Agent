@@ -43,7 +43,7 @@ class BaseChatModel(ABC):
 
     def __init__(self, cfg: Optional[Dict] = None):
         cfg = cfg or {}
-        self.model = cfg.get('model', '')
+        self.model = cfg.get('model', '').strip()
         generate_cfg = copy.deepcopy(cfg.get('generate_cfg', {}))
         self.max_retries = generate_cfg.pop('max_retries', 0)
         self.generate_cfg = generate_cfg

@@ -39,7 +39,7 @@ Specifically, consult the [vLLM](https://github.com/QwenLM/Qwen1.5?tab=readme-ov
 
 ## Developing Your Own Agent
 
-Qwen-Agent offers atomic components, such as LLMs (which inherit from `class BaseChatModel`) and Tools (which inherit
+Qwen-Agent offers atomic components, such as LLMs (which inherit from `class BaseChatModel` and come with [function calling](https://github.com/QwenLM/Qwen-Agent/blob/main/examples/function_calling.py)) and Tools (which inherit
 from `class BaseTool`), along with high-level components like Agents (derived from `class Agent`).
 
 The following example illustrates the process of creating an agent capable of reading PDF files and utilizing tools, as

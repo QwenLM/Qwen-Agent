@@ -41,7 +41,7 @@ def get_chat_model(cfg: Optional[Dict] = None) -> BaseChatModel:
     # Deduce model_type from model and model_server if model_type is not provided:
 
     if 'model_server' in cfg:
-        if cfg['model_server'].startswith('http'):
+        if cfg['model_server'].strip().startswith('http'):
             model_type = 'oai'
             return LLM_REGISTRY[model_type](cfg)
 

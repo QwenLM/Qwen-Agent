@@ -34,7 +34,7 @@ Qwen-Agent支持接入阿里云[DashScope](https://help.aliyun.com/zh/dashscope/
 
 ## 快速开发
 
-框架提供了大模型（LLM，继承自`class BaseChatModel`）和工具（Tools，继承自`class BaseTool`）等原子组件，也提供了智能体（Agent）等高级抽象组件（继承自`class Agent`）。
+框架提供了大模型（LLM，继承自`class BaseChatModel`，并提供了[Function Calling](./examples/function_calling.py)功能）和工具（Tool，继承自`class BaseTool`）等原子组件，也提供了智能体（Agent）等高级抽象组件（继承自`class Agent`）。
 
 以下示例演示了如何增加自定义工具，并快速开发一个带有设定、知识库和工具使用能力的智能体：
 

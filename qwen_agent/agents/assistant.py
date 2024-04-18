@@ -43,7 +43,7 @@ class Assistant(FnCallAgent):
              **kwargs) -> Iterator[List[Message]]:
 
         new_messages = self._prepend_knowledge_prompt(messages, lang,
-                                                      max_ref_token)
+                                                      max_ref_token, **kwargs)
         return super()._run(messages=new_messages,
                             lang=lang,
                             max_ref_token=max_ref_token,
@@ -52,10 +52,11 @@ class Assistant(FnCallAgent):
     def _prepend_knowledge_prompt(self,
                                   messages: List[Message],
                                   lang: str = 'en',
-                                  max_ref_token: int = 4000) -> List[Message]:
+                                  max_ref_token: int = 4000,
+                                  **kwargs) -> List[Message]:
         messages = copy.deepcopy(messages)
         # Retrieval knowledge from files
-        *_, last = self.mem.run(messages=messages, max_ref_token=max_ref_token)
+        *_, last = self.mem.run(messages=messages, max_ref_token=max_ref_token, lang=lang, **kwargs)
         knowledge = last[-1][CONTENT]
 
         logger.debug(

@@ -316,8 +316,7 @@ def format_knowledge_to_source_and_content(
         for doc in docs:
             url, snippets = doc['url'], doc['text']
             assert isinstance(snippets, list)
-            for s in snippets:
-                _tmp_knowledge.append({'source': f'[文件]({url})', 'content': s})
+            _tmp_knowledge.append({'source': f'[文件]({url})', 'content': '\n\n...\n\n'.join(snippets)})
         knowledge.extend(_tmp_knowledge)
     except Exception:
         print_traceback()
