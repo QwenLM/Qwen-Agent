@@ -11,7 +11,6 @@ from .user_agent import UserAgent
 from .write_from_scratch import WriteFromScratch
 
 __all__ = [
-    'DocQAAgent', 'Assistant', 'ArticleAgent', 'ReActChat', 'Router',
-    'UserAgent', 'GroupChat', 'WriteFromScratch', 'GroupChatCreator',
-    'GroupChatAutoRouter', 'FnCallAgent'
+    'DocQAAgent', 'Assistant', 'ArticleAgent', 'ReActChat', 'Router', 'UserAgent', 'GroupChat', 'WriteFromScratch',
+    'GroupChatCreator', 'GroupChatAutoRouter', 'FnCallAgent'
 ]

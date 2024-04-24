@@ -18,28 +18,23 @@ class MyImageGen(BaseTool):
     parameters = [{
         'name': 'prompt',
         'type': 'string',
-        'description':
-        'Detailed description of the desired image content, in English',
+        'description': 'Detailed description of the desired image content, in English',
         'required': True
     }]
 
     def call(self, params: str, **kwargs) -> str:
         prompt = json5.loads(params)['prompt']
         prompt = urllib.parse.quote(prompt)
-        return json.dumps(
-            {'image_url': f'https://image.pollinations.ai/prompt/{prompt}'},
-            ensure_ascii=False)
+        return json.dumps({'image_url': f'https://image.pollinations.ai/prompt/{prompt}'}, ensure_ascii=False)
 
 
 def init_agent_service():
     llm_cfg = {'model': 'qwen-max'}
-    system = (
-        'According to the user\'s request, you first draw a picture and then automatically '
-        'run code to download the picture and select an image operation from the given document '
-        'to process the image')
+    system = ('According to the user\'s request, you first draw a picture and then automatically '
+              'run code to download the picture and select an image operation from the given document '
+              'to process the image')
 
-    tools = ['my_image_gen', 'code_interpreter'
-             ]  # code_interpreter is a built-in tool in Qwen-Agent
+    tools = ['my_image_gen', 'code_interpreter']  # code_interpreter is a built-in tool in Qwen-Agent
     bot = Assistant(llm=llm_cfg,
                     system_message=system,
                     function_list=tools,

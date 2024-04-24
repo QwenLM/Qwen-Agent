@@ -60,10 +60,7 @@ class ContentItem(BaseModelCompatibleDict):
     image: Optional[str] = None
     file: Optional[str] = None
 
-    def __init__(self,
-                 text: Optional[str] = None,
-                 image: Optional[str] = None,
-                 file: Optional[str] = None):
+    def __init__(self, text: Optional[str] = None, image: Optional[str] = None, file: Optional[str] = None):
         super().__init__(text=text, image=image, file=file)
 
     @model_validator(mode='after')
@@ -77,8 +74,7 @@ class ContentItem(BaseModelCompatibleDict):
             provided_fields += 1
 
         if provided_fields != 1:
-            raise ValueError(
-                "Exactly one of 'text', 'image', or 'file' must be provided.")
+            raise ValueError("Exactly one of 'text', 'image', or 'file' must be provided.")
         return self
 
     def __repr__(self):
@@ -104,10 +100,7 @@ class Message(BaseModelCompatibleDict):
                  **kwargs):
         if content is None:
             content = ''
-        super().__init__(role=role,
-                         content=content,
-                         name=name,
-                         function_call=function_call)
+        super().__init__(role=role, content=content, name=name, function_call=function_call)
 
     def __repr__(self):
         return f'Message({self.model_dump()})'
@@ -115,7 +108,5 @@ class Message(BaseModelCompatibleDict):
     @field_validator('role')
     def role_checker(cls, value: str) -> str:
         if value not in [USER, ASSISTANT, SYSTEM, FUNCTION]:
-            raise ValueError(
-                f'{value} must be one of {",".join([USER, ASSISTANT, SYSTEM, FUNCTION])}'
-            )
+            raise ValueError(f'{value} must be one of {",".join([USER, ASSISTANT, SYSTEM, FUNCTION])}')
         return value

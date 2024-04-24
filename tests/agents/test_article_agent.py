@@ -8,8 +8,7 @@ def test_article_agent_full_article():
     llm_cfg = {'model': 'qwen-max', 'api_key': '', 'model_server': 'dashscope'}
     agent = ArticleAgent(llm=llm_cfg)
     messages = [{
-        'role':
-        'user',
+        'role': 'user',
         'content': [{
             'text': 'Qwen-Agent简介'
         }, {

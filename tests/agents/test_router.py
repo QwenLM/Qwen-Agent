@@ -30,10 +30,8 @@ def test_router():
             'user',
             [
                 ContentItem(text='描述图片'),
-                ContentItem(
-                    image=  # NOQA
-                    'https://img01.sc115.com/uploads/sc/jpgs/1505/apic11540_sc115.com.jpg'
-                )
+                ContentItem(image=  # NOQA
+                            'https://img01.sc115.com/uploads/sc/jpgs/1505/apic11540_sc115.com.jpg')
             ])
     ]
 

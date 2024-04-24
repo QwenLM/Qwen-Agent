@@ -40,12 +40,11 @@ class QwenVLChatAtDS(BaseFnCallModel):
         messages = _format_local_files(messages)
         messages = [msg.model_dump() for msg in messages]
         logger.debug(f'*{pformat(messages, indent=2)}*')
-        response = dashscope.MultiModalConversation.call(
-            model=self.model,
-            messages=messages,
-            result_format='message',
-            stream=True,
-            **self.generate_cfg)
+        response = dashscope.MultiModalConversation.call(model=self.model,
+                                                         messages=messages,
+                                                         result_format='message',
+                                                         stream=True,
+                                                         **self.generate_cfg)
 
         for trunk in response:
             if trunk.status_code == HTTPStatus.OK:
@@ -60,22 +59,18 @@ class QwenVLChatAtDS(BaseFnCallModel):
         messages = _format_local_files(messages)
         messages = [msg.model_dump() for msg in messages]
         logger.debug(f'*{pformat(messages, indent=2)}*')
-        response = dashscope.MultiModalConversation.call(
-            model=self.model,
-            messages=messages,
-            result_format='message',
-            stream=False,
-            **self.generate_cfg)
+        response = dashscope.MultiModalConversation.call(model=self.model,
+                                                         messages=messages,
+                                                         result_format='message',
+                                                         stream=False,
+                                                         **self.generate_cfg)
         if response.status_code == HTTPStatus.OK:
             return _extract_vl_response(response=response)
         else:
-            raise ModelServiceError(code=response.code,
-                                    message=response.message)
+            raise ModelServiceError(code=response.code, message=response.message)
 
-    def _postprocess_messages(self, messages: List[Message],
-                              fncall_mode: bool) -> List[Message]:
-        messages = super()._postprocess_messages(messages,
-                                                 fncall_mode=fncall_mode)
+    def _postprocess_messages(self, messages: List[Message], fncall_mode: bool) -> List[Message]:
+        messages = super()._postprocess_messages(messages, fncall_mode=fncall_mode)
         # Make VL return the same format as text models for easy usage
         messages = format_as_text_messages(messages)
         return messages

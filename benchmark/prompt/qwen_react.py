@@ -25,9 +25,7 @@ class QwenReAct(ReAct):
     def __init__(self, query, lang='en', upload_file_paths=[]):
         super().__init__(query, lang, upload_file_paths)
 
-        self.upload_file_paths = [
-            f'{os.path.basename(fname)}' for fname in upload_file_paths
-        ]
+        self.upload_file_paths = [f'{os.path.basename(fname)}' for fname in upload_file_paths]
         self.list_of_plugin_info = QWEN_TOOLS_LIST
         self.fname_template = {
             'zh': '[上传文件{fname_str}]',
@@ -60,8 +58,7 @@ class QwenReAct(ReAct):
                 name_for_model=plugin_info['name_for_model'],
                 name_for_human=plugin_info['name_for_human'],
                 description_for_model=plugin_info['description_for_model'],
-                parameters=json.dumps(plugin_info['parameters'],
-                                      ensure_ascii=False),
+                parameters=json.dumps(plugin_info['parameters'], ensure_ascii=False),
             )
             if plugin_info.get('args_format', 'json') == 'json':
                 tool += ' Format the arguments as a JSON object.'
@@ -74,7 +71,4 @@ class QwenReAct(ReAct):
         return tools_text
 
     def _build_tools_name_text(self):
-        return ', '.join([
-            plugin_info['name_for_model']
-            for plugin_info in self.list_of_plugin_info
-        ])
+        return ', '.join([plugin_info['name_for_model'] for plugin_info in self.list_of_plugin_info])

@@ -48,12 +48,7 @@ def format_input_doc(doc: List[str]) -> RefMaterialInput:
 @register_tool('similarity_search')
 class SimilaritySearch(BaseTool):
     description = '从给定文档中检索和问题相关的部分'
-    parameters = [{
-        'name': 'query',
-        'type': 'string',
-        'description': '问题，需要从文档中检索和这个问题有关的内容',
-        'required': True
-    }]
+    parameters = [{'name': 'query', 'type': 'string', 'description': '问题，需要从文档中检索和这个问题有关的内容', 'required': True}]
 
     def call(self,
              params: Union[str, dict],
@@ -74,9 +69,7 @@ class SimilaritySearch(BaseTool):
         logger.info(f'all tokens of {doc.url}: {all_tokens}')
         if all_tokens <= max_token:
             logger.info('use full ref')
-            return RefMaterialOutput(url=doc.url,
-                                     text=[x.content
-                                           for x in doc.text]).to_dict()
+            return RefMaterialOutput(url=doc.url, text=[x.content for x in doc.text]).to_dict()
 
         wordlist = parse_keyword(query)
         logger.info('wordlist: ' + ','.join(wordlist))
@@ -95,8 +88,7 @@ class SimilaritySearch(BaseTool):
         if max_sims != 0:
             manul = 0
             for i in range(min(manul, len(doc.text))):
-                if max_token >= tokens[
-                        i] * 2:  # Ensure that the first two pages do not fill up the window
+                if max_token >= tokens[i] * 2:  # Ensure that the first two pages do not fill up the window
                     res.append(doc.text[i].content)
                     max_token -= tokens[i]
             for i, x in enumerate(sims):
@@ -105,8 +97,7 @@ class SimilaritySearch(BaseTool):
                 page = doc.text[x[0]]
                 if max_token < page.token:
                     use_rate = (max_token / page.token) * 0.2
-                    res.append(page.content[:int(len(page.content) *
-                                                 use_rate)])
+                    res.append(page.content[:int(len(page.content) * use_rate)])
                     break
 
                 res.append(page.content)

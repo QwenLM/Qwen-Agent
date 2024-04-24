@@ -6,8 +6,7 @@ from typing import Dict, Iterator, List, Optional, Tuple, Union
 
 from qwen_agent.llm import get_chat_model
 from qwen_agent.llm.base import BaseChatModel
-from qwen_agent.llm.schema import (CONTENT, DEFAULT_SYSTEM_MESSAGE, ROLE,
-                                   SYSTEM, ContentItem, Message)
+from qwen_agent.llm.schema import CONTENT, DEFAULT_SYSTEM_MESSAGE, ROLE, SYSTEM, ContentItem, Message
 from qwen_agent.log import logger
 from qwen_agent.tools import TOOL_REGISTRY, BaseTool
 from qwen_agent.utils.utils import has_chinese_chars
@@ -21,8 +20,7 @@ class Agent(ABC):
     """
 
     def __init__(self,
-                 function_list: Optional[List[Union[str, Dict,
-                                                    BaseTool]]] = None,
+                 function_list: Optional[List[Union[str, Dict, BaseTool]]] = None,
                  llm: Optional[Union[Dict, BaseChatModel]] = None,
                  system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
                  name: Optional[str] = None,
@@ -92,16 +90,10 @@ class Agent(ABC):
             if _return_message_type == 'message':
                 yield [Message(**x) if isinstance(x, dict) else x for x in rsp]
             else:
-                yield [
-                    x.model_dump() if not isinstance(x, dict) else x
-                    for x in rsp
-                ]
+                yield [x.model_dump() if not isinstance(x, dict) else x for x in rsp]
 
     @abstractmethod
-    def _run(self,
-             messages: List[Message],
-             lang: str = 'en',
-             **kwargs) -> Iterator[List[Message]]:
+    def _run(self, messages: List[Message], lang: str = 'en', **kwargs) -> Iterator[List[Message]]:
         """Return one response generator based on the received messages.
 
         The workflow for an agent to generate a reply.
@@ -138,22 +130,15 @@ class Agent(ABC):
         """
         messages = copy.deepcopy(messages)
         if messages[0][ROLE] != SYSTEM:
-            messages.insert(0, Message(role=SYSTEM,
-                                       content=self.system_message))
+            messages.insert(0, Message(role=SYSTEM, content=self.system_message))
         elif isinstance(messages[0][CONTENT], str):
             messages[0][CONTENT] = self.system_message + messages[0][CONTENT]
         else:
             assert isinstance(messages[0][CONTENT], list)
-            messages[0][CONTENT] = [ContentItem(text=self.system_message)
-                                    ] + messages[0][CONTENT]
-        return self.llm.chat(messages=messages,
-                             functions=functions,
-                             stream=stream)
+            messages[0][CONTENT] = [ContentItem(text=self.system_message)] + messages[0][CONTENT]
+        return self.llm.chat(messages=messages, functions=functions, stream=stream)
 
-    def _call_tool(self,
-                   tool_name: str,
-                   tool_args: Union[str, dict] = '{}',
-                   **kwargs) -> str:
+    def _call_tool(self, tool_name: str, tool_args: Union[str, dict] = '{}', **kwargs) -> str:
         """The interface of calling tools for the agent.
 
         Args:
@@ -186,9 +171,7 @@ class Agent(ABC):
         if isinstance(tool, BaseTool):
             tool_name = tool.name
             if tool_name in self.function_map:
-                logger.warning(
-                    f'Repeatedly adding tool {tool_name}, will use the newest tool in function list'
-                )
+                logger.warning(f'Repeatedly adding tool {tool_name}, will use the newest tool in function list')
             self.function_map[tool_name] = tool
         else:
             if isinstance(tool, dict):
@@ -201,9 +184,7 @@ class Agent(ABC):
                 raise ValueError(f'Tool {tool_name} is not registered.')
 
             if tool_name in self.function_map:
-                logger.warning(
-                    f'Repeatedly adding tool {tool_name}, will use the newest tool in function list'
-                )
+                logger.warning(f'Repeatedly adding tool {tool_name}, will use the newest tool in function list')
             self.function_map[tool_name] = TOOL_REGISTRY[tool_name](tool_cfg)
 
     def _detect_tool(self, message: Message) -> Tuple[bool, str, str, str]:

@@ -11,13 +11,10 @@ except ImportError:
 try:
     import gradio as gr
     if gr.__version__ < '3.50' or gr.__version__ >= '4.0':
-        raise ImportError(
-            'Incompatible gradio version detected. '
-            'Please install the correct version with: pip install "gradio>=3.50,<4.0"'
-        )
+        raise ImportError('Incompatible gradio version detected. '
+                          'Please install the correct version with: pip install "gradio>=3.50,<4.0"')
 except (ModuleNotFoundError, AttributeError):
-    raise ImportError(
-        'Please install gradio by: pip install "gradio>=3.50,<4.0"')
+    raise ImportError('Please install gradio by: pip install "gradio>=3.50,<4.0"')
 import jsonlines
 
 from qwen_agent.agents import DocQAAgent
@@ -25,8 +22,7 @@ from qwen_agent.llm.base import ModelServiceError
 from qwen_agent.log import logger
 from qwen_server import output_beautify
 from qwen_server.schema import GlobalConfig
-from qwen_server.utils import (read_history, read_meta_data_by_condition,
-                               save_history)
+from qwen_server.utils import read_history, read_meta_data_by_condition, save_history
 
 server_config_path = Path(__file__).resolve().parent / 'server_config.json'
 with open(server_config_path, 'r') as f:
@@ -54,8 +50,7 @@ with open(Path(__file__).resolve().parent / 'css/main.css', 'r') as f:
     css = f.read()
 with open(Path(__file__).resolve().parent / 'js/main.js', 'r') as f:
     js = f.read()
-cache_file_popup_url = os.path.join(server_config.path.work_space_root,
-                                    'popup_url.jsonl')
+cache_file_popup_url = os.path.join(server_config.path.work_space_root, 'popup_url.jsonl')
 meta_file = os.path.join(server_config.path.work_space_root, 'meta_data.jsonl')
 history_dir = os.path.join(server_config.path.work_space_root, 'history')
 
@@ -79,9 +74,7 @@ def set_url():
     lines = []
     if not os.path.exists(cache_file_popup_url):
         # Only able to remind the situation of first browsing failure
-        gr.Error(
-            'Oops, it seems that the page cannot be opened due to network issues.'
-        )
+        gr.Error('Oops, it seems that the page cannot be opened due to network issues.')
 
     for line in jsonlines.open(cache_file_popup_url):
         lines.append(line)
@@ -94,19 +87,10 @@ def bot(history):
     if not history:
         yield history
     else:
-        messages = [{
-            'role': 'user',
-            'content': [{
-                'text': history[-1][0]
-            }, {
-                'file': page_url
-            }]
-        }]
+        messages = [{'role': 'user', 'content': [{'text': history[-1][0]}, {'file': page_url}]}]
         history[-1][1] = ''
         try:
-            response = assistant.run(
-                messages=messages,
-                max_ref_token=server_config.server.max_ref_token)
+            response = assistant.run(messages=messages, max_ref_token=server_config.server.max_ref_token)
 
             for chunk in output_beautify.convert_to_full_str_stream(response):
                 history[-1][1] = chunk
@@ -126,8 +110,7 @@ def init_chatbot():
     response = read_meta_data_by_condition(meta_file, url=page_url)
     if not response:
         gr.Info(
-            "Please add this page to Qwen's Reading List first! If you have already added it, please reopen later..."
-        )
+            "Please add this page to Qwen's Reading List first! If you have already added it, please reopen later...")
     elif response == '[CACHING]':
         gr.Info('Please reopen later, Qwen is analyzing this page...')
     else:
@@ -144,14 +127,10 @@ with gr.Blocks(css=css, theme='soft') as demo:
     chatbot = gr.Chatbot([],
                          elem_id='chatbot',
                          height=480,
-                         avatar_images=(None, (os.path.join(
-                             Path(__file__).resolve().parent,
-                             'img/logo.png'))))
+                         avatar_images=(None, (os.path.join(Path(__file__).resolve().parent, 'img/logo.png'))))
     with gr.Row():
         with gr.Column(scale=7):
-            txt = gr.Textbox(show_label=False,
-                             placeholder='Chat with Qwen...',
-                             container=False)
+            txt = gr.Textbox(show_label=False, placeholder='Chat with Qwen...', container=False)
         with gr.Column(scale=1, min_width=0):
             clr_bt = gr.Button('🧹', elem_classes='bt_small_font')
         with gr.Column(scale=1, min_width=0):
@@ -159,20 +138,15 @@ with gr.Blocks(css=css, theme='soft') as demo:
         with gr.Column(scale=1, min_width=0):
             re_bt = gr.Button('🔁', elem_classes='bt_small_font')
 
-    txt_msg = txt.submit(add_text, [chatbot, txt], [chatbot, txt],
-                         queue=False).then(bot, chatbot, chatbot)
+    txt_msg = txt.submit(add_text, [chatbot, txt], [chatbot, txt], queue=False).then(bot, chatbot, chatbot)
     txt_msg.then(lambda: gr.update(interactive=True), None, [txt], queue=False)
 
     clr_bt.click(clear_session, None, chatbot, queue=False)
-    re_txt_msg = re_bt.click(rm_text, [chatbot], [chatbot, txt],
-                             queue=False).then(bot, chatbot, chatbot)
-    re_txt_msg.then(lambda: gr.update(interactive=True),
-                    None, [txt],
-                    queue=False)
+    re_txt_msg = re_bt.click(rm_text, [chatbot], [chatbot, txt], queue=False).then(bot, chatbot, chatbot)
+    re_txt_msg.then(lambda: gr.update(interactive=True), None, [txt], queue=False)
 
     stop_bt.click(None, None, None, cancels=[txt_msg, re_txt_msg], queue=False)
 
     demo.load(init_chatbot, None, chatbot)
 
-demo.queue().launch(server_name=server_config.server.server_host,
-                    server_port=server_config.server.app_in_browser_port)
+demo.queue().launch(server_name=server_config.server.server_host, server_port=server_config.server.app_in_browser_port)

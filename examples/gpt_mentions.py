@@ -13,9 +13,10 @@ def init_agent_service(messages):
             'object': ReActChat,
             'params': {
                 'system_message':
-                'you are a programming expert, skilled in writing code to solve mathematical problems and data analysis problems.',
+                    'you are a programming expert, skilled in writing code to solve mathematical problems and data analysis problems.',
                 'function_list': ['code_interpreter'],
-                'llm': llm_cfg
+                'llm':
+                    llm_cfg
             }
         },
         'doc_qa': {
@@ -42,11 +43,7 @@ def init_agent_service(messages):
 # Below is the gradio service: front-end and back-end logic
 # =========================================================
 
-app_global_para = {
-    'messages': [],
-    'is_first_upload': True,
-    'uploaded_file': ''
-}
+app_global_para = {'messages': [], 'is_first_upload': True, 'uploaded_file': ''}
 
 AGENT_LIST_NAME = ['code_interpreter', 'doc_qa', 'assistant']
 
@@ -58,29 +55,21 @@ def app(history, chosen_plug):
         if '@' not in history[-1][0]:
             history[-1][0] += ('@' + chosen_plug)
         content = [{'text': history[-1][0]}]
-        if app_global_para['uploaded_file'] and app_global_para[
-                'is_first_upload']:
-            app_global_para[
-                'is_first_upload'] = False  # only send file when first upload
+        if app_global_para['uploaded_file'] and app_global_para['is_first_upload']:
+            app_global_para['is_first_upload'] = False  # only send file when first upload
             content.append({'file': app_global_para['uploaded_file']})
-        app_global_para['messages'].append({
-            'role': 'user',
-            'content': content
-        })
+        app_global_para['messages'].append({'role': 'user', 'content': content})
 
         # Define the agent
-        selected_agent = init_agent_service(
-            messages=app_global_para['messages'])
+        selected_agent = init_agent_service(messages=app_global_para['messages'])
 
         # Chat
         history[-1][1] = ''
         response = []
         try:
-            for response in selected_agent.run(
-                    messages=app_global_para['messages']):
+            for response in selected_agent.run(messages=app_global_para['messages']):
                 if response:
-                    display_response = output_beautify.convert_fncall_to_text(
-                        response)
+                    display_response = output_beautify.convert_fncall_to_text(response)
                     history[-1][1] = display_response[-1]['content']
                     yield history
         except Exception as ex:
@@ -140,25 +129,15 @@ with gr.Blocks(theme='soft') as demo:
                         value='assistant',
                     )
                 with gr.Column(scale=8, min_width=0):
-                    hidden_file_path = gr.Textbox(
-                        interactive=False,
-                        label='The uploaded file is displayed here')
+                    hidden_file_path = gr.Textbox(interactive=False, label='The uploaded file is displayed here')
 
-            txt_msg = chat_txt.submit(add_text, [chatbot, chat_txt],
-                                      [chatbot, chat_txt],
-                                      queue=False).then(
-                                          app, [chatbot, plug_bt], chatbot)
-            txt_msg.then(lambda: gr.update(interactive=True),
-                         None, [chat_txt],
-                         queue=False)
+            txt_msg = chat_txt.submit(add_text, [chatbot, chat_txt], [chatbot, chat_txt],
+                                      queue=False).then(app, [chatbot, plug_bt], chatbot)
+            txt_msg.then(lambda: gr.update(interactive=True), None, [chat_txt], queue=False)
 
-            file_msg = file_btn.upload(add_file,
-                                       file_btn, [hidden_file_path],
-                                       queue=False)
+            file_msg = file_btn.upload(add_file, file_btn, [hidden_file_path], queue=False)
 
-            chat_clr_bt.click(chat_clear,
-                              None, [chatbot, hidden_file_path],
-                              queue=False)
+            chat_clr_bt.click(chat_clear, None, [chatbot, hidden_file_path], queue=False)
 
 if __name__ == '__main__':
     demo.queue().launch()

@@ -21,8 +21,7 @@ Reply: ... # 选中的帮手的回复
 class Router(Assistant):
 
     def __init__(self,
-                 function_list: Optional[List[Union[str, Dict,
-                                                    BaseTool]]] = None,
+                 function_list: Optional[List[Union[str, Dict, BaseTool]]] = None,
                  llm: Optional[Union[Dict, BaseChatModel]] = None,
                  files: Optional[List[str]] = None,
                  name: Optional[str] = None,
@@ -30,22 +29,18 @@ class Router(Assistant):
                  agents: Optional[Dict[str, Dict]] = None):
         self.agents = agents
 
-        agent_descs = '\n\n'.join(
-            [f'{k}: {v["desc"]}' for k, v in agents.items()])
+        agent_descs = '\n\n'.join([f'{k}: {v["desc"]}' for k, v in agents.items()])
         agent_names = ', '.join([k for k in agents.keys()])
         super().__init__(function_list=function_list,
                          llm=llm,
-                         system_message=ROUTER_PROMPT.format(
-                             agent_descs=agent_descs, agent_names=agent_names),
+                         system_message=ROUTER_PROMPT.format(agent_descs=agent_descs, agent_names=agent_names),
                          name=name,
                          description=description,
                          files=files)
 
         stop = self.llm.generate_cfg.get('stop', [])
         fn_stop = ['Reply:', 'Reply:\n']
-        self.llm.generate_cfg['stop'] = stop + [
-            x for x in fn_stop if x not in stop
-        ]
+        self.llm.generate_cfg['stop'] = stop + [x for x in fn_stop if x not in stop]
 
     def _run(self,
              messages: List[Message],
@@ -59,22 +54,16 @@ class Router(Assistant):
                 msg = self.supplement_name_special_token(msg)
             messages_for_router.append(msg)
         response = []
-        for response in super()._run(messages=messages_for_router,
-                                     lang=lang,
-                                     max_ref_token=max_ref_token,
+        for response in super()._run(messages=messages_for_router, lang=lang, max_ref_token=max_ref_token,
                                      **kwargs):  # noqa
             yield response
 
         if 'Call:' in response[-1].content:
             # According to the rule in prompt to selected agent
-            selected_agent_name = response[-1].content.split(
-                'Call:')[-1].strip()
+            selected_agent_name = response[-1].content.split('Call:')[-1].strip()
             logger.info(f'Need help from {selected_agent_name}')
             selected_agent = self.agents[selected_agent_name]['obj']
-            for response in selected_agent.run(messages=messages,
-                                               lang=lang,
-                                               max_ref_token=max_ref_token,
-                                               **kwargs):
+            for response in selected_agent.run(messages=messages, lang=lang, max_ref_token=max_ref_token, **kwargs):
                 for i in range(len(response)):
                     if response[i].role == ASSISTANT:
                         response[i].name = selected_agent_name
@@ -87,14 +76,12 @@ class Router(Assistant):
             return message
 
         if isinstance(message['content'], str):
-            message['content'] = 'Call: ' + message[
-                'name'] + '\nReply:' + message['content']
+            message['content'] = 'Call: ' + message['name'] + '\nReply:' + message['content']
             return message
         assert isinstance(message['content'], list)
         for i, item in enumerate(message['content']):
             for k, v in item.model_dump().items():
                 if k == 'text':
-                    message['content'][i][k] = 'Call: ' + message[
-                        'name'] + '\nReply:' + message['content'][i][k]
+                    message['content'][i][k] = 'Call: ' + message['name'] + '\nReply:' + message['content'][i][k]
                     break
         return message

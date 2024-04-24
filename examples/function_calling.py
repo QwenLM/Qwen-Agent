@@ -10,23 +10,11 @@ from qwen_agent.llm import get_chat_model
 def get_current_weather(location, unit='fahrenheit'):
     """Get the current weather in a given location"""
     if 'tokyo' in location.lower():
-        return json.dumps({
-            'location': 'Tokyo',
-            'temperature': '10',
-            'unit': 'celsius'
-        })
+        return json.dumps({'location': 'Tokyo', 'temperature': '10', 'unit': 'celsius'})
     elif 'san francisco' in location.lower():
-        return json.dumps({
-            'location': 'San Francisco',
-            'temperature': '72',
-            'unit': 'fahrenheit'
-        })
+        return json.dumps({'location': 'San Francisco', 'temperature': '72', 'unit': 'fahrenheit'})
     elif 'paris' in location.lower():
-        return json.dumps({
-            'location': 'Paris',
-            'temperature': '22',
-            'unit': 'celsius'
-        })
+        return json.dumps({'location': 'Paris', 'temperature': '22', 'unit': 'celsius'})
     else:
         return json.dumps({'location': location, 'temperature': 'unknown'})
 
@@ -50,10 +38,7 @@ def test():
     })
 
     # Step 1: send the conversation and available functions to the model
-    messages = [{
-        'role': 'user',
-        'content': "What's the weather like in San Francisco?"
-    }]
+    messages = [{'role': 'user', 'content': "What's the weather like in San Francisco?"}]
     functions = [{
         'name': 'get_current_weather',
         'description': 'Get the current weather in a given location',
@@ -62,8 +47,7 @@ def test():
             'properties': {
                 'location': {
                     'type': 'string',
-                    'description':
-                    'The city and state, e.g. San Francisco, CA',
+                    'description': 'The city and state, e.g. San Francisco, CA',
                 },
                 'unit': {
                     'type': 'string',
@@ -76,9 +60,7 @@ def test():
 
     print('# Assistant Response 1:')
     responses = []
-    for responses in llm.chat(messages=messages,
-                              functions=functions,
-                              stream=True):
+    for responses in llm.chat(messages=messages, functions=functions, stream=True):
         print(responses)
 
     messages.extend(responses)  # extend conversation with assistant's reply

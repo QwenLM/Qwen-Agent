@@ -34,14 +34,7 @@ def app():
         if not file:
             messages.append({'role': 'user', 'content': query})
         else:
-            messages.append({
-                'role': 'user',
-                'content': [{
-                    'text': query
-                }, {
-                    'file': file
-                }]
-            })
+            messages.append({'role': 'user', 'content': [{'text': query}, {'file': file}]})
 
         response = []
         for response in bot.run(messages):
@@ -49,9 +42,7 @@ def app():
         messages.extend(response)
 
 
-def test(query='请用image_gen开始创作！',
-         file: Optional[str] = os.path.join(ROOT_RESOURCE,
-                                            'growing_girl.pdf')):
+def test(query='请用image_gen开始创作！', file: Optional[str] = os.path.join(ROOT_RESOURCE, 'growing_girl.pdf')):
     # Define the agent
     bot = init_agent_service()
 
@@ -61,14 +52,7 @@ def test(query='请用image_gen开始创作！',
     if not file:
         messages.append({'role': 'user', 'content': query})
     else:
-        messages.append({
-            'role': 'user',
-            'content': [{
-                'text': query
-            }, {
-                'file': file
-            }]
-        })
+        messages.append({'role': 'user', 'content': [{'text': query}, {'file': file}]})
 
     for response in bot.run(messages):
         print('bot response:', response)

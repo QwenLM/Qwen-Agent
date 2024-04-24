@@ -24,23 +24,18 @@ from jupyter_client import BlockingKernelClient
 
 from qwen_agent.log import logger
 from qwen_agent.tools.base import BaseTool, register_tool
-from qwen_agent.utils.utils import (extract_code, print_traceback,
-                                    save_url_to_local_work_dir)
+from qwen_agent.utils.utils import extract_code, print_traceback, save_url_to_local_work_dir
 
-WORK_DIR = os.getenv('M6_CODE_INTERPRETER_WORK_DIR',
-                     os.getcwd() + '/workspace/ci_workspace/')
+WORK_DIR = os.getenv('M6_CODE_INTERPRETER_WORK_DIR', os.getcwd() + '/workspace/ci_workspace/')
 
 
 def _fix_secure_write_for_code_interpreter():
     if 'linux' in sys.platform.lower():
         os.makedirs(WORK_DIR, exist_ok=True)
-        fname = os.path.join(WORK_DIR,
-                             f'test_file_permission_{os.getpid()}.txt')
+        fname = os.path.join(WORK_DIR, f'test_file_permission_{os.getpid()}.txt')
         if os.path.exists(fname):
             os.remove(fname)
-        with os.fdopen(
-                os.open(fname, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o0600),
-                'w') as f:
+        with os.fdopen(os.open(fname, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o0600), 'w') as f:
             f.write('test')
         file_mode = stat.S_IMODE(os.stat(fname).st_mode) & 0o6677
         if file_mode != 0o0600:
@@ -56,21 +51,16 @@ from ipykernel import kernelapp as app
 app.launch_new_instance()
 """
 
-INIT_CODE_FILE = str(
-    Path(__file__).absolute().parent / 'resource' /
-    'code_interpreter_init_kernel.py')
+INIT_CODE_FILE = str(Path(__file__).absolute().parent / 'resource' / 'code_interpreter_init_kernel.py')
 
-ALIB_FONT_FILE = str(
-    Path(__file__).absolute().parent / 'resource' /
-    'AlibabaPuHuiTi-3-45-Light.ttf')
+ALIB_FONT_FILE = str(Path(__file__).absolute().parent / 'resource' / 'AlibabaPuHuiTi-3-45-Light.ttf')
 
 _KERNEL_CLIENTS: Dict[int, BlockingKernelClient] = {}
 _MISC_SUBPROCESSES: Dict[str, subprocess.Popen] = {}
 
 
 def _start_kernel(pid) -> BlockingKernelClient:
-    connection_file = os.path.join(WORK_DIR,
-                                   f'kernel_connection_file_{pid}.json')
+    connection_file = os.path.join(WORK_DIR, f'kernel_connection_file_{pid}.json')
     launch_kernel_script = os.path.join(WORK_DIR, f'launch_kernel_{pid}.py')
     for f in [connection_file, launch_kernel_script]:
         if os.path.exists(f):
@@ -146,8 +136,7 @@ def _serve_image(image_base64: str) -> str:
     bytes_io = io.BytesIO(png_bytes)
     PIL.Image.open(bytes_io).save(local_image_file, 'png')
 
-    static_url = os.getenv('M6_CODE_INTERPRETER_STATIC_URL',
-                           'http://127.0.0.1:7865/static')
+    static_url = os.getenv('M6_CODE_INTERPRETER_STATIC_URL', 'http://127.0.0.1:7865/static')
 
     # Hotfix: Temporarily generate image URL proxies for code interpreter to display in gradio
     # Todo: Generate real url
@@ -155,11 +144,8 @@ def _serve_image(image_base64: str) -> str:
         if 'image_service' not in _MISC_SUBPROCESSES:
             try:
                 # run a fastapi server for image show in gradio demo by http://127.0.0.1:7865/figure_name
-                _MISC_SUBPROCESSES['image_service'] = subprocess.Popen([
-                    'python',
-                    Path(__file__).absolute().parent / 'resource' /
-                    'image_service.py'
-                ])
+                _MISC_SUBPROCESSES['image_service'] = subprocess.Popen(
+                    ['python', Path(__file__).absolute().parent / 'resource' / 'image_service.py'])
             except Exception:
                 print_traceback()
 
@@ -175,15 +161,12 @@ def _escape_ansi(line: str) -> str:
 
 def _fix_matplotlib_cjk_font_issue():
     ttf_name = os.path.basename(ALIB_FONT_FILE)
-    local_ttf = os.path.join(
-        os.path.abspath(
-            os.path.join(matplotlib.matplotlib_fname(), os.path.pardir)),
-        'fonts', 'ttf', ttf_name)
+    local_ttf = os.path.join(os.path.abspath(os.path.join(matplotlib.matplotlib_fname(), os.path.pardir)), 'fonts',
+                             'ttf', ttf_name)
     if not os.path.exists(local_ttf):
         try:
             shutil.copy(ALIB_FONT_FILE, local_ttf)
-            font_list_cache = os.path.join(matplotlib.get_cachedir(),
-                                           'fontlist-*.json')
+            font_list_cache = os.path.join(matplotlib.get_cachedir(), 'fontlist-*.json')
             for cache_file in glob.glob(font_list_cache):
                 with open(cache_file) as fin:
                     cache_content = fin.read()
@@ -251,23 +234,14 @@ def _execute_code(kc: BlockingKernelClient, code: str) -> str:
 @register_tool('code_interpreter')
 class CodeInterpreter(BaseTool):
     description = 'Python代码沙盒，可用于执行Python代码。'
-    parameters = [{
-        'name': 'code',
-        'type': 'string',
-        'description': '待执行的代码',
-        'required': True
-    }]
+    parameters = [{'name': 'code', 'type': 'string', 'description': '待执行的代码', 'required': True}]
 
     def __init__(self, cfg: Optional[Dict] = None):
         self.args_format = '此工具的输入应为Markdown代码块。'
         super().__init__(cfg)
         self.file_access = True
 
-    def call(self,
-             params: Union[str, dict],
-             files: List[str] = None,
-             timeout: Optional[int] = 30,
-             **kwargs) -> str:
+    def call(self, params: Union[str, dict], files: List[str] = None, timeout: Optional[int] = 30, **kwargs) -> str:
         try:
             params = json5.loads(params)
             code = params['code']
@@ -293,8 +267,7 @@ class CodeInterpreter(BaseTool):
             kc = _start_kernel(pid)
             with open(INIT_CODE_FILE) as fin:
                 start_code = fin.read()
-                start_code = start_code.replace('{{M6_FONT_PATH}}',
-                                                repr(ALIB_FONT_FILE)[1:-1])
+                start_code = start_code.replace('{{M6_FONT_PATH}}', repr(ALIB_FONT_FILE)[1:-1])
             logger.info(_execute_code(kc, start_code))
             _KERNEL_CLIENTS[pid] = kc
 
@@ -305,8 +278,7 @@ class CodeInterpreter(BaseTool):
         for line in code.split('\n'):
             fixed_code.append(line)
             if line.startswith('sns.set_theme('):
-                fixed_code.append(
-                    'plt.rcParams["font.family"] = _m6_font_prop.get_name()')
+                fixed_code.append('plt.rcParams["font.family"] = _m6_font_prop.get_name()')
         fixed_code = '\n'.join(fixed_code)
         fixed_code += '\n\n'  # Prevent code not executing in notebook due to no line breaks at the end
         result = _execute_code(kc, fixed_code)
@@ -322,8 +294,7 @@ class CodeInterpreter(BaseTool):
 # Ref: https://www.tornadoweb.org/en/stable/_modules/tornado/platform/asyncio.html#AnyThreadEventLoopPolicy
 #
 
-if sys.platform == 'win32' and hasattr(asyncio,
-                                       'WindowsSelectorEventLoopPolicy'):
+if sys.platform == 'win32' and hasattr(asyncio, 'WindowsSelectorEventLoopPolicy'):
     _BasePolicy = asyncio.WindowsSelectorEventLoopPolicy  # type: ignore
 else:
     _BasePolicy = asyncio.DefaultEventLoopPolicy

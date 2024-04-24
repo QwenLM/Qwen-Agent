@@ -42,11 +42,9 @@ def test_react_chat_with_file():
             [
                 ContentItem(
                     text=  # noqa
-                    'pd.head the file first and then help me draw a line chart to show the changes in stock prices'
-                ),
-                ContentItem(file=str(
-                    Path(__file__).resolve().parent.parent.parent /
-                    'examples/resource/stock_prices.csv'))
+                    'pd.head the file first and then help me draw a line chart to show the changes in stock prices'),
+                ContentItem(
+                    file=str(Path(__file__).resolve().parent.parent.parent / 'examples/resource/stock_prices.csv'))
             ])
     ]
 

@@ -5,8 +5,7 @@ import json5
 
 from qwen_agent import Agent
 from qwen_agent.llm import BaseChatModel
-from qwen_agent.llm.schema import (ASSISTANT, DEFAULT_SYSTEM_MESSAGE, USER,
-                                   Message)
+from qwen_agent.llm.schema import ASSISTANT, DEFAULT_SYSTEM_MESSAGE, USER, Message
 from qwen_agent.log import logger
 from qwen_agent.prompts import GenKeyword
 from qwen_agent.tools import BaseTool
@@ -20,15 +19,12 @@ class Memory(Agent):
     """
 
     def __init__(self,
-                 function_list: Optional[List[Union[str, Dict,
-                                                    BaseTool]]] = None,
+                 function_list: Optional[List[Union[str, Dict, BaseTool]]] = None,
                  llm: Optional[Union[Dict, BaseChatModel]] = None,
                  system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
                  files: Optional[List[str]] = None):
         function_list = function_list or []
-        super().__init__(function_list=['retrieval'] + function_list,
-                         llm=llm,
-                         system_message=system_message)
+        super().__init__(function_list=['retrieval'] + function_list, llm=llm, system_message=system_message)
 
         self.keygen = GenKeyword(llm=llm)
 
@@ -59,9 +55,7 @@ class Memory(Agent):
         files = self.system_files + session_files
         rag_files = []
         for file in files:
-            if (file.split('.')[-1].lower() in [
-                    'pdf', 'docx', 'pptx'
-            ]) or get_file_type(file) == 'html':
+            if (file.split('.')[-1].lower() in ['pdf', 'docx', 'pptx']) or get_file_type(file) == 'html':
                 rag_files.append(file)
 
         if not rag_files:

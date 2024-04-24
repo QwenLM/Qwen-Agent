@@ -34,8 +34,7 @@ PROMPT_TEMPLATE = {
 class GroupChatAutoRouter(Agent):
 
     def __init__(self,
-                 function_list: Optional[List[Union[str, Dict,
-                                                    BaseTool]]] = None,
+                 function_list: Optional[List[Union[str, Dict, BaseTool]]] = None,
                  llm: Optional[Union[Dict, BaseChatModel]] = None,
                  agents: List[Agent] = None,
                  name: Optional[str] = None,
@@ -46,9 +45,8 @@ class GroupChatAutoRouter(Agent):
         lang = 'en'
         if has_chinese_chars(agent_descs):
             lang = 'zh'
-        system_prompt = PROMPT_TEMPLATE[lang].format(
-            agent_descs=agent_descs,
-            agent_names=', '.join([x.name for x in agents]))
+        system_prompt = PROMPT_TEMPLATE[lang].format(agent_descs=agent_descs,
+                                                     agent_names=', '.join([x.name for x in agents]))
 
         super().__init__(function_list=function_list,
                          llm=llm,
@@ -57,18 +55,14 @@ class GroupChatAutoRouter(Agent):
                          description=description,
                          **kwargs)
 
-    def _run(self,
-             messages: List[Message],
-             lang: str = 'en',
-             **kwargs) -> Iterator[List[Message]]:
+    def _run(self, messages: List[Message], lang: str = 'en', **kwargs) -> Iterator[List[Message]]:
 
         dialogue = []
         for msg in messages:
             if msg.role == 'function' or not msg.content:
                 continue
             if isinstance(msg.content, list):
-                content = '\n'.join(
-                    [x.text if x.text else '' for x in msg.content]).strip()
+                content = '\n'.join([x.text if x.text else '' for x in msg.content]).strip()
             else:
                 content = msg.content.strip()
             display_name = msg.role

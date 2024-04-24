@@ -27,8 +27,7 @@ def test_assistant_files():
         Message('user', [
             ContentItem(text='总结一个文章标题'),
             ContentItem(
-                file='https://help.aliyun.com/zh/dashscope/developer-reference/api-details?disableWebsiteRedirect=true'
-            )
+                file='https://help.aliyun.com/zh/dashscope/developer-reference/api-details?disableWebsiteRedirect=true')
         ])
     ]
 
@@ -46,10 +45,8 @@ def test_assistant_vl():
             'user',
             [
                 ContentItem(text='用一句话描述图片'),
-                ContentItem(
-                    image=  # NOQA
-                    'https://img01.sc115.com/uploads/sc/jpgs/1505/apic11540_sc115.com.jpg'
-                )
+                ContentItem(image=  # NOQA
+                            'https://img01.sc115.com/uploads/sc/jpgs/1505/apic11540_sc115.com.jpg')
             ])
     ]
 

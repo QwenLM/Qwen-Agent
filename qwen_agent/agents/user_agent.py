@@ -14,6 +14,4 @@ class UserAgent(Assistant):
              max_ref_token: int = 4000,
              **kwargs) -> Iterator[List[Message]]:
 
-        yield [
-            Message(role='user', content=PENDING_USER_INPUT, name=self.name)
-        ]
+        yield [Message(role='user', content=PENDING_USER_INPUT, name=self.name)]

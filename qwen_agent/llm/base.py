@@ -5,11 +5,9 @@ from abc import ABC, abstractmethod
 from typing import Dict, Iterator, List, Optional, Union
 
 from qwen_agent.utils.tokenization_qwen import tokenizer
-from qwen_agent.utils.utils import (get_basename_from_url, has_chinese_chars,
-                                    is_image, print_traceback)
+from qwen_agent.utils.utils import get_basename_from_url, has_chinese_chars, is_image, print_traceback
 
-from .schema import (ASSISTANT, DEFAULT_SYSTEM_MESSAGE, FUNCTION, SYSTEM, USER,
-                     ContentItem, Message)
+from .schema import ASSISTANT, DEFAULT_SYSTEM_MESSAGE, FUNCTION, SYSTEM, USER, ContentItem, Message
 
 LLM_REGISTRY = {}
 
@@ -54,8 +52,7 @@ class BaseChatModel(ABC):
         functions: Optional[List[Dict]] = None,
         stream: bool = True,
         delta_stream: bool = False,
-    ) -> Union[List[Message], List[Dict], Iterator[List[Message]],
-               Iterator[List[Dict]]]:
+    ) -> Union[List[Message], List[Dict], Iterator[List[Message]], Iterator[List[Dict]]]:
         """LLM chat interface.
 
         Args:
@@ -82,8 +79,7 @@ class BaseChatModel(ABC):
         messages = new_messages
 
         if messages[0].role != SYSTEM:
-            messages = [Message(role=SYSTEM, content=DEFAULT_SYSTEM_MESSAGE)
-                        ] + messages
+            messages = [Message(role=SYSTEM, content=DEFAULT_SYSTEM_MESSAGE)] + messages
 
         messages = self._preprocess_messages(messages)
 
@@ -111,22 +107,16 @@ class BaseChatModel(ABC):
             # No retry for delta streaming
             output = _call_model_service()
         elif stream and (not delta_stream):
-            output = retry_model_service_iterator(_call_model_service,
-                                                  max_retries=self.max_retries)
+            output = retry_model_service_iterator(_call_model_service, max_retries=self.max_retries)
         else:
-            output = retry_model_service(_call_model_service,
-                                         max_retries=self.max_retries)
+            output = retry_model_service(_call_model_service, max_retries=self.max_retries)
 
         if isinstance(output, list):
-            output = self._postprocess_messages(output,
-                                                fncall_mode=fncall_mode)
-            return self._convert_messages_to_target_type(
-                output, _return_message_type)
+            output = self._postprocess_messages(output, fncall_mode=fncall_mode)
+            return self._convert_messages_to_target_type(output, _return_message_type)
         else:
-            output = self._postprocess_messages_iterator(
-                output, fncall_mode=fncall_mode)
-            return self._convert_messages_iterator_to_target_type(
-                output, _return_message_type)
+            output = self._postprocess_messages_iterator(output, fncall_mode=fncall_mode)
+            return self._convert_messages_iterator_to_target_type(output, _return_message_type)
 
     def _chat(
         self,
@@ -140,13 +130,11 @@ class BaseChatModel(ABC):
             return self._chat_no_stream(messages)
 
     @abstractmethod
-    def _chat_with_functions(
-        self,
-        messages: List[Union[Message, Dict]],
-        functions: List[Dict],
-        stream: bool = True,
-        delta_stream: bool = False
-    ) -> Union[List[Message], Iterator[List[Message]]]:
+    def _chat_with_functions(self,
+                             messages: List[Union[Message, Dict]],
+                             functions: List[Dict],
+                             stream: bool = True,
+                             delta_stream: bool = False) -> Union[List[Message], Iterator[List[Message]]]:
         raise NotImplementedError
 
     @abstractmethod
@@ -168,8 +156,7 @@ class BaseChatModel(ABC):
         messages = self._format_as_multimodal_messages(messages)
         return messages
 
-    def _postprocess_messages(self, messages: List[Message],
-                              fncall_mode: bool) -> List[Message]:
+    def _postprocess_messages(self, messages: List[Message], fncall_mode: bool) -> List[Message]:
         messages = self._format_as_multimodal_messages(messages)
         messages = self._postprocess_stop_words(messages)
         return messages
@@ -184,29 +171,22 @@ class BaseChatModel(ABC):
             if m:
                 yield m
 
-    def _convert_messages_to_target_type(
-            self, messages: List[Message],
-            target_type: str) -> Union[List[Message], List[Dict]]:
+    def _convert_messages_to_target_type(self, messages: List[Message],
+                                         target_type: str) -> Union[List[Message], List[Dict]]:
         if target_type == 'message':
-            return [
-                Message(**x) if isinstance(x, dict) else x for x in messages
-            ]
+            return [Message(**x) if isinstance(x, dict) else x for x in messages]
         elif target_type == 'dict':
-            return [
-                x.model_dump() if not isinstance(x, dict) else x
-                for x in messages
-            ]
+            return [x.model_dump() if not isinstance(x, dict) else x for x in messages]
         else:
             raise NotImplementedError
 
     def _convert_messages_iterator_to_target_type(
-        self, messages_iter: Iterator[List[Message]], target_type: str
-    ) -> Union[Iterator[List[Message]], Iterator[List[Dict]]]:
+            self, messages_iter: Iterator[List[Message]],
+            target_type: str) -> Union[Iterator[List[Message]], Iterator[List[Dict]]]:
         for messages in messages_iter:
             yield self._convert_messages_to_target_type(messages, target_type)
 
-    def _format_as_multimodal_messages(
-            self, messages: List[Message]) -> List[Message]:
+    def _format_as_multimodal_messages(self, messages: List[Message]) -> List[Message]:
 
         multimodal_messages = []
         for msg in messages:
@@ -259,8 +239,7 @@ class BaseChatModel(ABC):
 
         return multimodal_messages
 
-    def _postprocess_stop_words(self,
-                                messages: List[Message]) -> List[Message]:
+    def _postprocess_stop_words(self, messages: List[Message]) -> List[Message]:
         messages = copy.deepcopy(messages)
         stop = self.generate_cfg.get('stop', [])
 
@@ -272,8 +251,7 @@ class BaseChatModel(ABC):
             for i, item in enumerate(msg.content):
                 item_type, item_text = item.get_type_and_value()
                 if item_type == 'text':
-                    truncated, item.text = _truncate_at_stop_word(
-                        text=item_text, stop=stop)
+                    truncated, item.text = _truncate_at_stop_word(text=item_text, stop=stop)
                 trunc_content.append(item)
                 if truncated:
                     break
@@ -344,8 +322,7 @@ def retry_model_service(
             print_traceback(is_error=False)
 
             if num_retries >= max_retries:
-                raise ModelServiceError(exception=Exception(
-                    f'Maximum number of retries ({max_retries}) exceeded.'))
+                raise ModelServiceError(exception=Exception(f'Maximum number of retries ({max_retries}) exceeded.'))
 
             num_retries += 1
             delay *= exponential_base * (1.0 + random.random())
@@ -385,8 +362,7 @@ def retry_model_service_iterator(
             print_traceback(is_error=False)
 
             if num_retries >= max_retries:
-                raise ModelServiceError(exception=Exception(
-                    f'Maximum number of retries ({max_retries}) exceeded.'))
+                raise ModelServiceError(exception=Exception(f'Maximum number of retries ({max_retries}) exceeded.'))
 
             num_retries += 1
             delay *= exponential_base * (1.0 + random.random())

@@ -56,11 +56,9 @@ class TextChatAtOAI(BaseTextChatModel):
                 self.generate_cfg['extra_body'] = {}
                 for k in extra_params:
                     if k in self.generate_cfg:
-                        self.generate_cfg['extra_body'][
-                            k] = self.generate_cfg.pop(k)
+                        self.generate_cfg['extra_body'][k] = self.generate_cfg.pop(k)
             if 'request_timeout' in self.generate_cfg:
-                self.generate_cfg['timeout'] = self.generate_cfg.pop(
-                    'request_timeout')
+                self.generate_cfg['timeout'] = self.generate_cfg.pop('request_timeout')
 
             def _chat_complete_create(*args, **kwargs):
                 client = openai.OpenAI(**api_kwargs)
@@ -76,22 +74,15 @@ class TextChatAtOAI(BaseTextChatModel):
         messages = [msg.model_dump() for msg in messages]
         logger.debug(f'*{pformat(messages, indent=2)}*')
         try:
-            response = self._chat_complete_create(model=self.model,
-                                                  messages=messages,
-                                                  stream=True,
-                                                  **self.generate_cfg)
+            response = self._chat_complete_create(model=self.model, messages=messages, stream=True, **self.generate_cfg)
             if delta_stream:
                 for chunk in response:
-                    if hasattr(chunk.choices[0].delta,
-                               'content') and chunk.choices[0].delta.content:
-                        yield [
-                            Message(ASSISTANT, chunk.choices[0].delta.content)
-                        ]
+                    if hasattr(chunk.choices[0].delta, 'content') and chunk.choices[0].delta.content:
+                        yield [Message(ASSISTANT, chunk.choices[0].delta.content)]
             else:
                 full_response = ''
                 for chunk in response:
-                    if hasattr(chunk.choices[0].delta,
-                               'content') and chunk.choices[0].delta.content:
+                    if hasattr(chunk.choices[0].delta, 'content') and chunk.choices[0].delta.content:
                         full_response += chunk.choices[0].delta.content
                         yield [Message(ASSISTANT, full_response)]
         except OpenAIError as ex:

@@ -42,12 +42,8 @@ class Assistant(FnCallAgent):
              max_ref_token: int = 4000,
              **kwargs) -> Iterator[List[Message]]:
 
-        new_messages = self._prepend_knowledge_prompt(messages, lang,
-                                                      max_ref_token, **kwargs)
-        return super()._run(messages=new_messages,
-                            lang=lang,
-                            max_ref_token=max_ref_token,
-                            **kwargs)
+        new_messages = self._prepend_knowledge_prompt(messages, lang, max_ref_token, **kwargs)
+        return super()._run(messages=new_messages, lang=lang, max_ref_token=max_ref_token, **kwargs)
 
     def _prepend_knowledge_prompt(self,
                                   messages: List[Message],
@@ -59,29 +55,22 @@ class Assistant(FnCallAgent):
         *_, last = self.mem.run(messages=messages, max_ref_token=max_ref_token, lang=lang, **kwargs)
         knowledge = last[-1][CONTENT]
 
-        logger.debug(
-            f'Retrieved knowledge of type `{type(knowledge).__name__}`:\n{knowledge}'
-        )
+        logger.debug(f'Retrieved knowledge of type `{type(knowledge).__name__}`:\n{knowledge}')
         if knowledge:
             knowledge = format_knowledge_to_source_and_content(knowledge)
-            logger.debug(
-                f'Formatted knowledge into type `{type(knowledge).__name__}`:\n{knowledge}'
-            )
+            logger.debug(f'Formatted knowledge into type `{type(knowledge).__name__}`:\n{knowledge}')
         else:
             knowledge = []
         snippets = []
         for k in knowledge:
-            snippets.append(KNOWLEDGE_SNIPPET[lang].format(
-                source=k['source'], content=k['content']))
+            snippets.append(KNOWLEDGE_SNIPPET[lang].format(source=k['source'], content=k['content']))
         knowledge_prompt = ''
         if snippets:
-            knowledge_prompt = KNOWLEDGE_TEMPLATE[lang].format(
-                knowledge='\n\n'.join(snippets))
+            knowledge_prompt = KNOWLEDGE_TEMPLATE[lang].format(knowledge='\n\n'.join(snippets))
 
         if knowledge_prompt:
             if messages[0][ROLE] == SYSTEM:
                 messages[0][CONTENT] += knowledge_prompt
             else:
-                messages = [Message(role=SYSTEM, content=knowledge_prompt)
-                            ] + messages
+                messages = [Message(role=SYSTEM, content=knowledge_prompt)] + messages
         return messages

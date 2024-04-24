@@ -23,10 +23,7 @@ def test_function_content(cfg):
         })
 
     # Step 1: send the conversation and available functions to the model
-    messages = [{
-        'role': 'user',
-        'content': "What's the weather like in San Francisco?"
-    }]
+    messages = [{'role': 'user', 'content': "What's the weather like in San Francisco?"}]
     functions = [{
         'name': 'get_current_weather',
         'description': 'Get the current weather in a given location',
@@ -35,8 +32,7 @@ def test_function_content(cfg):
             'properties': {
                 'location': {
                     'type': 'string',
-                    'description':
-                    'The city and state, e.g. San Francisco, CA',
+                    'description': 'The city and state, e.g. San Francisco, CA',
                 },
                 'unit': {
                     'type': 'string',
@@ -49,9 +45,7 @@ def test_function_content(cfg):
 
     print('# Assistant Response 1:')
     responses = []
-    for responses in llm.chat(messages=messages,
-                              functions=functions,
-                              stream=True):
+    for responses in llm.chat(messages=messages, functions=functions, stream=True):
         print(responses)
 
     messages.extend(responses)  # extend conversation with assistant's reply

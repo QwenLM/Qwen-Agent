@@ -7,20 +7,16 @@ from qwen_agent.tools.base import BaseTool, register_tool
 from qwen_agent.utils.utils import get_basename_from_url, print_traceback
 
 from .doc_parser import DocParser, FileTypeNotImplError
-from .similarity_search import (RefMaterialInput, RefMaterialInputItem,
-                                SimilaritySearch)
+from .similarity_search import RefMaterialInput, RefMaterialInputItem, SimilaritySearch
 
 
 def format_records(records: List[Dict]):
     formatted_records = []
     for record in records:
         formatted_records.append(
-            RefMaterialInput(url=get_basename_from_url(record['url']),
-                             text=[
-                                 RefMaterialInputItem(
-                                     content=x['page_content'],
-                                     token=x['token']) for x in record['raw']
-                             ]))
+            RefMaterialInput(
+                url=get_basename_from_url(record['url']),
+                text=[RefMaterialInputItem(content=x['page_content'], token=x['token']) for x in record['raw']]))
     return formatted_records
 
 
@@ -46,10 +42,7 @@ class Retrieval(BaseTool):
         self.doc_parse = DocParser()
         self.search = SimilaritySearch()
 
-    def call(self,
-             params: Union[str, dict],
-             ignore_cache: bool = False,
-             max_token: int = 4000) -> list:
+    def call(self, params: Union[str, dict], ignore_cache: bool = False, max_token: int = 4000) -> list:
         """RAG tool.
 
         Step1: Parse and save files
@@ -71,8 +64,7 @@ class Retrieval(BaseTool):
         records = []
         for file in files:
             try:
-                _record = self.doc_parse.call(params={'url': file},
-                                              ignore_cache=ignore_cache)
+                _record = self.doc_parse.call(params={'url': file}, ignore_cache=ignore_cache)
                 records.append(_record)
             except FileTypeNotImplError:
                 logger.warning(
@@ -88,16 +80,11 @@ class Retrieval(BaseTool):
         else:
             return records
 
-    def _retrieve_content(self,
-                          query: str,
-                          records: List[RefMaterialInput],
-                          max_token=4000) -> List[Dict]:
+    def _retrieve_content(self, query: str, records: List[RefMaterialInput], max_token=4000) -> List[Dict]:
         single_max_token = int(max_token / len(records))
         _ref_list = []
         for record in records:
             # Retrieval for query
-            now_ref_list = self.search.call(params={'query': query},
-                                            doc=record,
-                                            max_token=single_max_token)
+            now_ref_list = self.search.call(params={'query': query}, doc=record, max_token=single_max_token)
             _ref_list.append(now_ref_list)
         return _ref_list

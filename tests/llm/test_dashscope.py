@@ -34,19 +34,14 @@ def test_vl_mix_text(functions, stream, delta_stream):
     # Chat with vl llm
     llm_vl = get_chat_model(llm_cfg_vl)
     messages = [{
-        'role':
-        'user',
+        'role': 'user',
         'content': [{
             'text': '框出太阳'
         }, {
-            'image':
-            'https://img01.sc115.com/uploads/sc/jpgs/1505/apic11540_sc115.com.jpg'
+            'image': 'https://img01.sc115.com/uploads/sc/jpgs/1505/apic11540_sc115.com.jpg'
         }]
     }]
-    response = llm_vl.chat(messages=messages,
-                           functions=None,
-                           stream=stream,
-                           delta_stream=delta_stream)
+    response = llm_vl.chat(messages=messages, functions=None, stream=stream, delta_stream=delta_stream)
     if stream:
         response = list(response)[-1]
 
@@ -69,10 +64,7 @@ def test_llm_dashscope(functions, stream, delta_stream):
     # Chat with text llm
     llm = get_chat_model(llm_cfg)
     messages = [Message('user', 'draw a cute cat')]
-    response = llm.chat(messages=messages,
-                        functions=functions,
-                        stream=stream,
-                        delta_stream=delta_stream)
+    response = llm.chat(messages=messages, functions=functions, stream=stream, delta_stream=delta_stream)
     if stream:
         response = list(response)[-1]
     assert isinstance(response[-1]['content'], str)
@@ -85,21 +77,13 @@ def test_llm_dashscope(functions, stream, delta_stream):
 @pytest.mark.parametrize('stream', [True, False])
 @pytest.mark.parametrize('delta_stream', [True, False])
 def test_llm_retry_failure(stream, delta_stream):
-    llm_cfg = {
-        'model': 'qwen-turbo',
-        'api_key': 'invalid',
-        'generate_cfg': {
-            'max_retries': 3
-        }
-    }
+    llm_cfg = {'model': 'qwen-turbo', 'api_key': 'invalid', 'generate_cfg': {'max_retries': 3}}
 
     llm = get_chat_model(llm_cfg)
     assert llm.max_retries == 3
 
     messages = [Message('user', 'hello')]
     with pytest.raises(ModelServiceError):
-        response = llm.chat(messages=messages,
-                            stream=stream,
-                            delta_stream=delta_stream)
+        response = llm.chat(messages=messages, stream=stream, delta_stream=delta_stream)
         if stream:
             list(response)

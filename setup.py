@@ -35,12 +35,11 @@ setup(
     long_description=read_description(),
     long_description_content_type='text/markdown',
     keywords=['LLM', 'Agent', 'Function Calling', 'RAG', 'Code Interpreter'],
-    packages=find_packages(
-        exclude=['examples', 'examples.*', 'qwen_server', 'qwen_server.*']),
+    packages=find_packages(exclude=['examples', 'examples.*', 'qwen_server', 'qwen_server.*']),
     package_data={
         'qwen_agent': [
-            'utils/qwen.tiktoken', 'tools/resource/*.ttf',
-            'tools/resource/*.py', 'gui/assets/*.css', 'gui/assets/*.jpeg'
+            'utils/qwen.tiktoken', 'tools/resource/*.ttf', 'tools/resource/*.py', 'gui/assets/*.css',
+            'gui/assets/*.jpeg'
         ],
     },
     install_requires=read_requirements(),

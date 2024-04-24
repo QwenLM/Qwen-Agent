@@ -18,14 +18,9 @@ def is_roman_numeral(s):
 
 class WriteFromScratch(Agent):
 
-    def _run(self,
-             messages: List[Message],
-             knowledge: str = '',
-             lang: str = 'en') -> Iterator[List[Message]]:
+    def _run(self, messages: List[Message], knowledge: str = '', lang: str = 'en') -> Iterator[List[Message]]:
 
-        response = [
-            Message(ASSISTANT, f'>\n> Use Default plans: \n{default_plan}')
-        ]
+        response = [Message(ASSISTANT, f'>\n> Use Default plans: \n{default_plan}')]
         yield response
         res_plans = json5.loads(default_plan)
 
@@ -34,8 +29,7 @@ class WriteFromScratch(Agent):
         for plan_id in sorted(res_plans.keys()):
             plan = res_plans[plan_id]
             if plan == 'summarize':
-                response.append(
-                    Message(ASSISTANT, '>\n> Summarize Browse Content: \n'))
+                response.append(Message(ASSISTANT, '>\n> Summarize Browse Content: \n'))
                 yield response
 
                 if lang == 'zh':
@@ -45,9 +39,7 @@ class WriteFromScratch(Agent):
                 else:
                     raise NotImplementedError
                 sum_agent = DocQA(llm=self.llm)
-                res_sum = sum_agent.run(messages=[Message(USER, user_request)],
-                                        knowledge=knowledge,
-                                        lang=lang)
+                res_sum = sum_agent.run(messages=[Message(USER, user_request)], knowledge=knowledge, lang=lang)
                 trunk = None
                 for trunk in res_sum:
                     yield response + trunk
@@ -55,14 +47,11 @@ class WriteFromScratch(Agent):
                     response.extend(trunk)
                     summ = trunk[-1][CONTENT]
             elif plan == 'outline':
-                response.append(Message(ASSISTANT,
-                                        '>\n> Generate Outline: \n'))
+                response.append(Message(ASSISTANT, '>\n> Generate Outline: \n'))
                 yield response
 
                 otl_agent = OutlineWriting(llm=self.llm)
-                res_otl = otl_agent.run(messages=messages,
-                                        knowledge=summ,
-                                        lang=lang)
+                res_otl = otl_agent.run(messages=messages, knowledge=summ, lang=lang)
                 trunk = None
                 for trunk in res_otl:
                     yield response + trunk

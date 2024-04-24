@@ -55,8 +55,7 @@ assert ANSWER_TOKEN in ROLE_CREATE_SYSTEM
 class GroupChatCreator(Agent):
 
     def __init__(self,
-                 function_list: Optional[List[Union[str, Dict,
-                                                    BaseTool]]] = None,
+                 function_list: Optional[List[Union[str, Dict, BaseTool]]] = None,
                  llm: Optional[Union[Dict, BaseChatModel]] = None,
                  name: Optional[str] = None,
                  description: Optional[str] = None,
@@ -93,8 +92,7 @@ class GroupChatCreator(Agent):
                 else:
                     content.append(f'{ANSWER_TOKEN}: {message.content}')
                     assert new_messages[-1].role == 'user'
-                    new_messages.append(
-                        Message('assistant', '\n'.join(content)))
+                    new_messages.append(Message('assistant', '\n'.join(content)))
                     content = []
         return new_messages
 
@@ -102,25 +100,20 @@ class GroupChatCreator(Agent):
         new_messages = []
         assert len(messages) == 1
         message = messages[-1]
-        background, cfgs, answer = self._extract_role_config_and_answer(
-            message.content)
+        background, cfgs, answer = self._extract_role_config_and_answer(message.content)
         if background:
-            new_messages.append(
-                Message(message.role, background, name='background'))
+            new_messages.append(Message(message.role, background, name='background'))
         if cfgs:
             for cfg in cfgs:
-                new_messages.append(
-                    Message(message.role, cfg, name='role_config'))
+                new_messages.append(Message(message.role, cfg, name='role_config'))
 
         new_messages.append(Message(message.role, answer, name=message.name))
         return new_messages
 
-    def _extract_role_config_and_answer(
-            self, text: str) -> Tuple[str, List[str], str]:
+    def _extract_role_config_and_answer(self, text: str) -> Tuple[str, List[str], str]:
         background, cfgs, answer = '', [], ''
-        back_pos, cfg_pos, ans_pos = text.find(
-            f'{BACKGROUND_TOKEN}: '), text.find(
-                f'{CONFIG_TOKEN}: '), text.find(f'{ANSWER_TOKEN}: ')
+        back_pos, cfg_pos, ans_pos = text.find(f'{BACKGROUND_TOKEN}: '), text.find(f'{CONFIG_TOKEN}: '), text.find(
+            f'{ANSWER_TOKEN}: ')
 
         if ans_pos > -1:
             answer = text[ans_pos + len(f'{ANSWER_TOKEN}: '):]
@@ -129,11 +122,9 @@ class GroupChatCreator(Agent):
 
         if back_pos > -1:
             if cfg_pos > back_pos:
-                background = text[back_pos +
-                                  len(f'{BACKGROUND_TOKEN}: '):cfg_pos]
+                background = text[back_pos + len(f'{BACKGROUND_TOKEN}: '):cfg_pos]
             else:
-                background = text[back_pos +
-                                  len(f'{BACKGROUND_TOKEN}: '):ans_pos]
+                background = text[back_pos + len(f'{BACKGROUND_TOKEN}: '):ans_pos]
         text = text[:ans_pos]
 
         tmp = text.split(f'{CONFIG_TOKEN}: ')

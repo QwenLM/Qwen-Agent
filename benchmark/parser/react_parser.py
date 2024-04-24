@@ -38,9 +38,7 @@ class ReActParser(object):
         return target
 
     def get_first_observation(self, text):
-        return self._extract_first_target(text, self.observation,
-                                          self.observation_stop)
+        return self._extract_first_target(text, self.observation, self.observation_stop)
 
     def get_first_action_input(self, text):
-        return self._extract_first_target(text, self.action_input,
-                                          self.action_input_stop)
+        return self._extract_first_target(text, self.action_input, self.action_input_stop)

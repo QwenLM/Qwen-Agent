@@ -38,14 +38,7 @@ def app():
         if not file:
             messages.append({'role': 'user', 'content': query})
         else:
-            messages.append({
-                'role': 'user',
-                'content': [{
-                    'text': query
-                }, {
-                    'file': file
-                }]
-            })
+            messages.append({'role': 'user', 'content': [{'text': query}, {'file': file}]})
 
         response = []
         for response in bot.run(messages):
@@ -56,8 +49,7 @@ def app():
 def test(
     query:  # noqa
     str = 'pd.head the file first and then help me draw a line chart to show the changes in stock prices',
-    file: Optional[str] = os.path.join(ROOT_RESOURCE,
-                                       'stock_prices.csv')):  # noqa
+    file: Optional[str] = os.path.join(ROOT_RESOURCE, 'stock_prices.csv')):  # noqa
     # Define the agent
     bot = init_agent_service()
 
@@ -67,14 +59,7 @@ def test(
     if not file:
         messages.append({'role': 'user', 'content': query})
     else:
-        messages.append({
-            'role': 'user',
-            'content': [{
-                'text': query
-            }, {
-                'file': file
-            }]
-        })
+        messages.append({'role': 'user', 'content': [{'text': query}, {'file': file}]})
 
     for response in bot.run(messages):
         print('bot response:', response)

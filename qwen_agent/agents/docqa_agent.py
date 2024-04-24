@@ -11,8 +11,7 @@ class DocQAAgent(Assistant):
     """This is an agent for doc QA."""
 
     def __init__(self,
-                 function_list: Optional[List[Union[str, Dict,
-                                                    BaseTool]]] = None,
+                 function_list: Optional[List[Union[str, Dict, BaseTool]]] = None,
                  llm: Optional[Union[Dict, BaseChatModel]] = None,
                  system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
                  name: Optional[str] = None,
@@ -34,14 +33,10 @@ class DocQAAgent(Assistant):
              **kwargs) -> Iterator[List[Message]]:
 
         # Need to use Memory agent for data management
-        *_, last = self.mem.run(messages=messages,
-                                max_ref_token=max_ref_token,
-                                **kwargs)
+        *_, last = self.mem.run(messages=messages, max_ref_token=max_ref_token, **kwargs)
         _ref = last[-1][CONTENT]
 
         # Use RetrievalQA agent
-        response = self.doc_qa.run(messages=messages,
-                                   lang=lang,
-                                   knowledge=_ref)
+        response = self.doc_qa.run(messages=messages, lang=lang, knowledge=_ref)
 
         return response

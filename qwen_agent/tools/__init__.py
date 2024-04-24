@@ -17,6 +17,6 @@ def call_tool(plugin_name: str, plugin_args: str) -> str:
 
 
 __all__ = [
-    'BaseTool', 'CodeInterpreter', 'ImageGen', 'AmapWeather', 'TOOL_REGISTRY',
-    'DocParser', 'SimilaritySearch', 'Storage', 'Retrieval', 'WebExtractor'
+    'BaseTool', 'CodeInterpreter', 'ImageGen', 'AmapWeather', 'TOOL_REGISTRY', 'DocParser', 'SimilaritySearch',
+    'Storage', 'Retrieval', 'WebExtractor'
 ]

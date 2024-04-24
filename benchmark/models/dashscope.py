@@ -10,8 +10,7 @@ class QwenDashscopeVLModel(object):
 
     def __init__(self, model, api_key):
         self.model = model
-        dashscope.api_key = api_key.strip() or os.getenv('DASHSCOPE_API_KEY',
-                                                         default='')
+        dashscope.api_key = api_key.strip() or os.getenv('DASHSCOPE_API_KEY', default='')
         assert dashscope.api_key, 'DASHSCOPE_API_KEY is required.'
 
     def generate(self, prompt, stop_words=[]):

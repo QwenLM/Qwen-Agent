@@ -19,8 +19,7 @@ from qwen_agent.log import logger
 from qwen_agent.memory import Memory
 from qwen_agent.utils.utils import get_local_ip, hash_sha256, save_text_to_file
 from qwen_server.schema import GlobalConfig
-from qwen_server.utils import (rm_browsing_meta_data, save_browsing_meta_data,
-                               save_history)
+from qwen_server.utils import rm_browsing_meta_data, save_browsing_meta_data, save_history
 
 # Read config
 with open(Path(__file__).resolve().parent / 'server_config.json', 'r') as f:
@@ -37,8 +36,7 @@ origins = [
     'http://127.0.0.1:' + str(server_config.server.workstation_port),
     'http://localhost:' + str(server_config.server.workstation_port),
     'http://0.0.0.0:' + str(server_config.server.workstation_port),
-    'http://' + get_local_ip() + ':' +
-    str(server_config.server.workstation_port),
+    'http://' + get_local_ip() + ':' + str(server_config.server.workstation_port),
 ]
 
 app.add_middleware(
@@ -49,12 +47,9 @@ app.add_middleware(
     allow_headers=['*'],
 )
 
-app.mount('/static',
-          StaticFiles(directory=server_config.path.code_interpreter_ws),
-          name='static')
+app.mount('/static', StaticFiles(directory=server_config.path.code_interpreter_ws), name='static')
 
-cache_file_popup_url = os.path.join(server_config.path.work_space_root,
-                                    'popup_url.jsonl')
+cache_file_popup_url = os.path.join(server_config.path.work_space_root, 'popup_url.jsonl')
 meta_file = os.path.join(server_config.path.work_space_root, 'meta_data.jsonl')
 history_dir = os.path.join(server_config.path.work_space_root, 'history')
 
@@ -95,13 +90,7 @@ def cache_page(**kwargs):
         # rm history
         save_history(None, url, history_dir)
     try:
-        *_, last = mem.run([{
-            'role': 'user',
-            'content': [{
-                'file': url
-            }]
-        }],
-                           ignore_cache=True)
+        *_, last = mem.run([{'role': 'user', 'content': [{'file': url}]}], ignore_cache=True)
         data = last[-1]['content']
         if isinstance(data, str):
             data = json5.loads(data)

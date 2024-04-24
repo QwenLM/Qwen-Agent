@@ -26,11 +26,7 @@ PROMPT_TEMPLATE = {
 
 class DocQA(Agent):
 
-    def _run(self,
-             messages: List[Message],
-             knowledge: str = '',
-             lang: str = 'en',
-             **kwargs) -> Iterator[List[Message]]:
+    def _run(self, messages: List[Message], knowledge: str = '', lang: str = 'en', **kwargs) -> Iterator[List[Message]]:
         messages = copy.deepcopy(messages)
         system_prompt = PROMPT_TEMPLATE[lang].format(ref_doc=knowledge)
         if messages[0][ROLE] == SYSTEM:

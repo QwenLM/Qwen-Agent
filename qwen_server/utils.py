@@ -70,8 +70,7 @@ def read_meta_data_by_condition(meta_file: str, **kwargs):
 
 def save_history(history, url, history_dir):
     history = history or []
-    history_file = os.path.join(history_dir,
-                                get_basename_from_url(url) + '.json')
+    history_file = os.path.join(history_dir, get_basename_from_url(url) + '.json')
     if not os.path.exists(history_dir):
         os.makedirs(history_dir)
     with open(history_file, 'w', encoding='utf-8') as file:
@@ -79,8 +78,7 @@ def save_history(history, url, history_dir):
 
 
 def read_history(url, history_dir):
-    history_file = os.path.join(history_dir,
-                                get_basename_from_url(url) + '.json')
+    history_file = os.path.join(history_dir, get_basename_from_url(url) + '.json')
     if os.path.exists(history_file):
         with open(history_file, 'r', encoding='utf-8') as file:
             data = json.load(file)

@@ -54,8 +54,7 @@ class GenKeyword(Agent):
 
     # TODO: Adding a stop word is not conveient! We should fix this later.
     def __init__(self,
-                 function_list: Optional[List[Union[str, Dict,
-                                                    BaseTool]]] = None,
+                 function_list: Optional[List[Union[str, Dict, BaseTool]]] = None,
                  llm: Optional[Union[Dict, BaseChatModel]] = None,
                  system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
                  **kwargs):
@@ -65,16 +64,10 @@ class GenKeyword(Agent):
                 llm = get_chat_model(llm)
             stop = llm.generate_cfg.get('stop', [])
             key_stop = ['Observation:', 'Observation:\n']
-            llm.generate_cfg['stop'] = stop + [
-                x for x in key_stop if x not in stop
-            ]
+            llm.generate_cfg['stop'] = stop + [x for x in key_stop if x not in stop]
         super().__init__(function_list, llm, system_message, **kwargs)
 
-    def _run(self,
-             messages: List[Message],
-             lang: str = 'en',
-             **kwargs) -> Iterator[List[Message]]:
+    def _run(self, messages: List[Message], lang: str = 'en', **kwargs) -> Iterator[List[Message]]:
         messages = copy.deepcopy(messages)
-        messages[-1][CONTENT] = PROMPT_TEMPLATE[lang].format(
-            user_request=messages[-1][CONTENT])
+        messages[-1][CONTENT] = PROMPT_TEMPLATE[lang].format(user_request=messages[-1][CONTENT])
         return self._call_llm(messages)

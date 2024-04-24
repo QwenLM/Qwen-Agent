@@ -27,12 +27,11 @@ def test():
     llm_vl = get_chat_model(llm_cfg_vl)
     messages = [{
         'role':
-        'user',
+            'user',
         'content': [{
             'text': '框出太阳并描述'
         }, {
-            'image':
-            'https://img01.sc115.com/uploads/sc/jpgs/1505/apic11540_sc115.com.jpg'
+            'image': 'https://img01.sc115.com/uploads/sc/jpgs/1505/apic11540_sc115.com.jpg'
         }]
     }]
     response = llm_vl.chat(messages, stream=True)
@@ -62,12 +61,9 @@ def test():
 
     # Simulation function call results
     messages.append({
-        'role':
-        'function',
-        'name':
-        'image_gen',
-        'content':
-        '![fig-001](https://seopic.699pic.com/photo/60098/4947.jpg_wh1200.jpg)'
+        'role': 'function',
+        'name': 'image_gen',
+        'content': '![fig-001](https://seopic.699pic.com/photo/60098/4947.jpg_wh1200.jpg)'
     })
     response = llm.chat(messages, functions=functions, stream=True)
     for x in response:
@@ -76,13 +72,11 @@ def test():
 
     # Chat with vl llm
     messages.append({
-        'role':
-        'user',
+        'role': 'user',
         'content': [{
             'text': '可以描述下这张图片吗？'
         }, {
-            'image':
-            'https://seopic.699pic.com/photo/60098/4947.jpg_wh1200.jpg'
+            'image': 'https://seopic.699pic.com/photo/60098/4947.jpg_wh1200.jpg'
         }]
     })
     response = llm_vl.chat(messages, stream=True)

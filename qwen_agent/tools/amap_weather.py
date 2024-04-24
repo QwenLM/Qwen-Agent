@@ -23,8 +23,7 @@ class AmapWeather(BaseTool):
         # remote call
         self.url = 'https://restapi.amap.com/v3/weather/weatherInfo?city={city}&key={key}'
         self.city_df = pd.read_excel(
-            'https://modelscope.oss-cn-beijing.aliyuncs.com/resource/agent/AMap_adcode_citycode.xlsx'
-        )
+            'https://modelscope.oss-cn-beijing.aliyuncs.com/resource/agent/AMap_adcode_citycode.xlsx')
 
         self.token = self.cfg.get('token', os.environ.get('AMAP_TOKEN', ''))
         assert self.token != '', 'weather api token must be acquired through ' \
@@ -33,9 +32,7 @@ class AmapWeather(BaseTool):
     def get_city_adcode(self, city_name):
         filtered_df = self.city_df[self.city_df['中文名'] == city_name]
         if len(filtered_df['adcode'].values) == 0:
-            raise ValueError(
-                f'location {city_name} not found, availables are {self.city_df["中文名"]}'
-            )
+            raise ValueError(f'location {city_name} not found, availables are {self.city_df["中文名"]}')
         else:
             return filtered_df['adcode'].values[0]
 
@@ -43,9 +40,7 @@ class AmapWeather(BaseTool):
         params = self._verify_json_format_args(params)
 
         location = params['location']
-        response = requests.get(
-            self.url.format(city=self.get_city_adcode(location),
-                            key=self.token))
+        response = requests.get(self.url.format(city=self.get_city_adcode(location), key=self.token))
         data = response.json()
         if data['status'] == '0':
             raise RuntimeError(data)

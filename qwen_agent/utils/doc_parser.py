@@ -89,8 +89,7 @@ def split_text_to_trunk(content: str, path: str, title: str = ''):
     if all_pages == 0:
         all_pages = 1
     len_content = len(content)
-    len_one_page = int(len_content /
-                       all_pages)  # Approximately equal to ONE_PAGE_TOKEN
+    len_one_page = int(len_content / all_pages)  # Approximately equal to ONE_PAGE_TOKEN
 
     res = []
     for i in range(0, len_content, len_one_page):

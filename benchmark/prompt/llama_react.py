@@ -11,8 +11,7 @@ class LlamaReAct(ReAct):
         planning_prompt = '[INST] ' + planning_prompt + ' [/INST]'
 
         if '<|im_end|>' in self.query:
-            planning_prompt = planning_prompt.replace(
-                '<|im_end|>\n<|im_start|>assistant', ' [/INST] ')
+            planning_prompt = planning_prompt.replace('<|im_end|>\n<|im_start|>assistant', ' [/INST] ')
             assert planning_prompt.endswith(' [/INST]')
             planning_prompt = planning_prompt[:-len(' [/INST]')]
 

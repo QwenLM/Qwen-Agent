@@ -13,16 +13,13 @@ class BaseTextChatModel(BaseFnCallModel, ABC):
         messages = format_as_text_messages(messages)
         return messages
 
-    def _postprocess_messages(self, messages: List[Message],
-                              fncall_mode: bool) -> List[Message]:
-        messages = super()._postprocess_messages(messages,
-                                                 fncall_mode=fncall_mode)
+    def _postprocess_messages(self, messages: List[Message], fncall_mode: bool) -> List[Message]:
+        messages = super()._postprocess_messages(messages, fncall_mode=fncall_mode)
         messages = format_as_text_messages(messages)
         return messages
 
 
-def format_as_text_messages(
-        multimodal_messages: List[Message]) -> List[Message]:
+def format_as_text_messages(multimodal_messages: List[Message]) -> List[Message]:
     text_messages = []
     for msg in multimodal_messages:
         assert msg.role in (USER, ASSISTANT, SYSTEM, FUNCTION)

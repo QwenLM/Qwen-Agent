@@ -34,8 +34,7 @@ def test_llm_oai(functions, stream, delta_stream):
     # settings
     llm_cfg = {
         'model': os.getenv('TEST_MODEL', 'Qwen/Qwen1.5-14B-Chat'),
-        'model_server': os.getenv('TEST_MODEL_SERVER',
-                                  'https://api.together.xyz'),
+        'model_server': os.getenv('TEST_MODEL_SERVER', 'https://api.together.xyz'),
         'api_key': os.getenv('TEST_MODEL_SERVER_API_KEY', 'none')
     }
 
@@ -43,10 +42,7 @@ def test_llm_oai(functions, stream, delta_stream):
     assert llm.max_retries == 0
 
     messages = [Message('user', 'draw a cute cat')]
-    response = llm.chat(messages=messages,
-                        functions=functions,
-                        stream=stream,
-                        delta_stream=delta_stream)
+    response = llm.chat(messages=messages, functions=functions, stream=stream, delta_stream=delta_stream)
     if stream:
         response = list(response)[-1]
 

@@ -57,20 +57,15 @@ class QwenChatAtDS(BaseTextChatModel):
             stream=False,
             **self.generate_cfg)
         if response.status_code == HTTPStatus.OK:
-            return [
-                Message(ASSISTANT, response.output.choices[0].message.content)
-            ]
+            return [Message(ASSISTANT, response.output.choices[0].message.content)]
         else:
-            raise ModelServiceError(code=response.code,
-                                    message=response.message)
+            raise ModelServiceError(code=response.code, message=response.message)
 
-    def _chat_with_functions(
-        self,
-        messages: List[Message],
-        functions: List[Dict],
-        stream: bool = True,
-        delta_stream: bool = False
-    ) -> Union[List[Message], Iterator[List[Message]]]:
+    def _chat_with_functions(self,
+                             messages: List[Message],
+                             functions: List[Dict],
+                             stream: bool = True,
+                             delta_stream: bool = False) -> Union[List[Message], Iterator[List[Message]]]:
         if delta_stream:
             raise NotImplementedError
 
@@ -95,12 +90,9 @@ class QwenChatAtDS(BaseTextChatModel):
                                              use_raw_prompt=True,
                                              **self.generate_cfg)
         if response.status_code == HTTPStatus.OK:
-            return [
-                Message(ASSISTANT, response.output.choices[0].message.content)
-            ]
+            return [Message(ASSISTANT, response.output.choices[0].message.content)]
         else:
-            raise ModelServiceError(code=response.code,
-                                    message=response.message)
+            raise ModelServiceError(code=response.code, message=response.message)
 
     def _text_completion_stream(
         self,
@@ -171,8 +163,6 @@ class QwenChatAtDS(BaseTextChatModel):
     def _full_stream_output(response) -> Iterator[List[Message]]:
         for trunk in response:
             if trunk.status_code == HTTPStatus.OK:
-                yield [
-                    Message(ASSISTANT, trunk.output.choices[0].message.content)
-                ]
+                yield [Message(ASSISTANT, trunk.output.choices[0].message.content)]
             else:
                 raise ModelServiceError(code=trunk.code, message=trunk.message)

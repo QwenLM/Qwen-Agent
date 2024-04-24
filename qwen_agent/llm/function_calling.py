@@ -3,8 +3,7 @@ from abc import ABC
 from typing import Dict, Iterator, List, Optional, Union
 
 from qwen_agent.llm.base import BaseChatModel
-from qwen_agent.llm.schema import (ASSISTANT, FUNCTION, SYSTEM, USER,
-                                   ContentItem, FunctionCall, Message)
+from qwen_agent.llm.schema import ASSISTANT, FUNCTION, SYSTEM, USER, ContentItem, FunctionCall, Message
 from qwen_agent.utils.utils import get_function_description, has_chinese_chars
 
 
@@ -13,17 +12,13 @@ class BaseFnCallModel(BaseChatModel, ABC):
     def __init__(self, cfg: Optional[Dict] = None):
         super().__init__(cfg)
         stop = self.generate_cfg.get('stop', [])
-        self.generate_cfg['stop'] = stop + [
-            x for x in FN_STOP_WORDS if x not in stop
-        ]
+        self.generate_cfg['stop'] = stop + [x for x in FN_STOP_WORDS if x not in stop]
 
-    def _chat_with_functions(
-        self,
-        messages: List[Union[Message, Dict]],
-        functions: List[Dict],
-        stream: bool = True,
-        delta_stream: bool = False
-    ) -> Union[List[Message], Iterator[List[Message]]]:
+    def _chat_with_functions(self,
+                             messages: List[Union[Message, Dict]],
+                             functions: List[Dict],
+                             stream: bool = True,
+                             delta_stream: bool = False) -> Union[List[Message], Iterator[List[Message]]]:
         if delta_stream:
             raise NotImplementedError
 
@@ -52,29 +47,22 @@ class BaseFnCallModel(BaseChatModel, ABC):
         messages = self._preprocess_fncall_messages(messages)
         return messages
 
-    def _postprocess_messages(self, messages: List[Message],
-                              fncall_mode: bool) -> List[Message]:
-        messages = super()._postprocess_messages(messages,
-                                                 fncall_mode=fncall_mode)
+    def _postprocess_messages(self, messages: List[Message], fncall_mode: bool) -> List[Message]:
+        messages = super()._postprocess_messages(messages, fncall_mode=fncall_mode)
         if fncall_mode:
             messages = self._postprocess_fncall_messages(messages)
         return messages
 
-    def _prepend_fncall_system(self, messages: List[Message],
-                               functions: List[Dict]) -> List[Message]:
+    def _prepend_fncall_system(self, messages: List[Message], functions: List[Dict]) -> List[Message]:
         tool_desc_template = FN_CALL_TEMPLATE['en']
         for message in messages[::-1]:
-            if message.role in (USER, ):
+            if message.role in (USER,):
                 if has_chinese_chars(message.content):
                     tool_desc_template = FN_CALL_TEMPLATE['zh']
                 break
-        tool_descs = '\n\n'.join(
-            get_function_description(function) for function in functions)
-        tool_names = ','.join(
-            function.get('name', function.get('name_for_model', ''))
-            for function in functions)
-        tool_system = tool_desc_template.format(tool_descs=tool_descs,
-                                                tool_names=tool_names)
+        tool_descs = '\n\n'.join(get_function_description(function) for function in functions)
+        tool_names = ','.join(function.get('name', function.get('name_for_model', '')) for function in functions)
+        tool_system = tool_desc_template.format(tool_descs=tool_descs, tool_names=tool_names)
 
         assert messages[0].role == SYSTEM
         messages = copy.deepcopy(messages[:1]) + messages[1:]
@@ -85,8 +73,7 @@ class BaseFnCallModel(BaseChatModel, ABC):
 
         return messages
 
-    def _preprocess_fncall_messages(self,
-                                    messages: List[Message]) -> List[Message]:
+    def _preprocess_fncall_messages(self, messages: List[Message]) -> List[Message]:
         """Convert messages with function_call key and function role to assistant's content, which is
             for chat interface or text_completion interface that do not support functions.
         """
@@ -121,9 +108,7 @@ class BaseFnCallModel(BaseChatModel, ABC):
                     assert f_result is not None
                 else:
                     f_result = ''
-                new_messages[-1].content += [
-                    ContentItem(text=f'\n{FN_RESULT}: {f_result}\n{FN_EXIT}: ')
-                ]
+                new_messages[-1].content += [ContentItem(text=f'\n{FN_RESULT}: {f_result}\n{FN_EXIT}: ')]
             else:
                 raise TypeError
 
@@ -139,10 +124,7 @@ class BaseFnCallModel(BaseChatModel, ABC):
                     break
         return new_messages
 
-    def _postprocess_fncall_messages(
-            self,
-            messages: List[Message],
-            stop_at_fncall: bool = True) -> List[Message]:
+    def _postprocess_fncall_messages(self, messages: List[Message], stop_at_fncall: bool = True) -> List[Message]:
         """
         If the model calls function by built-in function call template,
         convert and display it in function_call format.
@@ -191,11 +173,10 @@ class BaseFnCallModel(BaseChatModel, ABC):
                     if show_text:
                         new_content.append(ContentItem(text=show_text))
                     if new_content:
-                        new_messages.append(
-                            Message(
-                                role=role,
-                                content=new_content,
-                            ))  # split thought and function call
+                        new_messages.append(Message(
+                            role=role,
+                            content=new_content,
+                        ))  # split thought and function call
                         new_content = []
                     item_text = item_text[i:]
 
@@ -235,9 +216,7 @@ class BaseFnCallModel(BaseChatModel, ABC):
                         # Discard the text after the first function_call
                         return new_messages
 
-                    if (
-                            result and result[1:]
-                    ) or answer:  # result[1:] == '' is possible and allowed
+                    if (result and result[1:]) or answer:  # result[1:] == '' is possible and allowed
                         # rm the ' ' after ':'
                         show_text = remove_special_tokens(result[1:])
                         new_messages.append(
@@ -251,11 +230,10 @@ class BaseFnCallModel(BaseChatModel, ABC):
                         # rm the ' ' after ':'
                         show_text = remove_special_tokens(answer[1:])
                         if show_text:
-                            new_messages.append(
-                                Message(
-                                    role=ASSISTANT,
-                                    content=[ContentItem(text=show_text)],
-                                ))
+                            new_messages.append(Message(
+                                role=ASSISTANT,
+                                content=[ContentItem(text=show_text)],
+                            ))
             if new_content:
                 new_messages.append(Message(role=role, content=new_content))
 

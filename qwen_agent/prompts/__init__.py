@@ -6,6 +6,4 @@ from .expand_writing import ExpandWriting
 from .gen_keyword import GenKeyword
 from .outline_writing import OutlineWriting
 
-__all__ = [
-    'DocQA', 'ContinueWriting', 'OutlineWriting', 'ExpandWriting', 'GenKeyword'
-]
+__all__ = ['DocQA', 'ContinueWriting', 'OutlineWriting', 'ExpandWriting', 'GenKeyword']

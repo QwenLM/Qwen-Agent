@@ -9,8 +9,7 @@ from qwen_server.utils import read_meta_data_by_condition
 
 
 def test_database_server():
-    server_config_path = Path(__file__).resolve(
-    ).parent.parent.parent / 'qwen_server/server_config.json'
+    server_config_path = Path(__file__).resolve().parent.parent.parent / 'qwen_server/server_config.json'
     with open(server_config_path, 'r') as f:
         server_config = json.load(f)
         server_config = GlobalConfig(**server_config)
@@ -26,18 +25,16 @@ def test_database_server():
 
     data = {
         'url':
-        'https://github.com/QwenLM/Qwen-Agent',
+            'https://github.com/QwenLM/Qwen-Agent',
         'content':
-        '<p>Qwen-Agent is a framework for developing LLM applications based on the instruction following, tool usage, planning, and memory capabilities of Qwen. </p>'
+            '<p>Qwen-Agent is a framework for developing LLM applications based on the instruction following, tool usage, planning, and memory capabilities of Qwen. </p>'
     }
     cache_page(**data)
 
-    new_url = os.path.join(server_config.path.download_root,
-                           hash_sha256(data['url']))
+    new_url = os.path.join(server_config.path.download_root, hash_sha256(data['url']))
     assert os.path.exists(new_url)
 
-    meta_file = os.path.join(server_config.path.work_space_root,
-                             'meta_data.jsonl')
+    meta_file = os.path.join(server_config.path.work_space_root, 'meta_data.jsonl')
     assert os.path.exists(meta_file)
     res = read_meta_data_by_condition(meta_file, url=new_url)
     assert isinstance(res, dict)
@@ -45,6 +42,5 @@ def test_database_server():
 
     # pop up
     update_pop_url(new_url)
-    cache_file_popup_url = os.path.join(server_config.path.work_space_root,
-                                        'popup_url.jsonl')
+    cache_file_popup_url = os.path.join(server_config.path.work_space_root, 'popup_url.jsonl')
     assert os.path.exists(cache_file_popup_url)

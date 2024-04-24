@@ -18,9 +18,7 @@ def test_memory():
         Message('user', [
             ContentItem(text='总结'),
             ContentItem(file='https://github.com/QwenLM/Qwen-Agent'),
-            ContentItem(file=str(
-                Path(__file__).resolve().parent.parent.parent /
-                'examples/resource/growing_girl.pdf'))
+            ContentItem(file=str(Path(__file__).resolve().parent.parent.parent / 'examples/resource/growing_girl.pdf'))
         ])
     ]
     *_, last = mem.run(messages)

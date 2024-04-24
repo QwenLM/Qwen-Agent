@@ -20,16 +20,12 @@ class ArticleAgent(Assistant):
              **kwargs) -> Iterator[List[Message]]:
 
         # Need to use Memory agent for data management
-        *_, last = self.mem.run(messages=messages,
-                                max_ref_token=max_ref_token,
-                                **kwargs)
+        *_, last = self.mem.run(messages=messages, max_ref_token=max_ref_token, **kwargs)
         _ref = last[-1][CONTENT]
 
         response = []
         if _ref:
-            response.append(
-                Message(ASSISTANT,
-                        f'>\n> Search for relevant information: \n{_ref}\n'))
+            response.append(Message(ASSISTANT, f'>\n> Search for relevant information: \n{_ref}\n'))
             yield response
 
         if full_article:
@@ -39,8 +35,6 @@ class ArticleAgent(Assistant):
             response.append(Message(ASSISTANT, '>\n> Writing Text: \n'))
             yield response
 
-        for trunk in writing_agent.run(messages=messages,
-                                       lang=lang,
-                                       knowledge=_ref):
+        for trunk in writing_agent.run(messages=messages, lang=lang, knowledge=_ref):
             if trunk:
                 yield response + trunk

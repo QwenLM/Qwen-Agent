@@ -18,15 +18,12 @@ class GroupChat(Agent):
     This agent can accept a list of agents, manage their speaking order, and output the response of each agent.
     """
 
-    _VALID_AGENT_SELECTION_METHODS = [
-        'manual', 'round_robin', 'random', 'auto'
-    ]
+    _VALID_AGENT_SELECTION_METHODS = ['manual', 'round_robin', 'random', 'auto']
 
     def __init__(self,
                  agents: Union[List[Agent], Dict],
                  agent_selection_method: Optional[str] = 'auto',
-                 function_list: Optional[List[Union[str, Dict,
-                                                    BaseTool]]] = None,
+                 function_list: Optional[List[Union[str, Dict, BaseTool]]] = None,
                  llm: Optional[Union[Dict, BaseChatModel]] = None,
                  **kwargs):
         """Initialization the agent.
@@ -65,10 +62,7 @@ class GroupChat(Agent):
         assert len(self.agents) > 0
         if self.agent_selection_method == 'auto':
             assert llm is not None, 'Need to provide LLM to the host in auto mode'
-            self.host = GroupChatAutoRouter(function_list=function_list,
-                                            llm=llm,
-                                            agents=self.agents,
-                                            name='host')
+            self.host = GroupChatAutoRouter(function_list=function_list, llm=llm, agents=self.agents, name='host')
 
     def _run(self,
              messages: List[Message] = None,
@@ -88,18 +82,16 @@ class GroupChat(Agent):
                 message.name = message.role
 
         if need_batch_response:
-            return self._gen_batch_response(
-                messages=messages,
-                lang=lang,
-                max_round=max_round,
-                mentioned_agents_name=mentioned_agents_name,
-                **kwargs)
+            return self._gen_batch_response(messages=messages,
+                                            lang=lang,
+                                            max_round=max_round,
+                                            mentioned_agents_name=mentioned_agents_name,
+                                            **kwargs)
         else:
-            return self._gen_one_response(
-                messages=messages,
-                lang=lang,
-                mentioned_agents_name=mentioned_agents_name,
-                **kwargs)
+            return self._gen_one_response(messages=messages,
+                                          lang=lang,
+                                          mentioned_agents_name=mentioned_agents_name,
+                                          **kwargs)
 
     def _gen_batch_response(self,
                             messages: List[Message] = None,
@@ -114,9 +106,7 @@ class GroupChat(Agent):
         response = []
         for i in range(max_round):
             if isinstance(messages[-1].content, list):
-                content = '\n'.join([
-                    x.text if x.text else '' for x in messages[-1].content
-                ]).strip()
+                content = '\n'.join([x.text if x.text else '' for x in messages[-1].content]).strip()
             else:
                 content = messages[-1].content.strip()
             if '@' in content:
@@ -127,11 +117,10 @@ class GroupChat(Agent):
                                 mentioned_agents_name.append(agent.name)
                             break
             rsp = []
-            for rsp in self._gen_one_response(
-                    messages=messages,
-                    lang=lang,
-                    mentioned_agents_name=mentioned_agents_name,
-                    **kwargs):
+            for rsp in self._gen_one_response(messages=messages,
+                                              lang=lang,
+                                              mentioned_agents_name=mentioned_agents_name,
+                                              **kwargs):
                 yield response + rsp
             if not rsp:
                 # The topic ends
@@ -153,8 +142,7 @@ class GroupChat(Agent):
                           mentioned_agents_name: List[str] = None,
                           **kwargs) -> Iterator[List[Message]]:
 
-        selected_agent = self._select_agent(messages, mentioned_agents_name,
-                                            lang)
+        selected_agent = self._select_agent(messages, mentioned_agents_name, lang)
         if selected_agent:
             logger.info(f'selected_agent_name: {selected_agent.name}')
             new_messages = self._manage_messages(messages, selected_agent.name)
@@ -196,9 +184,7 @@ class GroupChat(Agent):
                 if agent_key in agents_map.keys():
                     return agents_map[agent_key]
                 else:
-                    logger.warning(
-                        f'Please select one agent from {str(list(agents_map.keys()))}'
-                    )
+                    logger.warning(f'Please select one agent from {str(list(agents_map.keys()))}')
 
         # round_robin
         if messages:
@@ -211,8 +197,7 @@ class GroupChat(Agent):
             last_agent_index = -1
         return self.agents[(last_agent_index + 1) % len(self.agents)]
 
-    def _manage_messages(self, messages: List[Message],
-                         name: str) -> List[Message]:
+    def _manage_messages(self, messages: List[Message], name: str) -> List[Message]:
         new_messages = []
         new_msg = None
         i = 0
@@ -223,8 +208,7 @@ class GroupChat(Agent):
                     # Have 'user' before 'assistant'
                     new_messages.append(new_msg)
                 if not msg.function_call and (  # noqa
-                    (not new_messages) or
-                    (new_messages[-1].name == name)):  # noqa
+                    (not new_messages) or (new_messages[-1].name == name)):  # noqa
                     new_messages.append(Message('user', f'{name}: '))
 
                 new_msg = copy.deepcopy(msg)
@@ -238,24 +222,20 @@ class GroupChat(Agent):
                     i += 1
             else:
                 if isinstance(msg.content, list):
-                    content = '\n'.join([
-                        x.text if x.text else '' for x in msg.content
-                    ]).strip()
+                    content = '\n'.join([x.text if x.text else '' for x in msg.content]).strip()
                 else:
                     content = msg.content.strip()
 
                 if content.strip():
                     if not new_msg:
-                        new_msg = Message('user',
-                                          f'{msg.name}: {content.strip()}')
+                        new_msg = Message('user', f'{msg.name}: {content.strip()}')
                     else:
                         new_msg.content += f'\n{msg.name}: {content.strip()}'
 
                 if msg.function_call:
                     # Skip the function call msg
                     assert messages[i + 1].role == 'function'
-                    assert messages[i + 2].role == 'assistant' and messages[
-                        i + 2].name == msg.name
+                    assert messages[i + 2].role == 'assistant' and messages[i + 2].name == msg.name
                     i += 1
 
             i += 1
@@ -268,10 +248,7 @@ class GroupChat(Agent):
             new_messages.append(Message('user', f'{name}: '))
         return new_messages
 
-    def _init_agents_from_config(
-            self,
-            cfgs: Dict,
-            llm: Optional[Union[Dict, BaseChatModel]] = None) -> List[Agent]:
+    def _init_agents_from_config(self, cfgs: Dict, llm: Optional[Union[Dict, BaseChatModel]] = None) -> List[Agent]:
 
         def _build_system_from_role_config(config: Dict):
             role_chat_prompt = """你是{name}。{description}\n\n{instructions}"""
@@ -283,9 +260,7 @@ class GroupChat(Agent):
                 description = ''  # redundant, as we already have instructions
             else:
                 description = f'你的简介是：{description}'
-            prompt = role_chat_prompt.format(name=name,
-                                             description=description,
-                                             instructions=instructions)
+            prompt = role_chat_prompt.format(name=name, description=description, instructions=instructions)
 
             knowledge_files = config.get('knowledge_files', [])
             selected_tools = config.get('selected_tools', [])
@@ -297,13 +272,10 @@ class GroupChat(Agent):
             groupchat_background += f'群聊背景为：{cfgs["background"]}'
 
         for cfg in cfgs['agents']:
-            system, knowledge_files, selected_tools = _build_system_from_role_config(
-                cfg)
+            system, knowledge_files, selected_tools = _build_system_from_role_config(cfg)
             if 'is_human' in cfg and cfg['is_human']:
                 # Append human agent
-                agents.append(
-                    UserAgent(name=cfg['name'],
-                              description=cfg['description']))
+                agents.append(UserAgent(name=cfg['name'], description=cfg['description']))
             else:
                 # Create npc agent by config
                 other_agents = []
@@ -311,14 +283,12 @@ class GroupChat(Agent):
                     if x['name'] != cfg['name']:
                         other_agents.append(x['name'])
                 agents.append(
-                    Assistant(
-                        llm=llm,
-                        system_message=groupchat_background + system +
-                        f'\n\n群里其他成员包括：{", ".join(other_agents)}，如果你想和别人对话，可以@成员名字。\n'
-                        +
-                        '\n\n讲话时请直接输出内容，不要输出你的名字。\n\n其他群友的发言历史以如下格式展示：\n角色名: 说话内容',
-                        files=knowledge_files,
-                        function_list=selected_tools,
-                        name=cfg['name'],
-                        description=cfg['description']))
+                    Assistant(llm=llm,
+                              system_message=groupchat_background + system +
+                              f'\n\n群里其他成员包括：{", ".join(other_agents)}，如果你想和别人对话，可以@成员名字。\n' +
+                              '\n\n讲话时请直接输出内容，不要输出你的名字。\n\n其他群友的发言历史以如下格式展示：\n角色名: 说话内容',
+                              files=knowledge_files,
+                              function_list=selected_tools,
+                              name=cfg['name'],
+                              description=cfg['description']))
         return agents

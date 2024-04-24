@@ -29,16 +29,11 @@ def encode_image(image_path):
     return a
 
 
-def judger_model_inference(judger_model_name,
-                           judger_model,
-                           imgs=[],
-                           prompt=''):
+def judger_model_inference(judger_model_name, judger_model, imgs=[], prompt=''):
     output = ''
     if judger_model_name == 'gpt-4-vision-preview':
-        logging.warning(
-            'This is an example of `gpt-4-vision-preview`. '
-            'Please set the API key and use according to your actual situation.'
-        )
+        logging.warning('This is an example of `gpt-4-vision-preview`. '
+                        'Please set the API key and use according to your actual situation.')
         from openai import OpenAI
         client = OpenAI()
         content_list = []
@@ -109,18 +104,14 @@ def check_images_observation(text, images, model_name):
 eval_visual_prompt = {'zh': EVAL_VISUAL_PROMPT_ZH, 'en': EVAL_VISUAL_PROMPT_EN}
 
 
-def eval_visualization_acc(output_fname,
-                           model_name,
-                           judger_model_name='gpt-4-vision-preview'):
+def eval_visualization_acc(output_fname, model_name, judger_model_name='gpt-4-vision-preview'):
     if judger_model_name == 'gpt-4-vision-preview':
         judger_model = None
     elif judger_model_name in ['qwen-vl-chat', 'qwen-vl-plus']:
         if judger_model_name == 'qwen-vl-chat':
-            logging.warning(
-                'In this benchmark of version 20231206, `Qwen-vl-chat` is no longer used as the '
-                'evaluation model for `Visualization` task.. If you insist on using it, '
-                'the evaluation results might differ from the official results.'
-            )
+            logging.warning('In this benchmark of version 20231206, `Qwen-vl-chat` is no longer used as the '
+                            'evaluation model for `Visualization` task.. If you insist on using it, '
+                            'the evaluation results might differ from the official results.')
         judger_model = get_model(judger_model_name)
     else:
         raise Exception('Not supported judger model.')
@@ -143,12 +134,10 @@ def eval_visualization_acc(output_fname,
 
         images = extract_images(item['gen'])
 
-        if images and check_images_observation(item['gen'], images,
-                                               model_name):
+        if images and check_images_observation(item['gen'], images, model_name):
             input_prompt = eval_visual_prompt[item.get('lang', 'en')]
             format_prompt = input_prompt.format(query=prompt)
-            output = judger_model_inference(judger_model_name, judger_model,
-                                            images, format_prompt)
+            output = judger_model_inference(judger_model_name, judger_model, images, format_prompt)
             if 'right' in output.lower():
                 item['vis_acc'] = True
                 if '<|im_end|>' in item['query']:
@@ -159,30 +148,19 @@ def eval_visualization_acc(output_fname,
     logging.info('*' * 60)
     logging.info('{:^60}'.format('Visualization Acc.'))
     logging.info('*' * 60)
-    logging.info(
-        'Visualization-Hard count={}, Visualization-Hard right count={}, Visualization-Hard acc={:.2f}'
-        .format(zero_action, zero_action_right,
-                zero_action_right / zero_action * 100))
-    logging.info(
-        'Visualization-Easy count={}, Visualization-Easy right count={}, Visualization-Easy acc={:.2f}'
-        .format(one_action, one_action_right,
-                one_action_right / one_action * 100))
+    logging.info('Visualization-Hard count={}, Visualization-Hard right count={}, Visualization-Hard acc={:.2f}'.format(
+        zero_action, zero_action_right, zero_action_right / zero_action * 100))
+    logging.info('Visualization-Easy count={}, Visualization-Easy right count={}, Visualization-Easy acc={:.2f}'.format(
+        one_action, one_action_right, one_action_right / one_action * 100))
     logging.info('all count={}, all right={}, all acc={:.2f}'.format(
         zero_action + one_action, zero_action_right + one_action_right,
-        (zero_action_right + one_action_right) / (zero_action + one_action) *
-        100))
+        (zero_action_right + one_action_right) / (zero_action + one_action) * 100))
 
-    visualization_code_correctness[
-        'visualization-hard'] = zero_action_right / zero_action * 100
-    visualization_code_correctness[
-        'visualization-easy'] = one_action_right / one_action * 100
+    visualization_code_correctness['visualization-hard'] = zero_action_right / zero_action * 100
+    visualization_code_correctness['visualization-easy'] = one_action_right / one_action * 100
 
-    error_data_list = [
-        item for item in data_list
-        if 'visualization' in item['tags'] and not item['vis_acc']
-    ]
-    error_data_output_fname = os.path.splitext(
-        output_fname)[0] + '_vis_error.jsonl'
+    error_data_list = [item for item in data_list if 'visualization' in item['tags'] and not item['vis_acc']]
+    error_data_output_fname = os.path.splitext(output_fname)[0] + '_vis_error.jsonl'
     save_jsonl(error_data_list, error_data_output_fname)
 
     return visualization_code_correctness

@@ -49,7 +49,7 @@ def parse_args():
         '--max_ref_token',
         type=int,
         default=4000,
-        help='The number of tokens reserved for the reference materials when doing retrieval-augmanted generation (RAG). Default: 4000',
+        help='Tokens reserved for the reference materials of retrieval-augmanted generation (RAG). Default: 4000',
     )
     parser.add_argument(
         '-w',
@@ -82,8 +82,7 @@ def update_config(server_config, args, server_config_path):
 
 def main():
     args = parse_args()
-    server_config_path = Path(
-        __file__).resolve().parent / 'qwen_server/server_config.json'
+    server_config_path = Path(__file__).resolve().parent / 'qwen_server/server_config.json'
     with open(server_config_path, 'r') as f:
         server_config = json.load(f)
         server_config = GlobalConfig(**server_config)
@@ -94,9 +93,7 @@ def main():
     os.makedirs(server_config.path.download_root, exist_ok=True)
 
     os.makedirs(server_config.path.code_interpreter_ws, exist_ok=True)
-    code_interpreter_work_dir = str(
-        Path(__file__).resolve().parent /
-        server_config.path.code_interpreter_ws)
+    code_interpreter_work_dir = str(Path(__file__).resolve().parent / server_config.path.code_interpreter_ws)
     os.environ['M6_CODE_INTERPRETER_WORK_DIR'] = code_interpreter_work_dir
 
     from qwen_agent.log import logger
@@ -112,20 +109,14 @@ def main():
 
     servers = {
         'database':
-        subprocess.Popen([
-            sys.executable,
-            os.path.join(os.getcwd(), 'qwen_server/database_server.py')
-        ]),
+            subprocess.Popen([sys.executable,
+                              os.path.join(os.getcwd(), 'qwen_server/database_server.py')]),
         'workstation':
-        subprocess.Popen([
-            sys.executable,
-            os.path.join(os.getcwd(), 'qwen_server/workstation_server.py')
-        ]),
+            subprocess.Popen([sys.executable,
+                              os.path.join(os.getcwd(), 'qwen_server/workstation_server.py')]),
         'assistant':
-        subprocess.Popen([
-            sys.executable,
-            os.path.join(os.getcwd(), 'qwen_server/assistant_server.py')
-        ]),
+            subprocess.Popen([sys.executable,
+                              os.path.join(os.getcwd(), 'qwen_server/assistant_server.py')]),
     }
 
     def signal_handler(sig_num, _frame):

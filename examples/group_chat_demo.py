@@ -36,7 +36,7 @@ app_global_para = {
 # Initialized group chat configuration
 CFGS = {
     'background':
-    '一个陌生人互帮互助群聊',
+        '一个陌生人互帮互助群聊',
     'agents': [
         {
             'name': '小塘',
@@ -46,8 +46,7 @@ CFGS = {
         {
             'name': '甄嬛',
             'description': '一位后宫妃嫔',
-            'instructions':
-            '你是甄嬛，你正在想办法除掉皇后，你说话风格为文言文，每次说完话会调image_gen工具画一幅图，展示心情。',
+            'instructions': '你是甄嬛，你正在想办法除掉皇后，你说话风格为文言文，每次说完话会调image_gen工具画一幅图，展示心情。',
             'knowledge_files': [],
             'selected_tools': ['image_gen']
         },
@@ -97,9 +96,7 @@ def app(cfgs):
         content = ''
         if messages:
             if isinstance(messages[-1].content, list):
-                content = '\n'.join([
-                    x.text if x.text else '' for x in messages[-1].content
-                ]).strip()
+                content = '\n'.join([x.text if x.text else '' for x in messages[-1].content]).strip()
             else:
                 content = messages[-1].content.strip()
         if '@' in content:
@@ -114,10 +111,7 @@ def app(cfgs):
         try:
             display_history = _get_display_history_from_message()
             yield display_history
-            for response in bot.run(
-                    messages,
-                    need_batch_response=False,
-                    mentioned_agents_name=mentioned_agents_name):
+            for response in bot.run(messages, need_batch_response=False, mentioned_agents_name=mentioned_agents_name):
                 if response:
                     if response[-1].content == PENDING_USER_INPUT:
                         # Stop printing the special message for mention human
@@ -127,9 +121,7 @@ def app(cfgs):
                         function_display = ''
                         if x.function_call:
                             function_display = f'\nCall Function: {str(x.function_call)}'
-                        incremental_history += [[
-                            None, f'{x.name}: {x.content}{function_display}'
-                        ]]
+                        incremental_history += [[None, f'{x.name}: {x.content}{function_display}']]
                     display_history = _get_display_history_from_message()
                     yield display_history + incremental_history
 
@@ -172,13 +164,11 @@ def app_create(history, now_cfgs):
                     new_cfgs['agents'].append(cfg)
         else:
             new_cfgs = now_cfgs
-        app_global_para['messages_create'].append(
-            Message('user', history[-1][0]))
+        app_global_para['messages_create'].append(Message('user', history[-1][0]))
         response = []
         try:
             agent = init_agent_service_create()
-            for response in agent.run(
-                    messages=app_global_para['messages_create']):
+            for response in agent.run(messages=app_global_para['messages_create']):
                 display_content = ''
                 for rsp in response:
                     if rsp.name == 'role_config':
@@ -201,9 +191,7 @@ def app_create(history, now_cfgs):
                         display_content += f'\n{rsp.content}'
 
                 history[-1][1] = display_content.strip()
-                yield history, json.dumps(new_cfgs,
-                                          indent=4,
-                                          ensure_ascii=False)
+                yield history, json.dumps(new_cfgs, indent=4, ensure_ascii=False)
         except Exception as ex:
             raise ValueError(ex)
 
@@ -215,17 +203,14 @@ def _get_display_history_from_message():
     display_history = []
     for msg in app_global_para['messages']:
         if isinstance(msg.content, list):
-            content = '\n'.join(
-                [x.text if x.text else '' for x in msg.content]).strip()
+            content = '\n'.join([x.text if x.text else '' for x in msg.content]).strip()
         else:
             content = msg.content.strip()
         function_display = ''
         if msg.function_call:
             function_display = f'\nCall Function: {str(msg.function_call)}'
         content = f'{msg.name}: {content}{function_display}'
-        display_history.append((content,
-                                None) if msg.name == 'user' else (None,
-                                                                  content))
+        display_history.append((content, None) if msg.name == 'user' else (None, content))
     return display_history
 
 
@@ -240,13 +225,10 @@ def add_text(text, cfgs):
     app_global_para['user_interrupt'] = True
     content = [ContentItem(text=text)]
     if app_global_para['uploaded_file'] and app_global_para['is_first_upload']:
-        app_global_para[
-            'is_first_upload'] = False  # only send file when first upload
+        app_global_para['is_first_upload'] = False  # only send file when first upload
         content.append(ContentItem(file=app_global_para['uploaded_file']))
     app_global_para['messages'].append(
-        Message('user',
-                content=content,
-                name=get_name_of_current_user(json5.loads(cfgs))))
+        Message('user', content=content, name=get_name_of_current_user(json5.loads(cfgs))))
 
     return _get_display_history_from_message(), None
 
@@ -289,8 +271,7 @@ with gr.Blocks(theme='soft') as demo:
             )
             with gr.Row():
                 with gr.Column(scale=3, min_width=0):
-                    auto_speak_button = gr.Button(
-                        'Randomly select an agent to speak first')
+                    auto_speak_button = gr.Button('Randomly select an agent to speak first')
                     auto_speak_button.click(app, display_config, chatbot)
                 with gr.Column(scale=10):
                     chat_txt = gr.Textbox(
@@ -301,8 +282,7 @@ with gr.Blocks(theme='soft') as demo:
                 with gr.Column(scale=1, min_width=0):
                     chat_clr_bt = gr.Button('Clear')
 
-            chat_txt.submit(add_text, [chat_txt, display_config],
-                            [chatbot, chat_txt],
+            chat_txt.submit(add_text, [chat_txt, display_config], [chatbot, chat_txt],
                             queue=False).then(app, display_config, chatbot)
 
             chat_clr_bt.click(chat_clear, None, [chatbot], queue=False)
@@ -327,17 +307,12 @@ with gr.Blocks(theme='soft') as demo:
                 with gr.Column(scale=1, min_width=0):
                     chat_clr_bt = gr.Button('Clear')
 
-            txt_msg = chat_txt.submit(
-                add_text_create, [chatbot, chat_txt], [chatbot, chat_txt],
-                queue=False).then(app_create, [chatbot, display_config],
-                                  [chatbot, display_config])
-            txt_msg.then(lambda: gr.update(interactive=True),
-                         None, [chat_txt],
-                         queue=False)
+            txt_msg = chat_txt.submit(add_text_create, [chatbot, chat_txt], [chatbot, chat_txt],
+                                      queue=False).then(app_create, [chatbot, display_config],
+                                                        [chatbot, display_config])
+            txt_msg.then(lambda: gr.update(interactive=True), None, [chat_txt], queue=False)
 
-            chat_clr_bt.click(chat_clear_create,
-                              None, [chatbot, chat_txt],
-                              queue=False)
+            chat_clr_bt.click(chat_clear_create, None, [chatbot, chat_txt], queue=False)
         demo.load(chat_clear_create, None, [chatbot, chat_txt], queue=False)
 
 if __name__ == '__main__':

@@ -75,16 +75,14 @@ def save_url_to_local_work_dir(url, base_dir, new_name=''):
     else:
         headers = {
             'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
         }
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
             with open(new_path, 'wb') as file:
                 file.write(response.content)
         else:
-            raise ValueError(
-                'Can not download this file. Please check your network or the file link.'
-            )
+            raise ValueError('Can not download this file. Please check your network or the file link.')
     end_time = datetime.datetime.now()
     logger.info(f'Time: {str(end_time - start_time)}')
     return new_path
@@ -105,8 +103,7 @@ def get_current_date_str(
     if hours_from_utc is None:
         cur_time = datetime.datetime.now()
     else:
-        cur_time = datetime.datetime.utcnow() + datetime.timedelta(
-            hours=hours_from_utc)
+        cur_time = datetime.datetime.utcnow() + datetime.timedelta(hours=hours_from_utc)
     if lang == 'en':
         date_str = 'Current date: ' + cur_time.strftime('%A, %B %d, %Y')
     elif lang == 'zh':
@@ -151,7 +148,7 @@ def get_file_type(path):
     else:
         headers = {
             'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
         }
         response = requests.get(path, headers=headers)
         if response.status_code == 200:
@@ -165,11 +162,9 @@ def get_file_type(path):
 
 
 ignore_words = [
-    '', ' ', '\t', '\n', '\\', 'is', 'are', 'am', 'what', 'how', '的', '吗', '是',
-    '了', '啊', '呢', '怎么', '如何', '什么', '？', '?', '！', '!', '“', '”', '‘', '’',
-    "'", "'", '"', '"', ':', '：', '讲了', '描述', '讲', '说说', '讲讲', '介绍', '总结下',
-    '总结一下', '文档', '文章', '文稿', '稿子', '论文', 'PDF', 'pdf', '这个', '这篇', '这', '我',
-    '帮我', '那个', '下', '翻译'
+    '', ' ', '\t', '\n', '\\', 'is', 'are', 'am', 'what', 'how', '的', '吗', '是', '了', '啊', '呢', '怎么', '如何', '什么', '？',
+    '?', '！', '!', '“', '”', '‘', '’', "'", "'", '"', '"', ':', '：', '讲了', '描述', '讲', '说说', '讲讲', '介绍', '总结下', '总结一下',
+    '文档', '文章', '文稿', '稿子', '论文', 'PDF', 'pdf', '这个', '这篇', '这', '我', '帮我', '那个', '下', '翻译'
 ]
 
 
@@ -279,10 +274,8 @@ def get_function_description(function: Dict) -> str:
     Text description of function
     """
     tool_desc_template = {
-        'zh':
-        '### {name_for_human}\n\n{name_for_model}: {description_for_model} 输入参数：{parameters} {args_format}',
-        'en':
-        '### {name_for_human}\n\n{name_for_model}: {description_for_model} Parameters: {parameters} {args_format}'
+        'zh': '### {name_for_human}\n\n{name_for_model}: {description_for_model} 输入参数：{parameters} {args_format}',
+        'en': '### {name_for_human}\n\n{name_for_model}: {description_for_model} Parameters: {parameters} {args_format}'
     }
     if has_chinese_chars(function):
         tool_desc = tool_desc_template['zh']
@@ -297,13 +290,11 @@ def get_function_description(function: Dict) -> str:
     return tool_desc.format(name_for_human=name_for_human,
                             name_for_model=name_for_model,
                             description_for_model=function['description'],
-                            parameters=json.dumps(function['parameters'],
-                                                  ensure_ascii=False),
+                            parameters=json.dumps(function['parameters'], ensure_ascii=False),
                             args_format=args_format).rstrip()
 
 
-def format_knowledge_to_source_and_content(
-        result: Union[str, List[dict]]) -> List[dict]:
+def format_knowledge_to_source_and_content(result: Union[str, List[dict]]) -> List[dict]:
     knowledge = []
     if isinstance(result, str):
         result = f'{result}'.strip()

@@ -16,20 +16,15 @@ class LLMRiddles(Agent):
         super().__init__(llm=llm)
 
         # Nest one assistant for create questions
-        self.examiner_agent = Assistant(
-            llm=self.llm,
-            system_message=(
-                '请你创造十个比较离谱或小众的短语，长度在10个汉字以内。例如“1+1=3”、“主莫朗玛峰”等反人类直觉的短语，'
-                '尽量类型丰富一些，包含数学、文学、地理、生物等领域。返回格式为字符串列表，不要返回其余任何内容。'))
+        self.examiner_agent = Assistant(llm=self.llm,
+                                        system_message=('请你创造十个比较离谱或小众的短语，长度在10个汉字以内。例如“1+1=3”、“主莫朗玛峰”等反人类直觉的短语，'
+                                                        '尽量类型丰富一些，包含数学、文学、地理、生物等领域。返回格式为字符串列表，不要返回其余任何内容。'))
 
         # Initialize the questions
         *_, last = self.examiner_agent.run([Message('user', '开始')])
         self.topics = json5.loads(last[-1].content)
 
-    def _run(self,
-             messages: List[Message],
-             lang: str = 'en',
-             **kwargs) -> Iterator[List[Message]]:
+    def _run(self, messages: List[Message], lang: str = 'en', **kwargs) -> Iterator[List[Message]]:
         return self._call_llm(messages=messages)
 
 

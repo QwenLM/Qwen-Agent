@@ -14,8 +14,7 @@ class FnCallAgent(Agent):
     """This is a widely applicable function call agent integrated with llm and tool use ability."""
 
     def __init__(self,
-                 function_list: Optional[List[Union[str, Dict,
-                                                    BaseTool]]] = None,
+                 function_list: Optional[List[Union[str, Dict, BaseTool]]] = None,
                  llm: Optional[Union[Dict, BaseChatModel]] = None,
                  system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
                  name: Optional[str] = None,
@@ -42,20 +41,14 @@ class FnCallAgent(Agent):
         # Default to use Memory to manage files
         self.mem = Memory(llm=self.llm, files=files)
 
-    def _run(self,
-             messages: List[Message],
-             lang: str = 'en',
-             **kwargs) -> Iterator[List[Message]]:
+    def _run(self, messages: List[Message], lang: str = 'en', **kwargs) -> Iterator[List[Message]]:
         messages = copy.deepcopy(messages)
         num_llm_calls_available = MAX_LLM_CALL_PER_RUN
         response = []
         while True and num_llm_calls_available > 0:
             num_llm_calls_available -= 1
-            output_stream = self._call_llm(
-                messages=messages,
-                functions=[
-                    func.function for func in self.function_map.values()
-                ])
+            output_stream = self._call_llm(messages=messages,
+                                           functions=[func.function for func in self.function_map.values()])
             output: List[Message] = []
             for output in output_stream:
                 if output:
@@ -65,9 +58,7 @@ class FnCallAgent(Agent):
                 messages.extend(output)
             use_tool, action, action_input, _ = self._detect_tool(response[-1])
             if use_tool:
-                observation = self._call_tool(action,
-                                              action_input,
-                                              messages=messages)
+                observation = self._call_tool(action, action_input, messages=messages)
                 fn_msg = Message(
                     role=FUNCTION,
                     name=action,
@@ -79,19 +70,12 @@ class FnCallAgent(Agent):
             else:
                 break
 
-    def _call_tool(self,
-                   tool_name: str,
-                   tool_args: Union[str, dict] = '{}',
-                   **kwargs) -> str:
+    def _call_tool(self, tool_name: str, tool_args: Union[str, dict] = '{}', **kwargs) -> str:
         # Temporary plan: Check if it is necessary to transfer files to the tool
         # Todo: This should be changed to parameter passing, and the file URL should be determined by the model
         if self.function_map[tool_name].file_access:
             assert 'messages' in kwargs
-            files = self.mem.get_all_files_of_messages(
-                kwargs['messages']) + self.mem.system_files
-            return super()._call_tool(tool_name,
-                                      tool_args,
-                                      files=files,
-                                      **kwargs)
+            files = self.mem.get_all_files_of_messages(kwargs['messages']) + self.mem.system_files
+            return super()._call_tool(tool_name, tool_args, files=files, **kwargs)
         else:
             return super()._call_tool(tool_name, tool_args, **kwargs)

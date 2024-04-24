@@ -2,11 +2,9 @@ from typing import Dict, Iterator, List
 
 import json5
 
-from qwen_agent.llm.schema import (ASSISTANT, CONTENT, FUNCTION, ROLE, SYSTEM,
-                                   USER)
+from qwen_agent.llm.schema import ASSISTANT, CONTENT, FUNCTION, ROLE, SYSTEM, USER
 from qwen_agent.log import logger
-from qwen_agent.utils.utils import (extract_code, extract_obs, extract_urls,
-                                    print_traceback)
+from qwen_agent.utils.utils import extract_code, extract_obs, extract_urls, print_traceback
 
 FN_NAME = 'Action'
 FN_ARGS = 'Action Input'
@@ -37,8 +35,7 @@ def convert_fncall_to_text(messages: List[Dict]) -> List[Dict]:
                 new_messages.append({ROLE: role, CONTENT: content})
         elif role == FUNCTION:
             assert new_messages[-1][ROLE] == ASSISTANT
-            new_messages[-1][
-                CONTENT] += f'\n{FN_RESULT}: {content}\n{FN_EXIT}: '
+            new_messages[-1][CONTENT] += f'\n{FN_RESULT}: {content}\n{FN_EXIT}: '
         else:
             raise TypeError
     return new_messages
@@ -77,8 +74,7 @@ def format_answer(text):
         return text.split(f'{FN_EXIT}:')[-1].strip()
 
 
-def convert_to_full_str_stream(
-        message_list_stream: Iterator[List[Dict]]) -> Iterator[str]:
+def convert_to_full_str_stream(message_list_stream: Iterator[List[Dict]]) -> Iterator[str]:
     """
     output the full streaming str response
     """
@@ -86,13 +82,11 @@ def convert_to_full_str_stream(
         if not message_list:
             continue
         new_message_list = convert_fncall_to_text(message_list)
-        assert len(
-            new_message_list) == 1 and new_message_list[0][ROLE] == ASSISTANT
+        assert len(new_message_list) == 1 and new_message_list[0][ROLE] == ASSISTANT
         yield new_message_list[0][CONTENT]
 
 
-def convert_to_delta_str_stream(
-        message_list_stream: Iterator[List[Dict]]) -> Iterator[str]:
+def convert_to_delta_str_stream(message_list_stream: Iterator[List[Dict]]) -> Iterator[str]:
     """
     output the delta streaming str response
     """

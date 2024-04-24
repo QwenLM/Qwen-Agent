@@ -17,9 +17,7 @@ app.add_middleware(
     allow_headers=['*'],
 )
 
-app.mount('/static',
-          StaticFiles(directory=os.getcwd() + '/workspace/ci_workspace/'),
-          name='static')
+app.mount('/static', StaticFiles(directory=os.getcwd() + '/workspace/ci_workspace/'), name='static')
 
 if __name__ == '__main__':
     uvicorn.run(app='image_service:app', port=7865)
