@@ -13,7 +13,11 @@ def init_agent_service():
               '你需要查询相应地区的天气，然后调用给你的画图工具绘制一张城市的图，并从给定的诗词文档中选一首相关的诗词来描述天气，不要说文档以外的诗词。')
 
     tools = ['image_gen', 'amap_weather']
-    bot = Assistant(llm=llm_cfg, system_message=system, function_list=tools)
+    bot = Assistant(
+        llm=llm_cfg,
+        system_message=system,
+        function_list=tools,
+    )
 
     return bot
 

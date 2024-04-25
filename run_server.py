@@ -89,15 +89,15 @@ def main():
     server_config = update_config(server_config, args, server_config_path)
 
     os.makedirs(server_config.path.work_space_root, exist_ok=True)
-    os.makedirs(server_config.path.database_root, exist_ok=True)
     os.makedirs(server_config.path.download_root, exist_ok=True)
 
     os.makedirs(server_config.path.code_interpreter_ws, exist_ok=True)
     code_interpreter_work_dir = str(Path(__file__).resolve().parent / server_config.path.code_interpreter_ws)
+
+    # TODO: Remove these two hacky code interpreter env vars.
     os.environ['M6_CODE_INTERPRETER_WORK_DIR'] = code_interpreter_work_dir
 
-    from qwen_agent.log import logger
-    from qwen_agent.utils.utils import get_local_ip
+    from qwen_agent.utils.utils import append_signal_handler, get_local_ip, logger
     logger.info(server_config)
 
     if args.server_host == '0.0.0.0':
@@ -109,14 +109,20 @@ def main():
 
     servers = {
         'database':
-            subprocess.Popen([sys.executable,
-                              os.path.join(os.getcwd(), 'qwen_server/database_server.py')]),
+            subprocess.Popen([
+                sys.executable,
+                os.path.join(os.getcwd(), 'qwen_server/database_server.py'),
+            ]),
         'workstation':
-            subprocess.Popen([sys.executable,
-                              os.path.join(os.getcwd(), 'qwen_server/workstation_server.py')]),
+            subprocess.Popen([
+                sys.executable,
+                os.path.join(os.getcwd(), 'qwen_server/workstation_server.py'),
+            ]),
         'assistant':
-            subprocess.Popen([sys.executable,
-                              os.path.join(os.getcwd(), 'qwen_server/assistant_server.py')]),
+            subprocess.Popen([
+                sys.executable,
+                os.path.join(os.getcwd(), 'qwen_server/assistant_server.py'),
+            ]),
     }
 
     def signal_handler(sig_num, _frame):
@@ -127,8 +133,8 @@ def main():
         if sig_num == signal.SIGINT:
             raise KeyboardInterrupt()
 
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
+    append_signal_handler(signal.SIGINT, signal_handler)
+    append_signal_handler(signal.SIGTERM, signal_handler)
 
     for p in list(servers.values()):
         p.wait()

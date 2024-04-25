@@ -4,6 +4,7 @@ from qwen_agent.agents.assistant import Assistant
 from qwen_agent.agents.write_from_scratch import WriteFromScratch
 from qwen_agent.llm.schema import ASSISTANT, CONTENT, Message
 from qwen_agent.prompts import ContinueWriting
+from qwen_agent.settings import DEFAULT_MAX_REF_TOKEN
 
 
 class ArticleAgent(Assistant):
@@ -15,7 +16,7 @@ class ArticleAgent(Assistant):
     def _run(self,
              messages: List[Message],
              lang: str = 'en',
-             max_ref_token: int = 4000,
+             max_ref_token: int = DEFAULT_MAX_REF_TOKEN,
              full_article: bool = False,
              **kwargs) -> Iterator[List[Message]]:
 
@@ -35,6 +36,6 @@ class ArticleAgent(Assistant):
             response.append(Message(ASSISTANT, '>\n> Writing Text: \n'))
             yield response
 
-        for trunk in writing_agent.run(messages=messages, lang=lang, knowledge=_ref):
-            if trunk:
-                yield response + trunk
+        for rsp in writing_agent.run(messages=messages, lang=lang, knowledge=_ref):
+            if rsp:
+                yield response + rsp

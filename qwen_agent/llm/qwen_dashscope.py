@@ -29,7 +29,8 @@ class QwenChatAtDS(BaseTextChatModel):
     def _chat_stream(
         self,
         messages: List[Message],
-        delta_stream: bool = False,
+        delta_stream: bool,
+        generate_cfg: dict,
     ) -> Iterator[List[Message]]:
         messages = [msg.model_dump() for msg in messages]
         logger.debug(f'*{pformat(messages, indent=2)}*')
@@ -38,7 +39,7 @@ class QwenChatAtDS(BaseTextChatModel):
             messages=messages,  # noqa
             result_format='message',
             stream=True,
-            **self.generate_cfg)
+            **generate_cfg)
         if delta_stream:
             return self._delta_stream_output(response)
         else:
@@ -47,6 +48,7 @@ class QwenChatAtDS(BaseTextChatModel):
     def _chat_no_stream(
         self,
         messages: List[Message],
+        generate_cfg: dict,
     ) -> List[Message]:
         messages = [msg.model_dump() for msg in messages]
         logger.debug(f'*{pformat(messages, indent=2)}*')
@@ -55,17 +57,20 @@ class QwenChatAtDS(BaseTextChatModel):
             messages=messages,  # noqa
             result_format='message',
             stream=False,
-            **self.generate_cfg)
+            **generate_cfg)
         if response.status_code == HTTPStatus.OK:
             return [Message(ASSISTANT, response.output.choices[0].message.content)]
         else:
             raise ModelServiceError(code=response.code, message=response.message)
 
-    def _chat_with_functions(self,
-                             messages: List[Message],
-                             functions: List[Dict],
-                             stream: bool = True,
-                             delta_stream: bool = False) -> Union[List[Message], Iterator[List[Message]]]:
+    def _chat_with_functions(
+        self,
+        messages: List[Message],
+        functions: List[Dict],
+        stream: bool,
+        delta_stream: bool,
+        generate_cfg: dict,
+    ) -> Union[List[Message], Iterator[List[Message]]]:
         if delta_stream:
             raise NotImplementedError
 
@@ -74,13 +79,14 @@ class QwenChatAtDS(BaseTextChatModel):
         # Using text completion
         prompt = self._build_text_completion_prompt(messages)
         if stream:
-            return self._text_completion_stream(prompt, delta_stream)
+            return self._text_completion_stream(prompt, delta_stream, generate_cfg=generate_cfg)
         else:
-            return self._text_completion_no_stream(prompt)
+            return self._text_completion_no_stream(prompt, generate_cfg=generate_cfg)
 
     def _text_completion_no_stream(
         self,
         prompt: str,
+        generate_cfg: dict,
     ) -> List[Message]:
         logger.debug(f'*{prompt}*')
         response = dashscope.Generation.call(self.model,
@@ -88,7 +94,7 @@ class QwenChatAtDS(BaseTextChatModel):
                                              result_format='message',
                                              stream=False,
                                              use_raw_prompt=True,
-                                             **self.generate_cfg)
+                                             **generate_cfg)
         if response.status_code == HTTPStatus.OK:
             return [Message(ASSISTANT, response.output.choices[0].message.content)]
         else:
@@ -97,7 +103,8 @@ class QwenChatAtDS(BaseTextChatModel):
     def _text_completion_stream(
         self,
         prompt: str,
-        delta_stream: bool = False,
+        delta_stream: bool,
+        generate_cfg: dict,
     ) -> Iterator[List[Message]]:
         logger.debug(f'*{prompt}*')
         response = dashscope.Generation.call(
@@ -106,7 +113,7 @@ class QwenChatAtDS(BaseTextChatModel):
             result_format='message',
             stream=True,
             use_raw_prompt=True,
-            **self.generate_cfg)
+            **generate_cfg)
         if delta_stream:
             return self._delta_stream_output(response)
         else:
@@ -142,9 +149,9 @@ class QwenChatAtDS(BaseTextChatModel):
         delay_len = 5
         in_delay = False
         text = ''
-        for trunk in response:
-            if trunk.status_code == HTTPStatus.OK:
-                text = trunk.output.choices[0].message.content
+        for chunk in response:
+            if chunk.status_code == HTTPStatus.OK:
+                text = chunk.output.choices[0].message.content
                 if (len(text) - last_len) <= delay_len:
                     in_delay = True
                     continue
@@ -155,14 +162,14 @@ class QwenChatAtDS(BaseTextChatModel):
                     yield [Message(ASSISTANT, now_rsp)]
                     last_len = len(real_text)
             else:
-                raise ModelServiceError(code=trunk.code, message=trunk.message)
+                raise ModelServiceError(code=chunk.code, message=chunk.message)
         if text and (in_delay or (last_len != len(text))):
             yield [Message(ASSISTANT, text[last_len:])]
 
     @staticmethod
     def _full_stream_output(response) -> Iterator[List[Message]]:
-        for trunk in response:
-            if trunk.status_code == HTTPStatus.OK:
-                yield [Message(ASSISTANT, trunk.output.choices[0].message.content)]
+        for chunk in response:
+            if chunk.status_code == HTTPStatus.OK:
+                yield [Message(ASSISTANT, chunk.output.choices[0].message.content)]
             else:
-                raise ModelServiceError(code=trunk.code, message=trunk.message)
+                raise ModelServiceError(code=chunk.code, message=chunk.message)

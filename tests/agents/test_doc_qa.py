@@ -1,9 +1,9 @@
-from qwen_agent.agents import DocQAAgent
+from qwen_agent.agents.doc_qa import BasicDocQA
 
 
 def test_doc_qa():
     llm_cfg = {'model': 'qwen-max', 'api_key': '', 'model_server': 'dashscope'}
-    agent = DocQAAgent(llm=llm_cfg)
+    agent = BasicDocQA(llm=llm_cfg)
     messages = [{
         'role': 'user',
         'content': [{

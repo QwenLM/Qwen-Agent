@@ -1,10 +1,11 @@
 import copy
+import json
 from abc import ABC
 from typing import Dict, Iterator, List, Optional, Union
 
 from qwen_agent.llm.base import BaseChatModel
 from qwen_agent.llm.schema import ASSISTANT, FUNCTION, SYSTEM, USER, ContentItem, FunctionCall, Message
-from qwen_agent.utils.utils import get_function_description, has_chinese_chars
+from qwen_agent.utils.utils import has_chinese_chars
 
 
 class BaseFnCallModel(BaseChatModel, ABC):
@@ -14,11 +15,14 @@ class BaseFnCallModel(BaseChatModel, ABC):
         stop = self.generate_cfg.get('stop', [])
         self.generate_cfg['stop'] = stop + [x for x in FN_STOP_WORDS if x not in stop]
 
-    def _chat_with_functions(self,
-                             messages: List[Union[Message, Dict]],
-                             functions: List[Dict],
-                             stream: bool = True,
-                             delta_stream: bool = False) -> Union[List[Message], Iterator[List[Message]]]:
+    def _chat_with_functions(
+        self,
+        messages: List[Union[Message, Dict]],
+        functions: List[Dict],
+        stream: bool,
+        delta_stream: bool,
+        generate_cfg: dict,
+    ) -> Union[List[Message], Iterator[List[Message]]]:
         if delta_stream:
             raise NotImplementedError
 
@@ -40,15 +44,20 @@ class BaseFnCallModel(BaseChatModel, ABC):
             text_to_complete.content = usr
             messages = messages[:-2] + [text_to_complete]
 
-        return self._chat(messages, stream=stream, delta_stream=delta_stream)
+        return self._chat(messages, stream=stream, delta_stream=delta_stream, generate_cfg=generate_cfg)
 
     def _preprocess_messages(self, messages: List[Message]) -> List[Message]:
         messages = super()._preprocess_messages(messages)
         messages = self._preprocess_fncall_messages(messages)
         return messages
 
-    def _postprocess_messages(self, messages: List[Message], fncall_mode: bool) -> List[Message]:
-        messages = super()._postprocess_messages(messages, fncall_mode=fncall_mode)
+    def _postprocess_messages(
+        self,
+        messages: List[Message],
+        fncall_mode: bool,
+        generate_cfg: dict,
+    ) -> List[Message]:
+        messages = super()._postprocess_messages(messages, fncall_mode=fncall_mode, generate_cfg=generate_cfg)
         if fncall_mode:
             messages = self._postprocess_fncall_messages(messages)
         return messages
@@ -160,7 +169,7 @@ class BaseFnCallModel(BaseChatModel, ABC):
 
                 i = item_text.find(f'{FN_NAME}:')
                 if i < 0:  # no function call
-                    show_text = remove_special_tokens(item_text)
+                    show_text = remove_incomplete_special_tokens(item_text)
                     if show_text:
                         new_content.append(ContentItem(text=show_text))
                     continue
@@ -169,7 +178,7 @@ class BaseFnCallModel(BaseChatModel, ABC):
                     answer = item_text[:i].lstrip('\n').rstrip()
                     if answer.endswith('\n'):
                         answer = answer[:-1]
-                    show_text = remove_special_tokens(answer)
+                    show_text = remove_incomplete_special_tokens(answer)
                     if show_text:
                         new_content.append(ContentItem(text=show_text))
                     if new_content:
@@ -207,8 +216,8 @@ class BaseFnCallModel(BaseChatModel, ABC):
                             role=ASSISTANT,
                             content=[],
                             function_call=FunctionCall(
-                                name=remove_special_tokens(fn_name),
-                                arguments=remove_special_tokens(fn_args),
+                                name=remove_incomplete_special_tokens(fn_name),
+                                arguments=remove_incomplete_special_tokens(fn_args),
                             ),
                         ))
 
@@ -218,17 +227,17 @@ class BaseFnCallModel(BaseChatModel, ABC):
 
                     if (result and result[1:]) or answer:  # result[1:] == '' is possible and allowed
                         # rm the ' ' after ':'
-                        show_text = remove_special_tokens(result[1:])
+                        show_text = remove_incomplete_special_tokens(result[1:])
                         new_messages.append(
                             Message(
                                 role=FUNCTION,
                                 content=[ContentItem(text=show_text)],
-                                name=remove_special_tokens(fn_name),
+                                name=remove_incomplete_special_tokens(fn_name),
                             ))
 
                     if answer and answer[1:]:
                         # rm the ' ' after ':'
-                        show_text = remove_special_tokens(answer[1:])
+                        show_text = remove_incomplete_special_tokens(answer[1:])
                         if show_text:
                             new_messages.append(Message(
                                 role=ASSISTANT,
@@ -291,20 +300,46 @@ FN_CALL_TEMPLATE = {
 }
 
 
-# TODO: This affects users who use the ✿ character accidentally.
+def get_function_description(function: Dict) -> str:
+    """
+    Text description of function
+    """
+    tool_desc_template = {
+        'zh': '### {name_for_human}\n\n{name_for_model}: {description_for_model} 输入参数：{parameters} {args_format}',
+        'en': '### {name_for_human}\n\n{name_for_model}: {description_for_model} Parameters: {parameters} {args_format}'
+    }
+    if has_chinese_chars(function):
+        tool_desc = tool_desc_template['zh']
+    else:
+        tool_desc = tool_desc_template['en']
+
+    name = function.get('name', None)
+    name_for_human = function.get('name_for_human', name)
+    name_for_model = function.get('name_for_model', name)
+    assert name_for_human and name_for_model
+    args_format = function.get('args_format', '')
+    return tool_desc.format(name_for_human=name_for_human,
+                            name_for_model=name_for_model,
+                            description_for_model=function['description'],
+                            parameters=json.dumps(function['parameters'], ensure_ascii=False),
+                            args_format=args_format).rstrip()
+
+
 # Mainly for removing incomplete trailing special tokens when streaming the output
-def remove_special_tokens(text: str, strip: bool = True) -> str:
-    text = text.replace('✿:', '✿')
-    text = text.replace('✿：', '✿')
-    out = ''
-    is_special = False
-    for c in text:
-        if c == '✿':
-            is_special = not is_special
-            continue
-        if is_special:
-            continue
-        out += c
-    if strip:
-        out = out.lstrip('\n').rstrip()
-    return out
+def remove_incomplete_special_tokens(text: str) -> str:
+    special_tokens = (FN_NAME, FN_ARGS, FN_RESULT, FN_EXIT)
+    text = text.rstrip()
+    if text.endswith(special_tokens):
+        for s in special_tokens:
+            if text.endswith(s):
+                text = text[:-len(s)]
+                break
+    else:
+        trail_start = text.rfind('✿')
+        trail_token = text[trail_start:]
+        for s in special_tokens:
+            if s.startswith(trail_token):
+                text = text[:trail_start]
+                break
+    text = text.lstrip('\n').rstrip()
+    return text

@@ -4,18 +4,22 @@ from qwen_agent.agents.assistant import Assistant
 from qwen_agent.llm.base import BaseChatModel
 from qwen_agent.llm.schema import CONTENT, DEFAULT_SYSTEM_MESSAGE, Message
 from qwen_agent.prompts import DocQA
+from qwen_agent.settings import DEFAULT_MAX_REF_TOKEN
 from qwen_agent.tools import BaseTool
 
+DEFAULT_NAME = 'Basic DocQA'
+DEFAULT_DESC = '可以根据问题，检索出知识库中的某个相关细节来回答。适用于需要定位到具体位置的问题，例如“介绍表1”等类型的问题'
 
-class DocQAAgent(Assistant):
+
+class BasicDocQA(Assistant):
     """This is an agent for doc QA."""
 
     def __init__(self,
                  function_list: Optional[List[Union[str, Dict, BaseTool]]] = None,
                  llm: Optional[Union[Dict, BaseChatModel]] = None,
                  system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
-                 name: Optional[str] = None,
-                 description: Optional[str] = None,
+                 name: Optional[str] = DEFAULT_NAME,
+                 description: Optional[str] = DEFAULT_DESC,
                  files: Optional[List[str]] = None):
         super().__init__(function_list=function_list,
                          llm=llm,
@@ -23,20 +27,20 @@ class DocQAAgent(Assistant):
                          name=name,
                          description=description,
                          files=files)
-
         self.doc_qa = DocQA(llm=self.llm)
 
     def _run(self,
              messages: List[Message],
              lang: str = 'en',
-             max_ref_token: int = 4000,
+             max_ref_token: int = DEFAULT_MAX_REF_TOKEN,
              **kwargs) -> Iterator[List[Message]]:
-
+        """This agent using different doc qa prompt with Assistant"""
         # Need to use Memory agent for data management
         *_, last = self.mem.run(messages=messages, max_ref_token=max_ref_token, **kwargs)
         _ref = last[-1][CONTENT]
 
         # Use RetrievalQA agent
+        # Todo: Prompt engineering
         response = self.doc_qa.run(messages=messages, lang=lang, knowledge=_ref)
 
         return response

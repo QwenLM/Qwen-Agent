@@ -2,12 +2,11 @@ import copy
 import random
 import time
 from abc import ABC, abstractmethod
-from typing import Dict, Iterator, List, Optional, Union
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
+from qwen_agent.llm.schema import DEFAULT_SYSTEM_MESSAGE, SYSTEM, Message
 from qwen_agent.utils.tokenization_qwen import tokenizer
-from qwen_agent.utils.utils import get_basename_from_url, has_chinese_chars, is_image, print_traceback
-
-from .schema import ASSISTANT, DEFAULT_SYSTEM_MESSAGE, FUNCTION, SYSTEM, USER, ContentItem, Message
+from qwen_agent.utils.utils import format_as_multimodal_message, merge_generate_cfgs, print_traceback
 
 LLM_REGISTRY = {}
 
@@ -52,20 +51,25 @@ class BaseChatModel(ABC):
         functions: Optional[List[Dict]] = None,
         stream: bool = True,
         delta_stream: bool = False,
+        extra_generate_cfg: Optional[Dict] = None,
     ) -> Union[List[Message], List[Dict], Iterator[List[Message]], Iterator[List[Dict]]]:
         """LLM chat interface.
 
         Args:
             messages: Inputted messages.
-            functions: Inputted functions, which supports OpenAI format.
+            functions: Inputted functions for function calling. OpenAI format supported.
             stream: Whether to use streaming generation.
-            delta_stream: Whether to return incrementally.
-              (1) When False: Use full return.
-              (2) When True: Use incremental return.
+            delta_stream: Whether to stream the response incrementally.
+              (1) When False (recommended): Stream the full response every iteration.
+              (2) When True: Stream the chunked response, i.e, delta responses.
+            extra_generate_cfg: Extra LLM generation hyper-paramters.
 
         Returns:
             the generated message list response by llm.
         """
+
+        generate_cfg = merge_generate_cfgs(base_generate_cfg=self.generate_cfg, new_generate_cfg=extra_generate_cfg)
+
         messages = copy.deepcopy(messages)
 
         _return_message_type = 'dict'
@@ -95,12 +99,14 @@ class BaseChatModel(ABC):
                     functions=functions,
                     stream=stream,
                     delta_stream=delta_stream,
+                    generate_cfg=generate_cfg,
                 )
             else:
                 return self._chat(
                     messages,
                     stream=stream,
                     delta_stream=delta_stream,
+                    generate_cfg=generate_cfg,
                 )
 
         if stream and delta_stream:
@@ -112,36 +118,41 @@ class BaseChatModel(ABC):
             output = retry_model_service(_call_model_service, max_retries=self.max_retries)
 
         if isinstance(output, list):
-            output = self._postprocess_messages(output, fncall_mode=fncall_mode)
+            output = self._postprocess_messages(output, fncall_mode=fncall_mode, generate_cfg=generate_cfg)
             return self._convert_messages_to_target_type(output, _return_message_type)
         else:
-            output = self._postprocess_messages_iterator(output, fncall_mode=fncall_mode)
+            output = self._postprocess_messages_iterator(output, fncall_mode=fncall_mode, generate_cfg=generate_cfg)
             return self._convert_messages_iterator_to_target_type(output, _return_message_type)
 
     def _chat(
         self,
         messages: List[Union[Message, Dict]],
-        stream: bool = True,
-        delta_stream: bool = False,
+        stream: bool,
+        delta_stream: bool,
+        generate_cfg: dict,
     ) -> Union[List[Message], Iterator[List[Message]]]:
         if stream:
-            return self._chat_stream(messages, delta_stream=delta_stream)
+            return self._chat_stream(messages, delta_stream=delta_stream, generate_cfg=generate_cfg)
         else:
-            return self._chat_no_stream(messages)
+            return self._chat_no_stream(messages, generate_cfg=generate_cfg)
 
     @abstractmethod
-    def _chat_with_functions(self,
-                             messages: List[Union[Message, Dict]],
-                             functions: List[Dict],
-                             stream: bool = True,
-                             delta_stream: bool = False) -> Union[List[Message], Iterator[List[Message]]]:
+    def _chat_with_functions(
+        self,
+        messages: List[Union[Message, Dict]],
+        functions: List[Dict],
+        stream: bool,
+        delta_stream: bool,
+        generate_cfg: dict,
+    ) -> Union[List[Message], Iterator[List[Message]]]:
         raise NotImplementedError
 
     @abstractmethod
     def _chat_stream(
         self,
         messages: List[Message],
-        delta_stream: bool = False,
+        delta_stream: bool,
+        generate_cfg: dict,
     ) -> Iterator[List[Message]]:
         raise NotImplementedError
 
@@ -149,25 +160,34 @@ class BaseChatModel(ABC):
     def _chat_no_stream(
         self,
         messages: List[Message],
+        generate_cfg: dict,
     ) -> List[Message]:
         raise NotImplementedError
 
     def _preprocess_messages(self, messages: List[Message]) -> List[Message]:
-        messages = self._format_as_multimodal_messages(messages)
+        messages = [format_as_multimodal_message(msg) for msg in messages]
         return messages
 
-    def _postprocess_messages(self, messages: List[Message], fncall_mode: bool) -> List[Message]:
-        messages = self._format_as_multimodal_messages(messages)
-        messages = self._postprocess_stop_words(messages)
+    def _postprocess_messages(
+        self,
+        messages: List[Message],
+        fncall_mode: bool,
+        generate_cfg: dict,
+    ) -> List[Message]:
+        messages = [format_as_multimodal_message(msg) for msg in messages]
+        messages = self._postprocess_stop_words(messages, generate_cfg=generate_cfg)
         return messages
 
     def _postprocess_messages_iterator(
         self,
         messages: Iterator[List[Message]],
         fncall_mode: bool,
+        generate_cfg: dict,
     ) -> Iterator[List[Message]]:
         for m in messages:
-            m = self._postprocess_messages(m, fncall_mode=fncall_mode)
+            m = self._postprocess_messages(m, fncall_mode=fncall_mode, generate_cfg=generate_cfg)
+            # TODO: Postprocessing may be incorrect if delta_stream=True.
+            # TODO: Early break if truncated at stop words.
             if m:
                 yield m
 
@@ -186,62 +206,9 @@ class BaseChatModel(ABC):
         for messages in messages_iter:
             yield self._convert_messages_to_target_type(messages, target_type)
 
-    def _format_as_multimodal_messages(self, messages: List[Message]) -> List[Message]:
-
-        multimodal_messages = []
-        for msg in messages:
-            assert msg.role in (USER, ASSISTANT, SYSTEM, FUNCTION)
-
-            content = []
-            if isinstance(msg.content, str):  # if text content
-                if msg.content:
-                    content = [ContentItem(text=msg.content)]
-            elif isinstance(msg.content, list):  # if multimodal content
-                files = []
-                for item in msg.content:
-                    (k, v), = item.model_dump().items()
-                    if k in ('box', 'text'):
-                        content.append(ContentItem(text=v))
-                    if k == 'image':
-                        content.append(item)
-                    if k in ('file', 'image'):
-                        files.append(v)
-                if (msg.role in (SYSTEM, USER)) and files:
-                    has_zh = has_chinese_chars(content)
-                    upload = []
-                    for f in [get_basename_from_url(f) for f in files]:
-                        if is_image(f):
-                            if has_zh:
-                                upload.append(f'![图片]({f})')
-                            else:
-                                upload.append(f'![image]({f})')
-                        else:
-                            if has_zh:
-                                upload.append(f'[文件]({f})')
-                            else:
-                                upload.append(f'[file]({f})')
-                    upload = ' '.join(upload)
-                    if has_zh:
-                        upload = f'（上传了 {upload}）\n\n'
-                    else:
-                        upload = f'(Uploaded {upload})\n\n'
-                    content = [ContentItem(text=upload)] + content
-            else:
-                raise TypeError
-
-            multimodal_messages.append(
-                Message(
-                    role=msg.role,
-                    content=content,
-                    name=msg.name if msg.role == FUNCTION else None,
-                    function_call=msg.function_call,
-                ))
-
-        return multimodal_messages
-
-    def _postprocess_stop_words(self, messages: List[Message]) -> List[Message]:
+    def _postprocess_stop_words(self, messages: List[Message], generate_cfg: dict) -> List[Message]:
         messages = copy.deepcopy(messages)
-        stop = self.generate_cfg.get('stop', [])
+        stop = generate_cfg.get('stop', [])
 
         # Make sure it stops before stop words.
         trunc_messages = []
@@ -264,7 +231,6 @@ class BaseChatModel(ABC):
         # It may ends with 'Observation' when the stop word is 'Observation:'.
         partial_stop = []
         for s in stop:
-            # TODO: This tokenizer is Qwen-specific.
             s = tokenizer.tokenize(s)[:-1]
             if s:
                 s = tokenizer.convert_tokens_to_string(s)
@@ -295,50 +261,25 @@ def _truncate_at_stop_word(text: str, stop: List[str]):
 def retry_model_service(
     fn,
     max_retries: int = 10,
-    exponential_base: float = 1.0,
-):
-    """Retry a function with exponential backoff"""
+) -> Any:
+    """Retry a function"""
 
-    num_retries = 0
-    delay = 2.0
+    num_retries, delay = 0, 1.0
     while True:
         try:
             return fn()
 
         except ModelServiceError as e:
-            if max_retries <= 0:  # no retry
-                raise e
-
-            # If harmful input or output detected, let it fail
-            if e.code == 'DataInspectionFailed':
-                raise e
-            if 'inappropriate content' in str(e):
-                raise e
-
-            # Retry is meaningless if the input is too long
-            if 'maximum context length' in str(e):
-                raise e
-
-            print_traceback(is_error=False)
-
-            if num_retries >= max_retries:
-                raise ModelServiceError(exception=Exception(f'Maximum number of retries ({max_retries}) exceeded.'))
-
-            num_retries += 1
-            delay *= exponential_base * (1.0 + random.random())
-            time.sleep(delay)
+            num_retries, delay = _raise_or_delay(e, num_retries, delay, max_retries)
 
 
 def retry_model_service_iterator(
     it_fn,
     max_retries: int = 10,
-    exponential_base: float = 1.0,
-):
-    """Retry an iterator with exponential backoff"""
+) -> Iterator:
+    """Retry an iterator"""
 
-    num_retries = 0
-    delay = 2.0
-
+    num_retries, delay = 0, 1.0
     while True:
         try:
             for rsp in it_fn():
@@ -346,24 +287,39 @@ def retry_model_service_iterator(
             break
 
         except ModelServiceError as e:
-            if max_retries <= 0:  # no retry
-                raise e
+            num_retries, delay = _raise_or_delay(e, num_retries, delay, max_retries)
 
-            # If harmful input or output detected, let it fail
-            if e.code == 'DataInspectionFailed':
-                raise e
-            if 'inappropriate content' in str(e):
-                raise e
 
-            # Retry is meaningless if the input is too long
-            if 'maximum context length' in str(e):
-                raise e
+def _raise_or_delay(
+    e: ModelServiceError,
+    num_retries: int,
+    delay: float,
+    max_retries: int = 10,
+    max_delay: float = 300.0,
+    exponential_base: float = 2.0,
+) -> Tuple[int, float]:
+    """Retry with exponential backoff"""
 
-            print_traceback(is_error=False)
+    if max_retries <= 0:  # no retry
+        raise e
 
-            if num_retries >= max_retries:
-                raise ModelServiceError(exception=Exception(f'Maximum number of retries ({max_retries}) exceeded.'))
+    # If harmful input or output detected, let it fail
+    if e.code == 'DataInspectionFailed':
+        raise e
+    if 'inappropriate content' in str(e):
+        raise e
 
-            num_retries += 1
-            delay *= exponential_base * (1.0 + random.random())
-            time.sleep(delay)
+    # Retry is meaningless if the input is too long
+    if 'maximum context length' in str(e):
+        raise e
+
+    print_traceback(is_error=False)
+
+    if num_retries >= max_retries:
+        raise ModelServiceError(exception=Exception(f'Maximum number of retries ({max_retries}) exceeded.'))
+
+    num_retries += 1
+    jittor = 1.0 + random.random()
+    delay = min(delay * exponential_base, max_delay) * jittor
+    time.sleep(delay)
+    return num_retries, delay

@@ -1,7 +1,7 @@
 anyio>=3.7.1
 beautifulsoup4
 dashscope>=1.11.0
-docx2txt
+eval_type_backport
 fastapi>=0.103.1
 html2text
 jieba
@@ -13,9 +13,12 @@ numpy
 openai
 pandas
 pdfminer-six
+pdfplumber
 pillow
 pydantic>=2.3.0
+python-docx
 python-pptx
+rank_bm25
 seaborn
 sympy
 tiktoken

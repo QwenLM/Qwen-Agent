@@ -5,26 +5,21 @@ from qwen_agent.llm.schema import ContentItem, Message
 def test_router():
     llm_cfg = {'model': 'qwen-max'}
     llm_cfg_vl = {'model': 'qwen-vl-max'}
-    tools = ['image_gen', 'amap_weather']
+    tools = ['amap_weather']
 
-    # define a vl agent
-    bot_vl = Assistant(llm=llm_cfg_vl)
+    # Define a vl agent
+    bot_vl = Assistant(llm=llm_cfg_vl, name='多模态助手', description='可以理解图像内容。')
 
-    # define a tool agent
-    bot_tool = Assistant(llm=llm_cfg, function_list=tools)
+    # Define a tool agent
+    bot_tool = Assistant(
+        llm=llm_cfg,
+        name='天气预报助手',
+        description='可以查询天气',
+        function_list=tools,
+    )
 
     # define a router (Simultaneously serving as a text agent)
-    bot = Router(llm=llm_cfg,
-                 agents={
-                     'vl': {
-                         'obj': bot_vl,
-                         'desc': '多模态助手，可以理解图像内容。'
-                     },
-                     'tool': {
-                         'obj': bot_tool,
-                         'desc': '工具助手，可以使用天气查询工具和画图工具来解决问题'
-                     }
-                 })
+    bot = Router(llm=llm_cfg, agents=[bot_vl, bot_tool])
     messages = [
         Message(
             'user',

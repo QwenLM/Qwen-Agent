@@ -1,11 +1,13 @@
 import os
 from typing import Dict, Optional, Union
 
+from qwen_agent.settings import DEFAULT_WORKSPACE
 from qwen_agent.tools.base import BaseTool, register_tool
 from qwen_agent.utils.utils import read_text_from_file, save_text_to_file
 
-DEFAULT_STORAGE_PATH = 'workspace/default_data_path'
-SUCCESS_MESSAGE = 'SUCCESS'
+
+class KeyNotExistsError(ValueError):
+    pass
 
 
 @register_tool('storage')
@@ -32,7 +34,7 @@ class Storage(BaseTool):
 
     def __init__(self, cfg: Optional[Dict] = None):
         super().__init__(cfg)
-        self.root = self.cfg.get('storage_root_path', DEFAULT_STORAGE_PATH)
+        self.root = self.cfg.get('storage_root_path', os.path.join(DEFAULT_WORKSPACE, 'tools', self.name))
         os.makedirs(self.root, exist_ok=True)
 
     def call(self, params: Union[str, dict], **kwargs) -> str:
@@ -63,10 +65,12 @@ class Storage(BaseTool):
             os.makedirs(path_dir, exist_ok=True)
 
         save_text_to_file(path, value)
-        return SUCCESS_MESSAGE
+        return f'Successfully saved {key}.'
 
     def get(self, key: str, path: Optional[str] = None) -> str:
         path = path or self.root
+        if not os.path.exists(os.path.join(path, key)):
+            raise KeyNotExistsError(f'Get Failed: {key} does not exist')
         return read_text_from_file(os.path.join(path, key))
 
     def delete(self, key, path: Optional[str] = None) -> str:
@@ -74,7 +78,7 @@ class Storage(BaseTool):
         path = os.path.join(path, key)
         if os.path.exists(path):
             os.remove(path)
-            return f'Successfully deleted{key}'
+            return f'Successfully deleted {key}'
         else:
             return f'Delete Failed: {key} does not exist'
 
@@ -83,7 +87,7 @@ class Storage(BaseTool):
         path = os.path.join(path, key)
         if os.path.exists(path):
             if not os.path.isdir(path):
-                return 'Scan Failed: The scan operation requires passing in a key to a folder path'
+                return 'Scan Failed: The scan operation requires passing in a folder path as the key.'
             # All key-value pairs
             kvs = {}
             for root, dirs, files in os.walk(path):

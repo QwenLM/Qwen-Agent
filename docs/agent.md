@@ -8,7 +8,7 @@ The Agent receives a list of messages as input and produces a generator that yie
 
 Different Agent classes have various workflows. In the [agents](../qwen_agent/agents) directory, we provide several different fundamental Agent subclasses.
 For instance, the [ArticleAgent](../qwen_agent/agents/article_agent.py) returns a message that includes an article;
-the [DocQAAgent](../qwen_agent/agents/docqa_agent.py) returns a message that contains the results of a document Q&A Results.
+the [BasicDocQA](../qwen_agent/agents/doc_qa/basic_doc_qa.py) returns a message that contains the results of a document Q&A Results.
 
 These types of Agents have relatively fixed response patterns and are suited for fairly specific use cases.
 

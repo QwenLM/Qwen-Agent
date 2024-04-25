@@ -1,9 +1,8 @@
 {
     "path": {
         "work_space_root": "workspace/",
-        "database_root": "workspace/database/",
         "download_root": "workspace/download/",
-        "code_interpreter_ws": "workspace/ci_workspace/"
+        "code_interpreter_ws": "workspace/tools/code_interpreter/"
     },
     "server": {
         "server_host": "127.0.0.1",
@@ -14,10 +13,6 @@
         "api_key": "",
         "llm": "qwen-plus",
         "max_ref_token": 4000,
-        "max_days": 7,
-        "functions": [
-            "code_interpreter",
-            "image_gen"
-        ]
+        "max_days": 7
     }
 }

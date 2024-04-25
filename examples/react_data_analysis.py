@@ -46,10 +46,8 @@ def app():
         messages.extend(response)
 
 
-def test(
-    query:  # noqa
-    str = 'pd.head the file first and then help me draw a line chart to show the changes in stock prices',
-    file: Optional[str] = os.path.join(ROOT_RESOURCE, 'stock_prices.csv')):  # noqa
+def test(query: str = 'pd.head the file first and then help me draw a line chart to show the changes in stock prices',
+         file: Optional[str] = os.path.join(ROOT_RESOURCE, 'stock_prices.csv')):
     # Define the agent
     bot = init_agent_service()
 

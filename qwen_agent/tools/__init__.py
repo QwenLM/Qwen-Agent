@@ -5,6 +5,7 @@ from .doc_parser import DocParser
 from .image_gen import ImageGen
 from .retrieval import Retrieval
 from .similarity_search import SimilaritySearch
+from .simple_doc_parser import SimpleDocParser
 from .storage import Storage
 from .web_extractor import WebExtractor
 
@@ -18,5 +19,5 @@ def call_tool(plugin_name: str, plugin_args: str) -> str:
 
 __all__ = [
     'BaseTool', 'CodeInterpreter', 'ImageGen', 'AmapWeather', 'TOOL_REGISTRY', 'DocParser', 'SimilaritySearch',
-    'Storage', 'Retrieval', 'WebExtractor'
+    'Storage', 'Retrieval', 'WebExtractor', 'SimpleDocParser'
 ]

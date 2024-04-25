@@ -1,4 +1,4 @@
-from typing import List, Optional, Union
+from typing import List, Literal, Optional, Tuple, Union
 
 from pydantic import BaseModel, field_validator, model_validator
 
@@ -6,6 +6,7 @@ DEFAULT_SYSTEM_MESSAGE = 'You are a helpful assistant.'
 
 ROLE = 'role'
 CONTENT = 'content'
+NAME = 'name'
 
 SYSTEM = 'system'
 USER = 'user'
@@ -80,10 +81,20 @@ class ContentItem(BaseModelCompatibleDict):
     def __repr__(self):
         return f'ContentItem({self.model_dump()})'
 
-    def get_type_and_value(self):
+    def get_type_and_value(self) -> Tuple[Literal['text', 'image', 'file'], str]:
         (t, v), = self.model_dump().items()
         assert t in ('text', 'image', 'file')
         return t, v
+
+    @property
+    def type(self) -> Literal['text', 'image', 'file']:
+        t, v = self.get_type_and_value()
+        return t
+
+    @property
+    def value(self) -> str:
+        t, v = self.get_type_and_value()
+        return v
 
 
 class Message(BaseModelCompatibleDict):

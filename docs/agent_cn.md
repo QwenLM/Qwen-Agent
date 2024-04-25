@@ -8,7 +8,7 @@ Agent接收一个消息列表输入，并返回一个消息列表的生成器，
 
 不同Agent类具有不同的工作流程，我们在[agents](../qwen_agent/agents)目录提供了多个不同的基础的Agent子类，
 例如[ArticleAgent](../qwen_agent/agents/article_agent.py)接收消息后，返回消息包含一篇文章；
-[DocQAAgent](../qwen_agent/agents/docqa_agent.py)返回消息包含文档问答的结果。
+[BasicDocQA](../qwen_agent/agents/doc_qa/basic_doc_qa.py)返回消息包含文档问答的结果。
 可以看出，这类Agent回复模式相对固定，使用场景也比较固定。
 
 ### 1.1. Assistant 类

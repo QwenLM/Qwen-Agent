@@ -24,7 +24,8 @@ log.jsonl
 
 ai_agent/debug.json
 ai_agent/local_prompts/*
-*/debug.json
+**/debug.json
+**/debug.log*
 debug.json
 ai_agent/log.jsonl
 qwen_agent.egg-info/*

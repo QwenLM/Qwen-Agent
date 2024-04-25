@@ -3,25 +3,22 @@ import json
 import os
 from pathlib import Path
 
-try:
-    import gradio as gr
-    if gr.__version__ < '3.50' or gr.__version__ >= '4.0':
-        raise ImportError('Incompatible gradio version detected. '
-                          'Please install the correct version with: pip install "gradio>=3.50,<4.0"')
-except (ModuleNotFoundError, AttributeError):
-    raise ImportError('Please install gradio by: pip install "gradio>=3.50,<4.0"')
 import json5
+
+from qwen_agent.tools.simple_doc_parser import PARSER_SUPPORTED_FILE_TYPES
 
 try:
     import add_qwen_libs  # NOQA
 except ImportError:
     pass
-from qwen_agent.agents import ArticleAgent, DocQAAgent, ReActChat
+
+from qwen_agent.agents import ArticleAgent, Assistant, ReActChat
+from qwen_agent.gui import gr
+from qwen_agent.gui.utils import get_avatar_image
 from qwen_agent.llm import get_chat_model
 from qwen_agent.llm.base import ModelServiceError
 from qwen_agent.memory import Memory
-from qwen_agent.utils.utils import (get_basename_from_url, get_last_one_line_context, has_chinese_chars,
-                                    save_text_to_file)
+from qwen_agent.utils.utils import get_basename_from_url, get_file_type, has_chinese_chars, save_text_to_file
 from qwen_server import output_beautify
 from qwen_server.schema import GlobalConfig
 from qwen_server.utils import read_meta_data_by_condition, save_browsing_meta_data
@@ -30,9 +27,7 @@ from qwen_server.utils import read_meta_data_by_condition, save_browsing_meta_da
 with open(Path(__file__).resolve().parent / 'server_config.json', 'r') as f:
     server_config = json.load(f)
     server_config = GlobalConfig(**server_config)
-function_list = None
 llm_config = None
-storage_path = None
 
 if hasattr(server_config.server, 'llm'):
     llm_config = {
@@ -40,17 +35,15 @@ if hasattr(server_config.server, 'llm'):
         'api_key': server_config.server.api_key,
         'model_server': server_config.server.model_server
     }
-if hasattr(server_config.server, 'functions'):
-    function_list = server_config.server.functions
-if hasattr(server_config.path, 'database_root'):
-    storage_path = server_config.path.database_root
 
 app_global_para = {
     'time': [str(datetime.date.today()), str(datetime.date.today())],
     'messages': [],
     'last_turn_msg_id': [],
     'is_first_upload': True,
-    'uploaded_ci_file': ''
+    'uploaded_ci_file': '',
+    'pure_messages': [],
+    'pure_last_turn_msg_id': [],
 }
 
 DOC_OPTION = 'Document QA'
@@ -75,6 +68,7 @@ def add_text(history, text):
 
 def pure_add_text(history, text):
     history = history + [(text, None)]
+    app_global_para['pure_last_turn_msg_id'] = []
     return history, gr.update(value='', interactive=False)
 
 
@@ -93,10 +87,21 @@ def chat_clear():
     return None, None
 
 
+def chat_clear_pure():
+    app_global_para['pure_messages'] = []
+    return None, None
+
+
 def chat_clear_last():
     for index in app_global_para['last_turn_msg_id'][::-1]:
         del app_global_para['messages'][index]
     app_global_para['last_turn_msg_id'] = []
+
+
+def pure_chat_clear_last():
+    for index in app_global_para['pure_last_turn_msg_id'][::-1]:
+        del app_global_para['pure_messages'][index]
+    app_global_para['pure_last_turn_msg_id'] = []
 
 
 def add_file(file, chosen_plug):
@@ -106,10 +111,10 @@ def add_file(file, chosen_plug):
         app_global_para['uploaded_ci_file'] = file.name
         app_global_para['is_first_upload'] = True
         return display_path
-
-    if not file.name.lower().endswith(('pdf', 'docx', 'pptx')):
+    f_type = get_file_type(file)
+    if f_type not in PARSER_SUPPORTED_FILE_TYPES:
         display_path = (
-            'Upload failed: only adding [\'.pdf\', \'.docx\', \'.pptx\'] documents as references is supported!')
+            f'Upload failed: only adding {", ".join(PARSER_SUPPORTED_FILE_TYPES)} as references is supported!')
     else:
         # cache file
         try:
@@ -189,17 +194,22 @@ def pure_bot(history):
         yield history
     else:
         history[-1][1] = ''
-        messages = []
-        for chat in history[:-1]:
-            messages.append({'role': 'user', 'content': chat[0]})
-            messages.append({'role': 'assistant', 'content': chat[1]})
-        messages.append({'role': 'user', 'content': history[-1][0]})
+        message = [{'role': 'user', 'content': history[-1][0], 'name': 'pure_chat_user'}]
         try:
             llm = get_chat_model(llm_config)
-            response = llm.chat(messages=messages)
-            for chunk in output_beautify.convert_to_full_str_stream(response):
-                history[-1][1] = chunk
-                yield history
+            response = llm.chat(messages=app_global_para['pure_messages'] + message)
+            rsp = []
+            for rsp in response:
+                if rsp:
+                    history[-1][1] = rsp[-1]['content']
+                    yield history
+
+            # Record the conversation history when the conversation succeeds
+            app_global_para['pure_last_turn_msg_id'].append(len(app_global_para['pure_messages']))
+            app_global_para['pure_messages'].extend(message)  # New user message
+            app_global_para['pure_last_turn_msg_id'].append(len(app_global_para['pure_messages']))
+            app_global_para['pure_messages'].extend(rsp)  # The response
+
         except ModelServiceError as ex:
             history[-1][1] = str(ex)
             yield history
@@ -231,7 +241,6 @@ def bot(history, chosen_plug):
         yield history
     else:
         history[-1][1] = ''
-        message = []
         if chosen_plug == CI_OPTION:  # use code interpreter
             if app_global_para['uploaded_ci_file'] and app_global_para['is_first_upload']:
                 app_global_para['is_first_upload'] = False  # only send file when first upload
@@ -250,9 +259,16 @@ def bot(history, chosen_plug):
             func_assistant = ReActChat(function_list=['code_interpreter'], llm=llm_config)
             try:
                 response = func_assistant.run(messages=messages)
-                for chunk in output_beautify.convert_to_full_str_stream(response):
-                    history[-1][1] = chunk
-                    yield history
+                rsp = []
+                for rsp in response:
+                    if rsp:
+                        history[-1][1] = rsp[-1]['content']
+                        yield history
+                # append message
+                app_global_para['last_turn_msg_id'].append(len(app_global_para['messages']))
+                app_global_para['messages'].extend(message)
+                app_global_para['last_turn_msg_id'].append(len(app_global_para['messages']))
+                app_global_para['messages'].extend(rsp)
             except ModelServiceError as ex:
                 history[-1][1] = str(ex)
                 yield history
@@ -264,25 +280,38 @@ def bot(history, chosen_plug):
                 # checked files
                 for record in read_meta_data_by_condition(meta_file, time_limit=app_global_para['time'], checked=True):
                     content.append({'file': record['url']})
-                qa_assistant = DocQAAgent(llm=llm_config)
+                qa_assistant = Assistant(llm=llm_config)
                 message = [{'role': 'user', 'content': content}]
-                response = qa_assistant.run(messages=message, max_ref_token=server_config.server.max_ref_token)
-                for chunk in output_beautify.convert_to_full_str_stream(response):
-                    history[-1][1] = chunk
-                    yield history
+                # rm all files of history
+                messages = keep_only_files_for_name(app_global_para['messages'], 'None') + message
+                response = qa_assistant.run(messages=messages, max_ref_token=server_config.server.max_ref_token)
+                rsp = []
+                for rsp in response:
+                    if rsp:
+                        history[-1][1] = rsp[-1]['content']
+                        yield history
+                # append message
+                app_global_para['last_turn_msg_id'].append(len(app_global_para['messages']))
+                app_global_para['messages'].extend(message)
+                app_global_para['last_turn_msg_id'].append(len(app_global_para['messages']))
+                app_global_para['messages'].extend(rsp)
+
             except ModelServiceError as ex:
                 history[-1][1] = str(ex)
                 yield history
             except Exception as ex:
                 raise ValueError(ex)
 
-        # append message
-        app_global_para['last_turn_msg_id'].append(len(app_global_para['messages']))
-        app_global_para['messages'].extend(message)
 
-        message = {'role': 'assistant', 'content': history[-1][1]}
-        app_global_para['last_turn_msg_id'].append(len(app_global_para['messages']))
-        app_global_para['messages'].append(message)
+def get_last_one_line_context(text):
+    lines = text.split('\n')
+    n = len(lines)
+    res = ''
+    for i in range(n - 1, -1, -1):
+        if lines[i].strip():
+            res = lines[i]
+            break
+    return res
 
 
 def generate(context):
@@ -297,8 +326,9 @@ def generate(context):
         func_assistant = ReActChat(function_list=['code_interpreter'], llm=llm_config)
         try:
             response = func_assistant.run(messages=[{'role': 'user', 'content': sp_query}])
-            for chunk in output_beautify.convert_to_full_str_stream(response):
-                yield chunk
+            for rsp in response:
+                if rsp:
+                    yield rsp[-1]['content']
         except ModelServiceError as ex:
             yield str(ex)
         except Exception as ex:
@@ -309,8 +339,9 @@ def generate(context):
         func_assistant = ReActChat(function_list=['code_interpreter', 'image_gen'], llm=llm_config)
         try:
             response = func_assistant.run(messages=[{'role': 'user', 'content': sp_query}])
-            for chunk in output_beautify.convert_to_full_str_stream(response):
-                yield chunk
+            for rsp in response:
+                if rsp:
+                    yield rsp[-1]['content']
         except ModelServiceError as ex:
             yield str(ex)
         except Exception as ex:
@@ -338,8 +369,9 @@ def generate(context):
             }],
                                              max_ref_token=server_config.server.max_ref_token,
                                              full_article=full_article)
-            for chunk in output_beautify.convert_to_full_str_stream(response):
-                yield chunk
+            for rsp in response:
+                if rsp:
+                    yield rsp[-1]['content']
         except ModelServiceError as ex:
             yield str(ex)
         except Exception as ex:
@@ -364,7 +396,7 @@ def format_generate(edit, context):
         yield res
 
 
-with gr.Blocks(css=css, theme='soft') as demo:
+with gr.Blocks(css=css, js=js, theme='soft') as demo:
     title = gr.Markdown('Qwen Agent: BrowserQwen', elem_classes='title')
     desc = gr.Markdown(
         'This is the editing workstation of BrowserQwen, where Qwen has collected the browsing history. Qwen can assist you in completing your creative work!',
@@ -480,10 +512,7 @@ with gr.Blocks(css=css, theme='soft') as demo:
                 elem_id='chatbot',
                 height=680,
                 show_copy_button=True,
-                avatar_images=(
-                    None,
-                    (os.path.join(Path(__file__).resolve().parent, 'img/logo.png')),
-                ),
+                avatar_images=(None, get_avatar_image('qwen')),
             )
             with gr.Row():
                 with gr.Column(scale=1, min_width=0):
@@ -523,7 +552,7 @@ with gr.Blocks(css=css, theme='soft') as demo:
             re_txt_msg.then(lambda: gr.update(interactive=True), None, [chat_txt], queue=False)
 
             file_msg = file_btn.upload(add_file, [file_btn, plug_bt], [hidden_file_path], queue=False)
-            file_msg.then(update_browser_list, None, browser_list).then(lambda: None, None, None, _js=f'() => {{{js}}}')
+            file_msg.then(update_browser_list, None, browser_list)
 
             chat_clr_bt.click(chat_clear, None, [chatbot, hidden_file_path], queue=False)
             # re_bt.click(re_bot, chatbot, chatbot)
@@ -539,10 +568,7 @@ with gr.Blocks(css=css, theme='soft') as demo:
                 elem_id='pure_chatbot',
                 height=680,
                 show_copy_button=True,
-                avatar_images=(
-                    None,
-                    (os.path.join(Path(__file__).resolve().parent, 'img/logo.png')),
-                ),
+                avatar_images=(None, get_avatar_image('qwen')),
             )
             with gr.Row():
                 with gr.Column(scale=13):
@@ -563,27 +589,22 @@ with gr.Blocks(css=css, theme='soft') as demo:
             txt_msg.then(lambda: gr.update(interactive=True), None, [chat_txt], queue=False)
 
             re_txt_msg = chat_re_bt.click(rm_text, [pure_chatbot], [pure_chatbot, chat_txt],
-                                          queue=False).then(pure_bot, pure_chatbot, pure_chatbot)
+                                          queue=False).then(pure_chat_clear_last, None,
+                                                            None).then(pure_bot, pure_chatbot, pure_chatbot)
             re_txt_msg.then(lambda: gr.update(interactive=True), None, [chat_txt], queue=False)
 
-            chat_clr_bt.click(lambda: None, None, pure_chatbot, queue=False)
+            chat_clr_bt.click(chat_clear_pure, None, pure_chatbot, queue=False)
 
-            chat_stop_bt.click(chat_clear_last, None, None, cancels=[txt_msg, re_txt_msg], queue=False)
+            chat_stop_bt.click(pure_chat_clear_last, None, None, cancels=[txt_msg, re_txt_msg], queue=False)
 
     date1.change(update_app_global_para, [date1, date2],
-                 None).then(update_browser_list, None,
-                            browser_list).then(lambda: None, None, None,
-                                               _js=f'() => {{{js}}}').then(chat_clear, None,
-                                                                           [chatbot, hidden_file_path])
+                 None).then(update_browser_list, None, browser_list).then(chat_clear, None, [chatbot, hidden_file_path])
     date2.change(update_app_global_para, [date1, date2],
-                 None).then(update_browser_list, None,
-                            browser_list).then(lambda: None, None, None,
-                                               _js=f'() => {{{js}}}').then(chat_clear, None,
-                                                                           [chatbot, hidden_file_path])
+                 None).then(update_browser_list, None, browser_list).then(chat_clear, None, [chatbot, hidden_file_path])
 
-    demo.load(update_app_global_para, [date1, date2], None).then(refresh_date, None, [date1, date2]).then(
-        update_browser_list, None, browser_list).then(lambda: None, None, None,
-                                                      _js=f'() => {{{js}}}').then(chat_clear, None,
-                                                                                  [chatbot, hidden_file_path])
+    demo.load(update_app_global_para, [date1, date2],
+              None).then(refresh_date, None,
+                         [date1, date2]).then(update_browser_list, None,
+                                              browser_list).then(chat_clear, None, [chatbot, hidden_file_path])
 
 demo.queue().launch(server_name=server_config.server.server_host, server_port=server_config.server.workstation_port)

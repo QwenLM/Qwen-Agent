@@ -5,9 +5,9 @@ from qwen_agent import Agent
 from qwen_agent.llm import BaseChatModel
 from qwen_agent.llm.schema import DEFAULT_SYSTEM_MESSAGE, FUNCTION, Message
 from qwen_agent.memory import Memory
+from qwen_agent.settings import MAX_LLM_CALL_PER_RUN
 from qwen_agent.tools import BaseTool
-
-MAX_LLM_CALL_PER_RUN = 8
+from qwen_agent.utils.utils import extract_files_from_messages
 
 
 class FnCallAgent(Agent):
@@ -38,8 +38,9 @@ class FnCallAgent(Agent):
                          name=name,
                          description=description)
 
-        # Default to use Memory to manage files
-        self.mem = Memory(llm=self.llm, files=files)
+        if not hasattr(self, 'mem'):
+            # Default to use Memory to manage files
+            self.mem = Memory(llm=self.llm, files=files)
 
     def _run(self, messages: List[Message], lang: str = 'en', **kwargs) -> Iterator[List[Message]]:
         messages = copy.deepcopy(messages)
@@ -56,19 +57,19 @@ class FnCallAgent(Agent):
             if output:
                 response.extend(output)
                 messages.extend(output)
-            use_tool, action, action_input, _ = self._detect_tool(response[-1])
-            if use_tool:
-                observation = self._call_tool(action, action_input, messages=messages)
-                fn_msg = Message(
-                    role=FUNCTION,
-                    name=action,
-                    content=observation,
-                )
-                messages.append(fn_msg)
-                response.append(fn_msg)
-                yield response
-            else:
-                break
+                use_tool, tool_name, tool_args, _ = self._detect_tool(response[-1])
+                if use_tool:
+                    tool_result = self._call_tool(tool_name, tool_args, messages=messages)
+                    fn_msg = Message(
+                        role=FUNCTION,
+                        name=tool_name,
+                        content=tool_result,
+                    )
+                    messages.append(fn_msg)
+                    response.append(fn_msg)
+                    yield response
+                else:
+                    break
 
     def _call_tool(self, tool_name: str, tool_args: Union[str, dict] = '{}', **kwargs) -> str:
         if tool_name not in self.function_map:
@@ -77,7 +78,7 @@ class FnCallAgent(Agent):
         # Todo: This should be changed to parameter passing, and the file URL should be determined by the model
         if self.function_map[tool_name].file_access:
             assert 'messages' in kwargs
-            files = self.mem.get_all_files_of_messages(kwargs['messages']) + self.mem.system_files
+            files = extract_files_from_messages(kwargs['messages']) + self.mem.system_files
             return super()._call_tool(tool_name, tool_args, files=files, **kwargs)
         else:
             return super()._call_tool(tool_name, tool_args, **kwargs)

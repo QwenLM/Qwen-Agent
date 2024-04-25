@@ -4,8 +4,9 @@ from typing import Iterator, List
 import json5
 
 from qwen_agent import Agent
+from qwen_agent.agents.assistant import Assistant
 from qwen_agent.llm.schema import ASSISTANT, CONTENT, USER, Message
-from qwen_agent.prompts import DocQA, ExpandWriting, OutlineWriting
+from qwen_agent.prompts import ExpandWriting, OutlineWriting
 
 default_plan = """{"action1": "summarize", "action2": "outline", "action3": "expand"}"""
 
@@ -38,26 +39,26 @@ class WriteFromScratch(Agent):
                     user_request = 'Summarize the main content of reference materials.'
                 else:
                     raise NotImplementedError
-                sum_agent = DocQA(llm=self.llm)
+                sum_agent = Assistant(llm=self.llm)
                 res_sum = sum_agent.run(messages=[Message(USER, user_request)], knowledge=knowledge, lang=lang)
-                trunk = None
-                for trunk in res_sum:
-                    yield response + trunk
-                if trunk:
-                    response.extend(trunk)
-                    summ = trunk[-1][CONTENT]
+                chunk = None
+                for chunk in res_sum:
+                    yield response + chunk
+                if chunk:
+                    response.extend(chunk)
+                    summ = chunk[-1][CONTENT]
             elif plan == 'outline':
                 response.append(Message(ASSISTANT, '>\n> Generate Outline: \n'))
                 yield response
 
                 otl_agent = OutlineWriting(llm=self.llm)
                 res_otl = otl_agent.run(messages=messages, knowledge=summ, lang=lang)
-                trunk = None
-                for trunk in res_otl:
-                    yield response + trunk
-                if trunk:
-                    response.extend(trunk)
-                    outline = trunk[-1][CONTENT]
+                chunk = None
+                for chunk in res_otl:
+                    yield response + chunk
+                if chunk:
+                    response.extend(chunk)
+                    outline = chunk[-1][CONTENT]
             elif plan == 'expand':
                 response.append(Message(ASSISTANT, '>\n> Writing Text: \n'))
                 yield response
@@ -88,10 +89,10 @@ class WriteFromScratch(Agent):
                         capture_later=capture_later,
                         lang=lang,
                     )
-                    trunk = None
-                    for trunk in res_exp:
-                        yield response + trunk
-                    if trunk:
-                        response.extend(trunk)
+                    chunk = None
+                    for chunk in res_exp:
+                        yield response + chunk
+                    if chunk:
+                        response.extend(chunk)
             else:
                 pass

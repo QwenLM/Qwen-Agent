@@ -9,7 +9,7 @@ from qwen_agent.llm.base import BaseChatModel
 from qwen_agent.llm.schema import CONTENT, DEFAULT_SYSTEM_MESSAGE, ROLE, SYSTEM, ContentItem, Message
 from qwen_agent.log import logger
 from qwen_agent.tools import TOOL_REGISTRY, BaseTool
-from qwen_agent.utils.utils import has_chinese_chars
+from qwen_agent.utils.utils import has_chinese_chars, merge_generate_cfgs
 
 
 class Agent(ABC):
@@ -41,6 +41,7 @@ class Agent(ABC):
             self.llm = get_chat_model(llm)
         else:
             self.llm = llm
+        self.extra_generate_cfg: dict = {}
 
         self.function_map = {}
         if function_list:
@@ -114,6 +115,7 @@ class Agent(ABC):
         messages: List[Message],
         functions: Optional[List[Dict]] = None,
         stream: bool = True,
+        extra_generate_cfg: Optional[dict] = None,
     ) -> Iterator[List[Message]]:
         """The interface of calling LLM for the agent.
 
@@ -136,7 +138,13 @@ class Agent(ABC):
         else:
             assert isinstance(messages[0][CONTENT], list)
             messages[0][CONTENT] = [ContentItem(text=self.system_message)] + messages[0][CONTENT]
-        return self.llm.chat(messages=messages, functions=functions, stream=stream)
+        return self.llm.chat(messages=messages,
+                             functions=functions,
+                             stream=stream,
+                             extra_generate_cfg=merge_generate_cfgs(
+                                 base_generate_cfg=self.extra_generate_cfg,
+                                 new_generate_cfg=extra_generate_cfg,
+                             ))
 
     def _call_tool(self, tool_name: str, tool_args: Union[str, dict] = '{}', **kwargs) -> str:
         """The interface of calling tools for the agent.
@@ -160,6 +168,7 @@ class Agent(ABC):
             error_message = f'An error occurred when calling tool `{tool_name}`:\n' \
                             f'{exception_type}: {exception_message}\n' \
                             f'Traceback:\n{traceback_info}'
+            logger.warning(error_message)
             return error_message
 
         if isinstance(tool_result, str):

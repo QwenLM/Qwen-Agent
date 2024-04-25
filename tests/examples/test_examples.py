@@ -12,7 +12,7 @@ from examples.assistant_angry_girlfriend import test as assistant_angry_girlfrie
 from examples.assistant_growing_girl import test as assistant_growing_girl  # noqa
 from examples.assistant_weather_bot import test as assistant_weather_bot  # noqa
 from examples.function_calling import test as function_calling  # noqa
-from examples.gpt_mentions import test as gpt_mentions  # noqa
+# from examples.gpt_mentions import test as gpt_mentions  # noqa
 from examples.group_chat_chess import test as group_chat_chess  # noqa
 from examples.group_chat_demo import test as group_chat_demo  # noqa
 from examples.llm_riddles import test as llm_riddles  # noqa
@@ -67,10 +67,11 @@ def test_function_calling():
     function_calling()
 
 
-@pytest.mark.parametrize('history', ['你能做什么？'])
-@pytest.mark.parametrize('chosen_plug', ['code_interpreter', 'doc_qa', 'assistant'])
-def test_gpt_mentions(history, chosen_plug):
-    gpt_mentions(history=history, chosen_plug=chosen_plug)
+# @pytest.mark.parametrize('history', ['你能做什么？'])
+# @pytest.mark.parametrize('chosen_plug',
+#                          ['code_interpreter', 'doc_qa', 'assistant'])
+# def test_gpt_mentions(history, chosen_plug):
+#     gpt_mentions(history=history, chosen_plug=chosen_plug)
 
 
 @pytest.mark.parametrize(

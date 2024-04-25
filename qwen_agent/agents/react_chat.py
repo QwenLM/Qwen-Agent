@@ -1,11 +1,13 @@
 import copy
 from typing import Dict, Iterator, List, Optional, Tuple, Union
 
-from qwen_agent.agents.fncall_agent import MAX_LLM_CALL_PER_RUN, FnCallAgent
+from qwen_agent.agents.fncall_agent import FnCallAgent
 from qwen_agent.llm import BaseChatModel
+from qwen_agent.llm.function_calling import get_function_description
 from qwen_agent.llm.schema import ASSISTANT, CONTENT, DEFAULT_SYSTEM_MESSAGE, ROLE, ContentItem, Message
+from qwen_agent.settings import MAX_LLM_CALL_PER_RUN
 from qwen_agent.tools import BaseTool
-from qwen_agent.utils.utils import get_basename_from_url, get_function_description, has_chinese_chars
+from qwen_agent.utils.utils import get_basename_from_url, has_chinese_chars, merge_generate_cfgs
 
 PROMPT_REACT = """Answer the following questions as best you can. You have access to the following tools:
 
@@ -43,9 +45,10 @@ class ReActChat(FnCallAgent):
                          name=name,
                          description=description,
                          files=files)
-        stop = self.llm.generate_cfg.get('stop', [])
-        fn_stop = ['Observation:', 'Observation:\n']
-        self.llm.generate_cfg['stop'] = stop + [x for x in fn_stop if x not in stop]
+        self.extra_generate_cfg = merge_generate_cfgs(
+            base_generate_cfg=self.extra_generate_cfg,
+            new_generate_cfg={'stop': ['Observation:', 'Observation:\n']},
+        )
 
     def _run(self, messages: List[Message], lang: str = 'en', **kwargs) -> Iterator[List[Message]]:
         ori_messages = messages

@@ -1,6 +1,10 @@
+from qwen_agent import Agent
+
 from .article_agent import ArticleAgent
 from .assistant import Assistant
-from .docqa_agent import DocQAAgent
+# DocQAAgent is the default solution for long document question answering.
+# The actual implementation of DocQAAgent may change with every release.
+from .doc_qa.basic_doc_qa import BasicDocQA as DocQAAgent
 from .fncall_agent import FnCallAgent
 from .group_chat import GroupChat
 from .group_chat_auto_router import GroupChatAutoRouter
@@ -11,6 +15,16 @@ from .user_agent import UserAgent
 from .write_from_scratch import WriteFromScratch
 
 __all__ = [
-    'DocQAAgent', 'Assistant', 'ArticleAgent', 'ReActChat', 'Router', 'UserAgent', 'GroupChat', 'WriteFromScratch',
-    'GroupChatCreator', 'GroupChatAutoRouter', 'FnCallAgent'
+    'Agent',
+    'DocQAAgent',
+    'Assistant',
+    'ArticleAgent',
+    'ReActChat',
+    'Router',
+    'UserAgent',
+    'GroupChat',
+    'WriteFromScratch',
+    'GroupChatCreator',
+    'GroupChatAutoRouter',
+    'FnCallAgent',
 ]

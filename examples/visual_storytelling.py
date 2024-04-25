@@ -34,8 +34,8 @@ class VisualStorytelling(Agent):
              **kwargs) -> Iterator[List[Message]]:
         """Define the workflow"""
 
-        assert (isinstance(messages[-1]['content'], list) and
-                any([item.image for item in messages[-1]['content']])), 'This agent requires input of images'
+        assert isinstance(messages[-1]['content'], list)
+        assert any([item.image for item in messages[-1]['content']]), 'This agent requires input of images'
 
         # Image understanding
         new_messages = copy.deepcopy(messages)

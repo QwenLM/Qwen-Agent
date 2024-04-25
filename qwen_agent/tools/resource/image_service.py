@@ -17,7 +17,12 @@ app.add_middleware(
     allow_headers=['*'],
 )
 
-app.mount('/static', StaticFiles(directory=os.getcwd() + '/workspace/ci_workspace/'), name='static')
+# TODO: This is buggy if workspace is modified. To be removed.
+app.mount(
+    '/static',
+    StaticFiles(directory=os.path.abspath('workspace/tools/code_interpreter/')),
+    name='static',
+)
 
 if __name__ == '__main__':
     uvicorn.run(app='image_service:app', port=7865)

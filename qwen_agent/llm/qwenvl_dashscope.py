@@ -32,7 +32,8 @@ class QwenVLChatAtDS(BaseFnCallModel):
     def _chat_stream(
         self,
         messages: List[Message],
-        delta_stream: bool = False,
+        delta_stream: bool,
+        generate_cfg: dict,
     ) -> Iterator[List[Message]]:
         if delta_stream:
             raise NotImplementedError
@@ -44,17 +45,18 @@ class QwenVLChatAtDS(BaseFnCallModel):
                                                          messages=messages,
                                                          result_format='message',
                                                          stream=True,
-                                                         **self.generate_cfg)
+                                                         **generate_cfg)
 
-        for trunk in response:
-            if trunk.status_code == HTTPStatus.OK:
-                yield _extract_vl_response(trunk)
+        for chunk in response:
+            if chunk.status_code == HTTPStatus.OK:
+                yield _extract_vl_response(chunk)
             else:
-                raise ModelServiceError(code=trunk.code, message=trunk.message)
+                raise ModelServiceError(code=chunk.code, message=chunk.message)
 
     def _chat_no_stream(
         self,
         messages: List[Message],
+        generate_cfg: dict,
     ) -> List[Message]:
         messages = _format_local_files(messages)
         messages = [msg.model_dump() for msg in messages]
@@ -63,14 +65,14 @@ class QwenVLChatAtDS(BaseFnCallModel):
                                                          messages=messages,
                                                          result_format='message',
                                                          stream=False,
-                                                         **self.generate_cfg)
+                                                         **generate_cfg)
         if response.status_code == HTTPStatus.OK:
             return _extract_vl_response(response=response)
         else:
             raise ModelServiceError(code=response.code, message=response.message)
 
-    def _postprocess_messages(self, messages: List[Message], fncall_mode: bool) -> List[Message]:
-        messages = super()._postprocess_messages(messages, fncall_mode=fncall_mode)
+    def _postprocess_messages(self, messages: List[Message], fncall_mode: bool, generate_cfg: dict) -> List[Message]:
+        messages = super()._postprocess_messages(messages, fncall_mode=fncall_mode, generate_cfg=generate_cfg)
         # Make VL return the same format as text models for easy usage
         messages = format_as_text_messages(messages)
         return messages

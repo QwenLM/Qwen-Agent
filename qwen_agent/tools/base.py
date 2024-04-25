@@ -38,12 +38,6 @@ class BaseTool(ABC):
                 f'You must set {self.__class__.__name__}.name, either by @register_tool(name=...) or explicitly setting {self.__class__.__name__}.name'
             )
 
-        self.name_for_human = self.cfg.get('name_for_human', self.name)
-        if not hasattr(self, 'args_format'):
-            self.args_format = self.cfg.get('args_format', '此工具的输入应为JSON对象。')
-        self.function = self._build_function()
-        self.file_access = False
-
     @abstractmethod
     def call(self, params: Union[str, dict], **kwargs) -> Union[str, list, dict]:
         """The interface for calling tools.
@@ -74,7 +68,8 @@ class BaseTool(ABC):
         except Exception:
             raise ValueError('Parameters cannot be converted to Json Format!')
 
-    def _build_function(self) -> dict:
+    @property
+    def function(self) -> dict:  # Bad naming. It should be `function_info`.
         return {
             'name_for_human': self.name_for_human,
             'name': self.name,
@@ -82,3 +77,15 @@ class BaseTool(ABC):
             'parameters': self.parameters,
             'args_format': self.args_format
         }
+
+    @property
+    def name_for_human(self) -> str:
+        return self.cfg.get('name_for_human', self.name)
+
+    @property
+    def args_format(self) -> str:
+        return self.cfg.get('args_format', '此工具的输入应为JSON对象。')
+
+    @property
+    def file_access(self) -> bool:
+        return False

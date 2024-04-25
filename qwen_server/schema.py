@@ -3,7 +3,6 @@ from pydantic import BaseModel
 
 class PathConfig(BaseModel):
     work_space_root: str
-    database_root: str
     download_root: str
     code_interpreter_ws: str
 
@@ -18,7 +17,6 @@ class ServerConfig(BaseModel):
     llm: str
     max_ref_token: int
     max_days: int
-    functions: list
 
     class Config:
         protected_namespaces = ()

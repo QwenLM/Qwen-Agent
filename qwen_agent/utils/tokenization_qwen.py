@@ -1,20 +1,13 @@
-# Copyright (c) Alibaba Cloud.
-#
-# This source code is licensed under the license found in the
-# LICENSE file in the root directory of this source tree.
 """Tokenization classes for QWen."""
 
 import base64
-import logging
-import os
 import unicodedata
-from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Collection, Dict, List, Set, Tuple, Union
+from typing import Collection, Dict, List, Set, Union
 
 import tiktoken
 
-logger = logging.getLogger(__name__)
+from qwen_agent.log import logger
 
 VOCAB_FILES_NAMES = {'vocab_file': 'qwen.tiktoken'}
 
@@ -45,23 +38,6 @@ def _load_tiktoken_bpe(tiktoken_bpe_file: str) -> Dict[bytes, int]:
     return {
         base64.b64decode(token): int(rank) for token, rank in (line.split() for line in contents.splitlines() if line)
     }
-
-
-@dataclass(frozen=True, eq=True)
-class AddedToken:
-    """
-    AddedToken represents a token to be added to a Tokenizer An AddedToken can have special options defining the
-    way it should behave.
-    """
-
-    content: str = field(default_factory=str)
-    single_word: bool = False
-    lstrip: bool = False
-    rstrip: bool = False
-    normalized: bool = True
-
-    def __getstate__(self):
-        return self.__dict__
 
 
 class QWenTokenizer:
@@ -157,33 +133,6 @@ class QWenTokenizer:
                 ids.append(self.mergeable_ranks.get(token))
         return ids
 
-    def _add_tokens(
-        self,
-        new_tokens: Union[List[str], List[AddedToken]],
-        special_tokens: bool = False,
-    ) -> int:
-        if not special_tokens and new_tokens:
-            raise ValueError('Adding regular tokens is not supported')
-        for token in new_tokens:
-            surface_form = token.content if isinstance(token, AddedToken) else token
-            if surface_form not in SPECIAL_TOKENS_SET:
-                raise ValueError('Adding unknown special tokens is not supported')
-        return 0
-
-    def save_vocabulary(self, save_directory: str, **kwargs) -> Tuple[str]:
-        """
-        Save only the vocabulary of the tokenizer (vocabulary).
-
-        Returns:
-            `Tuple(str)`: Paths to the files saved.
-        """
-        file_path = os.path.join(save_directory, 'qwen.tiktoken')
-        with open(file_path, 'w', encoding='utf8') as w:
-            for k, v in self.mergeable_ranks.items():
-                line = base64.b64encode(k).decode('utf8') + ' ' + str(v) + '\n'
-                w.write(line)
-        return (file_path,)
-
     def tokenize(
             self,
             text: str,
@@ -242,29 +191,6 @@ class QWenTokenizer:
     def vocab_size(self):
         return self.tokenizer.n_vocab
 
-    def _convert_id_to_token(self, index: int) -> Union[bytes, str]:
-        """Converts an id to a token, special tokens included"""
-        if index in self.decoder:
-            return self.decoder[index]
-        raise ValueError('unknown ids')
-
-    def _convert_token_to_id(self, token: Union[bytes, str]) -> int:
-        """Converts a token to an id using the vocab, special tokens included"""
-        if token in self.special_tokens:
-            return self.special_tokens[token]
-        if token in self.mergeable_ranks:
-            return self.mergeable_ranks[token]
-        raise ValueError('unknown token')
-
-    def _tokenize(self, text: str, **kwargs):
-        """
-        Converts a string in a sequence of tokens (string), using the tokenizer. Split in words for word-based
-        vocabulary or sub-words for sub-word-based vocabularies (BPE/SentencePieces/WordPieces).
-
-        Do NOT take care of added tokens.
-        """
-        raise NotImplementedError
-
     def _decode(
         self,
         token_ids: Union[int, List[int]],
@@ -278,10 +204,20 @@ class QWenTokenizer:
             token_ids = [i for i in token_ids if i < self.eod_id]
         return self.tokenizer.decode(token_ids, errors=errors or self.errors)
 
+    def encode(self, text: str) -> List[int]:
+        return self.convert_tokens_to_ids(self.tokenize(text))
+
+    def count_tokens(self, text: str) -> int:
+        return len(self.tokenize(text))
+
+    def truncate(self, text: str, max_token: int, start_token: int = 0) -> str:
+        token_list = self.tokenize(text)
+        token_list = token_list[start_token:min(len(token_list), start_token + max_token)]
+        return self.convert_tokens_to_string(token_list)
+
 
 tokenizer = QWenTokenizer(Path(__file__).resolve().parent / 'qwen.tiktoken')
 
 
-def count_tokens(text):
-    tokens = tokenizer.tokenize(text)
-    return len(tokens)
+def count_tokens(text: str) -> int:
+    return tokenizer.count_tokens(text)

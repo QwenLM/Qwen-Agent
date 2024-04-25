@@ -34,14 +34,14 @@ class _M6CountdownTimer:
         try:
             signal.alarm(timeout)
         except AttributeError:  # windows
-            pass  # TODO: I haven't found a solution that works with jupyter yet.
+            pass  # I haven't found a timeout solution that works with windows + jupyter yet.
 
     @classmethod
     def cancel(cls):
         try:
             signal.alarm(0)
         except AttributeError:  # windows
-            pass  # TODO
+            pass
 
 
 sns.set_theme()

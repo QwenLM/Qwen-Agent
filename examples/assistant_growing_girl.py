@@ -10,10 +10,12 @@ ROOT_RESOURCE = os.path.join(os.path.dirname(__file__), 'resource')
 def init_agent_service():
     llm_cfg = {'model': 'qwen-max'}
     tools = ['image_gen']
-    bot = Assistant(llm=llm_cfg,
-                    function_list=tools,
-                    system_message='你扮演一个漫画家，根据我给你的女孩的不同阶段，使用工具画出每个阶段女孩的的图片，'
-                    '并串成一个故事讲述出来。要求图片背景丰富')
+    bot = Assistant(
+        llm=llm_cfg,
+        function_list=tools,
+        system_message='你扮演一个漫画家，根据我给你的女孩的不同阶段，使用工具画出每个阶段女孩的的图片，'
+        '并串成一个故事讲述出来。要求图片背景丰富',
+    )
     return bot
 
 
@@ -42,7 +44,10 @@ def app():
         messages.extend(response)
 
 
-def test(query='请用image_gen开始创作！', file: Optional[str] = os.path.join(ROOT_RESOURCE, 'growing_girl.pdf')):
+def test(
+        query='请用image_gen开始创作！',
+        file: Optional[str] = os.path.join(ROOT_RESOURCE, 'growing_girl.pdf'),
+):
     # Define the agent
     bot = init_agent_service()
 
