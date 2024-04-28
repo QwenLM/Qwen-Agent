@@ -21,13 +21,10 @@ def test_router():
     # define a router (Simultaneously serving as a text agent)
     bot = Router(llm=llm_cfg, agents=[bot_vl, bot_tool])
     messages = [
-        Message(
-            'user',
-            [
-                ContentItem(text='描述图片'),
-                ContentItem(image=  # NOQA
-                            'https://img01.sc115.com/uploads/sc/jpgs/1505/apic11540_sc115.com.jpg')
-            ])
+        Message('user', [
+            ContentItem(text='描述图片'),
+            ContentItem(image='https://img01.sc115.com/uploads/sc/jpgs/1505/apic11540_sc115.com.jpg'),
+        ])
     ]
 
     *_, last = bot.run(messages)

@@ -9,8 +9,8 @@ import dashscope
 
 from qwen_agent.llm.base import ModelServiceError, register_llm
 from qwen_agent.llm.function_calling import BaseFnCallModel
-from qwen_agent.llm.text_base import format_as_text_messages
 from qwen_agent.log import logger
+from qwen_agent.utils.utils import format_as_text_message
 
 from .schema import ContentItem, Message
 
@@ -74,7 +74,7 @@ class QwenVLChatAtDS(BaseFnCallModel):
     def _postprocess_messages(self, messages: List[Message], fncall_mode: bool, generate_cfg: dict) -> List[Message]:
         messages = super()._postprocess_messages(messages, fncall_mode=fncall_mode, generate_cfg=generate_cfg)
         # Make VL return the same format as text models for easy usage
-        messages = format_as_text_messages(messages)
+        messages = [format_as_text_message(msg, add_upload_info=False) for msg in messages]
         return messages
 
 

@@ -1,5 +1,6 @@
 """A data analysis example implemented by assistant"""
 import os
+from pprint import pprint
 from typing import Optional
 
 from qwen_agent.agents import ReActChat
@@ -60,7 +61,7 @@ def test(query: str = 'pd.head the file first and then help me draw a line chart
         messages.append({'role': 'user', 'content': [{'text': query}, {'file': file}]})
 
     for response in bot.run(messages):
-        print('bot response:', response)
+        pprint(response, indent=2)
 
 
 if __name__ == '__main__':

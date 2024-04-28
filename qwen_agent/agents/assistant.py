@@ -7,7 +7,7 @@ import json5
 from qwen_agent.llm.schema import CONTENT, ROLE, SYSTEM, Message
 from qwen_agent.log import logger
 from qwen_agent.settings import DEFAULT_MAX_REF_TOKEN
-from qwen_agent.utils.utils import print_traceback
+from qwen_agent.utils.utils import get_basename_from_url, print_traceback
 
 from .fncall_agent import FnCallAgent
 
@@ -58,7 +58,10 @@ def format_knowledge_to_source_and_content(result: Union[str, List[dict]]) -> Li
         for doc in docs:
             url, snippets = doc['url'], doc['text']
             assert isinstance(snippets, list)
-            _tmp_knowledge.append({'source': f'[文件]({url})', 'content': '\n\n...\n\n'.join(snippets)})
+            _tmp_knowledge.append({
+                'source': f'[文件]({get_basename_from_url(url)})',
+                'content': '\n\n...\n\n'.join(snippets)
+            })
         knowledge.extend(_tmp_knowledge)
     except Exception:
         print_traceback()
@@ -71,7 +74,7 @@ class Assistant(FnCallAgent):
 
     def _run(self,
              messages: List[Message],
-             lang: str = 'en',
+             lang: Literal['en', 'zh'] = 'en',
              max_ref_token: int = DEFAULT_MAX_REF_TOKEN,
              knowledge: str = '',
              **kwargs) -> Iterator[List[Message]]:
@@ -92,7 +95,7 @@ class Assistant(FnCallAgent):
 
     def _prepend_knowledge_prompt(self,
                                   messages: List[Message],
-                                  lang: str = 'en',
+                                  lang: Literal['en', 'zh'] = 'en',
                                   max_ref_token: int = DEFAULT_MAX_REF_TOKEN,
                                   knowledge: str = '',
                                   **kwargs) -> List[Message]:

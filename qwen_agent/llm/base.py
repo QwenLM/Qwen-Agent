@@ -2,11 +2,12 @@ import copy
 import random
 import time
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
+from typing import Any, Dict, Iterator, List, Literal, Optional, Tuple, Union
 
 from qwen_agent.llm.schema import DEFAULT_SYSTEM_MESSAGE, SYSTEM, Message
 from qwen_agent.utils.tokenization_qwen import tokenizer
-from qwen_agent.utils.utils import format_as_multimodal_message, merge_generate_cfgs, print_traceback
+from qwen_agent.utils.utils import (format_as_multimodal_message, has_chinese_messages, merge_generate_cfgs,
+                                    print_traceback)
 
 LLM_REGISTRY = {}
 
@@ -69,6 +70,11 @@ class BaseChatModel(ABC):
         """
 
         generate_cfg = merge_generate_cfgs(base_generate_cfg=self.generate_cfg, new_generate_cfg=extra_generate_cfg)
+        if 'lang' in generate_cfg:
+            generate_cfg = copy.deepcopy(generate_cfg)
+            lang: Literal['en', 'zh'] = generate_cfg.pop('lang')
+        else:
+            lang: Literal['en', 'zh'] = 'zh' if has_chinese_messages(messages) else 'en'
 
         messages = copy.deepcopy(messages)
 
@@ -85,7 +91,7 @@ class BaseChatModel(ABC):
         if messages[0].role != SYSTEM:
             messages = [Message(role=SYSTEM, content=DEFAULT_SYSTEM_MESSAGE)] + messages
 
-        messages = self._preprocess_messages(messages)
+        messages = self._preprocess_messages(messages, lang=lang)
 
         if functions:
             fncall_mode = True
@@ -100,6 +106,7 @@ class BaseChatModel(ABC):
                     stream=stream,
                     delta_stream=delta_stream,
                     generate_cfg=generate_cfg,
+                    lang=lang,
                 )
             else:
                 return self._chat(
@@ -144,6 +151,7 @@ class BaseChatModel(ABC):
         stream: bool,
         delta_stream: bool,
         generate_cfg: dict,
+        lang: Literal['en', 'zh'],
     ) -> Union[List[Message], Iterator[List[Message]]]:
         raise NotImplementedError
 
@@ -164,8 +172,8 @@ class BaseChatModel(ABC):
     ) -> List[Message]:
         raise NotImplementedError
 
-    def _preprocess_messages(self, messages: List[Message]) -> List[Message]:
-        messages = [format_as_multimodal_message(msg) for msg in messages]
+    def _preprocess_messages(self, messages: List[Message], lang: Literal['en', 'zh']) -> List[Message]:
+        messages = [format_as_multimodal_message(msg, add_upload_info=True, lang=lang) for msg in messages]
         return messages
 
     def _postprocess_messages(
@@ -174,7 +182,7 @@ class BaseChatModel(ABC):
         fncall_mode: bool,
         generate_cfg: dict,
     ) -> List[Message]:
-        messages = [format_as_multimodal_message(msg) for msg in messages]
+        messages = [format_as_multimodal_message(msg, add_upload_info=False) for msg in messages]
         messages = self._postprocess_stop_words(messages, generate_cfg=generate_cfg)
         return messages
 

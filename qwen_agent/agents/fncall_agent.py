@@ -1,5 +1,5 @@
 import copy
-from typing import Dict, Iterator, List, Optional, Union
+from typing import Dict, Iterator, List, Literal, Optional, Union
 
 from qwen_agent import Agent
 from qwen_agent.llm import BaseChatModel
@@ -42,14 +42,15 @@ class FnCallAgent(Agent):
             # Default to use Memory to manage files
             self.mem = Memory(llm=self.llm, files=files)
 
-    def _run(self, messages: List[Message], lang: str = 'en', **kwargs) -> Iterator[List[Message]]:
+    def _run(self, messages: List[Message], lang: Literal['en', 'zh'] = 'en', **kwargs) -> Iterator[List[Message]]:
         messages = copy.deepcopy(messages)
         num_llm_calls_available = MAX_LLM_CALL_PER_RUN
         response = []
         while True and num_llm_calls_available > 0:
             num_llm_calls_available -= 1
             output_stream = self._call_llm(messages=messages,
-                                           functions=[func.function for func in self.function_map.values()])
+                                           functions=[func.function for func in self.function_map.values()],
+                                           extra_generate_cfg={'lang': lang})
             output: List[Message] = []
             for output in output_stream:
                 if output:

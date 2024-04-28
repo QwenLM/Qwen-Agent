@@ -105,6 +105,7 @@ class CodeInterpreter(BaseTool):
             with open(INIT_CODE_FILE) as fin:
                 start_code = fin.read()
                 start_code = start_code.replace('{{M6_FONT_PATH}}', repr(ALIB_FONT_FILE)[1:-1])
+                start_code += '\n%xmode Minimal'
             logger.info(self._execute_code(kc, start_code))
             _KERNEL_CLIENTS[kernel_id] = kc
             _MISC_SUBPROCESSES[kernel_id] = subproc

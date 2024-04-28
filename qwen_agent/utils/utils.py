@@ -9,7 +9,7 @@ import sys
 import time
 import traceback
 import urllib.parse
-from typing import Any, List, Literal, Optional
+from typing import Any, List, Literal, Optional, Tuple, Union
 
 import json5
 import requests
@@ -64,15 +64,27 @@ def hash_sha256(text: str) -> str:
 
 
 def print_traceback(is_error: bool = True):
+    tb = ''.join(traceback.format_exception(*sys.exc_info(), limit=3))
     if is_error:
-        logger.error(''.join(traceback.format_exception(*sys.exc_info())))
+        logger.error(tb)
     else:
-        logger.warning(''.join(traceback.format_exception(*sys.exc_info())))
+        logger.warning(tb)
+
+
+CHINESE_CHAR_RE = re.compile(r'[\u4e00-\u9fff]')
 
 
 def has_chinese_chars(data: Any) -> bool:
     text = f'{data}'
-    return len(re.findall(r'[\u4e00-\u9fff]+', text)) > 0
+    return bool(CHINESE_CHAR_RE.search(text))
+
+
+def has_chinese_messages(messages: List[Union[Message, dict]], check_roles: Tuple[str] = (SYSTEM, USER)) -> bool:
+    for m in messages:
+        if m['role'] in check_roles:
+            if has_chinese_chars(m['content']):
+                return True
+    return False
 
 
 def get_basename_from_url(path_or_url: str) -> str:
@@ -194,9 +206,13 @@ def extract_code(text: str) -> str:
     return text
 
 
-def format_as_multimodal_message(msg: Message, add_upload_info: bool = True) -> Message:
+def format_as_multimodal_message(
+    msg: Message,
+    add_upload_info: bool,
+    lang: Literal['auto', 'en', 'zh'] = 'auto',
+) -> Message:
     assert msg.role in (USER, ASSISTANT, SYSTEM, FUNCTION)
-    content = []
+    content: List[ContentItem] = []
     if isinstance(msg.content, str):  # if text content
         if msg.content:
             content = [ContentItem(text=msg.content)]
@@ -209,9 +225,13 @@ def format_as_multimodal_message(msg: Message, add_upload_info: bool = True) -> 
             if k == 'image':
                 content.append(item)
             if k in ('file', 'image'):
+                # Move 'file' out of 'content' since it's not natively supported by models
                 files.append(v)
         if add_upload_info and files and (msg.role in (SYSTEM, USER)):
-            has_zh = has_chinese_chars(content)
+            if lang == 'auto':
+                has_zh = has_chinese_chars(msg)
+            else:
+                has_zh = (lang == 'zh')
             upload = []
             for f in [get_basename_from_url(f) for f in files]:
                 if is_image(f):
@@ -229,7 +249,15 @@ def format_as_multimodal_message(msg: Message, add_upload_info: bool = True) -> 
                 upload = f'（上传了 {upload}）\n\n'
             else:
                 upload = f'(Uploaded {upload})\n\n'
-            content = [ContentItem(text=upload)] + content
+
+            # Check and avoid adding duplicate upload info
+            upload_info_already_added = False
+            for item in content:
+                if item.text and (upload in item.text):
+                    upload_info_already_added = True
+
+            if not upload_info_already_added:
+                content = [ContentItem(text=upload)] + content
     else:
         raise TypeError
     msg = Message(
@@ -241,13 +269,27 @@ def format_as_multimodal_message(msg: Message, add_upload_info: bool = True) -> 
     return msg
 
 
-def extract_text_from_message(msg: Message, add_upload_info: bool = True) -> str:
+def format_as_text_message(
+    msg: Message,
+    add_upload_info: bool,
+    lang: Literal['auto', 'en', 'zh'] = 'auto',
+) -> Message:
+    msg = format_as_multimodal_message(msg, add_upload_info=add_upload_info, lang=lang)
+    text = ''
+    for item in msg.content:
+        if item.type == 'text':
+            text += item.value
+    msg.content = text
+    return msg
+
+
+def extract_text_from_message(
+    msg: Message,
+    add_upload_info: bool,
+    lang: Literal['auto', 'en', 'zh'] = 'auto',
+) -> str:
     if isinstance(msg.content, list):
-        mm_msg = format_as_multimodal_message(msg, add_upload_info=add_upload_info)
-        text = ''
-        for item in mm_msg.content:
-            if item.type == 'text':
-                text += item.value
+        text = format_as_text_message(msg, add_upload_info=add_upload_info, lang=lang).content
     elif isinstance(msg.content, str):
         text = msg.content
     else:

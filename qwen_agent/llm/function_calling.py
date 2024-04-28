@@ -1,11 +1,10 @@
 import copy
 import json
 from abc import ABC
-from typing import Dict, Iterator, List, Optional, Union
+from typing import Dict, Iterator, List, Literal, Optional, Union
 
 from qwen_agent.llm.base import BaseChatModel
 from qwen_agent.llm.schema import ASSISTANT, FUNCTION, SYSTEM, USER, ContentItem, FunctionCall, Message
-from qwen_agent.utils.utils import has_chinese_chars
 
 
 class BaseFnCallModel(BaseChatModel, ABC):
@@ -15,71 +14,9 @@ class BaseFnCallModel(BaseChatModel, ABC):
         stop = self.generate_cfg.get('stop', [])
         self.generate_cfg['stop'] = stop + [x for x in FN_STOP_WORDS if x not in stop]
 
-    def _chat_with_functions(
-        self,
-        messages: List[Union[Message, Dict]],
-        functions: List[Dict],
-        stream: bool,
-        delta_stream: bool,
-        generate_cfg: dict,
-    ) -> Union[List[Message], Iterator[List[Message]]]:
-        if delta_stream:
-            raise NotImplementedError
-
-        messages = self._prepend_fncall_system(messages, functions)
-
-        # Simulate text completion with chat completion
-        if messages and messages[-1].role == ASSISTANT:
-            assert len(messages) > 1 and messages[-2].role == USER
-            assert messages[-1].function_call is None
-            usr = messages[-2].content
-            bot = messages[-1].content
-            if isinstance(usr, str) and isinstance(bot, str):
-                usr = usr + '\n\n' + bot
-            elif isinstance(usr, list) and isinstance(bot, list):
-                usr = usr + [ContentItem(text='\n\n')] + bot
-            else:
-                raise NotImplementedError
-            text_to_complete = copy.deepcopy(messages[-2])
-            text_to_complete.content = usr
-            messages = messages[:-2] + [text_to_complete]
-
-        return self._chat(messages, stream=stream, delta_stream=delta_stream, generate_cfg=generate_cfg)
-
-    def _preprocess_messages(self, messages: List[Message]) -> List[Message]:
-        messages = super()._preprocess_messages(messages)
+    def _preprocess_messages(self, messages: List[Message], lang: Literal['en', 'zh']) -> List[Message]:
+        messages = super()._preprocess_messages(messages, lang=lang)
         messages = self._preprocess_fncall_messages(messages)
-        return messages
-
-    def _postprocess_messages(
-        self,
-        messages: List[Message],
-        fncall_mode: bool,
-        generate_cfg: dict,
-    ) -> List[Message]:
-        messages = super()._postprocess_messages(messages, fncall_mode=fncall_mode, generate_cfg=generate_cfg)
-        if fncall_mode:
-            messages = self._postprocess_fncall_messages(messages)
-        return messages
-
-    def _prepend_fncall_system(self, messages: List[Message], functions: List[Dict]) -> List[Message]:
-        tool_desc_template = FN_CALL_TEMPLATE['en']
-        for message in messages[::-1]:
-            if message.role in (USER,):
-                if has_chinese_chars(message.content):
-                    tool_desc_template = FN_CALL_TEMPLATE['zh']
-                break
-        tool_descs = '\n\n'.join(get_function_description(function) for function in functions)
-        tool_names = ','.join(function.get('name', function.get('name_for_model', '')) for function in functions)
-        tool_system = tool_desc_template.format(tool_descs=tool_descs, tool_names=tool_names)
-
-        assert messages[0].role == SYSTEM
-        messages = copy.deepcopy(messages[:1]) + messages[1:]
-        if isinstance(messages[0].content, str):
-            messages[0].content += tool_system
-        else:
-            messages[0].content.append(ContentItem(text=tool_system))
-
         return messages
 
     def _preprocess_fncall_messages(self, messages: List[Message]) -> List[Message]:
@@ -95,12 +32,12 @@ class BaseFnCallModel(BaseChatModel, ABC):
                 content = (content or [])
                 fn_call = msg.function_call
                 if fn_call:
-                    func_content = ''
                     f_name = fn_call.name
                     f_args = fn_call.arguments
                     if f_args.startswith('```'):  # if code snippet
                         f_args = '\n' + f_args  # for markdown rendering
-                    func_content += f'\n{FN_NAME}: {f_name}'
+                    func_content = '\n' if new_messages[-1].role == ASSISTANT else ''
+                    func_content += f'{FN_NAME}: {f_name}'
                     func_content += f'\n{FN_ARGS}: {f_args}'
                     content.append(ContentItem(text=func_content))
                 if new_messages[-1].role == ASSISTANT:
@@ -132,6 +69,74 @@ class BaseFnCallModel(BaseChatModel, ABC):
                         last_msg[i].text = item_text[:-2]
                     break
         return new_messages
+
+    def _chat_with_functions(
+        self,
+        messages: List[Message],
+        functions: List[Dict],
+        stream: bool,
+        delta_stream: bool,
+        generate_cfg: dict,
+        lang: Literal['en', 'zh'],
+    ) -> Union[List[Message], Iterator[List[Message]]]:
+        if delta_stream:
+            raise NotImplementedError
+        messages = self._prepend_fncall_system(messages, functions, lang=lang)
+        return self._continue_assistant_response(messages, generate_cfg=generate_cfg, stream=stream)
+
+    def _prepend_fncall_system(
+        self,
+        messages: List[Message],
+        functions: List[Dict],
+        lang: Literal['en', 'zh'],
+    ) -> List[Message]:
+        tool_desc_template = FN_CALL_TEMPLATE[lang]
+        tool_descs = '\n\n'.join(get_function_description(function, lang=lang) for function in functions)
+        tool_names = ','.join(function.get('name', function.get('name_for_model', '')) for function in functions)
+        tool_system = tool_desc_template.format(tool_descs=tool_descs, tool_names=tool_names)
+
+        assert messages[0].role == SYSTEM
+        messages = copy.deepcopy(messages[:1]) + messages[1:]
+        if isinstance(messages[0].content, str):
+            messages[0].content += tool_system
+        else:
+            messages[0].content.append(ContentItem(text=tool_system))
+
+        return messages
+
+    def _continue_assistant_response(
+        self,
+        messages: List[Message],
+        generate_cfg: dict,
+        stream: bool,
+    ) -> Iterator[List[Message]]:
+        # Simulate text completion with chat completion
+        if messages and messages[-1].role == ASSISTANT:
+            assert len(messages) > 1 and messages[-2].role == USER
+            assert messages[-1].function_call is None
+            usr = messages[-2].content
+            bot = messages[-1].content
+            if isinstance(usr, str) and isinstance(bot, str):
+                usr = usr + '\n\n' + bot
+            elif isinstance(usr, list) and isinstance(bot, list):
+                usr = usr + [ContentItem(text='\n\n')] + bot
+            else:
+                raise NotImplementedError
+            text_to_complete = copy.deepcopy(messages[-2])
+            text_to_complete.content = usr
+            messages = messages[:-2] + [text_to_complete]
+        return self._chat(messages, stream=stream, delta_stream=False, generate_cfg=generate_cfg)
+
+    def _postprocess_messages(
+        self,
+        messages: List[Message],
+        fncall_mode: bool,
+        generate_cfg: dict,
+    ) -> List[Message]:
+        messages = super()._postprocess_messages(messages, fncall_mode=fncall_mode, generate_cfg=generate_cfg)
+        if fncall_mode:
+            messages = self._postprocess_fncall_messages(messages)
+        return messages
 
     def _postprocess_fncall_messages(self, messages: List[Message], stop_at_fncall: bool = True) -> List[Message]:
         """
@@ -294,13 +299,14 @@ FN_CALL_TEMPLATE_EN = """
     FN_RESULT,
     FN_EXIT,
 )
+
 FN_CALL_TEMPLATE = {
     'zh': FN_CALL_TEMPLATE_ZH,
     'en': FN_CALL_TEMPLATE_EN,
 }
 
 
-def get_function_description(function: Dict) -> str:
+def get_function_description(function: Dict, lang: Literal['en', 'zh']) -> str:
     """
     Text description of function
     """
@@ -308,11 +314,7 @@ def get_function_description(function: Dict) -> str:
         'zh': '### {name_for_human}\n\n{name_for_model}: {description_for_model} 输入参数：{parameters} {args_format}',
         'en': '### {name_for_human}\n\n{name_for_model}: {description_for_model} Parameters: {parameters} {args_format}'
     }
-    if has_chinese_chars(function):
-        tool_desc = tool_desc_template['zh']
-    else:
-        tool_desc = tool_desc_template['en']
-
+    tool_desc = tool_desc_template[lang]
     name = function.get('name', None)
     name_for_human = function.get('name_for_human', name)
     name_for_model = function.get('name_for_model', name)

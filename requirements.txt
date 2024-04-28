@@ -19,6 +19,7 @@ pydantic>=2.3.0
 python-docx
 python-pptx
 rank_bm25
+requests
 seaborn
 sympy
 tiktoken

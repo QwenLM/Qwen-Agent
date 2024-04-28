@@ -1,7 +1,7 @@
 import os
 from http import HTTPStatus
 from pprint import pformat
-from typing import Dict, Iterator, List, Optional, Union
+from typing import Dict, Iterator, List, Optional
 
 import dashscope
 
@@ -63,49 +63,13 @@ class QwenChatAtDS(BaseTextChatModel):
         else:
             raise ModelServiceError(code=response.code, message=response.message)
 
-    def _chat_with_functions(
+    def _continue_assistant_response(
         self,
         messages: List[Message],
-        functions: List[Dict],
+        generate_cfg: dict,
         stream: bool,
-        delta_stream: bool,
-        generate_cfg: dict,
-    ) -> Union[List[Message], Iterator[List[Message]]]:
-        if delta_stream:
-            raise NotImplementedError
-
-        messages = self._prepend_fncall_system(messages, functions)
-
-        # Using text completion
-        prompt = self._build_text_completion_prompt(messages)
-        if stream:
-            return self._text_completion_stream(prompt, delta_stream, generate_cfg=generate_cfg)
-        else:
-            return self._text_completion_no_stream(prompt, generate_cfg=generate_cfg)
-
-    def _text_completion_no_stream(
-        self,
-        prompt: str,
-        generate_cfg: dict,
-    ) -> List[Message]:
-        logger.debug(f'*{prompt}*')
-        response = dashscope.Generation.call(self.model,
-                                             prompt=prompt,
-                                             result_format='message',
-                                             stream=False,
-                                             use_raw_prompt=True,
-                                             **generate_cfg)
-        if response.status_code == HTTPStatus.OK:
-            return [Message(ASSISTANT, response.output.choices[0].message.content)]
-        else:
-            raise ModelServiceError(code=response.code, message=response.message)
-
-    def _text_completion_stream(
-        self,
-        prompt: str,
-        delta_stream: bool,
-        generate_cfg: dict,
     ) -> Iterator[List[Message]]:
+        prompt = self._build_text_completion_prompt(messages)
         logger.debug(f'*{prompt}*')
         response = dashscope.Generation.call(
             self.model,
@@ -114,10 +78,12 @@ class QwenChatAtDS(BaseTextChatModel):
             stream=True,
             use_raw_prompt=True,
             **generate_cfg)
-        if delta_stream:
-            return self._delta_stream_output(response)
+        it = self._full_stream_output(response)
+        if stream:
+            return it  # streaming the response
         else:
-            return self._full_stream_output(response)
+            *_, final_response = it  # return the final response without streaming
+            return final_response
 
     @staticmethod
     def _build_text_completion_prompt(messages: List[Message]) -> str:

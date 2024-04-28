@@ -1,13 +1,16 @@
-import copy
-from typing import Dict, Iterator, List, Optional, Tuple, Union
+import json
+from typing import Dict, Iterator, List, Literal, Optional, Tuple, Union
 
 from qwen_agent.agents.fncall_agent import FnCallAgent
 from qwen_agent.llm import BaseChatModel
-from qwen_agent.llm.function_calling import get_function_description
-from qwen_agent.llm.schema import ASSISTANT, CONTENT, DEFAULT_SYSTEM_MESSAGE, ROLE, ContentItem, Message
+from qwen_agent.llm.schema import ASSISTANT, DEFAULT_SYSTEM_MESSAGE, Message
 from qwen_agent.settings import MAX_LLM_CALL_PER_RUN
 from qwen_agent.tools import BaseTool
-from qwen_agent.utils.utils import get_basename_from_url, has_chinese_chars, merge_generate_cfgs
+from qwen_agent.utils.utils import format_as_text_message, merge_generate_cfgs
+
+TOOL_DESC = (
+    '{name_for_model}: Call this tool to interact with the {name_for_human} API. '
+    'What is the {name_for_human} API useful for? {description_for_model} Parameters: {parameters} {args_format}')
 
 PROMPT_REACT = """Answer the following questions as best you can. You have access to the following tools:
 
@@ -26,7 +29,8 @@ Final Answer: the final answer to the original input question
 
 Begin!
 
-Question: {query}"""
+Question: {query}
+Thought: """
 
 
 class ReActChat(FnCallAgent):
@@ -50,56 +54,66 @@ class ReActChat(FnCallAgent):
             new_generate_cfg={'stop': ['Observation:', 'Observation:\n']},
         )
 
-    def _run(self, messages: List[Message], lang: str = 'en', **kwargs) -> Iterator[List[Message]]:
-        ori_messages = messages
-        messages = self._preprocess_react_prompt(messages)
+    def _run(self, messages: List[Message], lang: Literal['en', 'zh'] = 'en', **kwargs) -> Iterator[List[Message]]:
+        text_messages = self._prepend_react_prompt(messages, lang=lang)
 
         num_llm_calls_available = MAX_LLM_CALL_PER_RUN
-        response = []
-        while True and num_llm_calls_available > 0:
+        response: str = 'Thought: '
+        while num_llm_calls_available > 0:
             num_llm_calls_available -= 1
-            output_stream = self._call_llm(messages=messages)
+
+            # Display the streaming response
             output = []
-
-            # Yield the streaming response
-            response_tmp = copy.deepcopy(response)
-            for output in output_stream:
+            for output in self._call_llm(messages=text_messages):
                 if output:
-                    if not response_tmp:
-                        yield output
-                    else:
-                        response_tmp[-1][CONTENT] = response[-1][CONTENT] + output[-1][CONTENT]
-                        yield response_tmp
-            # Record the incremental response
-            assert len(output) == 1 and output[-1][ROLE] == ASSISTANT
-            if not response:
-                response += output
-            else:
-                response[-1][CONTENT] += output[-1][CONTENT]
+                    yield [Message(role=ASSISTANT, content=response + output[-1].content)]
 
-            output = output[-1][CONTENT]
+            # Accumulate the current response
+            if output:
+                response += output[-1].content
 
-            use_tool, action, action_input, text = self._detect_tool(output)
-
-            if use_tool:
-                observation = self._call_tool(action, action_input, messages=ori_messages)
-                observation = f'\nObservation: {observation}\nThought: '
-                response[-1][CONTENT] += observation
-                yield response
-                if isinstance(messages[-1][CONTENT], list):
-                    if not ('text' in messages[-1][CONTENT][-1] and
-                            messages[-1][CONTENT][-1]['text'].endswith('\nThought: ')):
-                        if not text.startswith('\n'):
-                            text = '\n' + text
-                    messages[-1][CONTENT].append(
-                        ContentItem(text=text + f'\nAction: {action}\nAction Input:{action_input}' + observation))
-                else:
-                    if not (messages[-1][CONTENT].endswith('\nThought: ')):
-                        if not text.startswith('\n'):
-                            text = '\n' + text
-                    messages[-1][CONTENT] += text + f'\nAction: {action}\nAction Input:{action_input}' + observation
-            else:
+            has_action, action, action_input, thought = self._detect_tool(output[-1].content)
+            if not has_action:
                 break
+
+            # Add the tool result
+            observation = self._call_tool(action, action_input, messages=messages)
+            observation = f'\nObservation: {observation}\nThought: '
+            response += observation
+            yield [Message(role=ASSISTANT, content=response)]
+
+            if (not text_messages[-1].content.endswith('\nThought: ')) and (not thought.startswith('\n')):
+                # Add the '\n' between '\nQuestion:' and the first 'Thought:'
+                text_messages[-1].content += '\n'
+            if action_input.startswith('```'):
+                # Add a newline for proper markdown rendering of code
+                action_input = '\n' + action_input
+            text_messages[-1].content += thought + f'\nAction: {action}\nAction Input: {action_input}' + observation
+
+    def _prepend_react_prompt(self, messages: List[Message], lang: Literal['en', 'zh']) -> List[Message]:
+        tool_descs = []
+        for f in self.function_map.values():
+            function = f.function
+            name = function.get('name', None)
+            name_for_human = function.get('name_for_human', name)
+            name_for_model = function.get('name_for_model', name)
+            assert name_for_human and name_for_model
+            args_format = function.get('args_format', '')
+            tool_descs.append(
+                TOOL_DESC.format(name_for_human=name_for_human,
+                                 name_for_model=name_for_model,
+                                 description_for_model=function['description'],
+                                 parameters=json.dumps(function['parameters'], ensure_ascii=False),
+                                 args_format=args_format).rstrip())
+        tool_descs = '\n\n'.join(tool_descs)
+        tool_names = ','.join(tool.name for tool in self.function_map.values())
+        text_messages = [format_as_text_message(m, add_upload_info=True, lang=lang) for m in messages]
+        text_messages[-1].content = PROMPT_REACT.format(
+            tool_descs=tool_descs,
+            tool_names=tool_names,
+            query=text_messages[-1].content,
+        )
+        return text_messages
 
     def _detect_tool(self, text: str) -> Tuple[bool, str, str, str]:
         special_func_token = '\nAction:'
@@ -117,47 +131,5 @@ class ReActChat(FnCallAgent):
             k = text.rfind(special_obs_token)
             func_name = text[i + len(special_func_token):j].strip()
             func_args = text[j + len(special_args_token):k].strip()
-            text = text[:i]  # Return the response before tool call
-
+            text = text[:i]  # Return the response before tool call, i.e., `Thought`
         return (func_name is not None), func_name, func_args, text
-
-    def _preprocess_react_prompt(self, messages: List[Message]) -> List[Message]:
-        messages = copy.deepcopy(messages)
-        tool_descs = '\n\n'.join(get_function_description(func.function) for func in self.function_map.values())
-        tool_names = ','.join(tool.name for tool in self.function_map.values())
-
-        if isinstance(messages[-1][CONTENT], str):
-            prompt = PROMPT_REACT.format(tool_descs=tool_descs, tool_names=tool_names, query=messages[-1][CONTENT])
-            messages[-1][CONTENT] = prompt
-            return messages
-        else:
-            query = ''
-            new_content = []
-            files = []
-            for item in messages[-1][CONTENT]:
-                for k, v in item.model_dump().items():
-                    if k == 'text':
-                        query += v
-                    elif k == 'file':
-                        files.append(v)
-                    else:
-                        new_content.append(item)
-            if files:
-                has_zh = has_chinese_chars(query)
-                upload = []
-                for f in [get_basename_from_url(f) for f in files]:
-                    if has_zh:
-                        upload.append(f'[文件]({f})')
-                    else:
-                        upload.append(f'[file]({f})')
-                upload = ' '.join(upload)
-                if has_zh:
-                    upload = f'（上传了 {upload}）\n\n'
-                else:
-                    upload = f'(Uploaded {upload})\n\n'
-                query = upload + query
-
-            prompt = PROMPT_REACT.format(tool_descs=tool_descs, tool_names=tool_names, query=query)
-            new_content.insert(0, ContentItem(text=prompt))
-            messages[-1][CONTENT] = new_content
-            return messages

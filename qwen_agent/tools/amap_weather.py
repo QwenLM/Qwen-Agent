@@ -13,7 +13,7 @@ class AmapWeather(BaseTool):
     parameters = [{
         'name': 'location',
         'type': 'string',
-        'description': 'get temperature for a specific location',
+        'description': '城市/区具体名称，如`北京市海淀区`请描述为`海淀区`',
         'required': True
     }]
 

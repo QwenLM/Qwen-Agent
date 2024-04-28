@@ -9,7 +9,7 @@ from qwen_agent.llm.base import BaseChatModel
 from qwen_agent.llm.schema import CONTENT, DEFAULT_SYSTEM_MESSAGE, ROLE, SYSTEM, ContentItem, Message
 from qwen_agent.log import logger
 from qwen_agent.tools import TOOL_REGISTRY, BaseTool
-from qwen_agent.utils.utils import has_chinese_chars, merge_generate_cfgs
+from qwen_agent.utils.utils import has_chinese_messages, merge_generate_cfgs
 
 
 class Agent(ABC):
@@ -78,8 +78,8 @@ class Agent(ABC):
                 new_messages.append(msg)
                 _return_message_type = 'message'
 
-        if new_messages and 'lang' not in kwargs:
-            if has_chinese_chars([new_messages[-1][CONTENT], kwargs]):
+        if 'lang' not in kwargs:
+            if has_chinese_messages(new_messages):
                 kwargs['lang'] = 'zh'
             else:
                 kwargs['lang'] = 'en'
