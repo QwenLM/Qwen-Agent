@@ -77,7 +77,7 @@ class ReActChat(FnCallAgent):
                 break
 
             # Add the tool result
-            observation = self._call_tool(action, action_input, messages=messages)
+            observation = self._call_tool(action, action_input, messages=messages, **kwargs)
             observation = f'\nObservation: {observation}\nThought: '
             response += observation
             yield [Message(role=ASSISTANT, content=response)]

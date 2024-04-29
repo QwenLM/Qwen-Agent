@@ -35,7 +35,8 @@ class Memory(Agent):
              max_ref_token: int = DEFAULT_MAX_REF_TOKEN,
              parser_page_size: int = DEFAULT_PARSER_PAGE_SIZE,
              lang: str = 'en',
-             ignore_cache: bool = False) -> Iterator[List[Message]]:
+             ignore_cache: bool = False,
+             **kwargs) -> Iterator[List[Message]]:
         """This agent is responsible for processing the input files in the message.
 
          This method stores the files in the knowledge base, and retrievals the relevant parts
@@ -95,6 +96,7 @@ class Memory(Agent):
                 ignore_cache=ignore_cache,
                 max_token=max_ref_token,
                 parser_page_size=parser_page_size,
+                **kwargs,
             )
 
             yield [Message(role=ASSISTANT, content=content, name='memory')]

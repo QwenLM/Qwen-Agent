@@ -60,7 +60,7 @@ class FnCallAgent(Agent):
                 messages.extend(output)
                 use_tool, tool_name, tool_args, _ = self._detect_tool(response[-1])
                 if use_tool:
-                    tool_result = self._call_tool(tool_name, tool_args, messages=messages)
+                    tool_result = self._call_tool(tool_name, tool_args, messages=messages, **kwargs)
                     fn_msg = Message(
                         role=FUNCTION,
                         name=tool_name,
