@@ -216,7 +216,10 @@ class DocParser(BaseTool):
                                     ss = tokenizer.convert_tokens_to_string(
                                         token_list[si:min(len(token_list), si + available_token)])
                                     sentences.append([ss, min(available_token, len(token_list) - si)])
-                        for s, token in sentences:
+                        sent_index = 0
+                        while sent_index < len(sentences):
+                            s = sentences[sent_index][0]
+                            token = sentences[sent_index][1]
                             if not chunk:
                                 chunk.append(f'[page: {str(page_num)}]')
 
@@ -226,6 +229,7 @@ class DocParser(BaseTool):
                                 available_token -= token
                                 chunk.append([s, page_num])
                                 has_para = True
+                                sent_index += 1
                             else:
                                 assert has_para
                                 if isinstance(chunk[-1], str) and re.fullmatch(r'^\[page: \d+\]$',
