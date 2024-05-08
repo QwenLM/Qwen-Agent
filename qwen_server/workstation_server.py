@@ -4,14 +4,11 @@ import os
 from pathlib import Path
 
 import json5
-
-from qwen_agent.tools.simple_doc_parser import PARSER_SUPPORTED_FILE_TYPES
-
 try:
     import add_qwen_libs  # NOQA
 except ImportError:
     pass
-
+from qwen_agent.tools.simple_doc_parser import PARSER_SUPPORTED_FILE_TYPES
 from qwen_agent.agents import ArticleAgent, Assistant, ReActChat
 from qwen_agent.gui import gr
 from qwen_agent.gui.utils import get_avatar_image
