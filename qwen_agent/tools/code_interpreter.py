@@ -25,7 +25,8 @@ from jupyter_client import BlockingKernelClient
 from qwen_agent.log import logger
 from qwen_agent.settings import DEFAULT_WORKSPACE
 from qwen_agent.tools.base import BaseTool, register_tool
-from qwen_agent.utils.utils import append_signal_handler, extract_code, print_traceback, save_url_to_local_work_dir
+from qwen_agent.utils.utils import (append_signal_handler, extract_code, has_chinese_chars, print_traceback,
+                                    save_url_to_local_work_dir)
 
 LAUNCH_KERNEL_PY = """
 from ipykernel import kernelapp as app
@@ -71,7 +72,13 @@ class CodeInterpreter(BaseTool):
 
     @property
     def args_format(self) -> str:
-        return self.cfg.get('args_format', '此工具的输入应为Markdown代码块。')
+        fmt = self.cfg.get('args_format')
+        if fmt is None:
+            if has_chinese_chars([self.name_for_human, self.name, self.description, self.parameters]):
+                fmt = '此工具的输入应为Markdown代码块。'
+            else:
+                fmt = 'Enclose the code within triple backticks (`) at the beginning and end of the code.'
+        return fmt
 
     @property
     def file_access(self) -> bool:
