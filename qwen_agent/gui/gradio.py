@@ -5,4 +5,4 @@ try:
                           'Please install the correct version with: pip install "gradio>=4.0"')
 except (ModuleNotFoundError, AttributeError):
     raise ImportError('Requirement "gradio" not installed. '
-                      'Please install it by: pip install "gradio>=4.0"')
+                      'Please install it by: pip install -U "gradio>=4.0"')

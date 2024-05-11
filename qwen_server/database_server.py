@@ -3,7 +3,6 @@ import multiprocessing
 import os
 from pathlib import Path
 
-import json5
 import jsonlines
 import uvicorn
 from fastapi import FastAPI, Request
@@ -93,11 +92,7 @@ def cache_page(**kwargs):
         save_history(None, url, history_dir)
     try:
         *_, last = mem.run([{'role': 'user', 'content': [{'file': url}]}], ignore_cache=True)
-        data = last[-1]['content']
-        if isinstance(data, str):
-            data = json5.loads(data)
-        assert len(data) == 1
-        title = data[-1]['title']
+        title = get_basename_from_url(url)
         save_browsing_meta_data(url, title, meta_file)
     except Exception:
         rm_browsing_meta_data(url, meta_file)

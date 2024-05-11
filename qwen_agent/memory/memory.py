@@ -1,5 +1,5 @@
 import json
-from typing import Dict, Iterator, List, Optional, Union
+from typing import Dict, Iterator, List, Literal, Optional, Union
 
 import json5
 
@@ -8,7 +8,7 @@ from qwen_agent.llm import BaseChatModel
 from qwen_agent.llm.schema import ASSISTANT, DEFAULT_SYSTEM_MESSAGE, USER, Message
 from qwen_agent.log import logger
 from qwen_agent.prompts import GenKeyword
-from qwen_agent.settings import DEFAULT_MAX_REF_TOKEN, DEFAULT_PARSER_PAGE_SIZE
+from qwen_agent.settings import DEFAULT_MAX_REF_TOKEN, DEFAULT_PARSER_PAGE_SIZE, DEFAULT_RAG_KEYGEN_STRATEGY
 from qwen_agent.tools import BaseTool
 from qwen_agent.tools.simple_doc_parser import PARSER_SUPPORTED_FILE_TYPES
 from qwen_agent.utils.utils import extract_files_from_messages, extract_text_from_message, get_file_type
@@ -26,7 +26,9 @@ class Memory(Agent):
                  system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
                  files: Optional[List[str]] = None):
         function_list = function_list or []
-        super().__init__(function_list=['retrieval'] + function_list, llm=llm, system_message=system_message)
+        super().__init__(function_list=['retrieval', 'doc_parser'] + function_list,
+                         llm=llm,
+                         system_message=system_message)
 
         self.system_files = files or []
 
@@ -34,6 +36,7 @@ class Memory(Agent):
              messages: List[Message],
              max_ref_token: int = DEFAULT_MAX_REF_TOKEN,
              parser_page_size: int = DEFAULT_PARSER_PAGE_SIZE,
+             rag_keygen_strategy: Literal['none', 'simple', 'vocab'] = DEFAULT_RAG_KEYGEN_STRATEGY,
              lang: str = 'en',
              ignore_cache: bool = False,
              **kwargs) -> Iterator[List[Message]]:
@@ -53,13 +56,7 @@ class Memory(Agent):
             The message of retrieved documents.
         """
         # process files in messages
-        session_files = extract_files_from_messages(messages)
-        files = self.system_files + session_files
-        rag_files = []
-        for file in files:
-            f_type = get_file_type(file)
-            if f_type in PARSER_SUPPORTED_FILE_TYPES and file not in rag_files:
-                rag_files.append(file)
+        rag_files = self.get_rag_files(messages)
 
         if not rag_files:
             yield [Message(role=ASSISTANT, content='', name='memory')]
@@ -68,10 +65,15 @@ class Memory(Agent):
             # Only retrieval content according to the last user query if exists
             if messages and messages[-1].role == USER:
                 query = extract_text_from_message(messages[-1], add_upload_info=False)
-            if query:
-                # Gen keyword
-                keygen = GenKeyword(llm=self.llm)
-                *_, last = keygen.run([Message(USER, query)])
+            if query and rag_keygen_strategy != 'none':
+                if rag_keygen_strategy == 'vocab':
+                    raise NotImplementedError  # WIP
+                elif rag_keygen_strategy == 'simple':
+                    # Gen keyword
+                    keygen = GenKeyword(llm=self.llm)
+                    *_, last = keygen.run([Message(USER, query)])
+                else:
+                    raise NotImplementedError
 
                 keyword = last[-1].content
                 keyword = keyword.strip()
@@ -94,9 +96,19 @@ class Memory(Agent):
                     'files': rag_files
                 },
                 ignore_cache=ignore_cache,
-                max_token=max_ref_token,
+                max_ref_token=max_ref_token,
                 parser_page_size=parser_page_size,
                 **kwargs,
             )
 
             yield [Message(role=ASSISTANT, content=content, name='memory')]
+
+    def get_rag_files(self, messages: List[Message]):
+        session_files = extract_files_from_messages(messages)
+        files = self.system_files + session_files
+        rag_files = []
+        for file in files:
+            f_type = get_file_type(file)
+            if f_type in PARSER_SUPPORTED_FILE_TYPES and file not in rag_files:
+                rag_files.append(file)
+        return rag_files

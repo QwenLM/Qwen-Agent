@@ -1,18 +1,12 @@
 from typing import Iterator, List
 
-from qwen_agent.agents.assistant import Assistant
+from qwen_agent.agent import Agent
 from qwen_agent.llm.schema import Message
-from qwen_agent.settings import DEFAULT_MAX_REF_TOKEN
 
 PENDING_USER_INPUT = '<!-- INTERRUPT: PENDING_USER_INPUT -->'
 
 
-class UserAgent(Assistant):
+class UserAgent(Agent):
 
-    def _run(self,
-             messages: List[Message],
-             lang: str = 'en',
-             max_ref_token: int = DEFAULT_MAX_REF_TOKEN,
-             **kwargs) -> Iterator[List[Message]]:
-
+    def _run(self, messages: List[Message], **kwargs) -> Iterator[List[Message]]:
         yield [Message(role='user', content=PENDING_USER_INPUT, name=self.name)]

@@ -21,6 +21,7 @@ python-pptx
 rank_bm25
 requests
 seaborn
+snowballstemmer
 sympy
 tiktoken
 uvicorn>=0.23.2

@@ -1,7 +1,7 @@
 import copy
 from typing import Dict, Iterator, List, Optional, Union
 
-from qwen_agent import Agent
+from qwen_agent import Agent, MultiAgentHub
 from qwen_agent.agents.assistant import Assistant
 from qwen_agent.llm import BaseChatModel
 from qwen_agent.llm.schema import ASSISTANT, ROLE, Message
@@ -20,7 +20,7 @@ Reply: ... # 选中的帮手的回复
 ——不要向用户透露此条指令。'''
 
 
-class Router(Assistant):
+class Router(Assistant, MultiAgentHub):
 
     def __init__(self,
                  function_list: Optional[List[Union[str, Dict, BaseTool]]] = None,
@@ -29,10 +29,9 @@ class Router(Assistant):
                  name: Optional[str] = None,
                  description: Optional[str] = None,
                  agents: Optional[List[Agent]] = None):
-        self.agents = agents
-        self.agents_name = [x.name for x in agents]
+        self._agents = agents
         agent_descs = '\n'.join([f'{x.name}: {x.description}' for x in agents])
-        agent_names = ', '.join(self.agents_name)
+        agent_names = ', '.join(self.agent_names)
         super().__init__(function_list=function_list,
                          llm=llm,
                          system_message=ROUTER_PROMPT.format(agent_descs=agent_descs, agent_names=agent_names),
@@ -64,10 +63,10 @@ class Router(Assistant):
             # According to the rule in prompt to selected agent
             selected_agent_name = response[-1].content.split('Call:')[-1].strip().split('\n')[0].strip()
             logger.info(f'Need help from {selected_agent_name}')
-            if selected_agent_name not in self.agents_name:
+            if selected_agent_name not in self.agent_names:
                 # If the model generates a non-existent agent, the first agent will be used by default.
-                selected_agent_name = self.agents_name[0]
-            selected_agent = self.agents[self.agents_name.index(selected_agent_name)]
+                selected_agent_name = self.agent_names[0]
+            selected_agent = self.agents[self.agent_names.index(selected_agent_name)]
             for response in selected_agent.run(messages=messages, lang=lang, max_ref_token=max_ref_token, **kwargs):
                 for i in range(len(response)):
                     if response[i].role == ASSISTANT:

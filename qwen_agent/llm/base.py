@@ -4,10 +4,11 @@ import time
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Iterator, List, Literal, Optional, Tuple, Union
 
-from qwen_agent.llm.schema import DEFAULT_SYSTEM_MESSAGE, SYSTEM, Message
+from qwen_agent.llm.schema import DEFAULT_SYSTEM_MESSAGE, SYSTEM, USER, Message
+from qwen_agent.settings import DEFAULT_MAX_INPUT_TOKENS
 from qwen_agent.utils.tokenization_qwen import tokenizer
-from qwen_agent.utils.utils import (format_as_multimodal_message, has_chinese_messages, merge_generate_cfgs,
-                                    print_traceback)
+from qwen_agent.utils.utils import (extract_text_from_message, format_as_multimodal_message, has_chinese_messages,
+                                    merge_generate_cfgs, print_traceback)
 
 LLM_REGISTRY = {}
 
@@ -71,7 +72,6 @@ class BaseChatModel(ABC):
 
         generate_cfg = merge_generate_cfgs(base_generate_cfg=self.generate_cfg, new_generate_cfg=extra_generate_cfg)
         if 'lang' in generate_cfg:
-            generate_cfg = copy.deepcopy(generate_cfg)
             lang: Literal['en', 'zh'] = generate_cfg.pop('lang')
         else:
             lang: Literal['en', 'zh'] = 'zh' if has_chinese_messages(messages) else 'en'
@@ -90,6 +90,12 @@ class BaseChatModel(ABC):
 
         if messages[0].role != SYSTEM:
             messages = [Message(role=SYSTEM, content=DEFAULT_SYSTEM_MESSAGE)] + messages
+
+        # Not precise. It's hard to estimate tokens related with function calling and multimodal items.
+        messages = _truncate_input_messages_roughly(
+            messages=messages,
+            max_tokens=generate_cfg.pop('max_input_tokens', DEFAULT_MAX_INPUT_TOKENS),
+        )
 
         messages = self._preprocess_messages(messages, lang=lang)
 
@@ -264,6 +270,61 @@ def _truncate_at_stop_word(text: str, stop: List[str]):
             truncated = True
             text = text[:k]
     return truncated, text
+
+
+def _truncate_input_messages_roughly(messages: List[Message], max_tokens: int) -> List[Message]:
+    sys_msg = messages[0]
+    assert sys_msg.role == SYSTEM  # The default system is prepended if none exists
+    if len([m for m in messages if m.role == SYSTEM]) >= 2:
+        raise ModelServiceError(
+            code='400',
+            message='The input messages must contain no more than one system message. '
+            ' And the system message, if exists, must be the first message.',
+        )
+
+    turns = []
+    for m in messages[1:]:
+        if m.role == USER:
+            turns.append([m])
+        else:
+            if turns:
+                turns[-1].append(m)
+            else:
+                raise ModelServiceError(
+                    code='400',
+                    message='The input messages (excluding the system message) must start with a user message.',
+                )
+
+    def _count_tokens(msg: Message) -> int:
+        return tokenizer.count_tokens(extract_text_from_message(msg, add_upload_info=True))
+
+    token_cnt = _count_tokens(sys_msg)
+    truncated = []
+    for turn in reversed(turns):
+        # At least one user message is included
+        for m in reversed(turn):
+            truncated.append(m)
+            token_cnt += _count_tokens(m)
+        if token_cnt > max_tokens:
+            break
+    # Always include the system message
+    truncated.append(sys_msg)
+    truncated.reverse()
+
+    if len(truncated) < 2:
+        raise ModelServiceError(
+            code='400',
+            message='At least one user message should be provided.',
+        )
+    if token_cnt > max_tokens:
+        raise ModelServiceError(
+            code='400',
+            message=f'The input messages exceed the maximum context length ({max_tokens} tokens) after '
+            f'keeping only the system message and the latest one user message (around {token_cnt} tokens). '
+            'To configure the context limit, please specifiy "max_input_tokens" in the model generate_cfg. '
+            f'Example: generate_cfg = {{..., "max_input_tokens": {(token_cnt // 100 + 1) * 100}}}',
+        )
+    return truncated
 
 
 def retry_model_service(

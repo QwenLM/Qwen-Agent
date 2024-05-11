@@ -2,7 +2,7 @@ import copy
 import random
 from typing import Dict, Iterator, List, Optional, Union
 
-from qwen_agent import Agent
+from qwen_agent import Agent, MultiAgentHub
 from qwen_agent.agents.assistant import Assistant
 from qwen_agent.agents.group_chat_auto_router import GroupChatAutoRouter
 from qwen_agent.agents.user_agent import PENDING_USER_INPUT, UserAgent
@@ -12,7 +12,7 @@ from qwen_agent.log import logger
 from qwen_agent.tools import BaseTool
 
 
-class GroupChat(Agent):
+class GroupChat(Agent, MultiAgentHub):
     """This is an agent for multi-agent management.
 
     This agent can accept a list of agents, manage their speaking order, and output the response of each agent.
@@ -56,10 +56,10 @@ class GroupChat(Agent):
         self.agent_selection_method = agent_selection_method
 
         if isinstance(agents, dict):
-            self.agents = self._init_agents_from_config(agents, llm=llm)
+            self._agents = self._init_agents_from_config(agents, llm=llm)
         else:
-            self.agents = agents
-        assert len(self.agents) > 0
+            self._agents = agents
+
         if self.agent_selection_method == 'auto':
             assert llm is not None, 'Need to provide LLM to the host in auto mode'
             self.host = GroupChatAutoRouter(function_list=function_list, llm=llm, agents=self.agents, name='host')

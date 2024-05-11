@@ -61,7 +61,7 @@ class DocParser(BaseTool):
              params: Union[str, dict],
              ignore_cache: bool = False,
              parser_page_size: int = DEFAULT_PARSER_PAGE_SIZE,
-             max_token: int = DEFAULT_MAX_REF_TOKEN) -> dict:
+             max_ref_token: int = DEFAULT_MAX_REF_TOKEN) -> dict:
         """Extracting and blocking
 
         Returns:
@@ -123,7 +123,7 @@ class DocParser(BaseTool):
 
         logger.info(f'Start chunking {url} ({title})...')
         time2 = time.time()
-        if total_token <= max_token:
+        if total_token <= max_ref_token:
             # The whole doc is one chunk
             content = [
                 Chunk(content=get_plain_doc(doc),

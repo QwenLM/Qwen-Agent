@@ -3,18 +3,17 @@ import json
 import os
 from pathlib import Path
 
-import json5
 try:
     import add_qwen_libs  # NOQA
 except ImportError:
     pass
-from qwen_agent.tools.simple_doc_parser import PARSER_SUPPORTED_FILE_TYPES
 from qwen_agent.agents import ArticleAgent, Assistant, ReActChat
 from qwen_agent.gui import gr
 from qwen_agent.gui.utils import get_avatar_image
 from qwen_agent.llm import get_chat_model
 from qwen_agent.llm.base import ModelServiceError
 from qwen_agent.memory import Memory
+from qwen_agent.tools.simple_doc_parser import PARSER_SUPPORTED_FILE_TYPES
 from qwen_agent.utils.utils import get_basename_from_url, get_file_type, has_chinese_chars, save_text_to_file
 from qwen_server import output_beautify
 from qwen_server.schema import GlobalConfig
@@ -117,11 +116,7 @@ def add_file(file, chosen_plug):
         try:
             mem = Memory()
             *_, last = mem.run([{'role': 'user', 'content': [{'file': file.name}]}], ignore_cache=True)
-            data = last[-1]['content']
-            if isinstance(data, str):
-                data = json5.loads(data)
-            assert len(data) == 1
-            title = data[-1]['title']
+            title = display_path
             save_browsing_meta_data(file.name, title, meta_file)
 
         except Exception as ex:
