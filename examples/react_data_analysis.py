@@ -4,6 +4,7 @@ from pprint import pprint
 from typing import Optional
 
 from qwen_agent.agents import ReActChat
+from qwen_agent.gui import WebUI
 
 ROOT_RESOURCE = os.path.join(os.path.dirname(__file__), 'resource')
 
@@ -18,11 +19,31 @@ def init_agent_service():
         'api_key': os.getenv('DASHSCOPE_API_KEY'),
     }
     tools = ['code_interpreter']
-    bot = ReActChat(llm=llm_cfg, function_list=tools)
+    bot = ReActChat(llm=llm_cfg,
+                    name='code interpreter',
+                    description='This agent can run code to solve the problem',
+                    function_list=tools)
     return bot
 
 
-def app():
+def test(query: str = 'pd.head the file first and then help me draw a line chart to show the changes in stock prices',
+         file: Optional[str] = os.path.join(ROOT_RESOURCE, 'stock_prices.csv')):
+    # Define the agent
+    bot = init_agent_service()
+
+    # Chat
+    messages = []
+
+    if not file:
+        messages.append({'role': 'user', 'content': query})
+    else:
+        messages.append({'role': 'user', 'content': [{'text': query}, {'file': file}]})
+
+    for response in bot.run(messages):
+        pprint(response, indent=2)
+
+
+def app_tui():
     # Define the agent
     bot = init_agent_service()
 
@@ -47,22 +68,18 @@ def app():
         messages.extend(response)
 
 
-def test(query: str = 'pd.head the file first and then help me draw a line chart to show the changes in stock prices',
-         file: Optional[str] = os.path.join(ROOT_RESOURCE, 'stock_prices.csv')):
-    # Define the agent
+def app_gui():
     bot = init_agent_service()
-
-    # Chat
-    messages = []
-
-    if not file:
-        messages.append({'role': 'user', 'content': query})
-    else:
-        messages.append({'role': 'user', 'content': [{'text': query}, {'file': file}]})
-
-    for response in bot.run(messages):
-        pprint(response, indent=2)
+    chatbot_config = {
+        'prompt.suggestions': [{
+            'text': 'pd.head the file first and then help me draw a line chart to show the changes in stock prices',
+            'files': [os.path.join(ROOT_RESOURCE, 'stock_prices.csv')]
+        }, 'Draw a line graph y=x^2']
+    }
+    WebUI(bot, chatbot_config=chatbot_config).run()
 
 
 if __name__ == '__main__':
-    app()
+    # test()
+    # app_tui()
+    app_gui()

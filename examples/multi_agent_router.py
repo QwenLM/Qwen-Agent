@@ -4,6 +4,7 @@ import os
 from typing import Optional
 
 from qwen_agent.agents import Assistant, ReActChat, Router
+from qwen_agent.gui import WebUI
 
 ROOT_RESOURCE = os.path.join(os.path.dirname(__file__), 'resource')
 
@@ -33,7 +34,31 @@ def init_agent_service():
     return bot
 
 
-def app():
+def test(
+        query: str = 'hello',
+        image: str = 'https://img01.sc115.com/uploads/sc/jpgs/1505/apic11540_sc115.com.jpg',
+        file: Optional[str] = os.path.join(ROOT_RESOURCE, 'poem.pdf'),
+):
+    # Define the agent
+    bot = init_agent_service()
+
+    # Chat
+    messages = []
+
+    if not image and not file:
+        messages.append({'role': 'user', 'content': query})
+    else:
+        messages.append({'role': 'user', 'content': [{'text': query}]})
+        if image:
+            messages[-1]['content'].append({'image': image})
+        if file:
+            messages[-1]['content'].append({'file': file})
+
+    for response in bot.run(messages):
+        print('bot response:', response)
+
+
+def app_tui():
     # Define the agent
     bot = init_agent_service()
 
@@ -63,29 +88,15 @@ def app():
         messages.extend(response)
 
 
-def test(
-        query: str = 'hello',
-        image: str = 'https://img01.sc115.com/uploads/sc/jpgs/1505/apic11540_sc115.com.jpg',
-        file: Optional[str] = os.path.join(ROOT_RESOURCE, 'poem.pdf'),
-):
-    # Define the agent
+def app_gui():
     bot = init_agent_service()
-
-    # Chat
-    messages = []
-
-    if not image and not file:
-        messages.append({'role': 'user', 'content': query})
-    else:
-        messages.append({'role': 'user', 'content': [{'text': query}]})
-        if image:
-            messages[-1]['content'].append({'image': image})
-        if file:
-            messages[-1]['content'].append({'file': file})
-
-    for response in bot.run(messages):
-        print('bot response:', response)
+    chatbot_config = {
+        'verbose': True,
+    }
+    WebUI(bot, chatbot_config=chatbot_config).run()
 
 
 if __name__ == '__main__':
-    app()
+    # test()
+    # app_tui()
+    app_gui()

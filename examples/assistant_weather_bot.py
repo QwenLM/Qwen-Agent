@@ -1,8 +1,10 @@
 """A weather forecast assistant implemented by assistant"""
+
 import os
 from typing import Optional
 
 from qwen_agent.agents import Assistant
+from qwen_agent.gui import WebUI
 
 ROOT_RESOURCE = os.path.join(os.path.dirname(__file__), 'resource')
 
@@ -15,6 +17,8 @@ def init_agent_service():
     tools = ['image_gen', 'amap_weather']
     bot = Assistant(
         llm=llm_cfg,
+        name='天气预报助手',
+        description='查询天气和画图',
         system_message=system,
         function_list=tools,
     )
@@ -22,7 +26,23 @@ def init_agent_service():
     return bot
 
 
-def app():
+def test(query='海淀区天气', file: Optional[str] = os.path.join(ROOT_RESOURCE, 'poem.pdf')):
+    # Define the agent
+    bot = init_agent_service()
+
+    # Chat
+    messages = []
+
+    if not file:
+        messages.append({'role': 'user', 'content': query})
+    else:
+        messages.append({'role': 'user', 'content': [{'text': query}, {'file': file}]})
+
+    for response in bot.run(messages):
+        print('bot response:', response)
+
+
+def app_tui():
     # Define the agent
     bot = init_agent_service()
 
@@ -47,21 +67,23 @@ def app():
         messages.extend(response)
 
 
-def test(query='海淀区天气', file: Optional[str] = os.path.join(ROOT_RESOURCE, 'poem.pdf')):
+def app_gui():
     # Define the agent
     bot = init_agent_service()
-
-    # Chat
-    messages = []
-
-    if not file:
-        messages.append({'role': 'user', 'content': query})
-    else:
-        messages.append({'role': 'user', 'content': [{'text': query}, {'file': file}]})
-
-    for response in bot.run(messages):
-        print('bot response:', response)
+    chatbot_config = {
+        'prompt.suggestions': [
+            '查询北京的天气',
+            '画一张北京的图片',
+            '画一张北京的图片，然后配上一首诗',
+        ]
+    }
+    WebUI(
+        bot,
+        chatbot_config=chatbot_config,
+    ).run()
 
 
 if __name__ == '__main__':
-    app()
+    # test()
+    # app_tui()
+    app_gui()

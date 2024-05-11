@@ -1,5 +1,7 @@
 """A chess play game implemented by group chat"""
+
 from qwen_agent.agents import GroupChat
+from qwen_agent.gui import WebUI
 from qwen_agent.llm.schema import Message
 
 # Define a configuration file for a multi-agent:
@@ -36,7 +38,15 @@ CFGS = {
 }
 
 
-def app():
+def test(query: str):
+    bot = GroupChat(agents=CFGS, llm={'model': 'qwen-max'})
+
+    messages = [Message('user', query, name=USER_NAME)]
+    for response in bot.run(messages=messages):
+        print('bot response:', response)
+
+
+def app_tui():
     # Define a group chat agent from the CFGS
     bot = GroupChat(agents=CFGS, llm={'model': 'qwen-max'})
     # Chat
@@ -50,13 +60,26 @@ def app():
         messages.extend(response)
 
 
-def test(query: str):
+def app_gui():
+    # Define a group chat agent from the CFGS
     bot = GroupChat(agents=CFGS, llm={'model': 'qwen-max'})
+    chatbot_config = {
+        'user.name': '小塘',
+        'prompt.suggestions': [
+            '开始！我先手，落子 <1,1>',
+            '我后手，请小明先开始',
+            '新开一盘，我先开始',
+        ],
+        'verbose': True
+    }
 
-    messages = [Message('user', query, name=USER_NAME)]
-    for response in bot.run(messages=messages):
-        print('bot response:', response)
+    WebUI(
+        bot,
+        chatbot_config=chatbot_config,
+    ).run()
 
 
 if __name__ == '__main__':
-    app()
+    # test()
+    # app_tui()
+    app_gui()

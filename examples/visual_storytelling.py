@@ -4,6 +4,7 @@ from typing import Dict, Iterator, List, Optional, Union
 
 from qwen_agent import Agent
 from qwen_agent.agents import Assistant
+from qwen_agent.gui import WebUI
 from qwen_agent.llm import BaseChatModel
 from qwen_agent.llm.schema import ContentItem, Message
 from qwen_agent.tools import BaseTool
@@ -52,7 +53,21 @@ class VisualStorytelling(Agent):
             yield response + rsp
 
 
-def app():
+def test(query: Optional[str] = '看图说话',
+         image: str = 'https://img01.sc115.com/uploads3/sc/vector/201809/51413-20180914205509.jpg'):
+    # define a writer agent
+    bot = VisualStorytelling(llm={'model': 'qwen-max'})
+
+    # Chat
+    messages = [Message('user', [ContentItem(image=image)])]
+    if query:
+        messages[-1]['content'].append(ContentItem(text=query))
+
+    for response in bot.run(messages):
+        print('bot response:', response)
+
+
+def app_tui():
     # Define a writer agent
     bot = VisualStorytelling(llm={'model': 'qwen-max'})
 
@@ -76,19 +91,12 @@ def app():
         messages.extend(response)
 
 
-def test(query: Optional[str] = '看图说话',
-         image: str = 'https://img01.sc115.com/uploads3/sc/vector/201809/51413-20180914205509.jpg'):
-    # define a writer agent
+def app_gui():
     bot = VisualStorytelling(llm={'model': 'qwen-max'})
-
-    # Chat
-    messages = [Message('user', [ContentItem(image=image)])]
-    if query:
-        messages[-1]['content'].append(ContentItem(text=query))
-
-    for response in bot.run(messages):
-        print('bot response:', response)
+    WebUI(bot).run()
 
 
 if __name__ == '__main__':
-    app()
+    # test()
+    # app_tui()
+    app_gui()

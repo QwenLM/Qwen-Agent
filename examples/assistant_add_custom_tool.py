@@ -1,4 +1,5 @@
 """An image generation agent implemented by assistant"""
+
 import json
 import os
 import urllib.parse
@@ -6,6 +7,7 @@ import urllib.parse
 import json5
 
 from qwen_agent.agents import Assistant
+from qwen_agent.gui import WebUI
 from qwen_agent.tools.base import BaseTool, register_tool
 
 ROOT_RESOURCE = os.path.join(os.path.dirname(__file__), 'resource')
@@ -43,6 +45,8 @@ def init_agent_service():
     ]  # code_interpreter is a built-in tool in Qwen-Agent
     bot = Assistant(
         llm=llm_cfg,
+        name='AI painting',
+        description='AI painting service',
         system_message=system,
         function_list=tools,
         files=[os.path.join(ROOT_RESOURCE, 'doc.pdf')],
@@ -51,7 +55,17 @@ def init_agent_service():
     return bot
 
 
-def app():
+def test(query: str = 'draw a dog'):
+    # Define the agent
+    bot = init_agent_service()
+
+    # Chat
+    messages = [{'role': 'user', 'content': query}]
+    for response in bot.run(messages=messages):
+        print('bot response:', response)
+
+
+def app_tui():
     # Define the agent
     bot = init_agent_service()
 
@@ -66,15 +80,23 @@ def app():
         messages.extend(response)
 
 
-def test(query: str = 'draw a dog'):
+def app_gui():
     # Define the agent
     bot = init_agent_service()
-
-    # Chat
-    messages = [{'role': 'user', 'content': query}]
-    for response in bot.run(messages=messages):
-        print('bot response:', response)
+    chatbot_config = {
+        'prompt.suggestions': [
+            '画一只猫的图片',
+            '画一只可爱的小腊肠狗',
+            '画一幅风景画，有湖有山有树',
+        ]
+    }
+    WebUI(
+        bot,
+        chatbot_config=chatbot_config,
+    ).run()
 
 
 if __name__ == '__main__':
-    app()
+    # test()
+    # app_tui()
+    app_gui()

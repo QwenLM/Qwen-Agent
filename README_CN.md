@@ -23,6 +23,11 @@ cd Qwen-Agent
 pip install -e ./
 ```
 
+如需使用内置GUI支持，请安装以下可选依赖项：
+```bash
+pip install -U "gradio>=4.0" "modelscope-studio>=0.2.1"
+```
+
 ## 准备：模型服务
 
 Qwen-Agent支持接入阿里云[DashScope](https://help.aliyun.com/zh/dashscope/developer-reference/quick-start)服务提供的Qwen模型服务，也支持通过OpenAI API方式接入开源的Qwen模型服务。

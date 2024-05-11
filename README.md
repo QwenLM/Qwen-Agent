@@ -25,6 +25,11 @@ cd Qwen-Agent
 pip install -e ./
 ```
 
+Optionally, please install the following optional dependencies if built-in GUI support is needed:
+```bash
+pip install -U "gradio>=4.0" "modelscope-studio>=0.2.1"
+```
+
 ## Preparation: Model Service
 
 You can either use the model service provided by Alibaba
