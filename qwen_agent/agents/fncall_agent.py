@@ -80,7 +80,7 @@ class FnCallAgent(Agent):
         # Todo: This should be changed to parameter passing, and the file URL should be determined by the model
         if self.function_map[tool_name].file_access:
             assert 'messages' in kwargs
-            files = extract_files_from_messages(kwargs['messages']) + self.mem.system_files
+            files = extract_files_from_messages(kwargs['messages'], include_images=True) + self.mem.system_files
             return super()._call_tool(tool_name, tool_args, files=files, **kwargs)
         else:
             return super()._call_tool(tool_name, tool_args, **kwargs)

@@ -121,6 +121,32 @@ def is_image(path_or_url: str) -> bool:
     return False
 
 
+def sanitize_chrome_file_path(file_path: str) -> str:
+    # For Linux and macOS.
+    if os.path.exists(file_path):
+        return file_path
+
+    # For native Windows, drop the leading '/' in '/C:/'
+    win_path = file_path
+    if win_path.startswith('/'):
+        win_path = win_path[1:]
+    if os.path.exists(win_path):
+        return win_path
+
+    # For Windows + WSL.
+    if re.match(r'^[A-Za-z]:/', win_path):
+        wsl_path = f'/mnt/{win_path[0].lower()}/{win_path[3:]}'
+        if os.path.exists(wsl_path):
+            return wsl_path
+
+    # For native Windows, replace / with \.
+    win_path = win_path.replace('/', '\\')
+    if os.path.exists(win_path):
+        return win_path
+
+    return file_path
+
+
 def save_url_to_local_work_dir(url: str, save_dir: str, save_filename: str = '') -> str:
     if not save_filename:
         save_filename = get_basename_from_url(url)
@@ -130,6 +156,9 @@ def save_url_to_local_work_dir(url: str, save_dir: str, save_filename: str = '')
     logger.info(f'Downloading {url} to {new_path}...')
     start_time = time.time()
     if not is_http_url(url):
+        parsed_url = urllib.parse.urlparse(url)
+        path = urllib.parse.unquote(parsed_url.path)
+        url = sanitize_chrome_file_path(path)
         shutil.copy(url, new_path)
     else:
         headers = {
@@ -297,13 +326,15 @@ def extract_text_from_message(
     return text.strip()
 
 
-def extract_files_from_messages(messages: List[Message]) -> List[str]:
+def extract_files_from_messages(messages: List[Message], include_images: bool) -> List[str]:
     files = []
     for msg in messages:
         if isinstance(msg.content, list):
             for item in msg.content:
                 if item.file and item.file not in files:
                     files.append(item.file)
+                if include_images and item.image and item.image not in files:
+                    files.append(item.image)
     return files
 
 

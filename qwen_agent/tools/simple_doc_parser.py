@@ -8,7 +8,7 @@ from qwen_agent.settings import DEFAULT_WORKSPACE
 from qwen_agent.tools.base import BaseTool, register_tool
 from qwen_agent.utils.str_processing import rm_cid, rm_continuous_placeholders, rm_hexadecimal
 from qwen_agent.utils.utils import (get_file_type, hash_sha256, is_http_url, read_text_from_file,
-                                    save_url_to_local_work_dir)
+                                    sanitize_chrome_file_path, save_url_to_local_work_dir)
 
 
 def clean_paragraph(text):
@@ -250,32 +250,6 @@ def table_converter(table):
         table_string += ('|' + '|'.join(cleaned_row) + '|' + '\n')
     table_string = table_string[:-1]
     return table_string
-
-
-def sanitize_chrome_file_path(file_path: str) -> str:
-    # For Linux and macOS.
-    if os.path.exists(file_path):
-        return file_path
-
-    # For native Windows, drop the leading '/' in '/C:/'
-    win_path = file_path
-    if win_path.startswith('/'):
-        win_path = win_path[1:]
-    if os.path.exists(win_path):
-        return win_path
-
-    # For Windows + WSL.
-    if re.match(r'^[A-Za-z]:/', win_path):
-        wsl_path = f'/mnt/{win_path[0].lower()}/{win_path[3:]}'
-        if os.path.exists(wsl_path):
-            return wsl_path
-
-    # For native Windows, replace / with \.
-    win_path = win_path.replace('/', '\\')
-    if os.path.exists(win_path):
-        return win_path
-
-    return file_path
 
 
 PARSER_SUPPORTED_FILE_TYPES = ['pdf', 'docx', 'pptx', 'txt', 'html']

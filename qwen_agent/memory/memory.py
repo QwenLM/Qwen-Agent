@@ -124,7 +124,7 @@ class Memory(Agent):
             yield [Message(role=ASSISTANT, content=content, name='memory')]
 
     def get_rag_files(self, messages: List[Message]):
-        session_files = extract_files_from_messages(messages)
+        session_files = extract_files_from_messages(messages, include_images=False)
         files = self.system_files + session_files
         rag_files = []
         for file in files:
