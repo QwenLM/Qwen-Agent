@@ -1,7 +1,7 @@
 from typing import List, Literal
 
 # Settings for LLMs
-DEFAULT_MAX_INPUT_TOKENS: int = 5500  # The LLM will truncate the input messages if they exceed this limit
+DEFAULT_MAX_INPUT_TOKENS: int = 5800  # The LLM will truncate the input messages if they exceed this limit
 
 # Settings for agents
 MAX_LLM_CALL_PER_RUN: int = 8
