@@ -1,14 +1,15 @@
 import copy
 import datetime
-from typing import Iterator, List, Literal, Optional, Union
+from typing import Dict, Iterator, List, Literal, Optional, Union
 
 import json5
 
-from qwen_agent.llm.schema import CONTENT, ROLE, SYSTEM, Message
+from qwen_agent.llm.schema import CONTENT, DEFAULT_SYSTEM_MESSAGE, ROLE, SYSTEM, Message
 from qwen_agent.log import logger
-from qwen_agent.settings import DEFAULT_MAX_REF_TOKEN
 from qwen_agent.utils.utils import get_basename_from_url, print_traceback
 
+from ..llm import BaseChatModel
+from ..tools import BaseTool
 from .fncall_agent import FnCallAgent
 
 KNOWLEDGE_TEMPLATE_ZH = """
@@ -72,10 +73,25 @@ def format_knowledge_to_source_and_content(result: Union[str, List[dict]]) -> Li
 class Assistant(FnCallAgent):
     """This is a widely applicable agent integrated with RAG capabilities and function call ability."""
 
+    def __init__(self,
+                 function_list: Optional[List[Union[str, Dict, BaseTool]]] = None,
+                 llm: Optional[Union[Dict, BaseChatModel]] = None,
+                 system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
+                 name: Optional[str] = None,
+                 description: Optional[str] = None,
+                 files: Optional[List[str]] = None,
+                 rag_cfg: Optional[Dict] = None):
+        super().__init__(function_list=function_list,
+                         llm=llm,
+                         system_message=system_message,
+                         name=name,
+                         description=description,
+                         files=files,
+                         rag_cfg=rag_cfg)
+
     def _run(self,
              messages: List[Message],
              lang: Literal['en', 'zh'] = 'en',
-             max_ref_token: int = DEFAULT_MAX_REF_TOKEN,
              knowledge: str = '',
              **kwargs) -> Iterator[List[Message]]:
         """Q&A with RAG and tool use abilities.
@@ -86,23 +102,18 @@ class Assistant(FnCallAgent):
 
         """
 
-        new_messages = self._prepend_knowledge_prompt(messages=messages,
-                                                      lang=lang,
-                                                      max_ref_token=max_ref_token,
-                                                      knowledge=knowledge,
-                                                      **kwargs)
-        return super()._run(messages=new_messages, lang=lang, max_ref_token=max_ref_token, **kwargs)
+        new_messages = self._prepend_knowledge_prompt(messages=messages, lang=lang, knowledge=knowledge, **kwargs)
+        return super()._run(messages=new_messages, lang=lang, **kwargs)
 
     def _prepend_knowledge_prompt(self,
                                   messages: List[Message],
                                   lang: Literal['en', 'zh'] = 'en',
-                                  max_ref_token: int = DEFAULT_MAX_REF_TOKEN,
                                   knowledge: str = '',
                                   **kwargs) -> List[Message]:
         messages = copy.deepcopy(messages)
         if not knowledge:
             # Retrieval knowledge from files
-            *_, last = self.mem.run(messages=messages, lang=lang, max_ref_token=max_ref_token, **kwargs)
+            *_, last = self.mem.run(messages=messages, lang=lang, **kwargs)
             knowledge = last[-1][CONTENT]
 
         logger.debug(f'Retrieved knowledge of type `{type(knowledge).__name__}`:\n{knowledge}')

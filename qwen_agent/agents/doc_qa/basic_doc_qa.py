@@ -4,7 +4,6 @@ from qwen_agent.agents.assistant import Assistant
 from qwen_agent.llm.base import BaseChatModel
 from qwen_agent.llm.schema import CONTENT, DEFAULT_SYSTEM_MESSAGE, Message
 from qwen_agent.prompts import DocQA
-from qwen_agent.settings import DEFAULT_MAX_REF_TOKEN
 from qwen_agent.tools import BaseTool
 
 DEFAULT_NAME = 'Basic DocQA'
@@ -20,23 +19,21 @@ class BasicDocQA(Assistant):
                  system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
                  name: Optional[str] = DEFAULT_NAME,
                  description: Optional[str] = DEFAULT_DESC,
-                 files: Optional[List[str]] = None):
+                 files: Optional[List[str]] = None,
+                 rag_cfg: Optional[Dict] = None):
         super().__init__(function_list=function_list,
                          llm=llm,
                          system_message=system_message,
                          name=name,
                          description=description,
-                         files=files)
+                         files=files,
+                         rag_cfg=rag_cfg)
         self.doc_qa = DocQA(llm=self.llm)
 
-    def _run(self,
-             messages: List[Message],
-             lang: str = 'en',
-             max_ref_token: int = DEFAULT_MAX_REF_TOKEN,
-             **kwargs) -> Iterator[List[Message]]:
+    def _run(self, messages: List[Message], lang: str = 'en', **kwargs) -> Iterator[List[Message]]:
         """This agent using different doc qa prompt with Assistant"""
         # Need to use Memory agent for data management
-        *_, last = self.mem.run(messages=messages, max_ref_token=max_ref_token, **kwargs)
+        *_, last = self.mem.run(messages=messages, **kwargs)
         _ref = last[-1][CONTENT]
 
         # Use RetrievalQA agent

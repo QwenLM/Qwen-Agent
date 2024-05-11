@@ -52,16 +52,15 @@ class DocParser(BaseTool):
 
     def __init__(self, cfg: Optional[Dict] = None):
         super().__init__(cfg)
+        self.max_ref_token: int = self.cfg.get('max_ref_token', DEFAULT_MAX_REF_TOKEN)
+        self.parser_page_size: int = self.cfg.get('parser_page_size', DEFAULT_PARSER_PAGE_SIZE)
+
         self.data_root = self.cfg.get('path', os.path.join(DEFAULT_WORKSPACE, 'tools', self.name))
         self.db = Storage({'storage_root_path': self.data_root})
 
         self.doc_extractor = SimpleDocParser({'structured_doc': True})
 
-    def call(self,
-             params: Union[str, dict],
-             ignore_cache: bool = False,
-             parser_page_size: int = DEFAULT_PARSER_PAGE_SIZE,
-             max_ref_token: int = DEFAULT_MAX_REF_TOKEN) -> dict:
+    def call(self, params: Union[str, dict], **kwargs) -> dict:
         """Extracting and blocking
 
         Returns:
@@ -81,22 +80,25 @@ class DocParser(BaseTool):
         """
 
         params = self._verify_json_format_args(params)
+        # Compatible with the parameter passing of the qwen-agent version <= 0.0.3
+        max_ref_token = kwargs.get('max_ref_token', self.max_ref_token)
+        parser_page_size = kwargs.get('parser_page_size', self.parser_page_size)
+
         url = params['url']
         cached_name_ori = f'{hash_sha256(url)}_ori'
         cached_name_chunking = f'{hash_sha256(url)}_{str(parser_page_size)}'
         doc = None
-        if not ignore_cache:
+        try:
+            # Directly load the chunked doc
+            record = self.db.get(cached_name_chunking)
+            record = json5.loads(record)
+            return record
+        except KeyNotExistsError:
             try:
-                # Directly load the chunked doc
-                record = self.db.get(cached_name_chunking)
-                record = json5.loads(record)
-                return record
+                # Directly load the parsed doc
+                doc = json5.loads(self.db.get(cached_name_ori))
             except KeyNotExistsError:
-                try:
-                    # Directly load the parsed doc
-                    doc = json5.loads(self.db.get(cached_name_ori))
-                except KeyNotExistsError:
-                    pass
+                pass
         total_token = 0
         if not doc:
             logger.info(f'Start parsing {url}...')

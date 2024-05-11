@@ -28,11 +28,7 @@ class VisualStorytelling(Agent):
                                        '参考知识库中教你的写作技巧，发挥你的想象力，写一篇800字的记叙文',
                                        files=['https://www.jianshu.com/p/cdf82ff33ef8'])
 
-    def _run(self,
-             messages: List[Message],
-             lang: str = 'zh',
-             max_ref_token: int = 4000,
-             **kwargs) -> Iterator[List[Message]]:
+    def _run(self, messages: List[Message], lang: str = 'zh', **kwargs) -> Iterator[List[Message]]:
         """Define the workflow"""
 
         assert isinstance(messages[-1]['content'], list)
@@ -49,7 +45,7 @@ class VisualStorytelling(Agent):
 
         # Writing article
         new_messages.append(Message('user', '开始根据以上图片内容编写你的记叙文吧！'))
-        for rsp in self.writing_agent.run(new_messages, lang=lang, max_ref_token=max_ref_token, **kwargs):
+        for rsp in self.writing_agent.run(new_messages, lang=lang, **kwargs):
             yield response + rsp
 
 

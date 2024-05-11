@@ -4,7 +4,6 @@ from qwen_agent.agents.assistant import Assistant
 from qwen_agent.agents.write_from_scratch import WriteFromScratch
 from qwen_agent.llm.schema import ASSISTANT, CONTENT, Message
 from qwen_agent.prompts import ContinueWriting
-from qwen_agent.settings import DEFAULT_MAX_REF_TOKEN
 
 
 class ArticleAgent(Assistant):
@@ -16,12 +15,11 @@ class ArticleAgent(Assistant):
     def _run(self,
              messages: List[Message],
              lang: str = 'en',
-             max_ref_token: int = DEFAULT_MAX_REF_TOKEN,
              full_article: bool = False,
              **kwargs) -> Iterator[List[Message]]:
 
         # Need to use Memory agent for data management
-        *_, last = self.mem.run(messages=messages, max_ref_token=max_ref_token, **kwargs)
+        *_, last = self.mem.run(messages=messages, **kwargs)
         _ref = last[-1][CONTENT]
 
         response = []

@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import List, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 from pydantic import BaseModel
 
@@ -26,22 +26,25 @@ class BaseSearch(BaseTool):
     description = '从给定文档中检索和问题相关的部分'
     parameters = [{'name': 'query', 'type': 'string', 'description': '问题，需要从文档中检索和这个问题有关的内容', 'required': True}]
 
-    def call(self,
-             params: Union[str, dict],
-             docs: List[Union[Record, str, List[str]]] = None,
-             max_ref_token: int = DEFAULT_MAX_REF_TOKEN) -> list:
+    def __init__(self, cfg: Optional[Dict] = None):
+        super().__init__(cfg)
+        self.max_ref_token: int = self.cfg.get('max_ref_token', DEFAULT_MAX_REF_TOKEN)
+
+    def call(self, params: Union[str, dict], docs: List[Union[Record, str, List[str]]] = None, **kwargs) -> list:
         """The basic search algorithm
 
         Args:
             params: The dict parameters.
             docs: The list of parsed doc, each doc has unique url.
-            max_ref_token: The max tokens of retrieve windows.
 
         Returns:
             The list of retrieved chunks from each doc.
 
         """
         params = self._verify_json_format_args(params)
+        # Compatible with the parameter passing of the qwen-agent version <= 0.0.3
+        max_ref_token = kwargs.get('max_ref_token', self.max_ref_token)
+
         # The query is a string that may contain only the original question,
         # or it may be a json string containing the generated keywords and the original question
         query = params['query']

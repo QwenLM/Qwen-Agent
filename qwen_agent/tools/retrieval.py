@@ -28,20 +28,18 @@ class Retrieval(BaseTool):
 
     def __init__(self, cfg: Optional[Dict] = None):
         super().__init__(cfg)
-        self.doc_parse = DocParser()
-        self.searchers = self.cfg.get('rag_searchers', DEFAULT_RAG_SEARCHERS)
-        if len(self.searchers) == 1:
-            self.search = TOOL_REGISTRY[self.searchers[0]]()
+        self.max_ref_token: int = self.cfg.get('max_ref_token', DEFAULT_MAX_REF_TOKEN)
+        self.parser_page_size: int = self.cfg.get('parser_page_size', DEFAULT_PARSER_PAGE_SIZE)
+        self.doc_parse = DocParser({'max_ref_token': self.max_ref_token, 'parser_page_size': self.parser_page_size})
+
+        self.rag_searchers = self.cfg.get('rag_searchers', DEFAULT_RAG_SEARCHERS)
+        if len(self.rag_searchers) == 1:
+            self.search = TOOL_REGISTRY[self.rag_searchers[0]]({'max_ref_token': self.max_ref_token})
         else:
             from qwen_agent.tools.search_tools.hybrid_search import HybridSearch
-            self.search = HybridSearch({'rag_searchers': self.searchers})
+            self.search = HybridSearch({'max_ref_token': self.max_ref_token, 'rag_searchers': self.rag_searchers})
 
-    def call(self,
-             params: Union[str, dict],
-             ignore_cache: bool = False,
-             max_ref_token: int = DEFAULT_MAX_REF_TOKEN,
-             parser_page_size: int = DEFAULT_PARSER_PAGE_SIZE,
-             **kwargs) -> list:
+    def call(self, params: Union[str, dict], **kwargs) -> list:
         """RAG tool.
 
         Step1: Parse and save files
@@ -49,10 +47,6 @@ class Retrieval(BaseTool):
 
         Args:
             params: The files and query.
-            ignore_cache: When set to True, overwrite the same documents that have been parsed before.
-            max_ref_token: Maximum retrieval length.
-            parser_page_size: The size of one page for doc parser.
-
         Returns:
             The parsed file list or retrieved file list.
         """
@@ -63,16 +57,11 @@ class Retrieval(BaseTool):
             files = json5.loads(files)
         records = []
         for file in files:
-            _record = self.doc_parse.call(params={'url': file},
-                                          ignore_cache=ignore_cache,
-                                          parser_page_size=parser_page_size,
-                                          max_ref_token=max_ref_token)
+            _record = self.doc_parse.call(params={'url': file}, **kwargs)
             records.append(_record)
 
         query = params.get('query', '')
         if records:
-            return self.search.call(params={'query': query},
-                                    docs=[Record(**rec) for rec in records],
-                                    max_ref_token=max_ref_token)
+            return self.search.call(params={'query': query}, docs=[Record(**rec) for rec in records], **kwargs)
         else:
             return []

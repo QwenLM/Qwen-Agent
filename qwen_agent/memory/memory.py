@@ -8,7 +8,8 @@ from qwen_agent.llm import BaseChatModel
 from qwen_agent.llm.schema import ASSISTANT, DEFAULT_SYSTEM_MESSAGE, USER, Message
 from qwen_agent.log import logger
 from qwen_agent.prompts import GenKeyword
-from qwen_agent.settings import DEFAULT_MAX_REF_TOKEN, DEFAULT_PARSER_PAGE_SIZE, DEFAULT_RAG_KEYGEN_STRATEGY
+from qwen_agent.settings import (DEFAULT_MAX_REF_TOKEN, DEFAULT_PARSER_PAGE_SIZE, DEFAULT_RAG_KEYGEN_STRATEGY,
+                                 DEFAULT_RAG_SEARCHERS)
 from qwen_agent.tools import BaseTool
 from qwen_agent.tools.simple_doc_parser import PARSER_SUPPORTED_FILE_TYPES
 from qwen_agent.utils.utils import extract_files_from_messages, extract_text_from_message, get_file_type
@@ -24,22 +25,43 @@ class Memory(Agent):
                  function_list: Optional[List[Union[str, Dict, BaseTool]]] = None,
                  llm: Optional[Union[Dict, BaseChatModel]] = None,
                  system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
-                 files: Optional[List[str]] = None):
+                 files: Optional[List[str]] = None,
+                 rag_cfg: Optional[Dict] = None):
+        """Initialization the memory.
+
+        Args:
+            rag_cfg: The config for RAG. One example is:
+              {'max_ref_token': 4000,
+              'parser_page_size': 500,
+              'rag_keygen_strategy': 'simple',
+              'rag_searchers': ['keyword_search', 'front_page_search']}.
+              And the above is the default settings.
+        """
+        self.cfg = rag_cfg or {}
+        self.max_ref_token: int = self.cfg.get('max_ref_token', DEFAULT_MAX_REF_TOKEN)
+        self.parser_page_size: int = self.cfg.get('parser_page_size', DEFAULT_PARSER_PAGE_SIZE)
+        self.rag_searchers = self.cfg.get('rag_searchers', DEFAULT_RAG_SEARCHERS)
+
+        self.rag_keygen_strategy: Literal['none', 'simple', 'vocab'] = self.cfg.get('rag_keygen_strategy',
+                                                                                    DEFAULT_RAG_KEYGEN_STRATEGY)
+
         function_list = function_list or []
-        super().__init__(function_list=['retrieval', 'doc_parser'] + function_list,
+        super().__init__(function_list=[{
+            'name': 'retrieval',
+            'max_ref_token': self.max_ref_token,
+            'parser_page_size': self.parser_page_size,
+            'rag_searchers': self.rag_searchers,
+        }, {
+            'name': 'doc_parser',
+            'max_ref_token': self.max_ref_token,
+            'parser_page_size': self.parser_page_size,
+        }] + function_list,
                          llm=llm,
                          system_message=system_message)
 
         self.system_files = files or []
 
-    def _run(self,
-             messages: List[Message],
-             max_ref_token: int = DEFAULT_MAX_REF_TOKEN,
-             parser_page_size: int = DEFAULT_PARSER_PAGE_SIZE,
-             rag_keygen_strategy: Literal['none', 'simple', 'vocab'] = DEFAULT_RAG_KEYGEN_STRATEGY,
-             lang: str = 'en',
-             ignore_cache: bool = False,
-             **kwargs) -> Iterator[List[Message]]:
+    def _run(self, messages: List[Message], lang: str = 'en', **kwargs) -> Iterator[List[Message]]:
         """This agent is responsible for processing the input files in the message.
 
          This method stores the files in the knowledge base, and retrievals the relevant parts
@@ -48,13 +70,14 @@ class Memory(Agent):
 
          Args:
              messages: A list of messages.
-             max_ref_token: Search window for reference materials.
              lang: Language.
-             ignore_cache: Whether to reparse the same files.
 
         Yields:
             The message of retrieved documents.
         """
+        # Compatible with the parameter passing of the qwen-agent version <= 0.0.3
+        rag_keygen_strategy = kwargs.get('rag_keygen_strategy', self.rag_keygen_strategy)
+
         # process files in messages
         rag_files = self.get_rag_files(messages)
 
@@ -95,9 +118,6 @@ class Memory(Agent):
                     'query': query,
                     'files': rag_files
                 },
-                ignore_cache=ignore_cache,
-                max_ref_token=max_ref_token,
-                parser_page_size=parser_page_size,
                 **kwargs,
             )
 

@@ -6,7 +6,6 @@ from qwen_agent.agents.assistant import Assistant
 from qwen_agent.llm import BaseChatModel
 from qwen_agent.llm.schema import ASSISTANT, ROLE, Message
 from qwen_agent.log import logger
-from qwen_agent.settings import DEFAULT_MAX_REF_TOKEN
 from qwen_agent.tools import BaseTool
 from qwen_agent.utils.utils import merge_generate_cfgs
 
@@ -28,7 +27,8 @@ class Router(Assistant, MultiAgentHub):
                  files: Optional[List[str]] = None,
                  name: Optional[str] = None,
                  description: Optional[str] = None,
-                 agents: Optional[List[Agent]] = None):
+                 agents: Optional[List[Agent]] = None,
+                 rag_cfg: Optional[Dict] = None):
         self._agents = agents
         agent_descs = '\n'.join([f'{x.name}: {x.description}' for x in agents])
         agent_names = ', '.join(self.agent_names)
@@ -37,17 +37,14 @@ class Router(Assistant, MultiAgentHub):
                          system_message=ROUTER_PROMPT.format(agent_descs=agent_descs, agent_names=agent_names),
                          name=name,
                          description=description,
-                         files=files)
+                         files=files,
+                         rag_cfg=rag_cfg)
         self.extra_generate_cfg = merge_generate_cfgs(
             base_generate_cfg=self.extra_generate_cfg,
             new_generate_cfg={'stop': ['Reply:', 'Reply:\n']},
         )
 
-    def _run(self,
-             messages: List[Message],
-             lang: str = 'en',
-             max_ref_token: int = DEFAULT_MAX_REF_TOKEN,
-             **kwargs) -> Iterator[List[Message]]:
+    def _run(self, messages: List[Message], lang: str = 'en', **kwargs) -> Iterator[List[Message]]:
         # This is a temporary plan to determine the source of a message
         messages_for_router = []
         for msg in messages:
@@ -55,8 +52,7 @@ class Router(Assistant, MultiAgentHub):
                 msg = self.supplement_name_special_token(msg)
             messages_for_router.append(msg)
         response = []
-        for response in super()._run(messages=messages_for_router, lang=lang, max_ref_token=max_ref_token,
-                                     **kwargs):  # noqa
+        for response in super()._run(messages=messages_for_router, lang=lang, **kwargs):
             yield response
 
         if 'Call:' in response[-1].content and self.agents:
@@ -67,7 +63,7 @@ class Router(Assistant, MultiAgentHub):
                 # If the model generates a non-existent agent, the first agent will be used by default.
                 selected_agent_name = self.agent_names[0]
             selected_agent = self.agents[self.agent_names.index(selected_agent_name)]
-            for response in selected_agent.run(messages=messages, lang=lang, max_ref_token=max_ref_token, **kwargs):
+            for response in selected_agent.run(messages=messages, lang=lang, **kwargs):
                 for i in range(len(response)):
                     if response[i].role == ASSISTANT:
                         response[i].name = selected_agent_name

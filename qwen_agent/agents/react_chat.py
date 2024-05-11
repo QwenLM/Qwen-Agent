@@ -42,13 +42,15 @@ class ReActChat(FnCallAgent):
                  system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
                  name: Optional[str] = None,
                  description: Optional[str] = None,
-                 files: Optional[List[str]] = None):
+                 files: Optional[List[str]] = None,
+                 **kwargs):
         super().__init__(function_list=function_list,
                          llm=llm,
                          system_message=system_message,
                          name=name,
                          description=description,
-                         files=files)
+                         files=files,
+                         **kwargs)
         self.extra_generate_cfg = merge_generate_cfgs(
             base_generate_cfg=self.extra_generate_cfg,
             new_generate_cfg={'stop': ['Observation:', 'Observation:\n']},

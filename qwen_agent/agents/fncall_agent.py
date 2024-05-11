@@ -19,7 +19,8 @@ class FnCallAgent(Agent):
                  system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
                  name: Optional[str] = None,
                  description: Optional[str] = None,
-                 files: Optional[List[str]] = None):
+                 files: Optional[List[str]] = None,
+                 **kwargs):
         """Initialization the agent.
 
         Args:
@@ -40,7 +41,7 @@ class FnCallAgent(Agent):
 
         if not hasattr(self, 'mem'):
             # Default to use Memory to manage files
-            self.mem = Memory(llm=self.llm, files=files)
+            self.mem = Memory(llm=self.llm, files=files, **kwargs)
 
     def _run(self, messages: List[Message], lang: Literal['en', 'zh'] = 'en', **kwargs) -> Iterator[List[Message]]:
         messages = copy.deepcopy(messages)
