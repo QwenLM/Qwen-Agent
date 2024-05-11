@@ -363,7 +363,7 @@ def generate(context):
                                              full_article=full_article)
             for rsp in response:
                 if rsp:
-                    yield rsp[-1]['content']
+                    yield '\n'.join([x['content'] for x in rsp])
         except ModelServiceError as ex:
             yield str(ex)
         except Exception as ex:
