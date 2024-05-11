@@ -91,7 +91,7 @@ def cache_page(**kwargs):
         # rm history
         save_history(None, url, history_dir)
     try:
-        *_, last = mem.run([{'role': 'user', 'content': [{'file': url}]}], ignore_cache=True)
+        *_, last = mem.run([{'role': 'user', 'content': [{'file': url}]}])
         title = get_basename_from_url(url)
         save_browsing_meta_data(url, title, meta_file)
     except Exception:

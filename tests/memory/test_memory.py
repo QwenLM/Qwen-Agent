@@ -20,7 +20,7 @@ def test_memory():
             ContentItem(file=str(Path(__file__).resolve().parent.parent.parent / 'examples/resource/growing_girl.pdf'))
         ])
     ]
-    *_, last = mem.run(messages, max_ref_token=4000, parser_page_size=500, ignore_cache=True)
+    *_, last = mem.run(messages, max_ref_token=4000, parser_page_size=500)
     print(last)
     assert isinstance(last[-1].content, str)
     assert len(last[-1].content) > 0

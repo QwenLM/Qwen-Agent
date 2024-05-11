@@ -3,8 +3,7 @@ from qwen_agent.tools import DocParser
 
 def test_doc_parser():
     tool = DocParser()
-    res = tool.call({'url': 'https://qianwen-res.oss-cn-beijing.aliyuncs.com/QWEN_TECHNICAL_REPORT.pdf'},
-                    ignore_cache=True)
+    res = tool.call({'url': 'https://qianwen-res.oss-cn-beijing.aliyuncs.com/QWEN_TECHNICAL_REPORT.pdf'})
     print(res)
 
 

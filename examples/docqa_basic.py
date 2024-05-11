@@ -5,7 +5,7 @@ from qwen_agent.gui import WebUI
 def test():
     bot = BasicDocQA(llm={'model': 'qwen-plus'})
     messages = [{'role': 'user', 'content': [{'text': '介绍图一'}, {'file': 'https://arxiv.org/pdf/1706.03762.pdf'}]}]
-    for rsp in bot.run(messages, ignore_cache=True):
+    for rsp in bot.run(messages):
         print(rsp)
 
 

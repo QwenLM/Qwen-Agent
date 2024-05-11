@@ -115,7 +115,7 @@ def add_file(file, chosen_plug):
         # cache file
         try:
             mem = Memory()
-            *_, last = mem.run([{'role': 'user', 'content': [{'file': file.name}]}], ignore_cache=True)
+            *_, last = mem.run([{'role': 'user', 'content': [{'file': file.name}]}])
             title = display_path
             save_browsing_meta_data(file.name, title, meta_file)
 
