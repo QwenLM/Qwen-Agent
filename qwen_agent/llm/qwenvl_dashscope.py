@@ -9,10 +9,10 @@ import dashscope
 
 from qwen_agent.llm.base import ModelServiceError, register_llm
 from qwen_agent.llm.function_calling import BaseFnCallModel
+from qwen_agent.llm.qwen_dashscope import initialize_dashscope
+from qwen_agent.llm.schema import ContentItem, Message
 from qwen_agent.log import logger
 from qwen_agent.utils.utils import format_as_text_message
-
-from .schema import ContentItem, Message
 
 
 @register_llm('qwenvl_dashscope')
@@ -21,13 +21,7 @@ class QwenVLChatAtDS(BaseFnCallModel):
     def __init__(self, cfg: Optional[Dict] = None):
         super().__init__(cfg)
         self.model = self.model or 'qwen-vl-max'
-
-        cfg = cfg or {}
-        api_key = cfg.get('api_key', '')
-        if not api_key:
-            api_key = os.getenv('DASHSCOPE_API_KEY', 'EMPTY')
-        api_key = api_key.strip()
-        dashscope.api_key = api_key
+        initialize_dashscope(cfg)
 
     def _chat_stream(
         self,

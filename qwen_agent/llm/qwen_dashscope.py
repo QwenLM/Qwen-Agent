@@ -6,10 +6,9 @@ from typing import Dict, Iterator, List, Optional
 import dashscope
 
 from qwen_agent.llm.base import ModelServiceError, register_llm
+from qwen_agent.llm.schema import ASSISTANT, DEFAULT_SYSTEM_MESSAGE, SYSTEM, USER, Message
+from qwen_agent.llm.text_base import BaseTextChatModel
 from qwen_agent.log import logger
-
-from .schema import ASSISTANT, DEFAULT_SYSTEM_MESSAGE, SYSTEM, USER, Message
-from .text_base import BaseTextChatModel
 
 
 @register_llm('qwen_dashscope')
@@ -18,13 +17,7 @@ class QwenChatAtDS(BaseTextChatModel):
     def __init__(self, cfg: Optional[Dict] = None):
         super().__init__(cfg)
         self.model = self.model or 'qwen-max'
-
-        cfg = cfg or {}
-        api_key = cfg.get('api_key', '')
-        if not api_key:
-            api_key = os.getenv('DASHSCOPE_API_KEY', 'EMPTY')
-        api_key = api_key.strip()
-        dashscope.api_key = api_key
+        initialize_dashscope(cfg)
 
     def _chat_stream(
         self,
@@ -139,3 +132,25 @@ class QwenChatAtDS(BaseTextChatModel):
                 yield [Message(ASSISTANT, chunk.output.choices[0].message.content)]
             else:
                 raise ModelServiceError(code=chunk.code, message=chunk.message)
+
+
+def initialize_dashscope(cfg: Optional[Dict] = None) -> None:
+    cfg = cfg or {}
+
+    api_key = cfg.get('api_key', '')
+    base_http_api_url = cfg.get('base_http_api_url', None)
+    base_websocket_api_url = cfg.get('base_websocket_api_url', None)
+
+    if not api_key:
+        api_key = os.getenv('DASHSCOPE_API_KEY', 'EMPTY')
+    if not base_http_api_url:
+        base_http_api_url = os.getenv('DASHSCOPE_HTTP_URL', None)
+    if not base_websocket_api_url:
+        base_websocket_api_url = os.getenv('DASHSCOPE_WEBSOCKET_URL', None)
+
+    api_key = api_key.strip()
+    dashscope.api_key = api_key
+    if base_http_api_url is not None:
+        dashscope.base_http_api_url = base_http_api_url.strip()
+    if base_websocket_api_url is not None:
+        dashscope.base_websocket_api_url = base_websocket_api_url.strip()
