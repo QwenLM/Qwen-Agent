@@ -21,7 +21,7 @@ class KeywordSearch(BaseSearch):
         if not chunk_and_score:
             return self._get_the_front_part(docs, max_ref_token)
 
-        max_sims = chunk_and_score[0][1]
+        max_sims = chunk_and_score[0][2]
         if max_sims != 0:
             return super().get_topk(chunk_and_score=chunk_and_score, docs=docs, max_ref_token=max_ref_token)
         else:
