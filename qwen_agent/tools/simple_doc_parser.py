@@ -1,12 +1,19 @@
+import json
 import os
 import re
+import time
 import urllib.parse
 from collections import Counter
 from typing import Dict, List, Optional, Union
 
+import json5
+
+from qwen_agent.log import logger
 from qwen_agent.settings import DEFAULT_WORKSPACE
 from qwen_agent.tools.base import BaseTool, register_tool
+from qwen_agent.tools.storage import KeyNotExistsError, Storage
 from qwen_agent.utils.str_processing import rm_cid, rm_continuous_placeholders, rm_hexadecimal
+from qwen_agent.utils.tokenization_qwen import count_tokens
 from qwen_agent.utils.utils import (get_file_type, hash_sha256, is_http_url, read_text_from_file,
                                     sanitize_chrome_file_path, save_url_to_local_work_dir)
 
@@ -281,6 +288,8 @@ class SimpleDocParser(BaseTool):
         self.extract_image = self.cfg.get('extract_image', False)
         self.structured_doc = self.cfg.get('structured_doc', False)
 
+        self.db = Storage({'storage_root_path': self.data_root})
+
     def call(self, params: Union[str, dict], **kwargs) -> Union[str, list]:
         """Parse pdf by url, and return the formatted content.
 
@@ -303,38 +312,55 @@ class SimpleDocParser(BaseTool):
 
         params = self._verify_json_format_args(params)
         path = params['url']
+        cached_name_ori = f'{hash_sha256(path)}_ori'
+        try:
+            # Directly load the parsed doc
+            parsed_file = json5.loads(self.db.get(cached_name_ori))
+            logger.info(f'Read parsed {path} from cache.')
+        except KeyNotExistsError:
+            logger.info(f'Start parsing {path}...')
+            time1 = time.time()
 
-        f_type = get_file_type(path)
-        if f_type in PARSER_SUPPORTED_FILE_TYPES:
-            if path.startswith('https://') or path.startswith('http://') or re.match(r'^[A-Za-z]:\\', path) or re.match(
-                    r'^[A-Za-z]:/', path):
-                path = path
+            f_type = get_file_type(path)
+            if f_type in PARSER_SUPPORTED_FILE_TYPES:
+                if path.startswith('https://') or path.startswith('http://') or re.match(
+                        r'^[A-Za-z]:\\', path) or re.match(r'^[A-Za-z]:/', path):
+                    path = path
+                else:
+                    parsed_url = urllib.parse.urlparse(path)
+                    path = urllib.parse.unquote(parsed_url.path)
+                    path = sanitize_chrome_file_path(path)
+
+            os.makedirs(self.data_root, exist_ok=True)
+            if is_http_url(path):
+                # download online url
+                tmp_file_root = os.path.join(self.data_root, hash_sha256(path))
+                os.makedirs(tmp_file_root, exist_ok=True)
+                path = save_url_to_local_work_dir(path, tmp_file_root)
+
+            if f_type == 'pdf':
+                parsed_file = parse_pdf(path, self.extract_image)
+            elif f_type == 'docx':
+                parsed_file = parse_word(path, self.extract_image)
+            elif f_type == 'pptx':
+                parsed_file = parse_ppt(path, self.extract_image)
+            elif f_type == 'txt':
+                parsed_file = parse_txt(path)
+            elif f_type == 'html':
+                parsed_file = parse_html_bs(path, self.extract_image)
             else:
-                parsed_url = urllib.parse.urlparse(path)
-                path = urllib.parse.unquote(parsed_url.path)
-                path = sanitize_chrome_file_path(path)
+                raise ValueError(
+                    f'Failed: The current parser does not support this file type! Supported types: {"/".join(PARSER_SUPPORTED_FILE_TYPES)}'
+                )
+            for page in parsed_file:
+                for para in page['content']:
+                    # Todo: More attribute types
+                    para['token'] = count_tokens(para.get('text', para.get('table')))
+            time2 = time.time()
+            logger.info(f'Finished parsing {path}. Time spent: {time2 - time1} seconds.')
+            # Cache the parsing doc
+            self.db.put(cached_name_ori, json.dumps(parsed_file, ensure_ascii=False, indent=2))
 
-        os.makedirs(self.data_root, exist_ok=True)
-        if is_http_url(path):
-            # download online url
-            tmp_file_root = os.path.join(self.data_root, hash_sha256(path))
-            os.makedirs(tmp_file_root, exist_ok=True)
-            path = save_url_to_local_work_dir(path, tmp_file_root)
-
-        if f_type == 'pdf':
-            parsed_file = parse_pdf(path, self.extract_image)
-        elif f_type == 'docx':
-            parsed_file = parse_word(path, self.extract_image)
-        elif f_type == 'pptx':
-            parsed_file = parse_ppt(path, self.extract_image)
-        elif f_type == 'txt':
-            parsed_file = parse_txt(path)
-        elif f_type == 'html':
-            parsed_file = parse_html_bs(path, self.extract_image)
-        else:
-            raise ValueError(
-                f'Failed: The current parser does not support this file type! Supported types: {"/".join(PARSER_SUPPORTED_FILE_TYPES)}'
-            )
         if not self.structured_doc:
             return get_plain_doc(parsed_file)
         else:

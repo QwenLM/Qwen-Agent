@@ -7,7 +7,9 @@ from qwen_agent.llm.schema import CONTENT, DEFAULT_SYSTEM_MESSAGE, Message
 from qwen_agent.tools import BaseTool
 from qwen_agent.utils.utils import merge_generate_cfgs
 
-PROMPT_TEMPLATE_ZH = """请提取问题中的关键词，需要中英文均有，可以适量补充不在问题中但相关的关键词。关键词尽量切分为动词/名词/形容词等类型，不要长词组。关键词以JSON的格式给出，比如{{"keywords_zh": ["关键词1", "关键词2"], "keywords_en": ["keyword 1", "keyword 2"]}}
+
+class GenKeyword(Agent):
+    PROMPT_TEMPLATE_ZH = """请提取问题中的关键词，需要中英文均有，可以适量补充不在问题中但相关的关键词。关键词尽量切分为动词、名词、或形容词等单独的词，不要长词组（目的是更好的匹配检索到语义相关但表述不同的相关资料）。关键词以JSON的格式给出，比如{{"keywords_zh": ["关键词1", "关键词2"], "keywords_en": ["keyword 1", "keyword 2"]}}
 
 Question: 这篇文章的作者是谁？
 Keywords: {{"keywords_zh": ["作者"], "keywords_en": ["author"]}}
@@ -25,7 +27,8 @@ Question: {user_request}
 Keywords:
 """
 
-PROMPT_TEMPLATE_EN = """Please extract keywords from the question, both in Chinese and English, and supplement them appropriately with relevant keywords that are not in the question. Try to divide keywords into verb/noun/adjective types and avoid long phrases.
+    PROMPT_TEMPLATE_EN = """Please extract keywords from the question, both in Chinese and English, and supplement them appropriately with relevant keywords that are not in the question.
+Try to divide keywords into verb, noun, or adjective types and avoid long phrases (The aim is to better match and retrieve semantically related but differently phrased relevant information).
 Keywords are provided in JSON format, such as {{"keywords_zh": ["关键词1", "关键词2"], "keywords_en": ["keyword 1", "keyword 2"]}}
 
 Question: Who are the authors of this article?
@@ -44,13 +47,10 @@ Question: {user_request}
 Keywords:
 """
 
-PROMPT_TEMPLATE = {
-    'zh': PROMPT_TEMPLATE_ZH,
-    'en': PROMPT_TEMPLATE_EN,
-}
-
-
-class GenKeyword(Agent):
+    PROMPT_TEMPLATE = {
+        'zh': PROMPT_TEMPLATE_ZH,
+        'en': PROMPT_TEMPLATE_EN,
+    }
 
     def __init__(self,
                  function_list: Optional[List[Union[str, Dict, BaseTool]]] = None,
@@ -65,5 +65,5 @@ class GenKeyword(Agent):
 
     def _run(self, messages: List[Message], lang: str = 'en', **kwargs) -> Iterator[List[Message]]:
         messages = copy.deepcopy(messages)
-        messages[-1][CONTENT] = PROMPT_TEMPLATE[lang].format(user_request=messages[-1][CONTENT])
-        return self._call_llm(messages)
+        messages[-1][CONTENT] = self.PROMPT_TEMPLATE[lang].format(user_request=messages[-1].content)
+        return self._call_llm(messages=messages)

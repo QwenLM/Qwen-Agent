@@ -1,5 +1,6 @@
 import json
-from typing import Dict, Iterator, List, Literal, Optional, Union
+from importlib import import_module
+from typing import Dict, Iterator, List, Optional, Union
 
 import json5
 
@@ -7,7 +8,6 @@ from qwen_agent import Agent
 from qwen_agent.llm import BaseChatModel
 from qwen_agent.llm.schema import ASSISTANT, DEFAULT_SYSTEM_MESSAGE, USER, Message
 from qwen_agent.log import logger
-from qwen_agent.prompts import GenKeyword
 from qwen_agent.settings import (DEFAULT_MAX_REF_TOKEN, DEFAULT_PARSER_PAGE_SIZE, DEFAULT_RAG_KEYGEN_STRATEGY,
                                  DEFAULT_RAG_SEARCHERS)
 from qwen_agent.tools import BaseTool
@@ -31,19 +31,19 @@ class Memory(Agent):
 
         Args:
             rag_cfg: The config for RAG. One example is:
-              {'max_ref_token': 4000,
-              'parser_page_size': 500,
-              'rag_keygen_strategy': 'simple',
-              'rag_searchers': ['keyword_search', 'front_page_search']}.
+              {
+                'max_ref_token': 4000,
+                'parser_page_size': 500,
+                'rag_keygen_strategy': 'SplitQueryThenGenKeyword',
+                'rag_searchers': ['keyword_search', 'front_page_search']
+              }
               And the above is the default settings.
         """
         self.cfg = rag_cfg or {}
         self.max_ref_token: int = self.cfg.get('max_ref_token', DEFAULT_MAX_REF_TOKEN)
         self.parser_page_size: int = self.cfg.get('parser_page_size', DEFAULT_PARSER_PAGE_SIZE)
         self.rag_searchers = self.cfg.get('rag_searchers', DEFAULT_RAG_SEARCHERS)
-
-        self.rag_keygen_strategy: Literal['none', 'simple', 'vocab'] = self.cfg.get('rag_keygen_strategy',
-                                                                                    DEFAULT_RAG_KEYGEN_STRATEGY)
+        self.rag_keygen_strategy = self.cfg.get('rag_keygen_strategy', DEFAULT_RAG_KEYGEN_STRATEGY)
 
         function_list = function_list or []
         super().__init__(function_list=[{
@@ -75,9 +75,6 @@ class Memory(Agent):
         Yields:
             The message of retrieved documents.
         """
-        # Compatible with the parameter passing of the qwen-agent version <= 0.0.3
-        rag_keygen_strategy = kwargs.get('rag_keygen_strategy', self.rag_keygen_strategy)
-
         # process files in messages
         rag_files = self.get_rag_files(messages)
 
@@ -88,18 +85,22 @@ class Memory(Agent):
             # Only retrieval content according to the last user query if exists
             if messages and messages[-1].role == USER:
                 query = extract_text_from_message(messages[-1], add_upload_info=False)
-            if query and rag_keygen_strategy != 'none':
-                if rag_keygen_strategy == 'vocab':
-                    raise NotImplementedError  # WIP
-                elif rag_keygen_strategy == 'simple':
-                    # Gen keyword
-                    keygen = GenKeyword(llm=self.llm)
-                    *_, last = keygen.run([Message(USER, query)])
-                else:
-                    raise NotImplementedError
 
-                keyword = last[-1].content
-                keyword = keyword.strip()
+            # Keyword generation
+            if query and self.rag_keygen_strategy.lower() != 'none':
+                module_name = 'qwen_agent.agents.keygen_strategies'
+                module = import_module(module_name)
+                cls = getattr(module, self.rag_keygen_strategy)
+                keygen = cls(llm=self.llm)
+                response = keygen.run([Message(USER, query)], files=rag_files)
+                last = None
+                for last in response:
+                    continue
+                if last:
+                    keyword = last[-1].content.strip()
+                else:
+                    keyword = ''
+
                 if keyword.startswith('```json'):
                     keyword = keyword[len('```json'):]
                 if keyword.endswith('```'):

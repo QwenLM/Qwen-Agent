@@ -110,7 +110,7 @@ def split_text_into_keywords(text: str) -> List[str]:
     _wordlist = string_tokenizer(text)
     wordlist = []
     for x in _wordlist:
-        if x in WORDS_TO_IGNORE or x in wordlist:
+        if x in WORDS_TO_IGNORE:
             continue
         wordlist.append(x)
     return wordlist
@@ -136,10 +136,7 @@ def parse_keyword(text):
                 continue
             wordlist.append(x)
         split_wordlist = split_text_into_keywords(res['text'])
-        for x in split_wordlist:
-            if x in wordlist:
-                continue
-            wordlist.append(x)
+        wordlist += split_wordlist
         return wordlist
     except Exception:
         return split_text_into_keywords(text)

@@ -12,5 +12,6 @@ DEFAULT_WORKSPACE: str = 'workspace'
 # Settings for RAG
 DEFAULT_MAX_REF_TOKEN: int = 4000  # The window size reserved for RAG materials
 DEFAULT_PARSER_PAGE_SIZE: int = 500  # Max tokens per chunk when doing RAG
-DEFAULT_RAG_KEYGEN_STRATEGY: Literal['none', 'simple', 'vocab'] = 'simple'
+DEFAULT_RAG_KEYGEN_STRATEGY: Literal['None', 'GenKeyword', 'SplitQueryThenGenKeyword', 'GenKeywordWithKnowledge',
+                                     'SplitQueryThenGenKeywordWithKnowledge'] = 'SplitQueryThenGenKeyword'
 DEFAULT_RAG_SEARCHERS: List[str] = ['keyword_search', 'front_page_search']  # Sub-searchers for hybrid retrieval

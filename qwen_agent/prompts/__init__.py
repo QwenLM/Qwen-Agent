@@ -3,7 +3,6 @@
 from .continue_writing import ContinueWriting
 from .doc_qa import DocQA
 from .expand_writing import ExpandWriting
-from .gen_keyword import GenKeyword
 from .outline_writing import OutlineWriting
 
 __all__ = [
@@ -11,5 +10,4 @@ __all__ = [
     'ContinueWriting',
     'OutlineWriting',
     'ExpandWriting',
-    'GenKeyword',
 ]

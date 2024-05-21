@@ -85,38 +85,21 @@ class DocParser(BaseTool):
         parser_page_size = kwargs.get('parser_page_size', self.parser_page_size)
 
         url = params['url']
-        cached_name_ori = f'{hash_sha256(url)}_ori'
+
         cached_name_chunking = f'{hash_sha256(url)}_{str(parser_page_size)}'
-        doc = None
         try:
             # Directly load the chunked doc
             record = self.db.get(cached_name_chunking)
             record = json5.loads(record)
+            logger.info(f'Read chunked {url} from cache.')
             return record
         except KeyNotExistsError:
-            try:
-                # Directly load the parsed doc
-                doc = json5.loads(self.db.get(cached_name_ori))
-            except KeyNotExistsError:
-                pass
-        total_token = 0
-        if not doc:
-            logger.info(f'Start parsing {url}...')
-            time1 = time.time()
             doc = self.doc_extractor.call({'url': url})
-            for page in doc:
-                for para in page['content']:
-                    # Todo: More attribute types
-                    para['token'] = count_tokens(para.get('text', para.get('table')))
-                    total_token += para['token']
-            time2 = time.time()
-            logger.info(f'Finished parsing {url}. Time spent: {time2 - time1} seconds.')
-            # Cache the parsing doc
-            self.db.put(cached_name_ori, json.dumps(doc, ensure_ascii=False, indent=2))
-        else:
-            for page in doc:
-                for para in page['content']:
-                    total_token += para['token']
+
+        total_token = 0
+        for page in doc:
+            for para in page['content']:
+                total_token += para['token']
 
         if doc and 'title' in doc[0]:
             title = doc[0]['title']
@@ -124,7 +107,7 @@ class DocParser(BaseTool):
             title = get_basename_from_url(url)
 
         logger.info(f'Start chunking {url} ({title})...')
-        time2 = time.time()
+        time1 = time.time()
         if total_token <= max_ref_token:
             # The whole doc is one chunk
             content = [
@@ -140,8 +123,8 @@ class DocParser(BaseTool):
         else:
             content = self.split_doc_to_chunk(doc, url, title=title, parser_page_size=parser_page_size)
 
-        time3 = time.time()
-        logger.info(f'Finished chunking {url} ({title}). Time spent: {time3 - time2} seconds.')
+        time2 = time.time()
+        logger.info(f'Finished chunking {url} ({title}). Time spent: {time2 - time1} seconds.')
 
         # save the document data
         new_record = Record(url=url, raw=content, title=title).to_dict()

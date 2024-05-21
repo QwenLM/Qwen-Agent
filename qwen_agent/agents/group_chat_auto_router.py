@@ -9,23 +9,23 @@ from qwen_agent.utils.utils import has_chinese_chars
 
 class GroupChatAutoRouter(Agent):
     PROMPT_TEMPLATE_ZH = '''你扮演角色扮演游戏的上帝，你的任务是选择合适的发言角色。有如下角色：
-    {agent_descs}
+{agent_descs}
 
-    角色间的对话历史格式如下，越新的对话越重要：
-    角色名: 说话内容
+角色间的对话历史格式如下，越新的对话越重要：
+角色名: 说话内容
 
-    请阅读对话历史，并选择下一个合适的发言角色，从 [{agent_names}] 里选，当真实用户最近表明了停止聊天时，或话题应该终止时，请返回“[STOP]”，用户很懒，非必要不要选真实用户。
-    仅返回角色名或“[STOP]”，不要返回其余内容。'''
+请阅读对话历史，并选择下一个合适的发言角色，从 [{agent_names}] 里选，当真实用户最近表明了停止聊天时，或话题应该终止时，请返回“[STOP]”，用户很懒，非必要不要选真实用户。
+仅返回角色名或“[STOP]”，不要返回其余内容。'''
 
     PROMPT_TEMPLATE_EN = '''You are in a role play game. The following roles are available:
-    {agent_descs}
+{agent_descs}
 
-    The format of dialogue history between roles is as follows:
-    Role Name: Speech Content
+The format of dialogue history between roles is as follows:
+Role Name: Speech Content
 
-    Please read the dialogue history and choose the next suitable role to speak.
-    When the user indicates to stop chatting or when the topic should be terminated, please return '[STOP]'.
-    Only return the role name from [{agent_names}] or '[STOP]'. Do not reply any other content.'''
+Please read the dialogue history and choose the next suitable role to speak.
+When the user indicates to stop chatting or when the topic should be terminated, please return '[STOP]'.
+Only return the role name from [{agent_names}] or '[STOP]'. Do not reply any other content.'''
 
     PROMPT_TEMPLATE = {
         'zh': PROMPT_TEMPLATE_ZH,
