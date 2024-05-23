@@ -268,20 +268,14 @@ class CodeInterpreter(BaseTool):
         bytes_io = io.BytesIO(png_bytes)
         PIL.Image.open(bytes_io).save(local_image_file, 'png')
 
-        static_url = os.getenv('M6_CODE_INTERPRETER_STATIC_URL', 'http://127.0.0.1:7865/static')
+        static_url = os.getenv('M6_CODE_INTERPRETER_STATIC_URL', '')
 
         # Hotfix: Temporarily generate image URL proxies for code interpreter to display in gradio
-        if static_url == 'http://127.0.0.1:7865/static':
-            if 'image_service' not in _MISC_SUBPROCESSES:
-                try:
-                    # run a fastapi server for image show in gradio demo by http://127.0.0.1:7865/{image_file}
-                    _MISC_SUBPROCESSES['image_service'] = subprocess.Popen(
-                        ['python', Path(__file__).absolute().parent / 'resource' / 'image_service.py'])
-                except Exception:
-                    print_traceback()
-
-        image_url = f'{static_url}/{image_file}'
-        return image_url
+        if not static_url:
+            return local_image_file
+        else:
+            image_url = f'{static_url}/{image_file}'
+            return image_url
 
 
 def _fix_matplotlib_cjk_font_issue():

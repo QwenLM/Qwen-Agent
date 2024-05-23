@@ -8,7 +8,7 @@ try:
 except ImportError:
     pass
 from qwen_agent.agents import ArticleAgent, Assistant, ReActChat
-from qwen_agent.gui import gr
+from qwen_agent.gui import gr, mgr
 from qwen_agent.gui.utils import get_avatar_image
 from qwen_agent.llm import get_chat_model
 from qwen_agent.llm.base import ModelServiceError
@@ -74,7 +74,7 @@ def rm_text(history):
     elif not history[-1][1]:
         return history, gr.update(value='', interactive=False)
     else:
-        history = history[:-1] + [(history[-1][0], None)]
+        history = history[:-1] + [(history[-1][0].text, None)]
         return history, gr.update(value='', interactive=False)
 
 
@@ -186,7 +186,7 @@ def pure_bot(history):
         yield history
     else:
         history[-1][1] = ''
-        message = [{'role': 'user', 'content': history[-1][0], 'name': 'pure_chat_user'}]
+        message = [{'role': 'user', 'content': history[-1][0].text, 'name': 'pure_chat_user'}]
         try:
             llm = get_chat_model(llm_config)
             response = llm.chat(messages=app_global_para['pure_messages'] + message)
@@ -239,14 +239,14 @@ def bot(history, chosen_plug):
                 message = [{
                     'role': 'user',
                     'content': [{
-                        'text': history[-1][0]
+                        'text': history[-1][0].text
                     }, {
                         'file': app_global_para['uploaded_ci_file']
                     }],
                     'name': 'ci'
                 }]
             else:
-                message = [{'role': 'user', 'content': history[-1][0], 'name': 'ci'}]
+                message = [{'role': 'user', 'content': history[-1][0].text, 'name': 'ci'}]
             messages = keep_only_files_for_name(app_global_para['messages'], 'ci') + message
             func_assistant = ReActChat(function_list=['code_interpreter'], llm=llm_config)
             try:
@@ -268,7 +268,7 @@ def bot(history, chosen_plug):
                 raise ValueError(ex)
         else:
             try:
-                content = [{'text': history[-1][0]}]
+                content = [{'text': history[-1][0].text}]
                 # checked files
                 for record in read_meta_data_by_condition(meta_file, time_limit=app_global_para['time'], checked=True):
                     content.append({'file': record['url']})
@@ -499,12 +499,12 @@ with gr.Blocks(css=css, js=js, theme='soft') as demo:
 
     with gr.Tab('Chat', elem_id='chat-tab'):
         with gr.Column():
-            chatbot = gr.Chatbot(
-                [],
+            chatbot = mgr.Chatbot(
                 elem_id='chatbot',
                 height=680,
                 show_copy_button=True,
-                avatar_images=(None, get_avatar_image('qwen')),
+                avatar_images=[None, get_avatar_image('qwen')],
+                flushing=False
             )
             with gr.Row():
                 with gr.Column(scale=1, min_width=0):
@@ -555,12 +555,12 @@ with gr.Blocks(css=css, js=js, theme='soft') as demo:
     with gr.Tab('Pure Chat', elem_id='pure-chat-tab'):
         gr.Markdown('Note: The chat box on this tab will not use any browsing history!')
         with gr.Column():
-            pure_chatbot = gr.Chatbot(
-                [],
+            pure_chatbot = mgr.Chatbot(
                 elem_id='pure_chatbot',
                 height=680,
                 show_copy_button=True,
-                avatar_images=(None, get_avatar_image('qwen')),
+                avatar_images=[None, get_avatar_image('qwen')],
+                flushing=False
             )
             with gr.Row():
                 with gr.Column(scale=13):

@@ -1,11 +1,11 @@
 """A group chat gradio demo"""
 import json
 
-import gradio as gr
 import json5
 
 from qwen_agent.agents import GroupChat, GroupChatCreator
 from qwen_agent.agents.user_agent import PENDING_USER_INPUT
+from qwen_agent.gui.gradio import gr, mgr
 from qwen_agent.llm.schema import ContentItem, Message
 
 
@@ -164,7 +164,7 @@ def app_create(history, now_cfgs):
                     new_cfgs['agents'].append(cfg)
         else:
             new_cfgs = now_cfgs
-        app_global_para['messages_create'].append(Message('user', history[-1][0]))
+        app_global_para['messages_create'].append(Message('user', history[-1][0].text))
         response = []
         try:
             agent = init_agent_service_create()
@@ -263,12 +263,7 @@ with gr.Blocks(theme='soft') as demo:
 
     with gr.Tab('Chat', elem_id='chat-tab'):
         with gr.Column():
-            chatbot = gr.Chatbot(
-                [],
-                elem_id='chatbot',
-                height=750,
-                show_copy_button=True,
-            )
+            chatbot = mgr.Chatbot(elem_id='chatbot', height=750, show_copy_button=True, flushing=False)
             with gr.Row():
                 with gr.Column(scale=3, min_width=0):
                     auto_speak_button = gr.Button('Randomly select an agent to speak first')
@@ -291,12 +286,7 @@ with gr.Blocks(theme='soft') as demo:
 
     with gr.Tab('Create', elem_id='chat-tab'):
         with gr.Column(scale=9, min_width=0):
-            chatbot = gr.Chatbot(
-                [],
-                elem_id='chatbot0',
-                height=750,
-                show_copy_button=True,
-            )
+            chatbot = mgr.Chatbot(elem_id='chatbot0', height=750, show_copy_button=True, flushing=False)
             with gr.Row():
                 with gr.Column(scale=13):
                     chat_txt = gr.Textbox(
