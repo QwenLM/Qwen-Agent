@@ -1,3 +1,4 @@
+import json
 from typing import Dict, Iterator, List, Optional, Union
 
 import json5
@@ -6,7 +7,7 @@ from qwen_agent import Agent
 from qwen_agent.agents.keygen_strategies.gen_keyword import GenKeyword
 from qwen_agent.agents.keygen_strategies.split_query import SplitQuery
 from qwen_agent.llm.base import BaseChatModel
-from qwen_agent.llm.schema import DEFAULT_SYSTEM_MESSAGE, USER, Message
+from qwen_agent.llm.schema import ASSISTANT, DEFAULT_SYSTEM_MESSAGE, USER, Message
 from qwen_agent.tools import BaseTool
 
 
@@ -36,5 +37,19 @@ class SplitQueryThenGenKeyword(Agent):
                 query = information
         except Exception:
             query = query
+        rsp = []
+        for rsp in self.keygen.run([Message(USER, query)]):
+            yield rsp
 
-        return self.keygen.run([Message(USER, query)])
+        if rsp:
+            keyword = rsp[-1].content.strip()
+            if keyword.startswith('```json'):
+                keyword = keyword[len('```json'):]
+            if keyword.endswith('```'):
+                keyword = keyword[:-3]
+            try:
+                keyword_dict = json5.loads(keyword)
+                keyword_dict['text'] = query
+                yield [Message(role=ASSISTANT, content=json.dumps(keyword_dict, ensure_ascii=False))]
+            except Exception:
+                pass

@@ -106,10 +106,11 @@ class Memory(Agent):
                 if keyword.endswith('```'):
                     keyword = keyword[:-3]
                 try:
-                    logger.info(keyword)
                     keyword_dict = json5.loads(keyword)
-                    keyword_dict['text'] = query
+                    if 'text' not in keyword_dict:
+                        keyword_dict['text'] = query
                     query = json.dumps(keyword_dict, ensure_ascii=False)
+                    logger.info(query)
                 except Exception:
                     query = query
 
