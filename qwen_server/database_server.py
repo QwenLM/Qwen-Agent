@@ -17,7 +17,7 @@ except ImportError:
 
 from qwen_agent.log import logger
 from qwen_agent.memory import Memory
-from qwen_agent.utils.utils import get_basename_from_url, get_local_ip, hash_sha256, save_text_to_file
+from qwen_agent.utils.utils import get_basename_from_url, get_file_type, get_local_ip, hash_sha256, save_text_to_file
 from qwen_server.schema import GlobalConfig
 from qwen_server.utils import rm_browsing_meta_data, save_browsing_meta_data, save_history
 
@@ -55,7 +55,7 @@ history_dir = os.path.join(server_config.path.work_space_root, 'history')
 
 
 def update_pop_url(url: str):
-    if not get_basename_from_url(url).lower().endswith('.pdf'):
+    if not get_file_type(url) in ['pdf', 'docx', 'pptx', 'txt']:
         url = os.path.join(server_config.path.download_root, hash_sha256(url), get_basename_from_url(url))
     new_line = {'url': url}
 
@@ -78,7 +78,7 @@ def cache_page(**kwargs):
     url = kwargs.get('url', '')
 
     page_content = kwargs.get('content', '')
-    if page_content and not get_basename_from_url(url).lower().endswith('.pdf'):
+    if page_content and not get_file_type(url) in ['pdf', 'docx', 'pptx', 'txt']:
         # map to local url
         os.makedirs(os.path.join(server_config.path.download_root, hash_sha256(url)), exist_ok=True)
         url = os.path.join(server_config.path.download_root, hash_sha256(url), get_basename_from_url(url))

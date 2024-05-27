@@ -192,14 +192,32 @@ def contains_html_tags(text: str) -> bool:
     return bool(re.search(pattern, text))
 
 
+def get_content_type_by_head_request(path: str) -> str:
+    try:
+        response = requests.head(path, timeout=5)
+        content_type = response.headers.get('Content-Type', '')
+        return content_type
+    except requests.RequestException:
+        return 'unk'
+
+
 def get_file_type(path: str) -> Literal['pdf', 'docx', 'pptx', 'txt', 'html', 'unk']:
     f_type = get_basename_from_url(path).split('.')[-1].lower()
-    if f_type in ['pdf', 'docx', 'pptx', 'txt']:
+    if f_type in ['pdf', 'docx', 'pptx']:
         # Specially supported file types
         return f_type
 
     if is_http_url(path):
-        # Assuming that the URL is HTML by default
+        # The HTTP header information for the response is obtained by making a HEAD request to the target URL,
+        # where the Content-type field usually indicates the Type of Content to be returned
+        content_type = get_content_type_by_head_request(path)
+        if 'application/pdf' in content_type:
+            return 'pdf'
+        elif 'application/msword' in content_type:
+            return 'docx'
+
+        # Assuming that the URL is HTML by default,
+        # because the file downloaded by the request may contain html tags
         return 'html'
     else:
         # Determine by reading local HTML file
@@ -212,7 +230,7 @@ def get_file_type(path: str) -> Literal['pdf', 'docx', 'pptx', 'txt', 'html', 'u
         if contains_html_tags(content):
             return 'html'
         else:
-            return 'unk'
+            return 'txt'
 
 
 def extract_urls(text: str) -> List[str]:
