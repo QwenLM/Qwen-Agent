@@ -300,18 +300,23 @@ def _truncate_input_messages_roughly(messages: List[Message], max_tokens: int) -
 
     token_cnt = _count_tokens(sys_msg)
     truncated = []
-    for turn in reversed(turns):
-        # At least one user message is included
+    for i, turn in enumerate(reversed(turns)):
+        cur_turn_msgs = []
+        cur_token_cnt = 0
         for m in reversed(turn):
-            truncated.append(m)
-            token_cnt += _count_tokens(m)
-        if token_cnt > max_tokens:
+            cur_turn_msgs.append(m)
+            cur_token_cnt += _count_tokens(m)
+        # Check "i == 0" so that at least one user message is included
+        if (i == 0) or (token_cnt + cur_token_cnt <= max_tokens):
+            truncated.extend(cur_turn_msgs)
+            token_cnt += cur_token_cnt
+        else:
             break
     # Always include the system message
     truncated.append(sys_msg)
     truncated.reverse()
 
-    if len(truncated) < 2:
+    if len(truncated) < 2:  # one system message + one or more user messages
         raise ModelServiceError(
             code='400',
             message='At least one user message should be provided.',
