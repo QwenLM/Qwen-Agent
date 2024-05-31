@@ -94,6 +94,7 @@ class WebUI:
                         height=600,
                         avatar_image_width=80,
                         flushing=False,
+                        show_copy_button=True,
                     )
 
                     input = mgr.MultimodalInput(placeholder=self.input_placeholder,)

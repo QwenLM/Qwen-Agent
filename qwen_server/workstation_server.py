@@ -504,7 +504,7 @@ with gr.Blocks(css=css, js=js, theme='soft') as demo:
                 height=680,
                 show_copy_button=True,
                 avatar_images=[None, get_avatar_image('qwen')],
-                flushing=False
+                flushing=False,
             )
             with gr.Row():
                 with gr.Column(scale=1, min_width=0):
@@ -560,7 +560,7 @@ with gr.Blocks(css=css, js=js, theme='soft') as demo:
                 height=680,
                 show_copy_button=True,
                 avatar_images=[None, get_avatar_image('qwen')],
-                flushing=False
+                flushing=False,
             )
             with gr.Row():
                 with gr.Column(scale=13):
