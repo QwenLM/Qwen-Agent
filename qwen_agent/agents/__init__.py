@@ -7,6 +7,7 @@ from .dialogue_retrieval_agent import DialogueRetrievalAgent
 # DocQAAgent is the default solution for long document question answering.
 # The actual implementation of DocQAAgent may change with every release.
 from .doc_qa import BasicDocQA as DocQAAgent
+from .doc_qa import ParallelDocQA
 from .fncall_agent import FnCallAgent
 from .group_chat import GroupChat
 from .group_chat_auto_router import GroupChatAutoRouter
@@ -21,6 +22,7 @@ __all__ = [
     'Agent',
     'MultiAgentHub',
     'DocQAAgent',
+    'ParallelDocQA',
     'Assistant',
     'ArticleAgent',
     'ReActChat',
