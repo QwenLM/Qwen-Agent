@@ -134,10 +134,10 @@ class Agent(ABC):
         if messages[0][ROLE] != SYSTEM:
             messages.insert(0, Message(role=SYSTEM, content=self.system_message))
         elif isinstance(messages[0][CONTENT], str):
-            messages[0][CONTENT] = self.system_message + messages[0][CONTENT]
+            messages[0][CONTENT] = self.system_message + '\n\n' + messages[0][CONTENT]
         else:
             assert isinstance(messages[0][CONTENT], list)
-            messages[0][CONTENT] = [ContentItem(text=self.system_message)] + messages[0][CONTENT]
+            messages[0][CONTENT] = [ContentItem(text=self.system_message + '\n\n')] + messages[0][CONTENT]
         return self.llm.chat(messages=messages,
                              functions=functions,
                              stream=stream,

@@ -45,7 +45,7 @@ def app_gui():
         'content': [{
             'text': '试试看 @代码解释器 来问我~'
         }]
-    }])
+    }], enable_mention=True)
 
 
 if __name__ == '__main__':

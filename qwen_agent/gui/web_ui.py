@@ -67,7 +67,14 @@ class WebUI:
         messages: The chat history.
     """
 
-    def run(self, messages: List[Message] = None, share=False, server_name=None, concurrency_limit=10, **kwargs):
+    def run(self,
+            messages: List[Message] = None,
+            share: bool = False,
+            server_name: str = None,
+            server_port: int = None,
+            concurrency_limit: int = 10,
+            enable_mention: bool = False,
+            **kwargs):
         self.run_kwargs = kwargs
 
         from qwen_agent.gui.gradio import gr, mgr
@@ -91,7 +98,7 @@ class WebUI:
                             self.user_config,
                             self.agent_config_list,
                         ],
-                        height=600,
+                        height=900,
                         avatar_image_width=80,
                         flushing=False,
                         show_copy_button=True,
@@ -135,7 +142,7 @@ class WebUI:
                     queue=False,
                 )
 
-                if len(self.agent_list) > 1:
+                if len(self.agent_list) > 1 and enable_mention:
                     input_promise = input_promise.then(
                         self.add_mention,
                         [chatbot, agent_selector],
@@ -154,9 +161,11 @@ class WebUI:
 
                 input_promise.then(self.flushed, None, [input])
 
-            demo.load(self.chat_clear, None, None, queue=False)
+            demo.load(None)
 
-        demo.queue(default_concurrency_limit=concurrency_limit).launch(share=share, server_name=server_name)
+        demo.queue(default_concurrency_limit=concurrency_limit).launch(share=share,
+                                                                       server_name=server_name,
+                                                                       server_port=server_port)
 
     def change_agent(self, agent_selector):
         yield agent_selector, self._create_agent_info_block(agent_selector), self._create_agent_plugins_block(
@@ -262,10 +271,6 @@ class WebUI:
         from qwen_agent.gui.gradio import gr
 
         return gr.update(interactive=True)
-
-    def chat_clear(self):
-        # TODO: This code stinks. At present, all users are sharing the same state!
-        return None
 
     def _get_agent_index_by_name(self, agent_name):
         if agent_name is None:

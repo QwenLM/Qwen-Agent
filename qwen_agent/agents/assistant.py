@@ -4,23 +4,18 @@ from typing import Dict, Iterator, List, Literal, Optional, Union
 
 import json5
 
+from qwen_agent.agents.fncall_agent import FnCallAgent
+from qwen_agent.llm import BaseChatModel
 from qwen_agent.llm.schema import CONTENT, DEFAULT_SYSTEM_MESSAGE, ROLE, SYSTEM, Message
 from qwen_agent.log import logger
+from qwen_agent.tools import BaseTool
 from qwen_agent.utils.utils import get_basename_from_url, print_traceback
 
-from ..llm import BaseChatModel
-from ..tools import BaseTool
-from .fncall_agent import FnCallAgent
-
-KNOWLEDGE_TEMPLATE_ZH = """
-
-# 知识库
+KNOWLEDGE_TEMPLATE_ZH = """# 知识库
 
 {knowledge}"""
 
-KNOWLEDGE_TEMPLATE_EN = """
-
-# Knowledge Base
+KNOWLEDGE_TEMPLATE_EN = """# Knowledge Base
 
 {knowledge}"""
 
@@ -131,7 +126,7 @@ class Assistant(FnCallAgent):
 
         if knowledge_prompt:
             if messages[0][ROLE] == SYSTEM:
-                messages[0][CONTENT] += knowledge_prompt
+                messages[0][CONTENT] += '\n\n' + knowledge_prompt
             else:
                 messages = [Message(role=SYSTEM, content=knowledge_prompt)] + messages
         return messages

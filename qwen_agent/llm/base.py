@@ -393,7 +393,7 @@ def _raise_or_delay(
         raise ModelServiceError(exception=Exception(f'Maximum number of retries ({max_retries}) exceeded.'))
 
     num_retries += 1
-    jittor = 1.0 + random.random()
-    delay = min(delay * exponential_base, max_delay) * jittor
+    jitter = 1.0 + random.random()
+    delay = min(delay * exponential_base, max_delay) * jitter
     time.sleep(delay)
     return num_retries, delay

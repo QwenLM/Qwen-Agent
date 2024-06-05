@@ -36,3 +36,8 @@ examples/*.ipynb
 **/workspace/*
 test/*
 tests/env.sh
+examples/docqa_multi_agent.py
+examples/docqa_multihp_agents.py
+**/workspace/*
+test/*
+tests/env.sh
