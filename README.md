@@ -39,8 +39,8 @@ model service using the open-source Qwen models.
 - If you choose to use the model service offered by DashScope, please ensure that you set the environment
 variable `DASHSCOPE_API_KEY` to your unique DashScope API key.
 
-- Alternatively, if you prefer to deploy and use your own model service, please follow the instructions provided in the README of Qwen1.5 for deploying an OpenAI-compatible API service.
-Specifically, consult the [vLLM](https://github.com/QwenLM/Qwen1.5?tab=readme-ov-file#vllm) section for high-throughput GPU deployment or the [Ollama](https://github.com/QwenLM/Qwen1.5?tab=readme-ov-file#ollama) section for local CPU (+GPU) deployment.
+- Alternatively, if you prefer to deploy and use your own model service, please follow the instructions provided in the README of Qwen2 for deploying an OpenAI-compatible API service.
+Specifically, consult the [vLLM](https://github.com/QwenLM/Qwen2?tab=readme-ov-file#vllm) section for high-throughput GPU deployment or the [Ollama](https://github.com/QwenLM/Qwen2?tab=readme-ov-file#ollama) section for local CPU (+GPU) deployment.
 
 ## Developing Your Own Agent
 
@@ -89,7 +89,7 @@ llm_cfg = {
     # It will use the `DASHSCOPE_API_KEY' environment variable if 'api_key' is not set here.
 
     # Use a model service compatible with the OpenAI API, such as vLLM or Ollama:
-    # 'model': 'Qwen1.5-7B-Chat',
+    # 'model': 'Qwen2-7B-Chat',
     # 'model_server': 'http://localhost:8000/v1',  # base_url, also known as api_base
     # 'api_key': 'EMPTY',
 
@@ -131,6 +131,20 @@ while True:
 
 In addition to using built-in agent implentations such as `class Assistant`, you can also develop your own agent implemetation by inheriting from `class Agent`.
 Please refer to the [examples](https://github.com/QwenLM/Qwen-Agent/blob/main/examples) directory for more usage examples.
+
+# FAQ
+
+## Do you have function calling (aka tool calling)?
+
+Yes. The LLM classes provide [function calling](https://github.com/QwenLM/Qwen-Agent/blob/main/examples/function_calling.py). Additionally, some Agent classes also are built upon the function calling capability, e.g., FnCallAgent and ReActChat.
+
+## How to do question-answering over super-long documents involving 1M tokens?
+
+We have released [a fast RAG solution](https://github.com/QwenLM/Qwen-Agent/blob/main/examples/assistant_rag.py), as well as [an expensive but competitive agent](https://github.com/QwenLM/Qwen-Agent/blob/main/examples/parallel_doc_qa.py), for doing question-answering over super-long documents. They have managed to outperform native long-context models on two challenging benchmarks while being more efficient, and perform perfectly in the single-needle "needle-in-the-haystack" pressure test involving 1M-token contexts. See the [blog](https://qwenlm.github.io/blog/qwen-agent-2405/) for technical details.
+
+<p align="center">
+    <img src="https://qianwen-res.oss-cn-beijing.aliyuncs.com/assets/qwen_agent/qwen-agent-2405-blog-long-context-results.png" width="400"/>
+<p>
 
 # Application: BrowserQwen
 

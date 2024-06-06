@@ -34,8 +34,8 @@ Qwen-Agent支持接入阿里云[DashScope](https://help.aliyun.com/zh/dashscope/
 
 - 如果希望接入DashScope提供的模型服务，只需配置相应的环境变量`DASHSCOPE_API_KEY`为您的DashScope API Key。
 
-- 或者，如果您希望部署并使用您自己的模型服务，请按照Qwen1.5的README中提供的指导进行操作，以部署一个兼容OpenAI接口协议的API服务。
-具体来说，请参阅[vLLM](https://github.com/QwenLM/Qwen1.5?tab=readme-ov-file#vllm)一节了解高并发的GPU部署方式，或者查看[Ollama](https://github.com/QwenLM/Qwen1.5?tab=readme-ov-file#ollama)一节了解本地CPU（+GPU）部署。
+- 或者，如果您希望部署并使用您自己的模型服务，请按照Qwen2的README中提供的指导进行操作，以部署一个兼容OpenAI接口协议的API服务。
+具体来说，请参阅[vLLM](https://github.com/QwenLM/Qwen2?tab=readme-ov-file#vllm)一节了解高并发的GPU部署方式，或者查看[Ollama](https://github.com/QwenLM/Qwen2?tab=readme-ov-file#ollama)一节了解本地CPU（+GPU）部署。
 
 ## 快速开发
 
@@ -82,7 +82,7 @@ llm_cfg = {
     # 如果这里没有设置 'api_key'，它将读取 `DASHSCOPE_API_KEY` 环境变量。
 
     # 使用与 OpenAI API 兼容的模型服务，例如 vLLM 或 Ollama：
-    # 'model': 'Qwen1.5-7B-Chat',
+    # 'model': 'Qwen2-7B-Chat',
     # 'model_server': 'http://localhost:8000/v1',  # base_url，也称为 api_base
     # 'api_key': 'EMPTY',
 
@@ -124,6 +124,20 @@ while True:
 ```
 
 除了使用框架自带的智能体实现（如`class Assistant`），您也可以通过继承`class Agent`来自行开发您的智能体实现。更多使用示例，请参阅[examples](./examples)目录。
+
+# FAQ
+
+## 支持函数调用（也称为工具调用）吗？
+
+支持，LLM类提供了[函数调用](https://github.com/QwenLM/Qwen-Agent/blob/main/examples/function_calling.py)的支持。此外，一些Agent类如FnCallAgent和ReActChat也是基于函数调用功能构建的。
+
+## 如何让AI基于超长文档进行问答？
+
+我们已发布了一个[快速的RAG解决方案](https://github.com/QwenLM/Qwen-Agent/blob/main/examples/assistant_rag.py)，以及一个虽运行成本较高但[准确度较高的智能体](https://github.com/QwenLM/Qwen-Agent/blob/main/examples/parallel_doc_qa.py)，用于在超长文档中进行问答。它们在两个具有挑战性的基准测试中表现出色，超越了原生的长上下文模型，同时更加高效，并在涉及100万字词上下文的“大海捞针”式单针查询压力测试中表现完美。欲了解技术细节，请参阅[博客](https://qwenlm.github.io/blog/qwen-agent-2405/)。
+
+<p align="center">
+    <img src="https://qianwen-res.oss-cn-beijing.aliyuncs.com/assets/qwen_agent/qwen-agent-2405-blog-long-context-results.png" width="400"/>
+<p>
 
 # 应用：BrowserQwen
 
