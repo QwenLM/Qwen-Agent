@@ -1,288 +1,155 @@
-# Qwen-Agent
+[中文](https://github.com/QwenLM/Qwen-Agent/blob/main/README_CN.md) ｜ English | [日本語](./README_JA.md)
 
-[中文](./README_CN.md) ｜ English | [日本語](./README_JA.md)
+<p align="center">
+    <img src="https://qianwen-res.oss-cn-beijing.aliyuncs.com/assets/qwen_agent/logo-qwen-agent.png" width="400"/>
+<p>
+<br>
 
-Qwen-Agent is a framework for harnessing the tool usage, planning, and memory capabilities of the open-source language model [Qwen](https://github.com/QwenLM/Qwen).
-Building upon Qwen-Agent, we have developed a **Chrome browser extension** called BrowserQwen, which has key features such as:
-- Discuss with Qwen about the current web page or PDF document.
-- BrowserQwen records the web pages and PDF materials that you have browsed, with your permission. It helps you quickly understand the contents of multiple pages, summarize your browsing content, and eliminate tedious writing tasks.
-- Supports plugin integration, including **Code Interpreter** for math problem solving and data visualization.
+Qwen-Agent is a framework for developing LLM applications based on the instruction following, tool usage, planning, and
+memory capabilities of Qwen.
+It also comes with example applications such as Browser Assistant, Code Interpreter, and Custom Assistant.
 
-# Use Case Demonstration
+# Getting Started
 
-If you prefer watching videos instead of screenshots, you can refer to the [video demonstration](#video-demonstration).
+## Installation
 
-## Workstation - Editor Mode
-
-**Long article creation based on browsed web pages and PDFs**
-
-<figure>
-    <img src="assets/screenshot-writing.png">
-</figure>
-
-**Calling plugins to assist rich text creation**
-
-<figure>
-    <img src="assets/screenshot-editor-movie.png">
-</figure>
-
-## Workstation - Chat Mode
-
-**Multi-webpage QA**
-
-<figure >
-    <img src="assets/screenshot-multi-web-qa.png">
-</figure>
-
-**Drawing data charts using the code interpreter**
-
-<figure>
-    <img src="assets/screenshot-ci.png">
-</figure>
-
-## Browser Assistant
-
-**Web page QA**
-
-<figure>
-    <img src="assets/screenshot-web-qa.png">
-</figure>
-
-**PDF document QA**
-
-<figure>
-    <img src="assets/screenshot-pdf-qa.png">
-</figure>
-
-# BrowserQwen User Guide
-
-Supported platforms: MacOS, Linux, Windows.
-
-## Step 1. Deploy Model Service
-
-***You can skip this step if you are using the model service provided by [DashScope](https://help.aliyun.com/zh/dashscope/developer-reference/quick-start) from Alibaba Cloud.***
-
-However, if you prefer to deploy your own model service instead of using DashScope, please follow the following instruction provided by the [Qwen](https://github.com/QwenLM/Qwen) project to deploy a model service compatible with the OpenAI API:
-
+- Install the stable version from PyPI:
 ```bash
-# Install dependencies.
-git clone git@github.com:QwenLM/Qwen.git
-cd Qwen
-pip install -r requirements.txt
-pip install fastapi uvicorn openai "pydantic>=2.3.0" sse_starlette
-
-# Start the model service, specifying the model version with the -c parameter.
-# --server-name 0.0.0.0 allows other machines to access your service.
-# --server-name 127.0.0.1 only allows the machine deploying the model to access the service.
-python openai_api.py --server-name 0.0.0.0 --server-port 7905 -c QWen/QWen-14B-Chat
+pip install -U qwen-agent
 ```
 
-Currently, we can specify the -c argument with the following models, ordered in increasing GPU memory consumption:
-
-- [`Qwen/Qwen-7B-Chat-Int4`](https://huggingface.co/Qwen/Qwen-7B-Chat-Int4)
-- [`Qwen/Qwen-7B-Chat`](https://huggingface.co/Qwen/Qwen-7B-Chat-Int4)
-- [`Qwen/Qwen-14B-Chat-Int4`](https://huggingface.co/Qwen/Qwen-14B-Chat-Int4)
-- [`Qwen/Qwen-14B-Chat`](https://huggingface.co/Qwen/Qwen-14B-Chat)
-
-For the 7B models, please use the versions pulled from the official HuggingFace repository after September 25, 2023, as both the code and model weights have changed.
-
-## Step 2. Deploy Local Database Service
-
-On your local machine (the machine where you can open the Chrome browser), you will need to deploy a database service to manage your browsing history and conversation history.
-
-Please install the following dependencies if you have not done so already:
-
+- Alternatively, you can install the latest development version from the source:
 ```bash
-# Install dependencies.
 git clone https://github.com/QwenLM/Qwen-Agent.git
 cd Qwen-Agent
-pip install -r requirements.txt
+pip install -e ./
 ```
 
-If you have skipped Step 1 and decided to use DashScope's model service, then please execute the following command:
-
+Optionally, please install the following optional dependencies if built-in GUI support is needed:
 ```bash
-# Start the database service, specifying the model on DashScope by using the --llm flag.
-# The value of --llm can be one of the following, in increasing order of resource consumption:
-#   - qwen-7b-chat (the same as the open-sourced 7B-Chat model)
-#   - qwen-14b-chat (the same as the open-sourced 14B-Chat model)
-#   - qwen-turbo
-#   - qwen-plus
-# You need to replace YOUR_DASHSCOPE_API_KEY with your actual api key.
-export DASHSCOPE_API_KEY=YOUR_DASHSCOPE_API_KEY
-python run_server.py --model_server dashscope --llm qwen-7b-chat --workstation_port 7864
+pip install -U "gradio>=4.0" "modelscope-studio>=0.2.1"
 ```
 
-If you have followed Step 1 and are using your own model service instead of DashScope, then please execute the following command:
+## Preparation: Model Service
 
-```bash
-# Start the database service, specifying the model service deployed in Step 1 with --model_server.
-# If the IP address of the machine in Step 1 is 123.45.67.89,
-#     you can specify --model_server http://123.45.67.89:7905/v1
-# If Step 1 and Step 2 are on the same machine,
-#     you can specify --model_server http://127.0.0.1:7905/v1
-python run_server.py --model_server http://{MODEL_SERVER_IP}:7905/v1 --workstation_port 7864
+You can either use the model service provided by Alibaba
+Cloud's [DashScope](https://help.aliyun.com/zh/dashscope/developer-reference/quick-start), or deploy and use your own
+model service using the open-source Qwen models.
+
+- If you choose to use the model service offered by DashScope, please ensure that you set the environment
+variable `DASHSCOPE_API_KEY` to your unique DashScope API key.
+
+- Alternatively, if you prefer to deploy and use your own model service, please follow the instructions provided in the README of Qwen2 for deploying an OpenAI-compatible API service.
+Specifically, consult the [vLLM](https://github.com/QwenLM/Qwen2?tab=readme-ov-file#vllm) section for high-throughput GPU deployment or the [Ollama](https://github.com/QwenLM/Qwen2?tab=readme-ov-file#ollama) section for local CPU (+GPU) deployment.
+
+## Developing Your Own Agent
+
+Qwen-Agent offers atomic components, such as LLMs (which inherit from `class BaseChatModel` and come with [function calling](https://github.com/QwenLM/Qwen-Agent/blob/main/examples/function_calling.py)) and Tools (which inherit
+from `class BaseTool`), along with high-level components like Agents (derived from `class Agent`).
+
+The following example illustrates the process of creating an agent capable of reading PDF files and utilizing tools, as
+well as incorporating a custom tool:
+
+```py
+import pprint
+import urllib.parse
+import json5
+from qwen_agent.agents import Assistant
+from qwen_agent.tools.base import BaseTool, register_tool
+
+
+# Step 1 (Optional): Add a custom tool named `my_image_gen`.
+@register_tool('my_image_gen')
+class MyImageGen(BaseTool):
+    # The `description` tells the agent the functionality of this tool.
+    description = 'AI painting (image generation) service, input text description, and return the image URL drawn based on text information.'
+    # The `parameters` tell the agent what input parameters the tool has.
+    parameters = [{
+        'name': 'prompt',
+        'type': 'string',
+        'description': 'Detailed description of the desired image content, in English',
+        'required': True
+    }]
+
+    def call(self, params: str, **kwargs) -> str:
+        # `params` are the arguments generated by the LLM agent.
+        prompt = json5.loads(params)['prompt']
+        prompt = urllib.parse.quote(prompt)
+        return json5.dumps(
+            {'image_url': f'https://image.pollinations.ai/prompt/{prompt}'},
+            ensure_ascii=False)
+
+
+# Step 2: Configure the LLM you are using.
+llm_cfg = {
+    # Use the model service provided by DashScope:
+    'model': 'qwen-max',
+    'model_server': 'dashscope',
+    # 'api_key': 'YOUR_DASHSCOPE_API_KEY',
+    # It will use the `DASHSCOPE_API_KEY' environment variable if 'api_key' is not set here.
+
+    # Use a model service compatible with the OpenAI API, such as vLLM or Ollama:
+    # 'model': 'Qwen2-7B-Chat',
+    # 'model_server': 'http://localhost:8000/v1',  # base_url, also known as api_base
+    # 'api_key': 'EMPTY',
+
+    # (Optional) LLM hyperparameters for generation:
+    'generate_cfg': {
+        'top_p': 0.8
+    }
+}
+
+# Step 3: Create an agent. Here we use the `Assistant` agent as an example, which is capable of using tools and reading files.
+system_instruction = '''You are a helpful assistant.
+After receiving the user's request, you should:
+- first draw an image and obtain the image url,
+- then run code `request.get(image_url)` to download the image,
+- and finally select an image operation from the given document to process the image.
+Please show the image using `plt.show()`.'''
+tools = ['my_image_gen', 'code_interpreter']  # `code_interpreter` is a built-in tool for executing code.
+files = ['./examples/resource/doc.pdf']  # Give the bot a PDF file to read.
+bot = Assistant(llm=llm_cfg,
+                system_message=system_instruction,
+                function_list=tools,
+                files=files)
+
+# Step 4: Run the agent as a chatbot.
+messages = []  # This stores the chat history.
+while True:
+    # For example, enter the query "draw a dog and rotate it 90 degrees".
+    query = input('user query: ')
+    # Append the user query to the chat history.
+    messages.append({'role': 'user', 'content': query})
+    response = []
+    for response in bot.run(messages=messages):
+        # Streaming output.
+        print('bot response:')
+        pprint.pprint(response, indent=2)
+    # Append the bot responses to the chat history.
+    messages.extend(response)
 ```
 
-Now you can access [http://127.0.0.1:7864/](http://127.0.0.1:7864/) to use the Workstation's Editor mode and Chat mode.
+In addition to using built-in agent implentations such as `class Assistant`, you can also develop your own agent implemetation by inheriting from `class Agent`.
+Please refer to the [examples](https://github.com/QwenLM/Qwen-Agent/blob/main/examples) directory for more usage examples.
 
-For tips on using the Workstation, please refer to the instructions on the Workstation page or watch the [video demonstration](#video-demonstration).
+# FAQ
 
-## Step 3. Install Browser Assistant
+## Do you have function calling (aka tool calling)?
 
-Install the BrowserQwen Chrome extension:
+Yes. The LLM classes provide [function calling](https://github.com/QwenLM/Qwen-Agent/blob/main/examples/function_calling.py). Additionally, some Agent classes also are built upon the function calling capability, e.g., FnCallAgent and ReActChat.
 
-- Open the Chrome browser and enter `chrome://extensions/` in the address bar, then press Enter.
-- Make sure that the `Developer mode` in the top right corner is turned on, then click on `Load unpacked` to upload the `browser_qwen` directory from this project and enable it.
-- Click the extension icon in the top right corner of the Chrome browser to pin BrowserQwen to the toolbar.
+## How to do question-answering over super-long documents involving 1M tokens?
 
-Note that after installing the Chrome extension, you need to refresh the page for the extension to take effect.
+We have released [a fast RAG solution](https://github.com/QwenLM/Qwen-Agent/blob/main/examples/assistant_rag.py), as well as [an expensive but competitive agent](https://github.com/QwenLM/Qwen-Agent/blob/main/examples/parallel_doc_qa.py), for doing question-answering over super-long documents. They have managed to outperform native long-context models on two challenging benchmarks while being more efficient, and perform perfectly in the single-needle "needle-in-the-haystack" pressure test involving 1M-token contexts. See the [blog](https://qwenlm.github.io/blog/qwen-agent-2405/) for technical details.
 
-When you want Qwen to read the content of the current webpage:
+<p align="center">
+    <img src="https://qianwen-res.oss-cn-beijing.aliyuncs.com/assets/qwen_agent/qwen-agent-2405-blog-long-context-results.png" width="400"/>
+<p>
 
-- Click the `Add to Qwen's Reading List` button on the screen to authorize Qwen to analyze the page in the background.
-- Click the Qwen icon in the browser's top right corner to start interacting with Qwen about the current page's content.
+# Application: BrowserQwen
 
-## Video Demonstration
-
-You can watch the following showcase videos to learn about the basic operations of BrowserQwen:
-
-- Long-form writing based on visited webpages and PDFs [video](https://qianwen-res.oss-cn-beijing.aliyuncs.com/assets/qwen_agent/showcase_write_article_based_on_webpages_and_pdfs.mp4)
-- Drawing a plot using code interpreter based on the given information [video](https://qianwen-res.oss-cn-beijing.aliyuncs.com/assets/qwen_agent/showcase_chat_with_docs_and_code_interpreter.mp4)
-- Uploading files, multi-turn conversation, and data analysis using code interpreter [video](https://qianwen-res.oss-cn-beijing.aliyuncs.com/assets/qwen_agent/showcase_code_interpreter_multi_turn_chat.mp4)
-
-# Evaluation Benchmark
-
-We have also open-sourced a benchmark for evaluating the performance of a model in writing Python code and using Code Interpreter for mathematical problem solving, data analysis, and other general tasks. The benchmark can be found in the [benchmark](benchmark/README.md) directory. The current evaluation results are as follows:
-
-<table>
-    <tr>
-        <th colspan="4" align="center">Executable Rate of Generated Code (%)</th>
-    </tr>
-    <tr>
-        <th align="center">Model</th><th align="center">Math↑</th><th align="center">Visualization↑</th><th align="center">General↑</th>
-    </tr>
-    <tr>
-        <td>GPT-4</td><td align="center">91.9</td><td align="center">85.9</td><td align="center">82.8</td>
-    </tr>
-    <tr>
-        <td>GPT-3.5</td><td align="center">89.2</td><td align="center">65.0</td><td align="center">74.1</td>
-    </tr>
-    <tr>
-        <td>LLaMA2-7B-Chat</td>
-        <td align="center">41.9</td>
-        <td align="center">33.1</td>
-        <td align="center">24.1 </td>
-    </tr>
-    <tr>
-        <td>LLaMA2-13B-Chat</td>
-        <td align="center">50.0</td>
-        <td align="center">40.5</td>
-        <td align="center">48.3 </td>
-    </tr>
-    <tr>
-        <td>CodeLLaMA-7B-Instruct</td>
-        <td align="center">85.1</td>
-        <td align="center">54.0</td>
-        <td align="center">70.7 </td>
-    </tr>
-    <tr>
-        <td>CodeLLaMA-13B-Instruct</td>
-        <td align="center">93.2</td>
-        <td align="center">55.8</td>
-        <td align="center">74.1 </td>
-    </tr>
-    <tr>
-        <td>InternLM-7B-Chat-v1.1</td>
-        <td align="center">78.4</td>
-        <td align="center">44.2</td>
-        <td align="center">62.1 </td>
-    </tr>
-    <tr>
-        <td>InternLM-20B-Chat</td>
-        <td align="center">70.3</td>
-        <td align="center">44.2</td>
-        <td align="center">65.5 </td>
-    </tr>
-    <tr>
-        <td>Qwen-7B-Chat</td>
-        <td align="center">82.4</td>
-        <td align="center">64.4</td>
-        <td align="center">67.2 </td>
-    </tr>
-    <tr>
-        <td>Qwen-14B-Chat</td>
-        <td align="center">89.2</td>
-        <td align="center">84.1</td>
-        <td align="center">65.5</td>
-    </tr>
-</table>
-
-<table>
-    <tr>
-        <th colspan="4" align="center">Accuracy of Code Execution Results (%)</th>
-    </tr>
-    <tr>
-        <th align="center">Model</th><th align="center">Math↑</th><th align="center">Visualization-Hard↑</th><th align="center">Visualization-Easy↑</th>
-    </tr>
-    <tr>
-        <td>GPT-4</td><td align="center">82.8</td><td align="center">66.7</td><td align="center">60.8</td>
-    </tr>
-    <tr>
-        <td>GPT-3.5</td><td align="center">47.3</td><td align="center">33.3</td><td align="center">55.7</td>
-    </tr>
-    <tr>
-        <td>LLaMA2-7B-Chat</td>
-        <td align="center">3.9</td>
-        <td align="center">14.3</td>
-        <td align="center">39.2 </td>
-    </tr>
-    <tr>
-        <td>LLaMA2-13B-Chat</td>
-        <td align="center">8.3</td>
-        <td align="center">8.3</td>
-        <td align="center">40.5 </td>
-    </tr>
-    <tr>
-        <td>CodeLLaMA-7B-Instruct</td>
-        <td align="center">14.3</td>
-        <td align="center">26.2</td>
-        <td align="center">60.8 </td>
-    </tr>
-    <tr>
-        <td>CodeLLaMA-13B-Instruct</td>
-        <td align="center">28.2</td>
-        <td align="center">27.4</td>
-        <td align="center">62.0 </td>
-    </tr>
-    <tr>
-        <td>InternLM-7B-Chat-v1.1</td>
-        <td align="center">28.5</td>
-        <td align="center">4.8</td>
-        <td align="center">40.5 </td>
-    </tr>
-    <tr>
-        <td>InternLM-20B-Chat</td>
-        <td align="center">34.6</td>
-        <td align="center">21.4</td>
-        <td align="center">45.6 </td>
-    </tr>
-    <tr>
-        <td>Qwen-7B-Chat</td>
-        <td align="center">41.9</td>
-        <td align="center">40.5</td>
-        <td align="center">54.4 </td>
-    </tr>
-    <tr>
-        <td>Qwen-14B-Chat</td>
-        <td align="center">58.4</td>
-        <td align="center">53.6</td>
-        <td align="center">59.5</td>
-    </tr>
-</table>
-
-Qwen-7B-Chat refers to the version updated after September 25, 2023.
+BrowserQwen is a browser assistant built upon Qwen-Agent. Please refer to its [documentation](https://github.com/QwenLM/Qwen-Agent/blob/main/browser_qwen.md) for details.
 
 # Disclaimer
 
-This project is not intended to be an official product, rather it serves as a proof-of-concept project that highlights the capabilities of the Qwen series models.
+The code interpreter is not sandboxed, and it executes code in your own environment. Please do not ask Qwen to perform dangerous tasks, and do not directly use the code interpreter for production purposes.

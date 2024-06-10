@@ -46,13 +46,13 @@ chrome.runtime.onMessage.addListener(async (msg, sender) => {
       });
     }
   }
-  if (msg.flag == "set_addr"){
-    if (msg.data) {
-      chrome.storage.sync.get(['data'], function(result) {
-        chrome.storage.sync.set({ data: result.data }, function() {
-            send_data({ 'addr' : msg.data, 'task':'set_addr'});
-        });
-      });
-    }
-  }
+//  if (msg.flag == "set_addr"){
+//    if (msg.data) {
+//      chrome.storage.sync.get(['data'], function(result) {
+//        chrome.storage.sync.set({ data: result.data }, function() {
+//            send_data({ 'addr' : msg.data, 'task':'set_addr'});
+//        });
+//      });
+//    }
+//  }
 });

@@ -13,7 +13,6 @@ code
 Enclose the code within triple backticks (```) at the beginning and end of the code.
 """
 
-
 REACT_PROMPT = """Answer the following questions as best you can. You have access to the following tools:
 
 {tools_text}
@@ -33,7 +32,6 @@ Begin!
 
 Question: {query}"""
 
-
 fname_template = {
     'zh': '文件{fname_str}，',
     'en_multi': 'Files {fname_str}. ',
@@ -42,6 +40,7 @@ fname_template = {
 
 
 class ReAct(object):
+
     def __init__(self, query, lang='en', upload_file_paths=[]):
         self.query = query
         self.lang = lang
@@ -55,7 +54,9 @@ class ReAct(object):
         query = self._format_upload_fname() + self.query
         tools_text = self._build_tools_text()
         tools_name_text = self._build_tools_name_text()
-        planning_prompt = self.react_template.format(query=query, tools_text=tools_text, tools_name_text=tools_name_text)
+        planning_prompt = self.react_template.format(query=query,
+                                                     tools_text=tools_text,
+                                                     tools_name_text=tools_name_text)
 
         self.prompt = planning_prompt
         return planning_prompt

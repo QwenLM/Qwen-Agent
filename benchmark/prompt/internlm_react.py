@@ -17,9 +17,7 @@ def solution():
     return final_answer
 ```"""
 
-
 INTERNLM_TOOL = {'PythonInterpreter': INTERNLM_TOOL_DESCRIPTION}
-
 
 INTERNLM_REACT_PROMPT_ZH = """<|System|>:你是一个可以调用外部工具的助手，可以使用的工具包括：
 {tools_text}
@@ -41,7 +39,6 @@ FinalAnswer:最终答案
 开始!<TOKENS_UNUSED_2>
 <|User|>:{query}<eoh>
 <|Bot|>:"""
-
 
 INTERNLM_REACT_PROMPT_EN = """<|System|>:You are a assistant who can utilize external tools.
 {tools_text}
@@ -67,6 +64,7 @@ Begin!<TOKENS_UNUSED_2>
 
 
 class InternLMReAct(ReAct):
+
     def __init__(self, query, lang='en', upload_file_paths=[]):
         super().__init__(query, lang, upload_file_paths)
         self.react_template = INTERNLM_REACT_PROMPT_ZH if self.lang == 'zh' else INTERNLM_REACT_PROMPT_EN
@@ -74,12 +72,15 @@ class InternLMReAct(ReAct):
     def build_prompt(self):
         planning_prompt = super().build_prompt()
         if '<|im_end|>' in self.query and planning_prompt.endswith('<eoh>\n<|Bot|>:'):
-            planning_prompt = planning_prompt[: -len('<eoh>\n<|Bot|>:')]
+            planning_prompt = planning_prompt[:-len('<eoh>\n<|Bot|>:')]
 
         if '<|im_end|>' in self.query:
-            planning_prompt = planning_prompt.replace('<|im_end|>\n<|im_start|>assistant\n', '<eoh>\n<|Bot|>:').replace('Observation:', '<eoa>\n<|System|>:Response:').replace('\nAction Input', '\nActionInput').replace('code_interpreter', 'PythonInterpreter')
+            planning_prompt = planning_prompt.replace('<|im_end|>\n<|im_start|>assistant\n', '<eoh>\n<|Bot|>:').replace(
+                'Observation:',
+                '<eoa>\n<|System|>:Response:').replace('\nAction Input',
+                                                       '\nActionInput').replace('code_interpreter', 'PythonInterpreter')
             assert planning_prompt.endswith('Thought:')
-            planning_prompt = planning_prompt[: -len('Thought:')] + '<TOKENS_UNUSED_2>\n<|Bot|>:'
+            planning_prompt = planning_prompt[:-len('Thought:')] + '<TOKENS_UNUSED_2>\n<|Bot|>:'
 
         self.prompt = planning_prompt
         return planning_prompt

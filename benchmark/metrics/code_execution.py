@@ -27,7 +27,6 @@ import json
 import math
 """
 
-
 tags_config = {
     'visualization': {
         'timelimit': True,
@@ -43,11 +42,7 @@ tags_config = {
     }
 }
 
-code_executability = {
-    'math': None,
-    'visualization': None,
-    'general': None
-}
+code_executability = {'math': None, 'visualization': None, 'general': None}
 
 
 @func_set_timeout(10)
@@ -102,7 +97,11 @@ def get_action_input_code(text, model_name='qwen-14b-chat', extract_first_code=F
     return code
 
 
-def eval_code_execution_rate(output_fname, tag='all_ci', model_name='qwen-14b-chat', timelimit=False, extract_first_code=False):
+def eval_code_execution_rate(output_fname,
+                             tag='all_ci',
+                             model_name='qwen-14b-chat',
+                             timelimit=False,
+                             extract_first_code=False):
     data_list = load_jsonl(output_fname)
     pip_package = []
 
@@ -149,7 +148,7 @@ def eval_code_execution_rate(output_fname, tag='all_ci', model_name='qwen-14b-ch
                     packege = ''
                 if packege and packege not in pip_package:  # install package
                     pip_package.append(packege)
-                    os.system('pip install '+packege)
+                    os.system('pip install ' + packege)
                     logging.info(f'Automatic installation: {packege}')
                 else:
                     line['code_error_info'] = str(ex)
@@ -164,13 +163,13 @@ def eval_code_execution_rate(output_fname, tag='all_ci', model_name='qwen-14b-ch
             logging.warning('The code executes correctly, but it has an error in IPython!')
             logging.warning(f'Code:\n{gen_code}')
             logging.warning(f'IPython error info:\n{observation}')
-            logging.info('='*60)
+            logging.info('=' * 60)
         elif not line['executable_code'] and not ('error:' in observation):
             logging.warning('The code has an execution error, but it runs correctly in IPython!')
             logging.warning(f'Code:\n{gen_code}')
             logging.warning(f"Exec error info:\n{line['code_error_info']}")
             logging.warning(f'IPython observation:\n{observation}')
-            logging.info('='*60)
+            logging.info('=' * 60)
 
     # save error data
     error_data_list = [item for item in data_list if not item['executable_code'] or item['missing_code']]
@@ -184,9 +183,9 @@ def eval_code_execution_rate(output_fname, tag='all_ci', model_name='qwen-14b-ch
 
 def log_result(data_list, verbose=True):
     if verbose:
-        logging.info('*'*60)
+        logging.info('*' * 60)
         logging.info('{:^60}'.format('Detail'))
-        logging.info('*'*60)
+        logging.info('*' * 60)
         for line_id, line in enumerate(data_list):
             logging.info(f'Question {line_id}'.center(60, '='))
             logging.info(line['query'])
@@ -202,9 +201,9 @@ def log_result(data_list, verbose=True):
             exec_info = prefix_info + line['code_error_info']
             logging.info(exec_info)
 
-    logging.info('='*60)
+    logging.info('=' * 60)
     logging.info('{:^60}'.format('Code Execuation Rate'))
-    logging.info('='*60)
+    logging.info('=' * 60)
     involved_tags = []
     for line in data_list:
         involved_tags += line['tags'].split(',')
@@ -220,13 +219,15 @@ def log_result(data_list, verbose=True):
         logging.info(f'All Test: {all_count}')
         logging.info(f'Missing Code: {missing_code_count}')
         logging.info(f'Predict Exec Success: {executable_code_count}')
-        logging.info('Codes available && Execution Rate: {:.2f}'.format(executable_code_count/(all_count-missing_code_count)*100))
-        logging.info('Execution Rate: {:.2f}'.format(executable_code_count/all_count*100))
-        logging.info('Non-executable rate: {:.2f}'.format((all_count-missing_code_count-executable_code_count)/all_count*100))
-        logging.info('Missing code rate: {:.2f}'.format(missing_code_count/all_count*100))
+        logging.info('Codes available && Execution Rate: {:.2f}'.format(executable_code_count /
+                                                                        (all_count - missing_code_count) * 100))
+        logging.info('Execution Rate: {:.2f}'.format(executable_code_count / all_count * 100))
+        logging.info('Non-executable rate: {:.2f}'.format(
+            (all_count - missing_code_count - executable_code_count) / all_count * 100))
+        logging.info('Missing code rate: {:.2f}'.format(missing_code_count / all_count * 100))
 
         if key != 'all_ci':
-            code_executability[key] = executable_code_count/all_count*100
+            code_executability[key] = executable_code_count / all_count * 100
 
         if verbose:
             logging.info('Error List: ')

@@ -34,19 +34,17 @@ _KERNEL_CLIENTS = {}
 #   plt.rcParams['axes.unicode_minus'] = False
 #   ````
 def fix_matplotlib_cjk_font_issue():
-    local_ttf = os.path.join(
-        os.path.abspath(
-            os.path.join(matplotlib.matplotlib_fname(), os.path.pardir)),
-        'fonts', 'ttf', 'simhei.ttf')
+    local_ttf = os.path.join(os.path.abspath(os.path.join(matplotlib.matplotlib_fname(), os.path.pardir)), 'fonts',
+                             'ttf', 'simhei.ttf')
     if not os.path.exists(local_ttf):
-        logging.warning(f'Missing font file `{local_ttf}` for matplotlib. It may cause some error when using matplotlib.')
+        logging.warning(
+            f'Missing font file `{local_ttf}` for matplotlib. It may cause some error when using matplotlib.')
 
 
 def start_kernel(pid):
     fix_matplotlib_cjk_font_issue()
 
-    connection_file = os.path.join(WORK_DIR,
-                                   f'kernel_connection_file_{pid}.json')
+    connection_file = os.path.join(WORK_DIR, f'kernel_connection_file_{pid}.json')
     launch_kernel_script = os.path.join(WORK_DIR, f'launch_kernel_{pid}.py')
     for f in [connection_file, launch_kernel_script]:
         if os.path.exists(f):

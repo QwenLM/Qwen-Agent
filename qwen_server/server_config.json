@@ -1,0 +1,18 @@
+{
+    "path": {
+        "work_space_root": "workspace/",
+        "download_root": "workspace/download/",
+        "code_interpreter_ws": "workspace/tools/code_interpreter/"
+    },
+    "server": {
+        "server_host": "127.0.0.1",
+        "fast_api_port": 7866,
+        "app_in_browser_port": 7863,
+        "workstation_port": 7864,
+        "model_server": "dashscope",
+        "api_key": "",
+        "llm": "qwen-plus",
+        "max_ref_token": 4000,
+        "max_days": 7
+    }
+}

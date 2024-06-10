@@ -5,6 +5,7 @@ __pycache__
 .idea
 .vscode
 .DS_Store
+*.ipynb_checkpoints
 
 qwen_agent/llm/gpt.py
 qwen_agent/llm/tools.py
@@ -19,3 +20,24 @@ Qwen-Agent
 
 docqa/*
 log/*
+log.jsonl
+
+ai_agent/debug.json
+ai_agent/local_prompts/*
+**/debug.json
+**/debug.log*
+debug.json
+ai_agent/log.jsonl
+qwen_agent.egg-info/*
+build/*
+dist/*
+
+examples/*.ipynb
+**/workspace/*
+test/*
+tests/env.sh
+examples/docqa_multi_agent.py
+examples/docqa_multihp_agents.py
+**/workspace/*
+test/*
+tests/env.sh

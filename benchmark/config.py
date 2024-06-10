@@ -1,6 +1,6 @@
 from parser import InternLMReActParser, ReActParser
 
-from models import LLM, HFModel, Qwen
+from models import LLM, Qwen, QwenDashscopeVLModel, QwenVL
 from prompt import InternLMReAct, LlamaReAct, QwenReAct
 
 react_prompt_map = {
@@ -15,14 +15,10 @@ react_parser_map = {
     'internlm': InternLMReActParser,
 }
 
-model_map = {
-    'qwen': Qwen,
-    'llama': LLM,
-    'internlm': LLM,
-    'qwen-vl': HFModel
-}
+model_map = {'qwen': Qwen, 'llama': LLM, 'internlm': LLM, 'qwen-vl-chat': QwenVL}
 
 model_type_map = {
+    'qwen-72b-chat': 'qwen',
     'qwen-14b-chat': 'qwen',
     'qwen-1.8b-chat': 'qwen',
     'qwen-7b-chat': 'qwen',
@@ -32,14 +28,14 @@ model_type_map = {
     'codellama-13b-instruct': 'llama',
     'internlm-7b-chat-1.1': 'internlm',
     'internlm-20b-chat': 'internlm',
-    'qwen-vl-chat': 'qwen-vl',
+    'qwen-vl-chat': 'qwen-vl-chat',
 }
 
-
 model_path_map = {
+    'qwen-72b-chat': 'Qwen/Qwen-72B-Chat',
     'qwen-14b-chat': 'Qwen/Qwen-14B-Chat',
     'qwen-7b-chat': 'Qwen/Qwen-7B-Chat',
-    'qwen-1.8b-chat': 'Qwen/Qwen-1.8B-chat',
+    'qwen-1.8b-chat': 'Qwen/Qwen-1_8B-Chat',
     'llama-2-7b-chat': 'meta-llama/Llama-2-7b-chat-hf',
     'llama-2-13b-chat': 'meta-llama/Llama-2-13b-chat-hf',
     'codellama-7b-instruct': 'codellama/CodeLlama-7b-Instruct-hf',
@@ -61,6 +57,8 @@ def get_react_parser(model_name):
 
 
 def get_model(model_name):
-    model_path = model_path_map[model_name]
+    if model_name in ['qwen-vl-plus']:
+        return QwenDashscopeVLModel(model=model_name)
+    model_path = model_path_map.get(model_name, None)
     model_cls = model_map.get(model_type_map[model_name], LLM)
     return model_cls(model_path)

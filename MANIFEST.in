@@ -1,0 +1,2 @@
+include qwen_agent/utils/qwen.tiktoken
+recursive-include qwen_agent/tools/resource *

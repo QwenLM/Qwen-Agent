@@ -1,4 +1,3 @@
-
 import json
 import os
 
@@ -9,16 +8,20 @@ QWEN_TOOLS_LIST = [
         'name_for_human': '代码解释器',
         'name_for_model': 'code_interpreter',
         'description_for_model': '代码解释器，可用于执行Python代码。',
-        'parameters': [{'name': 'code', 'type': 'string', 'description': '待执行的代码'}],
+        'parameters': [{
+            'name': 'code',
+            'type': 'string',
+            'description': '待执行的代码'
+        }],
         'args_format': 'code'
     },
 ]
-
 
 TOOL_DESC = """{name_for_model}: Call this tool to interact with the {name_for_human} API. What is the {name_for_human} API useful for? {description_for_model} Parameters: {parameters}"""
 
 
 class QwenReAct(ReAct):
+
     def __init__(self, query, lang='en', upload_file_paths=[]):
         super().__init__(query, lang, upload_file_paths)
 
@@ -43,7 +46,7 @@ class QwenReAct(ReAct):
             prompt += f'\n{im_start}assistant\n{im_end}'
             assert prompt.endswith(f'\n{im_start}assistant\n{im_end}')
 
-        prompt = prompt[: -len(f'{im_end}')]
+        prompt = prompt[:-len(f'{im_end}')]
         self.prompt = prompt
         return prompt
 

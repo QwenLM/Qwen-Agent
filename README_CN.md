@@ -1,287 +1,148 @@
-# Qwen-Agent
-
 中文 ｜ [English](./README.md) | [日本語](./README_JA.md)
 
-Qwen-Agent是一个代码框架，用于发掘开源通义千问模型（[Qwen](https://github.com/QwenLM/Qwen)）的工具使用、规划、记忆能力。
-在Qwen-Agent的基础上，我们开发了一个名为BrowserQwen的**Chrome浏览器扩展**，它具有以下主要功能：
+<p align="center">
+    <img src="https://qianwen-res.oss-cn-beijing.aliyuncs.com/assets/qwen_agent/logo-qwen-agent.png" width="400"/>
+<p>
+<br>
 
-- 与Qwen讨论当前网页或PDF文档的内容。
-- 在获得您的授权后，BrowserQwen会记录您浏览过的网页和PDF材料，以帮助您快速了解多个页面的内容，总结您浏览过的内容，并减少繁琐的文字工作。
-- 集成各种插件，包括可用于数学问题求解、数据分析与可视化、处理文件等的**代码解释器**（**Code Interpreter**）。
+Qwen-Agent是一个开发框架。开发者可基于本框架开发Agent应用，充分利用基于通义千问模型（Qwen）的指令遵循、工具使用、规划、记忆能力。本项目也提供了浏览器助手、代码解释器、自定义助手等示例应用。
 
-# 用例演示
+# 开始上手
 
-如果您更喜欢观看视频，而不是效果截图，可以参见[视频演示](#视频演示)。
+## 安装
 
-## 工作台 - 创作模式
-
-**根据浏览过的网页、PDFs素材进行长文创作**
-
-<figure>
-    <img src="assets/screenshot-writing.png">
-</figure>
-
-**调用插件辅助富文本创作**
-
-<figure>
-    <img src="assets/screenshot-editor-movie.png">
-</figure>
-
-## 工作台 - 对话模式
-
-**多网页问答**
-
-<figure >
-    <img src="assets/screenshot-multi-web-qa.png">
-</figure>
-
-**使用代码解释器绘制数据图表**
-
-<figure>
-    <img src="assets/screenshot-ci.png">
-</figure>
-
-## 浏览器助手
-
-**网页问答**
-
-<figure>
-    <img src="assets/screenshot-web-qa.png">
-</figure>
-
-**PDF文档问答**
-
-<figure>
-    <img src="assets/screenshot-pdf-qa.png">
-</figure>
-
-# BrowserQwen 使用说明
-
-支持环境：MacOS，Linux，Windows。
-
-## 第一步 - 部署模型服务
-
-***如果您正在使用阿里云提供的[DashScope](https://help.aliyun.com/zh/dashscope/developer-reference/quick-start)服务来访问Qwen系列模型，可以跳过这一步，直接到第二步。***
-
-但如果您不想使用DashScope，而是希望自己部署一个模型服务。那么可以参考[Qwen项目](https://github.com/QwenLM/Qwen/blob/main/README_CN.md#api)，部署一个兼容OpenAI API的模型服务：
-
+- 安装稳定的版本：
 ```bash
-# 安装依赖
-git clone git@github.com:QwenLM/Qwen.git
-cd Qwen
-pip install -r requirements.txt
-pip install fastapi uvicorn openai "pydantic>=2.3.0" sse_starlette
-
-# 启动模型服务，通过 -c 参数指定模型版本
-# - 指定 --server-name 0.0.0.0 将允许其他机器访问您的模型服务
-# - 指定 --server-name 127.0.0.1 则只允许部署模型的机器自身访问该模型服务
-python openai_api.py --server-name 0.0.0.0 --server-port 7905 -c QWen/QWen-14B-Chat
+pip install -U qwen-agent
 ```
 
-目前，我们支持指定-c参数为以下模型，按照GPU显存开销从小到大排序：
-
-- [`Qwen/Qwen-7B-Chat-Int4`](https://huggingface.co/Qwen/Qwen-7B-Chat-Int4)
-- [`Qwen/Qwen-7B-Chat`](https://huggingface.co/Qwen/Qwen-7B-Chat-Int4)
-- [`Qwen/Qwen-14B-Chat-Int4`](https://huggingface.co/Qwen/Qwen-14B-Chat-Int4)
-- [`Qwen/Qwen-14B-Chat`](https://huggingface.co/Qwen/Qwen-14B-Chat)
-
-对于7B模型，请使用2023年9月25日之后从官方HuggingFace重新拉取的版本，因为代码和模型权重都发生了变化。
-
-## 第二步 - 部署本地数据库服务
-
-在这一步，您需要在您的本地机器上（即您可以打开Chrome浏览器的那台机器），部署维护个人浏览历史、对话历史的数据库服务。
-
-首次启动数据库服务前，请记得安装相关的依赖：
-
+- 或者，直接从源代码安装最新的版本：
 ```bash
-# 安装依赖
 git clone https://github.com/QwenLM/Qwen-Agent.git
 cd Qwen-Agent
-pip install -r requirements.txt
+pip install -e ./
 ```
 
-如果跳过了第一步、因为您打算使用DashScope提供的模型服务的话，请执行以下命令启动数据库服务：
-
+如需使用内置GUI支持，请安装以下可选依赖项：
 ```bash
-# 启动数据库服务，通过 --llm 参数指定您希望通过DashScope使用的具体模型
-# 参数 --llm 可以是如下之一，按资源消耗从小到大排序：
-#   - qwen-7b-chat （与开源的Qwen-7B-Chat相同模型）
-#   - qwen-14b-chat （与开源的Qwen-14B-Chat相同模型）
-#   - qwen-turbo
-#   - qwen-plus
-# 您需要将YOUR_DASHSCOPE_API_KEY替换为您的真实API-KEY。
-export DASHSCOPE_API_KEY=YOUR_DASHSCOPE_API_KEY
-python run_server.py --model_server dashscope --llm qwen-7b-chat --workstation_port 7864
+pip install -U "gradio>=4.0" "modelscope-studio>=0.2.1"
 ```
 
-如果您没有在使用DashScope、而是参考第一步部署了自己的模型服务的话，请执行以下命令：
+## 准备：模型服务
 
-```bash
-# 启动数据库服务，通过 --model_server 参数指定您在 Step 1 里部署好的模型服务
-# - 若 Step 1 的机器 IP 为 123.45.67.89，则可指定 --model_server http://123.45.67.89:7905/v1
-# - 若 Step 1 和 Step 2 是同一台机器，则可指定 --model_server http://127.0.0.1:7905/v1
-python run_server.py --model_server http://{MODEL_SERVER_IP}:7905/v1 --workstation_port 7864
+Qwen-Agent支持接入阿里云[DashScope](https://help.aliyun.com/zh/dashscope/developer-reference/quick-start)服务提供的Qwen模型服务，也支持通过OpenAI API方式接入开源的Qwen模型服务。
+
+- 如果希望接入DashScope提供的模型服务，只需配置相应的环境变量`DASHSCOPE_API_KEY`为您的DashScope API Key。
+
+- 或者，如果您希望部署并使用您自己的模型服务，请按照Qwen2的README中提供的指导进行操作，以部署一个兼容OpenAI接口协议的API服务。
+具体来说，请参阅[vLLM](https://github.com/QwenLM/Qwen2?tab=readme-ov-file#vllm)一节了解高并发的GPU部署方式，或者查看[Ollama](https://github.com/QwenLM/Qwen2?tab=readme-ov-file#ollama)一节了解本地CPU（+GPU）部署。
+
+## 快速开发
+
+框架提供了大模型（LLM，继承自`class BaseChatModel`，并提供了[Function Calling](./examples/function_calling.py)功能）和工具（Tool，继承自`class BaseTool`）等原子组件，也提供了智能体（Agent）等高级抽象组件（继承自`class Agent`）。
+
+以下示例演示了如何增加自定义工具，并快速开发一个带有设定、知识库和工具使用能力的智能体：
+
+```py
+import pprint
+import urllib.parse
+import json5
+from qwen_agent.agents import Assistant
+from qwen_agent.tools.base import BaseTool, register_tool
+
+
+# 步骤 1（可选）：添加一个名为 `my_image_gen` 的自定义工具。
+@register_tool('my_image_gen')
+class MyImageGen(BaseTool):
+    # `description` 用于告诉智能体该工具的功能。
+    description = 'AI 绘画（图像生成）服务，输入文本描述，返回基于文本信息绘制的图像 URL。'
+    # `parameters` 告诉智能体该工具有哪些输入参数。
+    parameters = [{
+        'name': 'prompt',
+        'type': 'string',
+        'description': '期望的图像内容的详细描述',
+        'required': True
+    }]
+
+    def call(self, params: str, **kwargs) -> str:
+        # `params` 是由 LLM 智能体生成的参数。
+        prompt = json5.loads(params)['prompt']
+        prompt = urllib.parse.quote(prompt)
+        return json5.dumps(
+            {'image_url': f'https://image.pollinations.ai/prompt/{prompt}'},
+            ensure_ascii=False)
+
+
+# 步骤 2：配置您所使用的 LLM。
+llm_cfg = {
+    # 使用 DashScope 提供的模型服务：
+    'model': 'qwen-max',
+    'model_server': 'dashscope',
+    # 'api_key': 'YOUR_DASHSCOPE_API_KEY',
+    # 如果这里没有设置 'api_key'，它将读取 `DASHSCOPE_API_KEY` 环境变量。
+
+    # 使用与 OpenAI API 兼容的模型服务，例如 vLLM 或 Ollama：
+    # 'model': 'Qwen2-7B-Chat',
+    # 'model_server': 'http://localhost:8000/v1',  # base_url，也称为 api_base
+    # 'api_key': 'EMPTY',
+
+    # （可选） LLM 的超参数：
+    'generate_cfg': {
+        'top_p': 0.8
+    }
+}
+
+# 步骤 3：创建一个智能体。这里我们以 `Assistant` 智能体为例，它能够使用工具并读取文件。
+system_instruction = '''你是一个乐于助人的AI助手。
+在收到用户的请求后，你应该：
+- 首先绘制一幅图像，得到图像的url，
+- 然后运行代码`request.get`以下载该图像的url，
+- 最后从给定的文档中选择一个图像操作进行图像处理。
+用 `plt.show()` 展示图像。
+你总是用中文回复用户。'''
+tools = ['my_image_gen', 'code_interpreter']  # `code_interpreter` 是框架自带的工具，用于执行代码。
+files = ['./examples/resource/doc.pdf']  # 给智能体一个 PDF 文件阅读。
+bot = Assistant(llm=llm_cfg,
+                system_message=system_instruction,
+                function_list=tools,
+                files=files)
+
+# 步骤 4：作为聊天机器人运行智能体。
+messages = []  # 这里储存聊天历史。
+while True:
+    # 例如，输入请求 "绘制一只狗并将其旋转 90 度"。
+    query = input('用户请求: ')
+    # 将用户请求添加到聊天历史。
+    messages.append({'role': 'user', 'content': query})
+    response = []
+    for response in bot.run(messages=messages):
+        # 流式输出。
+        print('机器人回应:')
+        pprint.pprint(response, indent=2)
+    # 将机器人的回应添加到聊天历史。
+    messages.extend(response)
 ```
 
-现在您可以访问 [http://127.0.0.1:7864/](http://127.0.0.1:7864/) 来使用工作台（Workstation）的创作模式（Editor模式）和对话模式（Chat模式）了。
+除了使用框架自带的智能体实现（如`class Assistant`），您也可以通过继承`class Agent`来自行开发您的智能体实现。更多使用示例，请参阅[examples](./examples)目录。
 
-关于工作台的使用技巧，请参见工作台页面的文字说明、或观看[视频演示](#视频演示)。
+# FAQ
 
-## Step 3. 安装浏览器助手
+## 支持函数调用（也称为工具调用）吗？
 
-安装BrowserQwen的Chrome插件（又称Chrome扩展程序）：
+支持，LLM类提供了[函数调用](https://github.com/QwenLM/Qwen-Agent/blob/main/examples/function_calling.py)的支持。此外，一些Agent类如FnCallAgent和ReActChat也是基于函数调用功能构建的。
 
-1. 打开Chrome浏览器，在浏览器的地址栏中输入 `chrome://extensions/` 并按下回车键；
-2. 确保右上角的 `开发者模式` 处于打开状态，之后点击 `加载已解压的扩展程序` 上传本项目下的 `browser_qwen` 目录并启用；
-3. 单击谷歌浏览器右上角```扩展程序```图标，将BrowserQwen固定在工具栏。
+## 如何让AI基于超长文档进行问答？
 
-注意，安装Chrome插件后，需要刷新页面，插件才能生效。
+我们已发布了一个[快速的RAG解决方案](https://github.com/QwenLM/Qwen-Agent/blob/main/examples/assistant_rag.py)，以及一个虽运行成本较高但[准确度较高的智能体](https://github.com/QwenLM/Qwen-Agent/blob/main/examples/parallel_doc_qa.py)，用于在超长文档中进行问答。它们在两个具有挑战性的基准测试中表现出色，超越了原生的长上下文模型，同时更加高效，并在涉及100万字词上下文的“大海捞针”式单针查询压力测试中表现完美。欲了解技术细节，请参阅[博客](https://qwenlm.github.io/blog/qwen-agent-2405/)。
 
-当您想让Qwen阅读当前网页的内容时：
+<p align="center">
+    <img src="https://qianwen-res.oss-cn-beijing.aliyuncs.com/assets/qwen_agent/qwen-agent-2405-blog-long-context-results.png" width="400"/>
+<p>
 
-1. 请先点击屏幕上的 `Add to Qwen's Reading List` 按钮，以授权Qwen在后台分析本页面。
-2. 再单击浏览器右上角扩展程序栏的Qwen图标，便可以和Qwen交流当前页面的内容了。
+# 应用：BrowserQwen
 
-## 视频演示
-
-可查看以下几个演示视频，了解BrowserQwen的基本操作：
-
-- 根据浏览过的网页、PDFs进行长文创作 [video](https://qianwen-res.oss-cn-beijing.aliyuncs.com/assets/qwen_agent/showcase_write_article_based_on_webpages_and_pdfs.mp4)
-- 提取浏览内容使用代码解释器画图 [video](https://qianwen-res.oss-cn-beijing.aliyuncs.com/assets/qwen_agent/showcase_chat_with_docs_and_code_interpreter.mp4)
-- 上传文件、多轮对话利用代码解释器分析数据 [video](https://qianwen-res.oss-cn-beijing.aliyuncs.com/assets/qwen_agent/showcase_code_interpreter_multi_turn_chat.mp4)
-
-# 评测基准
-
-我们也开源了一个评测基准，用于评估一个模型写Python代码并使用Code Interpreter进行数学解题、数据分析、及其他通用任务时的表现。评测基准见 [benchmark](benchmark/README.md) 目录，当前的评测结果如下：
-
-<table>
-    <tr>
-        <th colspan="4" align="center">生成代码的可执行率 (%)</th>
-    </tr>
-    <tr>
-        <th align="center">Model</th><th align="center">Math↑</th><th align="center">Visualization↑</th><th align="center">General↑</th>
-    </tr>
-    <tr>
-        <td>GPT-4</td><td align="center">91.9</td><td align="center">85.9</td><td align="center">82.8</td>
-    </tr>
-    <tr>
-        <td>GPT-3.5</td><td align="center">89.2</td><td align="center">65.0</td><td align="center">74.1</td>
-    </tr>
-    <tr>
-        <td>LLaMA2-7B-Chat</td>
-        <td align="center">41.9</td>
-        <td align="center">33.1</td>
-        <td align="center">24.1 </td>
-    </tr>
-    <tr>
-        <td>LLaMA2-13B-Chat</td>
-        <td align="center">50.0</td>
-        <td align="center">40.5</td>
-        <td align="center">48.3 </td>
-    </tr>
-    <tr>
-        <td>CodeLLaMA-7B-Instruct</td>
-        <td align="center">85.1</td>
-        <td align="center">54.0</td>
-        <td align="center">70.7 </td>
-    </tr>
-    <tr>
-        <td>CodeLLaMA-13B-Instruct</td>
-        <td align="center">93.2</td>
-        <td align="center">55.8</td>
-        <td align="center">74.1 </td>
-    </tr>
-    <tr>
-        <td>InternLM-7B-Chat-v1.1</td>
-        <td align="center">78.4</td>
-        <td align="center">44.2</td>
-        <td align="center">62.1 </td>
-    </tr>
-    <tr>
-        <td>InternLM-20B-Chat</td>
-        <td align="center">70.3</td>
-        <td align="center">44.2</td>
-        <td align="center">65.5 </td>
-    </tr>
-    <tr>
-        <td>Qwen-7B-Chat</td>
-        <td align="center">82.4</td>
-        <td align="center">64.4</td>
-        <td align="center">67.2 </td>
-    </tr>
-    <tr>
-        <td>Qwen-14B-Chat</td>
-        <td align="center">89.2</td>
-        <td align="center">84.1</td>
-        <td align="center">65.5</td>
-    </tr>
-</table>
-
-<table>
-    <tr>
-        <th colspan="4" align="center">代码执行结果的正确率 (%)</th>
-    </tr>
-    <tr>
-        <th align="center">Model</th><th align="center">Math↑</th><th align="center">Visualization-Hard↑</th><th align="center">Visualization-Easy↑</th>
-    </tr>
-    <tr>
-        <td>GPT-4</td><td align="center">82.8</td><td align="center">66.7</td><td align="center">60.8</td>
-    </tr>
-    <tr>
-        <td>GPT-3.5</td><td align="center">47.3</td><td align="center">33.3</td><td align="center">55.7</td>
-    </tr>
-    <tr>
-        <td>LLaMA2-7B-Chat</td>
-        <td align="center">3.9</td>
-        <td align="center">14.3</td>
-        <td align="center">39.2 </td>
-    </tr>
-    <tr>
-        <td>LLaMA2-13B-Chat</td>
-        <td align="center">8.3</td>
-        <td align="center">8.3</td>
-        <td align="center">40.5 </td>
-    </tr>
-    <tr>
-        <td>CodeLLaMA-7B-Instruct</td>
-        <td align="center">14.3</td>
-        <td align="center">26.2</td>
-        <td align="center">60.8 </td>
-    </tr>
-    <tr>
-        <td>CodeLLaMA-13B-Instruct</td>
-        <td align="center">28.2</td>
-        <td align="center">27.4</td>
-        <td align="center">62.0 </td>
-    </tr>
-    <tr>
-        <td>InternLM-7B-Chat-v1.1</td>
-        <td align="center">28.5</td>
-        <td align="center">4.8</td>
-        <td align="center">40.5 </td>
-    </tr>
-    <tr>
-        <td>InternLM-20B-Chat</td>
-        <td align="center">34.6</td>
-        <td align="center">21.4</td>
-        <td align="center">45.6 </td>
-    </tr>
-    <tr>
-        <td>Qwen-7B-Chat</td>
-        <td align="center">41.9</td>
-        <td align="center">40.5</td>
-        <td align="center">54.4 </td>
-    </tr>
-    <tr>
-        <td>Qwen-14B-Chat</td>
-        <td align="center">58.4</td>
-        <td align="center">53.6</td>
-        <td align="center">59.5</td>
-    </tr>
-</table>
-
-其中Qwen-7B-Chat指2023年09月25日后更新的版本。
+BrowserQwen 是一款基于 Qwen-Agent 构建的浏览器助手。如需了解详情，请参阅其[文档](browser_qwen_cn.md)。
 
 # 免责声明
 
-本项目并非正式产品，而是一个概念验证项目，用于演示Qwen系列模型的能力。
+代码解释器未进行沙盒隔离，会在部署环境中执行代码。请避免向Qwen发出危险指令，切勿将该代码解释器直接用于生产目的。

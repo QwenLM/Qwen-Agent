@@ -7,8 +7,7 @@ from parser import ReActParser
 import prettytable
 import tqdm
 from code_interpreter import code_interpreter
-from config import (get_model, get_react_parser, get_react_prompt,
-                    model_path_map)
+from config import get_model, get_react_parser, get_react_prompt, model_path_map
 from datasets import load_dataset
 from metrics.code_execution import eval_code_execution_rate
 from metrics.gsm8k import eval_gsm8k_acc, is_correct
@@ -26,7 +25,6 @@ WORK_DIR = os.getenv('CODE_INTERPRETER_WORK_DIR', '/tmp/workspace')
 os.makedirs(WORK_DIR, exist_ok=True)
 os.system(f'cp -r upload_file_clean {WORK_DIR}/upload_file')
 os.system('cp -r upload_file_clean ./upload_file')
-
 
 global_eval_result = {
     'code_executability': {
@@ -55,7 +53,7 @@ def llm_with_plugin(args, query, item=None, exec_limit=3):
     if '<|im_start|>' in query:
         _, prepend_code, __ = ReActParser().parse_latest_plugin_call(query)
         prepend_code = replace_upload_fname(prepend_code, upload_fname_list)
-        call_plugin(_, [prepend_code], clear=(exec_count == 0))
+        call_tool(_, [prepend_code], clear=(exec_count == 0))
         exec_count += 1
         exec_limit += 1
 
@@ -73,7 +71,7 @@ def llm_with_plugin(args, query, item=None, exec_limit=3):
         action, action_input, output = react_parser.parse_latest_plugin_call(output)
         if action:
             action_input = replace_upload_fname(action_input, upload_fname_list)
-            observation = call_plugin(action, [action_input], clear=(exec_count == 0))
+            observation = call_tool(action, [action_input], clear=(exec_count == 0))
             output += react_prompt_obj.build_observation(observation)
             text += output
             exec_count += 1
@@ -97,7 +95,7 @@ def text_completion(llm, input_text, stop_words=[]):
     return output
 
 
-def call_plugin(plugin_name, plugin_args_list, clear=False):
+def call_tool(plugin_name, plugin_args_list, clear=False):
     # Relax constraints on plugin name.
     logging.info('Call code interpreter'.center(60, '='))
     obs = code_interpreter(plugin_args_list, clear=clear)
@@ -131,10 +129,7 @@ def sequential_processing(args, data_list, process_func, writer):
         process_func(item, writer)
 
 
-process_func_map = {
-    'gsm8k': process_gsm8k,
-    'visualization': process_code_interpreter
-}
+process_func_map = {'gsm8k': process_gsm8k, 'visualization': process_code_interpreter}
 
 
 def gather_eval_result(model_name):
@@ -164,7 +159,7 @@ def eval_metrics(args, test_set, full_output_fname):
         code_executability = eval_code_execution_rate(abs_output_fname, args.task, args.model)
         global_eval_result['code_executability'].update(code_executability)
         if args.task in ['all_ci', 'visualization'] and not args.eval_code_exec_only:
-            visualization_code_correctness = eval_visualization_acc(abs_output_fname, args.model)
+            visualization_code_correctness = eval_visualization_acc(abs_output_fname, args.model, args.vis_judger)
             global_eval_result['code_correctness'].update(visualization_code_correctness)
 
 
@@ -211,7 +206,7 @@ def main(args):
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, default='qwen-14b-chat', choices=list(model_path_map.keys()))
-    parser.add_argument('--task', type=str, default='all', choices=['all', 'gsm8k', 'all_ci', 'visualization', 'math', 'general'])
+    parser.add_argument('--task', type=str, default='all', choices=['all', 'gsm8k', 'visualization', 'general'])
     parser.add_argument('--output-path', type=str, default='output_data')
     parser.add_argument('--input-path', type=str, default='eval_data')
     parser.add_argument('-o', '--output-fname', type=str, default='')
@@ -221,6 +216,10 @@ def parse_args():
     parser.add_argument('--eval-code-exec-only', action='store_true', default=False)
     parser.add_argument('--gen-exec-only', action='store_true', default=False)
     parser.add_argument('--gen-only', action='store_true', default=False)
+    parser.add_argument('--vis-judger',
+                        type=str,
+                        default="'gpt-4-vision-preview'",
+                        choices=['gpt-4-vision-preview', 'qwen-vl-chat', 'qwen-vl-plus'])
     args = parser.parse_args()
     return args
 
@@ -232,7 +231,7 @@ if __name__ == '__main__':
         logging.info(f'Init {args.model} done.')
 
     if args.task == 'all':
-        for key in ['all_ci', 'gsm8k']:
+        for key in ['gsm8k', 'visualization', 'general']:
             args.task = key
             main(args)
     else:

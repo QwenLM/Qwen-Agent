@@ -2,6 +2,7 @@ from parser.react_parser import ReActParser
 
 
 class InternLMReActParser(ReActParser):
+
     def __init__(self):
         self.action = '\nAction:'
         self.action_input = '\nActionInput:'

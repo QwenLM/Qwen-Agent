@@ -3,6 +3,7 @@ from models.base import HFModel
 
 
 class Qwen(HFModel):
+
     def __init__(self, model_path):
         super().__init__(model_path)
 
@@ -20,3 +21,15 @@ class Qwen(HFModel):
         output = output[len(input_text):].replace('<|endoftext|>', '').replace(im_end, '')
 
         return output
+
+
+class QwenVL(HFModel):
+
+    def __init__(self, model_path):
+        super().__init__(model_path)
+
+    def generate(self, inputs: list):
+        query = self.tokenizer.from_list_format(inputs)
+        response, _ = self.model.chat(self.tokenizer, query=query, history=None)
+
+        return response
