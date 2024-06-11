@@ -1,6 +1,6 @@
+import copy
 from threading import Thread
 from typing import Dict, Iterator, List, Optional
-import copy
 
 from qwen_agent.llm.base import register_llm
 from qwen_agent.llm.schema import ASSISTANT, DEFAULT_SYSTEM_MESSAGE, SYSTEM, USER, Message
@@ -119,7 +119,10 @@ class OpenVINO(BaseTextChatModel):
         partial_text = ''
         for new_text in streamer:
             partial_text += new_text
-            yield [Message(ASSISTANT, partial_text)]
+            if delta_stream:
+                yield [Message(ASSISTANT, new_text)]
+            else:
+                yield [Message(ASSISTANT, partial_text)]
 
     def _chat_no_stream(
         self,
