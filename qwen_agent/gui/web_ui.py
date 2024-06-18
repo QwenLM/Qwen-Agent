@@ -6,8 +6,7 @@ from typing import List, Optional, Union
 from qwen_agent import Agent, MultiAgentHub
 from qwen_agent.agents.user_agent import PENDING_USER_INPUT
 from qwen_agent.gui.gradio_utils import format_cover_html
-from qwen_agent.gui.utils import (are_similar_enough, convert_fncall_to_text, convert_history_to_chatbot,
-                                  get_avatar_image)
+from qwen_agent.gui.utils import convert_fncall_to_text, convert_history_to_chatbot, get_avatar_image
 from qwen_agent.llm.schema import CONTENT, FILE, IMAGE, NAME, ROLE, USER, Message
 from qwen_agent.log import logger
 from qwen_agent.utils.utils import print_traceback
@@ -215,39 +214,39 @@ class WebUI:
         if self.verbose:
             logger.info('agent_run input:\n' + pprint.pformat(_history, indent=2))
 
-        last_response_text = None
+        num_input_bubbles = len(_chatbot) - 1
+        num_output_bubbles = 1
         _chatbot[-1][1] = [None for _ in range(len(self.agent_list))]
 
         agent_runner = self.agent_list[_agent_selector or 0]
         if self.agent_hub:
             agent_runner = self.agent_hub
-        response = []
-        for response in agent_runner.run(_history, **self.run_kwargs):
-            if not response:
+        responses = []
+        for responses in agent_runner.run(_history, **self.run_kwargs):
+            if not responses:
                 continue
-            display_response = convert_fncall_to_text(response)
-
-            if display_response is None or len(display_response) == 0:
-                continue
-
-            agent_name, response_text = (
-                display_response[-1][NAME],
-                display_response[-1][CONTENT],
-            )
-            if response_text is None:
-                continue
-            elif response_text == PENDING_USER_INPUT:
+            if responses[-1][CONTENT] == PENDING_USER_INPUT:
                 logger.info('Interrupted. Waiting for user input!')
+                break
+
+            display_responses = convert_fncall_to_text(responses)
+            if not display_responses:
+                continue
+            if display_responses[-1][CONTENT] is None:
                 continue
 
-            # TODO: Remove this `are_similar_enough`. This hack is not smart.
-            if last_response_text is not None and not are_similar_enough(last_response_text, response_text):
+            while len(display_responses) > num_output_bubbles:
+                # Create a new chat bubble
                 _chatbot.append([None, None])
                 _chatbot[-1][1] = [None for _ in range(len(self.agent_list))]
+                num_output_bubbles += 1
 
-            agent_index = self._get_agent_index_by_name(agent_name)
-            _chatbot[-1][1][agent_index] = response_text
-            last_response_text = response_text
+            assert num_output_bubbles == len(display_responses)
+            assert num_input_bubbles + num_output_bubbles == len(_chatbot)
+
+            for i, rsp in enumerate(display_responses):
+                agent_index = self._get_agent_index_by_name(rsp[NAME])
+                _chatbot[num_input_bubbles + i][1][agent_index] = rsp[CONTENT]
 
             if len(self.agent_list) > 1:
                 _agent_selector = agent_index
@@ -256,8 +255,9 @@ class WebUI:
                 yield _chatbot, _history, _agent_selector
             else:
                 yield _chatbot, _history
-        if response:
-            _history.extend([res for res in response if res[CONTENT] != PENDING_USER_INPUT])
+
+        if responses:
+            _history.extend([res for res in responses if res[CONTENT] != PENDING_USER_INPUT])
 
         if _agent_selector is not None:
             yield _chatbot, _history, _agent_selector
@@ -265,7 +265,7 @@ class WebUI:
             yield _chatbot, _history
 
         if self.verbose:
-            logger.info('agent_run response:\n' + pprint.pformat(response, indent=2))
+            logger.info('agent_run response:\n' + pprint.pformat(responses, indent=2))
 
     def flushed(self):
         from qwen_agent.gui.gradio import gr

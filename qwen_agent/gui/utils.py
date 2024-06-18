@@ -28,16 +28,19 @@ def get_avatar_image(name: str = 'user') -> str:
 
 
 def convert_history_to_chatbot(messages):
-    # TODO: It hasn't taken function calling into account yet.
     if not messages:
         return None
     chatbot_history = [[None, None]]
     for message in messages:
+        if message.keys() != {'role', 'content'}:
+            raise ValueError('Each message must be a dict containing only "role" and "content".')
         if message['role'] == USER:
             chatbot_history[-1][0] = message['content']
-        else:
+        elif message['role'] == ASSISTANT:
             chatbot_history[-1][1] = message['content']
             chatbot_history.append([None, None])
+        else:
+            raise ValueError(f'Message role must be {USER} or {ASSISTANT}.')
     return chatbot_history
 
 
@@ -74,29 +77,3 @@ def convert_fncall_to_text(messages: List[Dict]) -> List[Dict]:
             raise TypeError
 
     return new_messages
-
-
-def are_similar_enough(str1, str2):
-    if len(str1) > len(str2):
-        return False
-
-    if str2.startswith(str1):
-        return True
-
-    max_index = -1
-    for i in range(min(len(str1), len(str2))):
-        if str1[i] == str2[i]:
-            max_index = i
-        else:
-            break
-
-    if max_index == -1:
-        return False
-
-    prefix = str1[:max_index + 1]
-    suffix = str1[max_index + 1:]
-
-    if str2.startswith(prefix) and str2.endswith(suffix):
-        return True
-
-    return False

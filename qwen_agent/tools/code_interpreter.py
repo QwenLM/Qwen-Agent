@@ -258,7 +258,6 @@ class CodeInterpreter(BaseTool):
         result = result.lstrip('\n')
         return result
 
-    # TODO: Remove this buggy image service and return local_image_file directly.
     def _serve_image(self, image_base64: str) -> str:
         image_file = f'{uuid.uuid4()}.png'
         local_image_file = os.path.join(self.work_dir, image_file)
@@ -268,14 +267,10 @@ class CodeInterpreter(BaseTool):
         bytes_io = io.BytesIO(png_bytes)
         PIL.Image.open(bytes_io).save(local_image_file, 'png')
 
-        static_url = os.getenv('M6_CODE_INTERPRETER_STATIC_URL', '')
-
-        # Hotfix: Temporarily generate image URL proxies for code interpreter to display in gradio
-        if not static_url:
-            return local_image_file
-        else:
-            image_url = f'{static_url}/{image_file}'
-            return image_url
+        image_server_url = os.getenv('M6_CODE_INTERPRETER_STATIC_URL', '')
+        if image_server_url:
+            return f'{image_server_url}/{image_file}'
+        return local_image_file
 
 
 def _fix_matplotlib_cjk_font_issue():
