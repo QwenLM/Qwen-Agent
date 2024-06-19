@@ -319,7 +319,11 @@ def get_function_description(function: Dict, lang: Literal['en', 'zh']) -> str:
     name_for_human = function.get('name_for_human', name)
     name_for_model = function.get('name_for_model', name)
     assert name_for_human and name_for_model
-    args_format = function.get('args_format', '')
+    if lang == 'zh':
+        args_format = '此工具的输入应为JSON对象。'
+    else:
+        args_format = 'Format the arguments as a JSON object.'
+    args_format = function.get('args_format', args_format)
     return tool_desc.format(name_for_human=name_for_human,
                             name_for_model=name_for_model,
                             description_for_model=function['description'],
