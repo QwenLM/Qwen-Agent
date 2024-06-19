@@ -1,3 +1,4 @@
+import copy
 import os
 from pprint import pformat
 from typing import Dict, Iterator, List, Optional
@@ -54,7 +55,7 @@ class TextChatAtOAI(BaseTextChatModel):
                 # OpenAI API v1 does not allow the following args, must pass by extra_body
                 extra_params = ['top_k', 'repetition_penalty']
                 if any((k in kwargs) for k in extra_params):
-                    kwargs['extra_body'] = {}
+                    kwargs['extra_body'] = copy.deepcopy(kwargs.get('extra_body', {}))
                     for k in extra_params:
                         if k in kwargs:
                             kwargs['extra_body'][k] = kwargs.pop(k)
