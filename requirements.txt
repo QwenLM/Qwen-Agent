@@ -12,7 +12,7 @@ matplotlib
 numpy
 openai
 pandas
-pdfminer-six
+pdfminer.six
 pdfplumber
 pillow
 pydantic>=2.3.0
