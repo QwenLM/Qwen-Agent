@@ -59,18 +59,21 @@ class FnCallAgent(Agent):
             if output:
                 response.extend(output)
                 messages.extend(output)
-                use_tool, tool_name, tool_args, _ = self._detect_tool(response[-1])
-                if use_tool:
-                    tool_result = self._call_tool(tool_name, tool_args, messages=messages, **kwargs)
-                    fn_msg = Message(
-                        role=FUNCTION,
-                        name=tool_name,
-                        content=tool_result,
-                    )
-                    messages.append(fn_msg)
-                    response.append(fn_msg)
-                    yield response
-                else:
+                used_any_tool = False
+                for out in output:
+                    use_tool, tool_name, tool_args, _ = self._detect_tool(out)
+                    if use_tool:
+                        tool_result = self._call_tool(tool_name, tool_args, messages=messages, **kwargs)
+                        fn_msg = Message(
+                            role=FUNCTION,
+                            name=tool_name,
+                            content=tool_result,
+                        )
+                        messages.append(fn_msg)
+                        response.append(fn_msg)
+                        yield response
+                        used_any_tool = True
+                if not used_any_tool:
                     break
 
     def _call_tool(self, tool_name: str, tool_args: Union[str, dict] = '{}', **kwargs) -> str:

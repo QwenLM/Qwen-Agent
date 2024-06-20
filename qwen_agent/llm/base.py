@@ -103,6 +103,8 @@ class BaseChatModel(ABC):
             fncall_mode = True
         else:
             fncall_mode = False
+            if 'parallel_function_calls' in generate_cfg:
+                del generate_cfg['parallel_function_calls']
 
         def _call_model_service():
             if fncall_mode:
@@ -375,6 +377,10 @@ def _raise_or_delay(
     """Retry with exponential backoff"""
 
     if max_retries <= 0:  # no retry
+        raise e
+
+    # Bad request, e.g., incorrect config or input
+    if e.code == '400':
         raise e
 
     # If harmful input or output detected, let it fail

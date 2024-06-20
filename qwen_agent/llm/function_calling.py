@@ -3,8 +3,37 @@ import json
 from abc import ABC
 from typing import Dict, Iterator, List, Literal, Optional, Union
 
-from qwen_agent.llm.base import BaseChatModel
+from qwen_agent.llm.base import BaseChatModel, ModelServiceError
 from qwen_agent.llm.schema import ASSISTANT, FUNCTION, SYSTEM, USER, ContentItem, FunctionCall, Message
+
+
+def validate_num_fncall_results(messages: List[Message]):
+    fn_results = []
+    i = len(messages) - 1
+    while messages[i].role == FUNCTION:
+        fn_results = [messages[i].name] + fn_results
+        i -= 1
+
+    fn_calls = []
+    while messages[i].function_call:
+        fn_calls = [messages[i].function_call.name] + fn_calls
+        i -= 1
+
+    if len(fn_calls) != len(fn_results):
+        raise ModelServiceError(
+            code='400',
+            message=(f'Expecting {len(fn_calls)} function results (i.e., messages with role="function") '
+                     f'but received {len(fn_results)} function results. '
+                     'The number of function results must match that of the function_call messages.'),
+        )
+    for fc_name, fr_name in zip(fn_calls, fn_results):
+        if fr_name and (fc_name != fr_name):
+            raise ModelServiceError(
+                code='400',
+                message=('The function results (i.e., the messages with role="function" ) must be '
+                         'put in the same order as the function_call messages. And the function names must match.'
+                         f'The function results are currently {fn_results}. But {fn_calls} are expected.'),
+            )
 
 
 class BaseFnCallModel(BaseChatModel, ABC):
@@ -23,6 +52,7 @@ class BaseFnCallModel(BaseChatModel, ABC):
         """Convert messages with function_call key and function role to assistant's content, which is
             for chat interface or text_completion interface that do not support functions.
         """
+        validate_num_fncall_results(messages)
         new_messages = []
         for msg in copy.deepcopy(messages):
             role, content = msg.role, msg.content
@@ -54,7 +84,11 @@ class BaseFnCallModel(BaseChatModel, ABC):
                     assert f_result is not None
                 else:
                     f_result = ''
-                new_messages[-1].content += [ContentItem(text=f'\n{FN_RESULT}: {f_result}\n{FN_EXIT}: ')]
+                f_exit = f'\n{FN_EXIT}: '
+                last_text_content = new_messages[-1].content[-1].text
+                if last_text_content.endswith(f_exit):
+                    new_messages[-1].content[-1].text = last_text_content[:-len(f_exit)]
+                new_messages[-1].content += [ContentItem(text=f'\n{FN_RESULT}: {f_result}{f_exit}')]
             else:
                 raise TypeError
 
@@ -81,7 +115,15 @@ class BaseFnCallModel(BaseChatModel, ABC):
     ) -> Union[List[Message], Iterator[List[Message]]]:
         if delta_stream:
             raise NotImplementedError
-        messages = self._prepend_fncall_system(messages, functions, lang=lang)
+        parallel_function_calls = generate_cfg.get('parallel_function_calls', False)
+        messages = self._prepend_fncall_system(
+            messages=messages,
+            functions=functions,
+            lang=lang,
+            parallel_function_calls=parallel_function_calls,
+        )
+        if 'parallel_function_calls' in generate_cfg:
+            del generate_cfg['parallel_function_calls']
         return self._continue_assistant_response(messages, generate_cfg=generate_cfg, stream=stream)
 
     def _prepend_fncall_system(
@@ -89,8 +131,9 @@ class BaseFnCallModel(BaseChatModel, ABC):
         messages: List[Message],
         functions: List[Dict],
         lang: Literal['en', 'zh'],
+        parallel_function_calls: bool = False,
     ) -> List[Message]:
-        tool_desc_template = FN_CALL_TEMPLATE[lang]
+        tool_desc_template = FN_CALL_TEMPLATE[lang + ('_parallel' if parallel_function_calls else '')]
         tool_descs = '\n\n'.join(get_function_description(function, lang=lang) for function in functions)
         tool_names = ','.join(function.get('name', function.get('name_for_model', '')) for function in functions)
         tool_system = tool_desc_template.format(tool_descs=tool_descs, tool_names=tool_names)
@@ -98,9 +141,9 @@ class BaseFnCallModel(BaseChatModel, ABC):
         assert messages[0].role == SYSTEM
         messages = copy.deepcopy(messages[:1]) + messages[1:]
         if isinstance(messages[0].content, str):
-            messages[0].content += tool_system
+            messages[0].content += '\n\n' + tool_system
         else:
-            messages[0].content.append(ContentItem(text=tool_system))
+            messages[0].content.append(ContentItem(text='\n\n' + tool_system))
 
         return messages
 
@@ -138,7 +181,7 @@ class BaseFnCallModel(BaseChatModel, ABC):
             messages = self._postprocess_fncall_messages(messages)
         return messages
 
-    def _postprocess_fncall_messages(self, messages: List[Message], stop_at_fncall: bool = True) -> List[Message]:
+    def _postprocess_fncall_messages(self, messages: List[Message]) -> List[Message]:
         """
         If the model calls function by built-in function call template,
         convert and display it in function_call format.
@@ -173,12 +216,15 @@ class BaseFnCallModel(BaseChatModel, ABC):
                     continue
 
                 i = item_text.find(f'{FN_NAME}:')
-                if i < 0:  # no function call
+
+                # If no function call:
+                if i < 0:
                     show_text = remove_incomplete_special_tokens(item_text)
                     if show_text:
                         new_content.append(ContentItem(text=show_text))
                     continue
 
+                # If it says something before function call:
                 if i > 0:
                     answer = item_text[:i].lstrip('\n').rstrip()
                     if answer.endswith('\n'):
@@ -194,6 +240,7 @@ class BaseFnCallModel(BaseChatModel, ABC):
                         new_content = []
                     item_text = item_text[i:]
 
+                # If has function call:
                 for part in item_text.split(f'{FN_NAME}:'):
                     if not part:
                         continue
@@ -201,8 +248,7 @@ class BaseFnCallModel(BaseChatModel, ABC):
                         part = part[:-1]
                     i = part.find(f'\n{FN_ARGS}:')
                     j = part.find(f'\n{FN_RESULT}:')
-                    k = part.find(f'\n{FN_EXIT}:')
-                    fn_name, fn_args, result, answer = '', '', '', ''
+                    fn_name, fn_args = '', ''
                     if i < 0:
                         fn_name = part.strip()
                     else:
@@ -211,11 +257,6 @@ class BaseFnCallModel(BaseChatModel, ABC):
                             fn_args = part[i + len(f'\n{FN_ARGS}:'):].strip()
                         else:
                             fn_args = part[i + len(f'\n{FN_ARGS}:'):j].strip()
-                            if k < j:
-                                result = part[j + len(f'\n{FN_RESULT}:'):]
-                            else:
-                                result = part[j + len(f'\n{FN_RESULT}:'):k]
-                                answer = part[k + len(f'\n{FN_EXIT}:'):]
                     new_messages.append(
                         Message(
                             role=ASSISTANT,
@@ -225,32 +266,11 @@ class BaseFnCallModel(BaseChatModel, ABC):
                                 arguments=remove_incomplete_special_tokens(fn_args),
                             ),
                         ))
+                # Break here and discard the text after function call
+                return new_messages
 
-                    if stop_at_fncall:
-                        # Discard the text after the first function_call
-                        return new_messages
-
-                    if (result and result[1:]) or answer:  # result[1:] == '' is possible and allowed
-                        # rm the ' ' after ':'
-                        show_text = remove_incomplete_special_tokens(result[1:])
-                        new_messages.append(
-                            Message(
-                                role=FUNCTION,
-                                content=[ContentItem(text=show_text)],
-                                name=remove_incomplete_special_tokens(fn_name),
-                            ))
-
-                    if answer and answer[1:]:
-                        # rm the ' ' after ':'
-                        show_text = remove_incomplete_special_tokens(answer[1:])
-                        if show_text:
-                            new_messages.append(Message(
-                                role=ASSISTANT,
-                                content=[ContentItem(text=show_text)],
-                            ))
             if new_content:
                 new_messages.append(Message(role=role, content=new_content))
-
         return new_messages
 
 
@@ -260,49 +280,99 @@ FN_RESULT = '✿RESULT✿'
 FN_EXIT = '✿RETURN✿'
 FN_STOP_WORDS = [FN_RESULT, f'{FN_RESULT}:', f'{FN_RESULT}:\n']
 
-FN_CALL_TEMPLATE_ZH = """
-
-# 工具
+FN_CALL_TEMPLATE_INFO_ZH = """# 工具
 
 ## 你拥有如下工具：
 
-{tool_descs}
+{tool_descs}"""
 
-## 你可以在回复中插入零次、一次或多次以下命令以调用工具：
+FN_CALL_TEMPLATE_INFO_EN = """# Tools
+
+## You have access to the following tools:
+
+{tool_descs}"""
+
+FN_CALL_TEMPLATE_FMT_ZH = """## 你可以在回复中插入零次、一次或多次以下命令以调用工具：
 
 %s: 工具名称，必须是[{tool_names}]之一。
 %s: 工具输入
-%s: 工具结果，需将图片用![](url)渲染出来。
-%s: 根据工具结果进行回复""" % (
+%s: 工具结果
+%s: 根据工具结果进行回复，需将图片用![](url)渲染出来""" % (
     FN_NAME,
     FN_ARGS,
     FN_RESULT,
     FN_EXIT,
 )
 
-FN_CALL_TEMPLATE_EN = """
-
-# Tools
-
-## You have access to the following tools:
-
-{tool_descs}
-
-## When you need to call a tool, please insert the following command in your reply, which can be called zero or multiple times according to your needs:
+FN_CALL_TEMPLATE_FMT_EN = """## When you need to call a tool, please insert the following command in your reply, which can be called zero or multiple times according to your needs:
 
 %s: The tool to use, should be one of [{tool_names}]
 %s: The input of the tool
-%s: The result returned by the tool. The image needs to be rendered as ![](url)
-%s: Reply based on tool result""" % (
+%s: Tool results
+%s: Reply based on tool results. Images need to be rendered as ![](url)""" % (
     FN_NAME,
     FN_ARGS,
+    FN_RESULT,
+    FN_EXIT,
+)
+
+FN_CALL_TEMPLATE_FMT_PARA_ZH = """## 你可以在回复中插入以下命令以并行调用N个工具：
+
+%s: 工具1的名称，必须是[{tool_names}]之一
+%s: 工具1的输入
+%s: 工具2的名称
+%s: 工具2的输入
+...
+%s: 工具N的名称
+%s: 工具N的输入
+%s: 工具1的结果
+%s: 工具2的结果
+...
+%s: 工具N的结果
+%s: 根据工具结果进行回复，需将图片用![](url)渲染出来""" % (
+    FN_NAME,
+    FN_ARGS,
+    FN_NAME,
+    FN_ARGS,
+    FN_NAME,
+    FN_ARGS,
+    FN_RESULT,
+    FN_RESULT,
+    FN_RESULT,
+    FN_EXIT,
+)
+
+FN_CALL_TEMPLATE_FMT_PARA_EN = """## Insert the following command in your reply when you need to call N tools in parallel:
+
+%s: The name of tool 1, should be one of [{tool_names}]
+%s: The input of tool 1
+%s: The name of tool 2
+%s: The input of tool 2
+...
+%s: The name of tool N
+%s: The input of tool N
+%s: The result of tool 1
+%s: The result of tool 2
+...
+%s: The result of tool N
+%s: Reply based on tool results. Images need to be rendered as ![](url)""" % (
+    FN_NAME,
+    FN_ARGS,
+    FN_NAME,
+    FN_ARGS,
+    FN_NAME,
+    FN_ARGS,
+    FN_RESULT,
+    FN_RESULT,
     FN_RESULT,
     FN_EXIT,
 )
 
 FN_CALL_TEMPLATE = {
-    'zh': FN_CALL_TEMPLATE_ZH,
-    'en': FN_CALL_TEMPLATE_EN,
+    'zh': FN_CALL_TEMPLATE_INFO_ZH + '\n\n' + FN_CALL_TEMPLATE_FMT_ZH,
+    'en': FN_CALL_TEMPLATE_INFO_EN + '\n\n' + FN_CALL_TEMPLATE_FMT_EN,
+    'zh_parallel': FN_CALL_TEMPLATE_INFO_ZH + '\n\n' + FN_CALL_TEMPLATE_FMT_PARA_ZH,
+    'en_parallel': FN_CALL_TEMPLATE_INFO_EN + '\n\n' + FN_CALL_TEMPLATE_FMT_PARA_EN,
 }
 
 
@@ -319,11 +389,19 @@ def get_function_description(function: Dict, lang: Literal['en', 'zh']) -> str:
     name_for_human = function.get('name_for_human', name)
     name_for_model = function.get('name_for_model', name)
     assert name_for_human and name_for_model
-    if lang == 'zh':
-        args_format = '此工具的输入应为JSON对象。'
+
+    if name_for_model == 'code_interpreter':
+        args_format = {
+            'zh': '此工具的输入应为Markdown代码块。',
+            'en': 'Enclose the code within triple backticks (`) at the beginning and end of the code.',
+        }
     else:
-        args_format = 'Format the arguments as a JSON object.'
-    args_format = function.get('args_format', args_format)
+        args_format = {
+            'zh': '此工具的输入应为JSON对象。',
+            'en': 'Format the arguments as a JSON object.',
+        }
+    args_format = function.get('args_format', args_format[lang])
+
     return tool_desc.format(name_for_human=name_for_human,
                             name_for_model=name_for_model,
                             description_for_model=function['description'],
