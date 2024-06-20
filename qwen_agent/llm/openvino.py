@@ -40,7 +40,7 @@ class StopSequenceCriteria(StoppingCriteria):
 class OpenVINO(BaseTextChatModel):
     """OpenVINO Pipeline API.
 
-    To use, you should have the ``optimum[openvino,nncf]`` python package installed.
+    To use, you should have the ``optimum[openvino]`` python package installed.
 
     Example export and quantizie from_model_id by command line:
         optimum-cli export openvino --model Qwen/Qwen2-7B-Instruct --task text-generation-with-past --weight-format int4 --group-size 128 --ratio 0.8 Qwen2-7B-Instruct-ov
