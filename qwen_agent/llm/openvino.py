@@ -1,17 +1,20 @@
 from typing import Dict, Iterator, List, Optional
 from threading import Thread
 
-from optimum.intel.openvino import OVModelForCausalLM
-from transformers import (AutoTokenizer, AutoConfig,
-                          TextIteratorStreamer, StoppingCriteriaList, StoppingCriteria)
-
 from qwen_agent.llm.base import register_llm
 from qwen_agent.llm.schema import ASSISTANT, DEFAULT_SYSTEM_MESSAGE, SYSTEM, USER, Message
 from qwen_agent.llm.text_base import BaseTextChatModel
 from qwen_agent.log import logger
 
 
-from transformers.generation.stopping_criteria import StoppingCriteriaList, StoppingCriteria
+try:
+    from transformers.generation.stopping_criteria import StoppingCriteriaList, StoppingCriteria
+except ImportError as e:
+    raise ImportError(
+        "Could not import transformers python package. "
+        "Please install it with: "
+        "pip install -U 'transformers'"
+    ) from e
 
 
 class StopSequenceCriteria(StoppingCriteria):
@@ -38,11 +41,12 @@ class StopSequenceCriteria(StoppingCriteria):
 
 @register_llm('openvino')
 class OpenVINO(BaseTextChatModel):
-    """OpenVINO Pipeline API.
+    """
+    OpenVINO Pipeline API.
 
-    To use, you should have the ``optimum[openvino]`` python package installed.
+    To use, you should have the 'optimum[openvino]' python package installed.
 
-    Example export and quantizie from_model_id by command line:
+    Example export and quantizie openvino model by command line:
         optimum-cli export openvino --model Qwen/Qwen2-7B-Instruct --task text-generation-with-past --weight-format int4 --group-size 128 --ratio 0.8 Qwen2-7B-Instruct-ov
     
     Example passing pipeline in directly:
@@ -70,6 +74,16 @@ class OpenVINO(BaseTextChatModel):
             raise ValueError(
                 f'Please provide openvino model directory through `ov_model_dir` in cfg')
 
+        try:
+            from optimum.intel.openvino import OVModelForCausalLM
+        except ImportError as e:
+            raise ImportError(
+                "Could not import optimum-intel python package. "
+                "Please install it with: "
+                "pip install -U 'optimum[openvino]'"
+            ) from e
+        from transformers import AutoTokenizer, AutoConfig
+
         self.ov_model = OVModelForCausalLM.from_pretrained(
             cfg['ov_model_dir'],
             device=cfg.get('device', 'cpu'),
@@ -84,6 +98,7 @@ class OpenVINO(BaseTextChatModel):
         delta_stream: bool,
         generate_cfg: dict,
     ) -> Iterator[List[Message]]:
+        from transformers import TextIteratorStreamer
 
         prompt = self._build_text_completion_prompt(messages)
         logger.debug(f'*{prompt}*')
