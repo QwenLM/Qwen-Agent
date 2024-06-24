@@ -4,9 +4,9 @@ from qwen_agent.llm.base import LLM_REGISTRY
 
 from .base import BaseChatModel, ModelServiceError
 from .oai import TextChatAtOAI
+from .openvino import OpenVINO
 from .qwen_dashscope import QwenChatAtDS
 from .qwenvl_dashscope import QwenVLChatAtDS
-from .openvino import OpenVINO
 
 
 def get_chat_model(cfg: Optional[Dict] = None) -> BaseChatModel:
