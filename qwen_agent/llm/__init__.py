@@ -4,6 +4,7 @@ from qwen_agent.llm.base import LLM_REGISTRY
 
 from .base import BaseChatModel, ModelServiceError
 from .oai import TextChatAtOAI
+from .openvino import OpenVINO
 from .qwen_dashscope import QwenChatAtDS
 from .qwenvl_dashscope import QwenVLChatAtDS
 
@@ -62,6 +63,7 @@ __all__ = [
     'QwenChatAtDS',
     'TextChatAtOAI',
     'QwenVLChatAtDS',
+    'OpenVINO',
     'get_chat_model',
     'ModelServiceError',
 ]
