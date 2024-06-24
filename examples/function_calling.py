@@ -22,9 +22,14 @@ def get_current_weather(location, unit='fahrenheit'):
 def test():
     llm = get_chat_model({
         # Use the model service provided by DashScope:
-        'model': 'qwen-max',
+        'model': 'qwen1.5-14b-chat',
         'model_server': 'dashscope',
         'api_key': os.getenv('DASHSCOPE_API_KEY'),
+
+        # Use the OpenAI-compatible model service provided by DashScope:
+        # 'model': 'qwen1.5-14b-chat',
+        # 'model_server': 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+        # 'api_key': os.getenv('DASHSCOPE_API_KEY'),
 
         # Use the model service provided by Together.AI:
         # 'model': 'Qwen/Qwen1.5-14B-Chat',
@@ -60,7 +65,18 @@ def test():
 
     print('# Assistant Response 1:')
     responses = []
-    for responses in llm.chat(messages=messages, functions=functions, stream=True):
+    for responses in llm.chat(
+            messages=messages,
+            functions=functions,
+            stream=True,
+            # Note: extra_generate_cfg is optional
+            # extra_generate_cfg=dict(
+            #     # Note: if function_choice='auto', let the model decide whether to call a function or not
+            #     # function_choice='auto',  # 'auto' is the default if function_choice is not set
+            #     # Note: set function_choice='get_current_weather' to force the model to call this function
+            #     function_choice='get_current_weather',
+            # ),
+    ):
         print(responses)
 
     messages.extend(responses)  # extend conversation with assistant's reply

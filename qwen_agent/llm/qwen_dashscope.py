@@ -26,7 +26,7 @@ class QwenChatAtDS(BaseTextChatModel):
         generate_cfg: dict,
     ) -> Iterator[List[Message]]:
         messages = [msg.model_dump() for msg in messages]
-        logger.debug(f'*{pformat(messages, indent=2)}*')
+        logger.debug(f'LLM Input:\n{pformat(messages, indent=2)}')
         response = dashscope.Generation.call(
             self.model,
             messages=messages,  # noqa
@@ -44,7 +44,7 @@ class QwenChatAtDS(BaseTextChatModel):
         generate_cfg: dict,
     ) -> List[Message]:
         messages = [msg.model_dump() for msg in messages]
-        logger.debug(f'*{pformat(messages, indent=2)}*')
+        logger.debug(f'LLM Input:\n{pformat(messages, indent=2)}')
         response = dashscope.Generation.call(
             self.model,
             messages=messages,  # noqa
@@ -63,7 +63,7 @@ class QwenChatAtDS(BaseTextChatModel):
         stream: bool,
     ) -> Iterator[List[Message]]:
         prompt = self._build_text_completion_prompt(messages)
-        logger.debug(f'*{prompt}*')
+        logger.debug(f'LLM Input:\n{pformat(prompt, indent=2)}')
         response = dashscope.Generation.call(
             self.model,
             prompt=prompt,  # noqa

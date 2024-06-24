@@ -3,7 +3,7 @@ import json
 from abc import ABC
 from typing import Dict, Iterator, List, Literal, Optional, Union
 
-from qwen_agent.llm.base import BaseChatModel, ModelServiceError
+from qwen_agent.llm.base import BaseChatModel
 from qwen_agent.llm.schema import ASSISTANT, FUNCTION, SYSTEM, USER, ContentItem, FunctionCall, Message
 
 
@@ -20,20 +20,14 @@ def validate_num_fncall_results(messages: List[Message]):
         i -= 1
 
     if len(fn_calls) != len(fn_results):
-        raise ModelServiceError(
-            code='400',
-            message=(f'Expecting {len(fn_calls)} function results (i.e., messages with role="function") '
-                     f'but received {len(fn_results)} function results. '
-                     'The number of function results must match that of the function_call messages.'),
-        )
+        raise ValueError(f'Expecting {len(fn_calls)} function results (i.e., messages with role="function") '
+                         f'but received {len(fn_results)} function results. '
+                         'The number of function results must match that of the function_call messages.')
     for fc_name, fr_name in zip(fn_calls, fn_results):
         if fr_name and (fc_name != fr_name):
-            raise ModelServiceError(
-                code='400',
-                message=('The function results (i.e., the messages with role="function" ) must be '
-                         'put in the same order as the function_call messages. And the function names must match.'
-                         f'The function results are currently {fn_results}. But {fn_calls} are expected.'),
-            )
+            raise ValueError('The function results (i.e., the messages with role="function" ) must be '
+                             'put in the same order as the function_call messages. And the function names must match.'
+                             f'The function results are currently {fn_results}. But {fn_calls} are expected.')
 
 
 class BaseFnCallModel(BaseChatModel, ABC):
@@ -124,6 +118,20 @@ class BaseFnCallModel(BaseChatModel, ABC):
         )
         if 'parallel_function_calls' in generate_cfg:
             del generate_cfg['parallel_function_calls']
+        if 'function_choice' in generate_cfg:
+            if messages[-1].role == ASSISTANT:
+                msg_to_cont = copy.deepcopy(messages[-1])
+                if msg_to_cont.content.endswith(FN_EXIT):
+                    msg_to_cont.content += ': '
+                msg_to_cont.content += '\n'
+                messages = messages[:-1]
+            else:
+                msg_to_cont = Message(role=ASSISTANT, content='')
+            fn_choice = generate_cfg['function_choice']
+            msg_to_cont.content += f'{FN_NAME}: {fn_choice}'
+            messages = messages + [msg_to_cont]
+            generate_cfg = copy.deepcopy(generate_cfg)
+            del generate_cfg['function_choice']
         return self._continue_assistant_response(messages, generate_cfg=generate_cfg, stream=stream)
 
     def _prepend_fncall_system(
@@ -159,10 +167,11 @@ class BaseFnCallModel(BaseChatModel, ABC):
             assert messages[-1].function_call is None
             usr = messages[-2].content
             bot = messages[-1].content
+            sep = '\n\n'
             if isinstance(usr, str) and isinstance(bot, str):
-                usr = usr + '\n\n' + bot
+                usr = usr + sep + bot
             elif isinstance(usr, list) and isinstance(bot, list):
-                usr = usr + [ContentItem(text='\n\n')] + bot
+                usr = usr + [ContentItem(text=sep)] + bot
             else:
                 raise NotImplementedError
             text_to_complete = copy.deepcopy(messages[-2])
@@ -178,6 +187,14 @@ class BaseFnCallModel(BaseChatModel, ABC):
     ) -> List[Message]:
         messages = super()._postprocess_messages(messages, fncall_mode=fncall_mode, generate_cfg=generate_cfg)
         if fncall_mode:
+            fn_choice = generate_cfg.get('function_choice')
+            if fn_choice:
+                messages = copy.deepcopy(messages)
+                output = messages[0].content[0].text
+                if output.lstrip().startswith(FN_ARGS):
+                    # Prepend this fn_choice prefix only if the model correctly completes it
+                    output = f'{FN_NAME}: {fn_choice}\n' + output
+                messages[0].content[0].text = output
             messages = self._postprocess_fncall_messages(messages)
         return messages
 
@@ -215,6 +232,10 @@ class BaseFnCallModel(BaseChatModel, ABC):
                     new_content.append(item)
                     continue
 
+                for stop_word in [FN_RESULT, FN_EXIT]:
+                    assert stop_word in FN_STOP_WORDS
+                    assert stop_word not in item_text, 'Something wrong, stop words are expected to be excluded.'
+
                 i = item_text.find(f'{FN_NAME}:')
 
                 # If no function call:
@@ -246,26 +267,28 @@ class BaseFnCallModel(BaseChatModel, ABC):
                         continue
                     if part.endswith('\n'):
                         part = part[:-1]
-                    i = part.find(f'\n{FN_ARGS}:')
-                    j = part.find(f'\n{FN_RESULT}:')
-                    fn_name, fn_args = '', ''
+
+                    arg_sep = f'\n{FN_ARGS}:'
+                    i = part.find(arg_sep)
                     if i < 0:
                         fn_name = part.strip()
+                        list_of_fn_args = ['']
                     else:
                         fn_name = part[:i].strip()
-                        if j < i:
-                            fn_args = part[i + len(f'\n{FN_ARGS}:'):].strip()
-                        else:
-                            fn_args = part[i + len(f'\n{FN_ARGS}:'):j].strip()
-                    new_messages.append(
-                        Message(
-                            role=ASSISTANT,
-                            content=[],
-                            function_call=FunctionCall(
-                                name=remove_incomplete_special_tokens(fn_name),
-                                arguments=remove_incomplete_special_tokens(fn_args),
-                            ),
-                        ))
+                        list_of_fn_args = [_.strip() for _ in part[i + len(arg_sep):].split(arg_sep)]
+                    fn_name = remove_incomplete_special_tokens(fn_name)
+                    for fn_args in list_of_fn_args:
+                        fn_args = remove_incomplete_special_tokens(fn_args)
+                        fn_args = remove_trailing_comment_of_fn_args(fn_args)
+                        new_messages.append(
+                            Message(
+                                role=ASSISTANT,
+                                content=[],
+                                function_call=FunctionCall(
+                                    name=fn_name,
+                                    arguments=fn_args,
+                                ),
+                            ))
                 # Break here and discard the text after function call
                 return new_messages
 
@@ -278,7 +301,7 @@ FN_NAME = '✿FUNCTION✿'
 FN_ARGS = '✿ARGS✿'
 FN_RESULT = '✿RESULT✿'
 FN_EXIT = '✿RETURN✿'
-FN_STOP_WORDS = [FN_RESULT, f'{FN_RESULT}:', f'{FN_RESULT}:\n']
+FN_STOP_WORDS = [FN_RESULT, FN_EXIT]
 
 FN_CALL_TEMPLATE_INFO_ZH = """# 工具
 
@@ -427,3 +450,20 @@ def remove_incomplete_special_tokens(text: str) -> str:
                 break
     text = text.lstrip('\n').rstrip()
     return text
+
+
+# For hotfix badcases such as `{"arg1": "value1"} <!-- this is an example comment -->`.
+def remove_trailing_comment_of_fn_args(fn_args: str):
+    fn_args = fn_args.strip()
+
+    if fn_args.startswith('{'):
+        k = fn_args.rfind('}')
+        if k > 0:
+            fn_args = fn_args[:k + 1]
+
+    if fn_args.startswith('```'):
+        k = fn_args.rfind('\n```')
+        if k > 0:
+            fn_args = fn_args[:k + 4]
+
+    return fn_args

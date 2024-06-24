@@ -63,8 +63,14 @@ def test():
             messages=messages,
             functions=functions,
             stream=True,
-            # Note: pass parallel_function_calls=True to enable parallel function calling
-            extra_generate_cfg={'parallel_function_calls': True},
+            extra_generate_cfg=dict(
+                # Note: set parallel_function_calls=True to enable parallel function calling
+                parallel_function_calls=True,  # Default: False
+                # Note: set function_choice='auto' to let the model decide whether to call a function or not
+                # function_choice='auto',  # 'auto' is the default if function_choice is not set
+                # Note: set function_choice='get_current_weather' to force the model to call this function
+                # function_choice='get_current_weather',
+            ),
     ):
         print(responses)
 
