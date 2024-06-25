@@ -14,13 +14,14 @@ class OpenVINO(BaseTextChatModel):
 
     To use, you should have the 'optimum[openvino]' python package installed.
 
-    Example export and quantizie openvino model by command line:
+    Example export and quantize openvino model by command line:
         optimum-cli export openvino --model Qwen/Qwen2-7B-Instruct --task text-generation-with-past --weight-format int4 --group-size 128 --ratio 0.8 Qwen2-7B-Instruct-ov
 
     Example passing pipeline in directly:
         llm_cfg = {
             'ov_model_dir': 'Qwen2-7B-Instruct-ov',
-            'model_type': 'openvino'
+            'model_type': 'openvino',
+            'device': 'cpu'
             }
         system_instruction = '''You are a helpful assistant.
         After receiving the user's request, you should:
