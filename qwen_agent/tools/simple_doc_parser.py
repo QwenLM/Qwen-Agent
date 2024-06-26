@@ -315,7 +315,12 @@ class SimpleDocParser(BaseTool):
         cached_name_ori = f'{hash_sha256(path)}_ori'
         try:
             # Directly load the parsed doc
-            parsed_file = json5.loads(self.db.get(cached_name_ori))
+            parsed_file = self.db.get(cached_name_ori)
+            try:
+                parsed_file = json5.loads(parsed_file)
+            except ValueError:
+                logger.warning(f'Encountered ValueError raised by json5. Fall back to json. File: {cached_name_ori}')
+                parsed_file = json.loads(parsed_file)
             logger.info(f'Read parsed {path} from cache.')
         except KeyNotExistsError:
             logger.info(f'Start parsing {path}...')

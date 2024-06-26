@@ -124,8 +124,7 @@ class ParallelDocQA(Assistant):
         # max_ref_token is the retrieve doc token size
         # parser_page_size is the chunk size in retrieve
 
-        retrieve_content = self._call_tool(
-            'retrieval',
+        retrieve_content = self.function_map['retrieval'].call(
             {
                 'query': rag_query,
                 'files': valid_files
@@ -133,6 +132,8 @@ class ParallelDocQA(Assistant):
             max_ref_token=MAX_RAG_TOKEN_SIZE,
             parser_page_size=RAG_CHUNK_SIZE,
         )
+        if not isinstance(retrieve_content, str):
+            retrieve_content = json.dumps(retrieve_content, ensure_ascii=False, indent=4)
 
         retrieve_content = format_knowledge_to_source_and_content(retrieve_content)
 

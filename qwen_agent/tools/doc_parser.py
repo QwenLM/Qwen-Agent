@@ -90,7 +90,12 @@ class DocParser(BaseTool):
         try:
             # Directly load the chunked doc
             record = self.db.get(cached_name_chunking)
-            record = json5.loads(record)
+            try:
+                record = json5.loads(record)
+            except ValueError:
+                logger.warning(
+                    f'Encountered ValueError raised by json5. Fall back to json. File: {cached_name_chunking}')
+                record = json.loads(record)
             logger.info(f'Read chunked {url} from cache.')
             return record
         except KeyNotExistsError:
