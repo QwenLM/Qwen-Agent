@@ -17,6 +17,28 @@ def read_requirements():
     with open('requirements.txt') as req:
         content = req.read()
         requirements = content.split('\n')
+
+    # Note: `pip install qwen-agent` by default installs the following deps for code_interpreter.
+    # However, if you do not want these optional deps, you can install qwen-agent via the following:
+    # ```bash
+    # curl -O https://raw.githubusercontent.com/QwenLM/Qwen-Agent/main/requirements.txt;
+    # pip install -r requirements.txt;
+    # pip install -U --no-deps qwen-agent;
+    # ```
+    code_interpreter_deps = [
+        'anyio>=3.7.1',
+        'fastapi>=0.103.1',
+        'jupyter>=1.0.0',
+        'matplotlib',
+        'numpy',
+        'pandas',
+        'pillow',
+        'seaborn',
+        'sympy',
+        'uvicorn>=0.23.2',
+    ]
+    requirements.extend(code_interpreter_deps)
+
     return requirements
 
 
@@ -43,5 +65,11 @@ setup(
         ],
     },
     install_requires=read_requirements(),
+    extras_require={
+        'gui': [
+            'gradio==4.21.0',
+            'modelscope-studio>=0.4.0',
+        ],
+    },
     url='https://github.com/QwenLM/Qwen-Agent',
 )

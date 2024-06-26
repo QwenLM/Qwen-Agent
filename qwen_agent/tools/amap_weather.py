@@ -1,7 +1,6 @@
 import os
 from typing import Dict, Optional, Union
 
-import pandas as pd
 import requests
 
 from qwen_agent.tools.base import BaseTool, register_tool
@@ -22,6 +21,8 @@ class AmapWeather(BaseTool):
 
         # remote call
         self.url = 'https://restapi.amap.com/v3/weather/weatherInfo?city={city}&key={key}'
+
+        import pandas as pd
         self.city_df = pd.read_excel(
             'https://modelscope.oss-cn-beijing.aliyuncs.com/resource/agent/AMap_adcode_citycode.xlsx')
 

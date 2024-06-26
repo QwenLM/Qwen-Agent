@@ -25,9 +25,10 @@ cd Qwen-Agent
 pip install -e ./
 ```
 
-Optionally, please install the following optional dependencies if built-in GUI support is needed:
+Optionally, please install the optional dependencies if built-in GUI support is needed via:
 ```bash
-pip install -U "gradio>=4.0" "modelscope-studio>=0.2.1"
+pip install -U qwen-agent[gui]
+# Or install from the source via: pip install -e ./[gui]
 ```
 
 ## Preparation: Model Service

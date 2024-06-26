@@ -15,12 +15,9 @@ import sys
 import time
 import uuid
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Union
 
 import json5
-import matplotlib
-import PIL.Image
-from jupyter_client import BlockingKernelClient
 
 from qwen_agent.log import logger
 from qwen_agent.settings import DEFAULT_WORKSPACE
@@ -36,7 +33,7 @@ app.launch_new_instance()
 INIT_CODE_FILE = str(Path(__file__).absolute().parent / 'resource' / 'code_interpreter_init_kernel.py')
 ALIB_FONT_FILE = str(Path(__file__).absolute().parent / 'resource' / 'AlibabaPuHuiTi-3-45-Light.ttf')
 
-_KERNEL_CLIENTS: Dict[str, BlockingKernelClient] = {}
+_KERNEL_CLIENTS: dict = {}
 _MISC_SUBPROCESSES: Dict[str, subprocess.Popen] = {}
 
 
@@ -158,7 +155,7 @@ class CodeInterpreter(BaseTool):
             if os.path.exists(fname):
                 os.remove(fname)
 
-    def _start_kernel(self, kernel_id: str) -> Tuple[BlockingKernelClient, subprocess.Popen]:
+    def _start_kernel(self, kernel_id: str):
         connection_file = os.path.join(self.work_dir, f'kernel_connection_file_{kernel_id}.json')
         launch_kernel_script = os.path.join(self.work_dir, f'launch_kernel_{kernel_id}.py')
         for f in [connection_file, launch_kernel_script]:
@@ -197,6 +194,8 @@ class CodeInterpreter(BaseTool):
                     pass
 
         # Client
+        from jupyter_client import BlockingKernelClient
+
         kc = BlockingKernelClient(connection_file=connection_file)
         asyncio.set_event_loop_policy(AnyThreadEventLoopPolicy())
         kc.load_connection_file()
@@ -204,7 +203,7 @@ class CodeInterpreter(BaseTool):
         kc.wait_for_ready()
         return kc, kernel_process
 
-    def _execute_code(self, kc: BlockingKernelClient, code: str) -> str:
+    def _execute_code(self, kc, code: str) -> str:
         kc.wait_for_ready()
         kc.execute(code)
         result = ''
@@ -259,6 +258,8 @@ class CodeInterpreter(BaseTool):
         return result
 
     def _serve_image(self, image_base64: str) -> str:
+        import PIL.Image
+
         image_file = f'{uuid.uuid4()}.png'
         local_image_file = os.path.join(self.work_dir, image_file)
 
@@ -274,6 +275,8 @@ class CodeInterpreter(BaseTool):
 
 
 def _fix_matplotlib_cjk_font_issue():
+    import matplotlib
+
     ttf_name = os.path.basename(ALIB_FONT_FILE)
     local_ttf = os.path.join(os.path.abspath(os.path.join(matplotlib.matplotlib_fname(), os.path.pardir)), 'fonts',
                              'ttf', ttf_name)

@@ -23,9 +23,10 @@ cd Qwen-Agent
 pip install -e ./
 ```
 
-如需使用内置GUI支持，请安装以下可选依赖项：
+如需使用内置GUI支持，请通过以下方式安装GUI相关的可选依赖项：
 ```bash
-pip install -U "gradio>=4.0" "modelscope-studio>=0.2.1"
+pip install -U qwen-agent[gui]
+# 或，从源代码安装最新版本: pip install -e ./[gui]
 ```
 
 ## 准备：模型服务
