@@ -1,5 +1,6 @@
 from threading import Thread
 from typing import Dict, Iterator, List, Optional
+import copy
 
 from qwen_agent.llm.base import register_llm
 from qwen_agent.llm.schema import ASSISTANT, DEFAULT_SYSTEM_MESSAGE, SYSTEM, USER, Message
@@ -96,7 +97,7 @@ class OpenVINO(BaseTextChatModel):
         generate_cfg: dict,
     ) -> Iterator[List[Message]]:
         from transformers import TextIteratorStreamer
-
+        generate_cfg = copy.deepcopy(generate_cfg)
         prompt = self._build_text_completion_prompt(messages)
         logger.debug(f'*{prompt}*')
         input_token = self.tokenizer(prompt, return_tensors='pt').input_ids
@@ -125,6 +126,7 @@ class OpenVINO(BaseTextChatModel):
         messages: List[Message],
         generate_cfg: dict,
     ) -> List[Message]:
+        generate_cfg = copy.deepcopy(generate_cfg)
         prompt = self._build_text_completion_prompt(messages)
         logger.debug(f'*{prompt}*')
         input_token = self.tokenizer(prompt, return_tensors='pt').input_ids
