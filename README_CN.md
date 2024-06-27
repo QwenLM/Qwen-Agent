@@ -1,4 +1,4 @@
-中文 ｜ [English](./README.md)
+中文 ｜ [English](./README.md) | [日本語](./README_JA.md)
 
 <p align="center">
     <img src="https://qianwen-res.oss-cn-beijing.aliyuncs.com/assets/qwen_agent/logo-qwen-agent.png" width="400"/>
