@@ -6,18 +6,29 @@ from qwen_agent.llm import get_chat_model
 
 
 @pytest.mark.parametrize('cfg', [0, 1])
-def test_function_content(cfg):
+@pytest.mark.parametrize('gen_cfg1', [
+    None,
+    dict(parallel_function_calls=True),
+    dict(function_choice='auto'),
+    dict(function_choice='none'),
+    dict(function_choice='get_current_weather'),
+])
+@pytest.mark.parametrize('gen_cfg2', [
+    None,
+    dict(function_choice='none'),
+])
+def test_function_content(cfg, gen_cfg1, gen_cfg2):
     if cfg == 0:
         llm = get_chat_model({
             # Use the model service provided by DashScope:
-            'model': 'qwen-max',
+            'model': 'qwen2-7b-instruct',
             'model_server': 'dashscope',
             'api_key': os.getenv('DASHSCOPE_API_KEY'),
         })
     else:
         llm = get_chat_model({
             # Use the model service provided by Together.AI:
-            'model': 'Qwen/Qwen1.5-14B-Chat',
+            'model': 'Qwen/Qwen1.5-7B-Chat',
             'model_server': 'https://api.together.xyz',  # api_base
             'api_key': os.getenv('TOGETHER_API_KEY'),
         })
@@ -45,14 +56,18 @@ def test_function_content(cfg):
 
     print('# Assistant Response 1:')
     responses = []
-    for responses in llm.chat(messages=messages, functions=functions, stream=True):
+    for responses in llm.chat(messages=messages, functions=functions, stream=True, extra_generate_cfg=gen_cfg1):
         print(responses)
 
     messages.extend(responses)  # extend conversation with assistant's reply
 
+    if gen_cfg1 and (gen_cfg1.get('function_choice') == 'none'):
+        assert all([('function_call' not in rsp) for rsp in responses])
+        return
+
     # Step 2: check if the model wanted to call a function
     last_response = messages[-1]
-    assert 'function_call' in last_response
+    assert last_response.get('function_call')
     messages.append({
         'role': 'function',
         'name': last_response['function_call']['name'],
@@ -64,6 +79,7 @@ def test_function_content(cfg):
             messages=messages,
             functions=functions,
             stream=True,
+            extra_generate_cfg=gen_cfg2,
     ):  # get a new response from the model where it can see the function response
         print(responses)
 

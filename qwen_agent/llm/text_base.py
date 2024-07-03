@@ -8,8 +8,9 @@ from qwen_agent.utils.utils import format_as_text_message
 
 class BaseTextChatModel(BaseFnCallModel, ABC):
 
-    def _preprocess_messages(self, messages: List[Message], lang: Literal['en', 'zh']) -> List[Message]:
-        messages = super()._preprocess_messages(messages, lang=lang)
+    def _preprocess_messages(self, messages: List[Message], lang: Literal['en', 'zh'],
+                             generate_cfg: dict) -> List[Message]:
+        messages = super()._preprocess_messages(messages, lang=lang, generate_cfg=generate_cfg)
         # The upload info is already added by super()._preprocess_messages
         messages = [format_as_text_message(msg, add_upload_info=False) for msg in messages]
         return messages

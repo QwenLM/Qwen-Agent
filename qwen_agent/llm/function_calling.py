@@ -37,10 +37,50 @@ class BaseFnCallModel(BaseChatModel, ABC):
         stop = self.generate_cfg.get('stop', [])
         self.generate_cfg['stop'] = stop + [x for x in FN_STOP_WORDS if x not in stop]
 
-    def _preprocess_messages(self, messages: List[Message], lang: Literal['en', 'zh']) -> List[Message]:
-        messages = super()._preprocess_messages(messages, lang=lang)
-        messages = self._preprocess_fncall_messages(messages)
+    def _preprocess_messages(self, messages: List[Message], lang: Literal['en', 'zh'],
+                             generate_cfg: dict) -> List[Message]:
+        messages = super()._preprocess_messages(messages, lang=lang, generate_cfg=generate_cfg)
+        if generate_cfg.get('function_choice', 'auto') == 'none':
+            messages = self._remove_fncall_messages(messages, lang=lang)
+        else:
+            messages = self._preprocess_fncall_messages(messages)
         return messages
+
+    def _remove_fncall_messages(self, messages: List[Message], lang: Literal['en', 'zh']) -> List[Message]:
+        # Change function calls into user messages so that the model won't try
+        # to generate function calls when given functions and function_choice="none".
+        new_messages = []
+        for msg in messages:
+            if (msg.role == FUNCTION) or msg.function_call:
+                if (not new_messages) or (new_messages[-1].role != USER):
+                    new_messages.append(Message(role=USER, content=[]))
+                if msg.function_call:
+                    tool_name = msg.function_call.name
+                    tool_args = msg.function_call.arguments
+                    if lang == 'zh':
+                        tool_text = f'\n\n工具"{tool_name}"被调用时使用了以下参数：\n{tool_args}'
+                    else:
+                        tool_text = f'\n\nThe tool "{tool_name}" was called with these arguments:\n{tool_args}'
+                else:
+                    assert msg.role == FUNCTION
+                    if msg.content:
+                        assert len(msg.content) == 1
+                        assert isinstance(msg.content[0], ContentItem)
+                        assert isinstance(msg.content[0].text, str)
+                        tool_result = msg.content[0].text
+                    else:
+                        tool_result = 'No result.'
+                    if lang == 'zh':
+                        tool_text = f'\n\n该工具返回了以下结果：\n{tool_result}'
+                    else:
+                        tool_text = f'\n\nThe tool has returned the following result:\n{tool_result}'
+                new_messages[-1].content.append(ContentItem(text=tool_text))
+            else:
+                if (msg.role == USER) and new_messages and (new_messages[-1].role == USER):
+                    # Separate two user messages with an assistant message to make the bot focus on the latter:
+                    new_messages.append(Message(role=ASSISTANT, content=[ContentItem(text='...')]))
+                new_messages.append(msg)
+        return new_messages
 
     def _preprocess_fncall_messages(self, messages: List[Message]) -> List[Message]:
         """Convert messages with function_call key and function role to assistant's content, which is
@@ -116,9 +156,9 @@ class BaseFnCallModel(BaseChatModel, ABC):
             lang=lang,
             parallel_function_calls=parallel_function_calls,
         )
-        if 'parallel_function_calls' in generate_cfg:
-            del generate_cfg['parallel_function_calls']
-        if 'function_choice' in generate_cfg:
+
+        fn_choice = generate_cfg.get('function_choice', 'auto')
+        if fn_choice not in ('auto', 'none'):
             if messages[-1].role == ASSISTANT:
                 msg_to_cont = copy.deepcopy(messages[-1])
                 if msg_to_cont.content.endswith(FN_EXIT):
@@ -127,11 +167,14 @@ class BaseFnCallModel(BaseChatModel, ABC):
                 messages = messages[:-1]
             else:
                 msg_to_cont = Message(role=ASSISTANT, content='')
-            fn_choice = generate_cfg['function_choice']
             msg_to_cont.content += f'{FN_NAME}: {fn_choice}'
             messages = messages + [msg_to_cont]
-            generate_cfg = copy.deepcopy(generate_cfg)
-            del generate_cfg['function_choice']
+
+        generate_cfg = copy.deepcopy(generate_cfg)
+        for k in ['parallel_function_calls', 'function_choice']:
+            if k in generate_cfg:
+                del generate_cfg[k]
+
         return self._continue_assistant_response(messages, generate_cfg=generate_cfg, stream=stream)
 
     def _prepend_fncall_system(
@@ -187,8 +230,8 @@ class BaseFnCallModel(BaseChatModel, ABC):
     ) -> List[Message]:
         messages = super()._postprocess_messages(messages, fncall_mode=fncall_mode, generate_cfg=generate_cfg)
         if fncall_mode:
-            fn_choice = generate_cfg.get('function_choice')
-            if fn_choice:
+            fn_choice = generate_cfg.get('function_choice', 'auto')
+            if fn_choice not in ('auto', 'none'):
                 messages = copy.deepcopy(messages)
                 output = messages[0].content[0].text
                 if output.lstrip().startswith(FN_ARGS):

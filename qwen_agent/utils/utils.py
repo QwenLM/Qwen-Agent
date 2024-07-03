@@ -14,7 +14,7 @@ from typing import Any, List, Literal, Optional, Tuple, Union
 import json5
 import requests
 
-from qwen_agent.llm.schema import ASSISTANT, FUNCTION, SYSTEM, USER, ContentItem, Message
+from qwen_agent.llm.schema import ASSISTANT, DEFAULT_SYSTEM_MESSAGE, FUNCTION, SYSTEM, USER, ContentItem, Message
 from qwen_agent.log import logger
 
 
@@ -367,3 +367,35 @@ def merge_generate_cfgs(base_generate_cfg: Optional[dict], new_generate_cfg: Opt
             else:
                 generate_cfg[k] = v
     return generate_cfg
+
+
+def build_text_completion_prompt(messages: List[Message]) -> str:
+    im_start = '<|im_start|>'
+    im_end = '<|im_end|>'
+
+    if messages[0].role == SYSTEM:
+        sys = messages[0].content
+        assert isinstance(sys, str)
+        prompt = f'{im_start}{SYSTEM}\n{sys}{im_end}'
+        messages = messages[1:]
+    else:
+        prompt = f'{im_start}{SYSTEM}\n{DEFAULT_SYSTEM_MESSAGE}{im_end}'
+
+    # Make sure we are completing the chat in the tone of the assistant
+    if messages[-1].role != ASSISTANT:
+        messages = messages + [Message(ASSISTANT, '')]
+
+    for msg in messages:
+        assert isinstance(msg.content, str)
+        if msg.role == USER:
+            query = msg.content.lstrip('\n').rstrip()
+            prompt += f'\n{im_start}{USER}\n{query}{im_end}'
+        elif msg.role == ASSISTANT:
+            response = msg.content.lstrip('\n').rstrip()
+            prompt += f'\n{im_start}{ASSISTANT}\n{response}{im_end}'
+        else:
+            raise ValueError
+
+    assert prompt.endswith(im_end)
+    prompt = prompt[:-len(im_end)]
+    return prompt

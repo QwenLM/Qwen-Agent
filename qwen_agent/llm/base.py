@@ -72,6 +72,13 @@ class BaseChatModel(ABC):
             the generated message list response by llm.
         """
 
+        if stream and delta_stream:
+            logger.warning(
+                'Support for `delta_stream=True` is deprecated. '
+                'Please use `stream=True and delta_stream=False` or `stream=False` instead. '
+                'Using `delta_stream=True` makes it difficult to implement advanced postprocessing and retry mechanisms.'
+            )
+
         generate_cfg = merge_generate_cfgs(base_generate_cfg=self.generate_cfg, new_generate_cfg=extra_generate_cfg)
         if 'lang' in generate_cfg:
             lang: Literal['en', 'zh'] = generate_cfg.pop('lang')
@@ -94,13 +101,17 @@ class BaseChatModel(ABC):
             messages = [Message(role=SYSTEM, content=DEFAULT_SYSTEM_MESSAGE)] + messages
 
         # Not precise. It's hard to estimate tokens related with function calling and multimodal items.
-        messages = _truncate_input_messages_roughly(
-            messages=messages,
-            max_tokens=generate_cfg.pop('max_input_tokens', DEFAULT_MAX_INPUT_TOKENS),
-        )
+        max_input_tokens = generate_cfg.pop('max_input_tokens', DEFAULT_MAX_INPUT_TOKENS)
+        if max_input_tokens > 0:
+            messages = _truncate_input_messages_roughly(
+                messages=messages,
+                max_tokens=max_input_tokens,
+            )
 
-        messages = self._preprocess_messages(messages, lang=lang)
-
+        if functions:
+            fncall_mode = True
+        else:
+            fncall_mode = False
         if 'function_choice' in generate_cfg:
             fn_choice = generate_cfg['function_choice']
             valid_fn_choices = [f.get('name', f.get('name_for_model', None)) for f in (functions or [])]
@@ -108,15 +119,13 @@ class BaseChatModel(ABC):
             if fn_choice not in valid_fn_choices:
                 raise ValueError(f'The value of function_choice must be one of the following: {valid_fn_choices}. '
                                  f'But function_choice="{fn_choice}" is received.')
-            if fn_choice == 'auto':
-                del generate_cfg['function_choice']
             if fn_choice == 'none':
-                raise NotImplementedError('Not implemented function_choice="none" yet.')  # TODO:
+                fncall_mode = False
 
-        if functions:
-            fncall_mode = True
-        else:
-            fncall_mode = False
+        # Note: the preprocessor's behavior could change if it receives function_choice="none"
+        messages = self._preprocess_messages(messages, lang=lang, generate_cfg=generate_cfg)
+
+        if not fncall_mode:
             for k in ['parallel_function_calls', 'function_choice']:
                 if k in generate_cfg:
                     del generate_cfg[k]
@@ -148,10 +157,19 @@ class BaseChatModel(ABC):
             output = retry_model_service(_call_model_service, max_retries=self.max_retries)
 
         if isinstance(output, list):
+            assert not stream
             logger.debug(f'LLM Output:\n{pformat([_.model_dump() for _ in output], indent=2)}')
             output = self._postprocess_messages(output, fncall_mode=fncall_mode, generate_cfg=generate_cfg)
             return self._convert_messages_to_target_type(output, _return_message_type)
         else:
+            assert stream
+            if delta_stream:
+                # Hack: To avoid accidental mistakes during the postprocessing of stop words.
+                # Man, we should never have implemented the support for `delta_stream=True` in the first place!
+                generate_cfg = copy.deepcopy(generate_cfg)  # copy to avoid conflicts with `_call_model_service`
+                assert 'keep_partial_stopwords' not in generate_cfg
+                generate_cfg['keep_partial_stopwords'] = True
+                # TODO: the stopword postprocessor may fail to truncate the output if delta_stream=True
             output = self._postprocess_messages_iterator(output, fncall_mode=fncall_mode, generate_cfg=generate_cfg)
             return self._convert_messages_iterator_to_target_type(output, _return_message_type)
 
@@ -196,7 +214,8 @@ class BaseChatModel(ABC):
     ) -> List[Message]:
         raise NotImplementedError
 
-    def _preprocess_messages(self, messages: List[Message], lang: Literal['en', 'zh']) -> List[Message]:
+    def _preprocess_messages(self, messages: List[Message], lang: Literal['en', 'zh'],
+                             generate_cfg: dict) -> List[Message]:
         messages = [format_as_multimodal_message(msg, add_upload_info=True, lang=lang) for msg in messages]
         return messages
 
@@ -207,7 +226,7 @@ class BaseChatModel(ABC):
         generate_cfg: dict,
     ) -> List[Message]:
         messages = [format_as_multimodal_message(msg, add_upload_info=False) for msg in messages]
-        messages = self._postprocess_stop_words(messages, generate_cfg=generate_cfg)
+        messages = _postprocess_stop_words(messages, generate_cfg=generate_cfg)
         return messages
 
     def _postprocess_messages_iterator(
@@ -218,8 +237,6 @@ class BaseChatModel(ABC):
     ) -> Iterator[List[Message]]:
         pre_msg = []
         for pre_msg in messages:
-            # TODO: Postprocessing may be incorrect if delta_stream=True.
-            # TODO: Early break if truncated at stop words.
             post_msg = self._postprocess_messages(pre_msg, fncall_mode=fncall_mode, generate_cfg=generate_cfg)
             if post_msg:
                 yield post_msg
@@ -240,46 +257,52 @@ class BaseChatModel(ABC):
         for messages in messages_iter:
             yield self._convert_messages_to_target_type(messages, target_type)
 
-    def _postprocess_stop_words(self, messages: List[Message], generate_cfg: dict) -> List[Message]:
-        messages = copy.deepcopy(messages)
-        stop = generate_cfg.get('stop', [])
 
-        # Make sure it stops before stop words.
-        trunc_messages = []
-        for msg in messages:
-            truncated = False
-            trunc_content = []
-            for i, item in enumerate(msg.content):
-                item_type, item_text = item.get_type_and_value()
-                if item_type == 'text':
-                    truncated, item.text = _truncate_at_stop_word(text=item_text, stop=stop)
-                trunc_content.append(item)
-                if truncated:
-                    break
-            msg.content = trunc_content
-            trunc_messages.append(msg)
+def _postprocess_stop_words(messages: List[Message], generate_cfg: dict) -> List[Message]:
+    messages = copy.deepcopy(messages)
+    stop = generate_cfg.get('stop', [])
+
+    # Make sure it stops before stop words.
+    trunc_messages = []
+    for msg in messages:
+        truncated = False
+        trunc_content = []
+        for i, item in enumerate(msg.content):
+            item_type, item_text = item.get_type_and_value()
+            if item_type == 'text':
+                truncated, item.text = _truncate_at_stop_word(text=item_text, stop=stop)
+            trunc_content.append(item)
             if truncated:
                 break
-        messages = trunc_messages
+        msg.content = trunc_content
+        trunc_messages.append(msg)
+        if truncated:
+            break
+    messages = trunc_messages
 
-        # It may ends with 'Observation' when the stop word is 'Observation:'.
-        partial_stop = []
-        for s in stop:
-            s = tokenizer.tokenize(s)[:-1]
-            if s:
-                s = tokenizer.convert_tokens_to_string(s)
-                partial_stop.append(s)
-        partial_stop = sorted(set(partial_stop))
-        last_msg = messages[-1].content
-        for i in range(len(last_msg) - 1, -1, -1):
-            item_type, item_text = last_msg[i].get_type_and_value()
-            if item_type == 'text':
-                for s in partial_stop:
-                    if item_text.endswith(s):
-                        last_msg[i].text = item_text[:-len(s)]
-                break
-
+    if generate_cfg.get('keep_partial_stopwords', False):
         return messages
+
+    # It may ends with 'Observation' when the stop word is 'Observation:'.
+    # This post-processing step removes partial stop words. However, it may produce incorrect results if
+    # delta_stream=True. We therefore need to set keep_partial_stopwords=True when delta_stream=True.
+    partial_stop = []
+    for s in stop:
+        s = tokenizer.tokenize(s)[:-1]
+        if s:
+            s = tokenizer.convert_tokens_to_string(s)
+            partial_stop.append(s)
+    partial_stop = sorted(set(partial_stop))
+    last_msg = messages[-1].content
+    for i in range(len(last_msg) - 1, -1, -1):
+        item_type, item_text = last_msg[i].get_type_and_value()
+        if item_type == 'text':
+            for s in partial_stop:
+                if item_text.endswith(s):
+                    last_msg[i].text = item_text[:-len(s)]
+            break
+
+    return messages
 
 
 def _truncate_at_stop_word(text: str, stop: List[str]):

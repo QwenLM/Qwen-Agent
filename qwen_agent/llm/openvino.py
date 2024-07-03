@@ -3,9 +3,10 @@ from threading import Thread
 from typing import Dict, Iterator, List, Optional
 
 from qwen_agent.llm.base import register_llm
-from qwen_agent.llm.schema import ASSISTANT, DEFAULT_SYSTEM_MESSAGE, SYSTEM, USER, Message
+from qwen_agent.llm.schema import ASSISTANT, Message
 from qwen_agent.llm.text_base import BaseTextChatModel
 from qwen_agent.log import logger
+from qwen_agent.utils.utils import build_text_completion_prompt
 
 
 @register_llm('openvino')
@@ -98,7 +99,7 @@ class OpenVINO(BaseTextChatModel):
     ) -> Iterator[List[Message]]:
         from transformers import TextIteratorStreamer
         generate_cfg = copy.deepcopy(generate_cfg)
-        prompt = self._build_text_completion_prompt(messages)
+        prompt = build_text_completion_prompt(messages)
         logger.debug(f'*{prompt}*')
         input_token = self.tokenizer(prompt, return_tensors='pt').input_ids
         streamer = TextIteratorStreamer(self.tokenizer, timeout=60.0, skip_prompt=True, skip_special_tokens=True)
@@ -130,7 +131,7 @@ class OpenVINO(BaseTextChatModel):
         generate_cfg: dict,
     ) -> List[Message]:
         generate_cfg = copy.deepcopy(generate_cfg)
-        prompt = self._build_text_completion_prompt(messages)
+        prompt = build_text_completion_prompt(messages)
         logger.debug(f'*{prompt}*')
         input_token = self.tokenizer(prompt, return_tensors='pt').input_ids
         generate_cfg.update(
@@ -144,27 +145,3 @@ class OpenVINO(BaseTextChatModel):
         response = response[:, len(input_token[0]):]
         answer = self.tokenizer.batch_decode(response, skip_special_tokens=True)[0]
         return [Message(ASSISTANT, answer)]
-
-    @staticmethod
-    def _build_text_completion_prompt(messages: List[Message]) -> str:
-        im_start = '<|im_start|>'
-        im_end = '<|im_end|>'
-        if messages[0].role == SYSTEM:
-            sys = messages[0].content
-            assert isinstance(sys, str)
-            prompt = f'{im_start}{SYSTEM}\n{sys}{im_end}'
-        else:
-            prompt = f'{im_start}{SYSTEM}\n{DEFAULT_SYSTEM_MESSAGE}{im_end}'
-        if messages[-1].role != ASSISTANT:
-            messages.append(Message(ASSISTANT, ''))
-        for msg in messages:
-            assert isinstance(msg.content, str)
-            if msg.role == USER:
-                query = msg.content.lstrip('\n').rstrip()
-                prompt += f'\n{im_start}{USER}\n{query}{im_end}'
-            elif msg.role == ASSISTANT:
-                response = msg.content.lstrip('\n').rstrip()
-                prompt += f'\n{im_start}{ASSISTANT}\n{response}{im_end}'
-        assert prompt.endswith(im_end)
-        prompt = prompt[:-len(im_end)]
-        return prompt

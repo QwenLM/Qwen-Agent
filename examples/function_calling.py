@@ -79,6 +79,11 @@ def test():
     ):
         print(responses)
 
+    # If you do not need streaming output, you can either use the following trick:
+    #   *_, responses = llm.chat(messages=messages, functions=functions, stream=True)
+    # or use stream=False:
+    #   responses = llm.chat(messages=messages, functions=functions, stream=False)
+
     messages.extend(responses)  # extend conversation with assistant's reply
 
     # Step 2: check if the model wanted to call a function
