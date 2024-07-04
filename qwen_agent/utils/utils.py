@@ -182,8 +182,14 @@ def save_text_to_file(path: str, text: str) -> None:
 
 
 def read_text_from_file(path: str) -> str:
-    with open(path, 'r', encoding='utf-8') as file:
-        file_content = file.read()
+    try:
+        with open(path, 'r', encoding='utf-8') as file:
+            file_content = file.read()
+    except UnicodeDecodeError:
+        print_traceback(is_error=False)
+        from charset_normalizer import from_path
+        results = from_path(path)
+        file_content = str(results.best())
     return file_content
 
 
