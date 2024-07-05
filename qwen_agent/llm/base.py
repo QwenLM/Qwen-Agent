@@ -164,12 +164,11 @@ class BaseChatModel(ABC):
         else:
             assert stream
             if delta_stream:
-                # Hack: To avoid accidental mistakes during the postprocessing of stop words.
+                # Hack: To avoid potential errors during the postprocessing of stop words when delta_stream=True.
                 # Man, we should never have implemented the support for `delta_stream=True` in the first place!
                 generate_cfg = copy.deepcopy(generate_cfg)  # copy to avoid conflicts with `_call_model_service`
-                assert 'keep_partial_stopwords' not in generate_cfg
-                generate_cfg['keep_partial_stopwords'] = True
-                # TODO: the stopword postprocessor may fail to truncate the output if delta_stream=True
+                assert 'skip_stopword_postproc' not in generate_cfg
+                generate_cfg['skip_stopword_postproc'] = True
             output = self._postprocess_messages_iterator(output, fncall_mode=fncall_mode, generate_cfg=generate_cfg)
             return self._convert_messages_iterator_to_target_type(output, _return_message_type)
 
@@ -226,7 +225,9 @@ class BaseChatModel(ABC):
         generate_cfg: dict,
     ) -> List[Message]:
         messages = [format_as_multimodal_message(msg, add_upload_info=False) for msg in messages]
-        messages = _postprocess_stop_words(messages, generate_cfg=generate_cfg)
+        if not generate_cfg.get('skip_stopword_postproc', False):
+            stop = generate_cfg.get('stop', [])
+            messages = _postprocess_stop_words(messages, stop=stop)
         return messages
 
     def _postprocess_messages_iterator(
@@ -258,9 +259,8 @@ class BaseChatModel(ABC):
             yield self._convert_messages_to_target_type(messages, target_type)
 
 
-def _postprocess_stop_words(messages: List[Message], generate_cfg: dict) -> List[Message]:
+def _postprocess_stop_words(messages: List[Message], stop: List[str]) -> List[Message]:
     messages = copy.deepcopy(messages)
-    stop = generate_cfg.get('stop', [])
 
     # Make sure it stops before stop words.
     trunc_messages = []
@@ -280,12 +280,8 @@ def _postprocess_stop_words(messages: List[Message], generate_cfg: dict) -> List
             break
     messages = trunc_messages
 
-    if generate_cfg.get('keep_partial_stopwords', False):
-        return messages
-
-    # It may ends with 'Observation' when the stop word is 'Observation:'.
-    # This post-processing step removes partial stop words. However, it may produce incorrect results if
-    # delta_stream=True. We therefore need to set keep_partial_stopwords=True when delta_stream=True.
+    # It may ends with partial stopword 'Observation' when the full stopword is 'Observation:'.
+    # The following post-processing step removes partial stop words.
     partial_stop = []
     for s in stop:
         s = tokenizer.tokenize(s)[:-1]

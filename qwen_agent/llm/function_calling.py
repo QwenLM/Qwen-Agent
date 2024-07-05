@@ -148,7 +148,8 @@ class BaseFnCallModel(BaseChatModel, ABC):
         lang: Literal['en', 'zh'],
     ) -> Union[List[Message], Iterator[List[Message]]]:
         if delta_stream:
-            raise NotImplementedError
+            raise NotImplementedError('Please use stream=True with delta_stream=False, because delta_stream=True'
+                                      ' is not implemented for function calling due to some technical reasons.')
         parallel_function_calls = generate_cfg.get('parallel_function_calls', False)
         messages = self._prepend_fncall_system(
             messages=messages,
