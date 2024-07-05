@@ -48,9 +48,10 @@ class BaseSearch(BaseTool):
         # The query is a string that may contain only the original question,
         # or it may be a json string containing the generated keywords and the original question
         query = params['query']
-        if not docs or not query:
+        if not docs:
             return []
-
+        if not query:
+            return self._get_the_front_part(docs, max_ref_token)
         new_docs, all_tokens = self.format_docs(docs)
         logger.info(f'all tokens: {all_tokens}')
         if all_tokens <= max_ref_token:
@@ -137,3 +138,24 @@ class BaseSearch(BaseTool):
             else:
                 raise TypeError
         return new_docs, all_tokens
+
+    @staticmethod
+    def _get_the_front_part(docs: List[Record], max_ref_token: int = DEFAULT_MAX_REF_TOKEN) -> list:
+        single_max_ref_token = int(max_ref_token / len(docs))
+        _ref_list = []
+        for doc in docs:
+            available_token = single_max_ref_token
+            text = []
+            for page in doc.raw:
+                if available_token <= 0:
+                    break
+                if page.token <= available_token:
+                    text.append(page.content)
+                    available_token -= page.token
+                else:
+                    text.append(tokenizer.truncate(page.content, max_token=available_token))
+                    break
+            logger.info(f'[Get top] Remaining slots: {available_token}')
+            now_ref_list = RefMaterialOutput(url=doc.url, text=text).to_dict()
+            _ref_list.append(now_ref_list)
+        return _ref_list

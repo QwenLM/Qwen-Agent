@@ -10,8 +10,7 @@ from qwen_agent.log import logger
 from qwen_agent.settings import DEFAULT_MAX_REF_TOKEN
 from qwen_agent.tools.base import register_tool
 from qwen_agent.tools.doc_parser import Record
-from qwen_agent.tools.search_tools.base_search import BaseSearch, RefMaterialOutput
-from qwen_agent.utils.tokenization_qwen import tokenizer
+from qwen_agent.tools.search_tools.base_search import BaseSearch
 from qwen_agent.utils.utils import has_chinese_chars
 
 
@@ -53,27 +52,6 @@ class KeywordSearch(BaseSearch):
         assert len(chunk_and_score) > 0
 
         return chunk_and_score
-
-    @staticmethod
-    def _get_the_front_part(docs: List[Record], max_ref_token: int = DEFAULT_MAX_REF_TOKEN) -> list:
-        single_max_ref_token = int(max_ref_token / len(docs))
-        _ref_list = []
-        for doc in docs:
-            available_token = single_max_ref_token
-            text = []
-            for page in doc.raw:
-                if available_token <= 0:
-                    break
-                if page.token <= available_token:
-                    text.append(page.content)
-                    available_token -= page.token
-                else:
-                    text.append(tokenizer.truncate(page.content, max_token=available_token))
-                    break
-            logger.info(f'[Get top] Remaining slots: {available_token}')
-            now_ref_list = RefMaterialOutput(url=doc.url, text=text).to_dict()
-            _ref_list.append(now_ref_list)
-        return _ref_list
 
 
 WORDS_TO_IGNORE = [

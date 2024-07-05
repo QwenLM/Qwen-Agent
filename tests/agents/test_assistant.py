@@ -36,6 +36,22 @@ def test_assistant_files():
     assert len(last[-1].content) > 0
 
 
+def test_assistant_empty_query():
+    llm_cfg = {'model': 'qwen2-7b-instruct'}
+    agent = Assistant(llm=llm_cfg)
+
+    messages = [
+        Message('user', [
+            ContentItem(
+                file='https://help.aliyun.com/zh/dashscope/developer-reference/api-details?disableWebsiteRedirect=true')
+        ])
+    ]
+    *_, last = agent.run(messages)
+    print(last)
+    last_text = last[-1].content
+    assert ('通义千问' in last_text) or ('qwen' in last_text.lower())
+
+
 def test_assistant_vl():
     llm_cfg = {'model': 'qwen-vl-max'}
     agent = Assistant(llm=llm_cfg)

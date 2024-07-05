@@ -311,7 +311,7 @@ class BaseFnCallModel(BaseChatModel, ABC):
                     if part.endswith('\n'):
                         part = part[:-1]
 
-                    arg_sep = f'\n{FN_ARGS}:'
+                    arg_sep = f'{FN_ARGS}:'
                     i = part.find(arg_sep)
                     if i < 0:
                         fn_name = part.strip()
