@@ -37,8 +37,7 @@ def parse_word(docx_path: str, extract_image: bool = False):
 
     content = []
     for para in doc.paragraphs:
-        if para.text.strip():
-            content.append({'text': para.text})
+        content.append({'text': para.text})
     for table in doc.tables:
         tbl = []
         for row in table.rows:
@@ -86,9 +85,7 @@ def parse_txt(path: str):
     paras = text.split(PARAGRAPH_SPLIT_SYMBOL)
     content = []
     for p in paras:
-        p = clean_paragraph(p)
-        if p.strip():
-            content.append({'text': p})
+        content.append({'text': p})
 
     # Due to the pages in txt are not fixed, the entire document is returned as one page
     return [{'page_num': 1, 'content': content}]
