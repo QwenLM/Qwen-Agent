@@ -1,16 +1,17 @@
 import copy
+from pprint import pformat
 from threading import Thread
 from typing import Dict, Iterator, List, Optional
 
 from qwen_agent.llm.base import register_llm
+from qwen_agent.llm.function_calling import BaseFnCallModel
 from qwen_agent.llm.schema import ASSISTANT, Message
-from qwen_agent.llm.text_base import BaseTextChatModel
 from qwen_agent.log import logger
 from qwen_agent.utils.utils import build_text_completion_prompt
 
 
 @register_llm('openvino')
-class OpenVINO(BaseTextChatModel):
+class OpenVINO(BaseFnCallModel):
     """
     OpenVINO Pipeline API.
 
@@ -100,7 +101,7 @@ class OpenVINO(BaseTextChatModel):
         from transformers import TextIteratorStreamer
         generate_cfg = copy.deepcopy(generate_cfg)
         prompt = build_text_completion_prompt(messages)
-        logger.debug(f'*{prompt}*')
+        logger.debug(f'LLM Input:\n{pformat(prompt, indent=2)}')
         input_token = self.tokenizer(prompt, return_tensors='pt').input_ids
         streamer = TextIteratorStreamer(self.tokenizer, timeout=60.0, skip_prompt=True, skip_special_tokens=True)
         generate_cfg.update(
@@ -132,7 +133,7 @@ class OpenVINO(BaseTextChatModel):
     ) -> List[Message]:
         generate_cfg = copy.deepcopy(generate_cfg)
         prompt = build_text_completion_prompt(messages)
-        logger.debug(f'*{prompt}*')
+        logger.debug(f'LLM Input:\n{pformat(prompt, indent=2)}')
         input_token = self.tokenizer(prompt, return_tensors='pt').input_ids
         generate_cfg.update(
             dict(

@@ -11,14 +11,13 @@ else:
     from openai import OpenAIError
 
 from qwen_agent.llm.base import ModelServiceError, register_llm
-from qwen_agent.llm.text_base import BaseTextChatModel
+from qwen_agent.llm.function_calling import BaseFnCallModel
+from qwen_agent.llm.schema import ASSISTANT, Message
 from qwen_agent.log import logger
-
-from .schema import ASSISTANT, Message
 
 
 @register_llm('oai')
-class TextChatAtOAI(BaseTextChatModel):
+class TextChatAtOAI(BaseFnCallModel):
 
     def __init__(self, cfg: Optional[Dict] = None):
         super().__init__(cfg)
@@ -74,7 +73,7 @@ class TextChatAtOAI(BaseTextChatModel):
         generate_cfg: dict,
     ) -> Iterator[List[Message]]:
         messages = [msg.model_dump() for msg in messages]
-        logger.debug(f'*{pformat(messages, indent=2)}*')
+        logger.debug(f'LLM Input:\n{pformat(messages, indent=2)}')
         try:
             response = self._chat_complete_create(model=self.model, messages=messages, stream=True, **generate_cfg)
             if delta_stream:
@@ -96,7 +95,7 @@ class TextChatAtOAI(BaseTextChatModel):
         generate_cfg: dict,
     ) -> List[Message]:
         messages = [msg.model_dump() for msg in messages]
-        logger.debug(f'*{pformat(messages, indent=2)}*')
+        logger.debug(f'LLM Input:\n{pformat(messages, indent=2)}')
         try:
             response = self._chat_complete_create(model=self.model, messages=messages, stream=False, **generate_cfg)
             return [Message(ASSISTANT, response.choices[0].message.content)]

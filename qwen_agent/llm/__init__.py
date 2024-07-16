@@ -7,6 +7,7 @@ from .oai import TextChatAtOAI
 from .openvino import OpenVINO
 from .qwen_dashscope import QwenChatAtDS
 from .qwenvl_dashscope import QwenVLChatAtDS
+from .qwenvl_oai import QwenVLChatAtOAI
 
 
 def get_chat_model(cfg: Optional[Dict] = None) -> BaseChatModel:
@@ -63,6 +64,7 @@ __all__ = [
     'QwenChatAtDS',
     'TextChatAtOAI',
     'QwenVLChatAtDS',
+    'QwenVLChatAtOAI',
     'OpenVINO',
     'get_chat_model',
     'ModelServiceError',

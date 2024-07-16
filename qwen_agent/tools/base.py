@@ -3,6 +3,7 @@ from typing import Dict, List, Optional, Union
 
 import json5
 
+from qwen_agent.llm.schema import ContentItem
 from qwen_agent.utils.utils import has_chinese_chars, logger
 
 TOOL_REGISTRY = {}
@@ -39,7 +40,7 @@ class BaseTool(ABC):
             )
 
     @abstractmethod
-    def call(self, params: Union[str, dict], **kwargs) -> Union[str, list, dict]:
+    def call(self, params: Union[str, dict], **kwargs) -> Union[str, list, dict, List[ContentItem]]:
         """The interface for calling tools.
 
         Each tool needs to implement this function, which is the workflow of the tool.

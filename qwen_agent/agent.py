@@ -153,7 +153,7 @@ class Agent(ABC):
                                  new_generate_cfg=extra_generate_cfg,
                              ))
 
-    def _call_tool(self, tool_name: str, tool_args: Union[str, dict] = '{}', **kwargs) -> str:
+    def _call_tool(self, tool_name: str, tool_args: Union[str, dict] = '{}', **kwargs) -> Union[str, List[ContentItem]]:
         """The interface of calling tools for the agent.
 
         Args:
@@ -180,6 +180,8 @@ class Agent(ABC):
 
         if isinstance(tool_result, str):
             return tool_result
+        elif isinstance(tool_result, list) and all(isinstance(item, ContentItem) for item in tool_result):
+            return tool_result  # multimodal tool results
         else:
             return json.dumps(tool_result, ensure_ascii=False, indent=4)
 

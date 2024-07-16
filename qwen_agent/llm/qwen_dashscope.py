@@ -6,14 +6,14 @@ from typing import Dict, Iterator, List, Optional
 import dashscope
 
 from qwen_agent.llm.base import ModelServiceError, register_llm
+from qwen_agent.llm.function_calling import BaseFnCallModel
 from qwen_agent.llm.schema import ASSISTANT, Message
-from qwen_agent.llm.text_base import BaseTextChatModel
 from qwen_agent.log import logger
 from qwen_agent.utils.utils import build_text_completion_prompt
 
 
 @register_llm('qwen_dashscope')
-class QwenChatAtDS(BaseTextChatModel):
+class QwenChatAtDS(BaseFnCallModel):
 
     def __init__(self, cfg: Optional[Dict] = None):
         super().__init__(cfg)

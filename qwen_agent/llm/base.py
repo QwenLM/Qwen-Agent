@@ -9,8 +9,8 @@ from qwen_agent.llm.schema import DEFAULT_SYSTEM_MESSAGE, SYSTEM, USER, Message
 from qwen_agent.log import logger
 from qwen_agent.settings import DEFAULT_MAX_INPUT_TOKENS
 from qwen_agent.utils.tokenization_qwen import tokenizer
-from qwen_agent.utils.utils import (extract_text_from_message, format_as_multimodal_message, has_chinese_messages,
-                                    merge_generate_cfgs, print_traceback)
+from qwen_agent.utils.utils import (extract_text_from_message, format_as_multimodal_message, format_as_text_message,
+                                    has_chinese_messages, merge_generate_cfgs, print_traceback)
 
 LLM_REGISTRY = {}
 
@@ -41,6 +41,16 @@ class ModelServiceError(Exception):
 
 class BaseChatModel(ABC):
     """The base class of LLM"""
+
+    @property
+    def support_multimodal_input(self) -> bool:
+        # Does the model support multimodal input natively? It affects how we preprocess the input.
+        return False
+
+    @property
+    def support_multimodal_output(self) -> bool:
+        # Does the model generate multimodal outputs beyond texts? It affects how we post-process the output.
+        return False
 
     def __init__(self, cfg: Optional[Dict] = None):
         cfg = cfg or {}
@@ -124,6 +134,8 @@ class BaseChatModel(ABC):
 
         # Note: the preprocessor's behavior could change if it receives function_choice="none"
         messages = self._preprocess_messages(messages, lang=lang, generate_cfg=generate_cfg)
+        if not self.support_multimodal_input:
+            messages = [format_as_text_message(msg, add_upload_info=False) for msg in messages]
 
         if not fncall_mode:
             for k in ['parallel_function_calls', 'function_choice']:
@@ -160,6 +172,8 @@ class BaseChatModel(ABC):
             assert not stream
             logger.debug(f'LLM Output:\n{pformat([_.model_dump() for _ in output], indent=2)}')
             output = self._postprocess_messages(output, fncall_mode=fncall_mode, generate_cfg=generate_cfg)
+            if not self.support_multimodal_output:
+                output = _format_as_text_messages(messages=output)
             return self._convert_messages_to_target_type(output, _return_message_type)
         else:
             assert stream
@@ -239,6 +253,8 @@ class BaseChatModel(ABC):
         pre_msg = []
         for pre_msg in messages:
             post_msg = self._postprocess_messages(pre_msg, fncall_mode=fncall_mode, generate_cfg=generate_cfg)
+            if not self.support_multimodal_output:
+                post_msg = _format_as_text_messages(messages=post_msg)
             if post_msg:
                 yield post_msg
         logger.debug(f'LLM Output:\n{pformat([_.model_dump() for _ in pre_msg], indent=2)}')
@@ -257,6 +273,17 @@ class BaseChatModel(ABC):
             target_type: str) -> Union[Iterator[List[Message]], Iterator[List[Dict]]]:
         for messages in messages_iter:
             yield self._convert_messages_to_target_type(messages, target_type)
+
+
+def _format_as_text_messages(messages: List[Message]) -> List[Message]:
+    for msg in messages:
+        if isinstance(msg.content, list):
+            for item in msg.content:
+                assert item.type == 'text'
+        else:
+            assert isinstance(msg.content, str)
+    messages = [format_as_text_message(msg, add_upload_info=False) for msg in messages]
+    return messages
 
 
 def _postprocess_stop_words(messages: List[Message], stop: List[str]) -> List[Message]:

@@ -92,6 +92,7 @@ class BaseFnCallModel(BaseChatModel, ABC):
             role, content = msg.role, msg.content
             if role in (SYSTEM, USER):
                 new_messages.append(msg)
+
             elif role == ASSISTANT:
                 content = (content or [])
                 fn_call = msg.function_call
@@ -108,21 +109,27 @@ class BaseFnCallModel(BaseChatModel, ABC):
                     new_messages[-1].content += content
                 else:
                     new_messages.append(Message(role=role, content=content))
+
             elif role == FUNCTION:
                 assert new_messages[-1].role == ASSISTANT
                 assert isinstance(content, list)
+                assert all(isinstance(item, ContentItem) for item in content)
+                if not self.support_multimodal_input:
+                    assert all(item.type == 'text' for item in content)
+
                 if content:
-                    assert len(content) == 1
-                    assert isinstance(content[0], ContentItem)
-                    f_result = content[0].text
-                    assert f_result is not None
+                    f_result = copy.deepcopy(content)
                 else:
-                    f_result = ''
+                    f_result = [ContentItem(text='')]
+
                 f_exit = f'\n{FN_EXIT}: '
                 last_text_content = new_messages[-1].content[-1].text
                 if last_text_content.endswith(f_exit):
                     new_messages[-1].content[-1].text = last_text_content[:-len(f_exit)]
-                new_messages[-1].content += [ContentItem(text=f'\n{FN_RESULT}: {f_result}{f_exit}')]
+
+                f_result = [ContentItem(text=f'\n{FN_RESULT}: ')] + f_result + [ContentItem(text=f_exit)]
+                new_messages[-1].content += f_result
+
             else:
                 raise TypeError
 

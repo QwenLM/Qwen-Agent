@@ -12,11 +12,14 @@ from qwen_agent.llm.function_calling import BaseFnCallModel
 from qwen_agent.llm.qwen_dashscope import initialize_dashscope
 from qwen_agent.llm.schema import ContentItem, Message
 from qwen_agent.log import logger
-from qwen_agent.utils.utils import format_as_text_message
 
 
 @register_llm('qwenvl_dashscope')
 class QwenVLChatAtDS(BaseFnCallModel):
+
+    @property
+    def support_multimodal_input(self) -> bool:
+        return True
 
     def __init__(self, cfg: Optional[Dict] = None):
         super().__init__(cfg)
@@ -34,7 +37,7 @@ class QwenVLChatAtDS(BaseFnCallModel):
 
         messages = _format_local_files(messages)
         messages = [msg.model_dump() for msg in messages]
-        logger.debug(f'*{pformat(messages, indent=2)}*')
+        logger.debug(f'LLM Input:\n{pformat(messages, indent=2)}')
         response = dashscope.MultiModalConversation.call(model=self.model,
                                                          messages=messages,
                                                          result_format='message',
@@ -54,7 +57,7 @@ class QwenVLChatAtDS(BaseFnCallModel):
     ) -> List[Message]:
         messages = _format_local_files(messages)
         messages = [msg.model_dump() for msg in messages]
-        logger.debug(f'*{pformat(messages, indent=2)}*')
+        logger.debug(f'LLM Input:\n{pformat(messages, indent=2)}')
         response = dashscope.MultiModalConversation.call(model=self.model,
                                                          messages=messages,
                                                          result_format='message',
@@ -64,12 +67,6 @@ class QwenVLChatAtDS(BaseFnCallModel):
             return _extract_vl_response(response=response)
         else:
             raise ModelServiceError(code=response.code, message=response.message)
-
-    def _postprocess_messages(self, messages: List[Message], fncall_mode: bool, generate_cfg: dict) -> List[Message]:
-        messages = super()._postprocess_messages(messages, fncall_mode=fncall_mode, generate_cfg=generate_cfg)
-        # Make VL return the same format as text models for easy usage
-        messages = [format_as_text_message(msg, add_upload_info=False) for msg in messages]
-        return messages
 
 
 # DashScope Qwen-VL requires the following format for local files:
@@ -86,12 +83,16 @@ def _format_local_files(messages: List[Message]) -> List[Message]:
                             'http://',
                             'https://',
                             'file://',
+                            'data:',  # base64 such as f"data:image/jpg;base64,{image_base64}"
                     )):
                         if fname.startswith('~'):
                             fname = os.path.expanduser(fname)
-                        if re.match(r'^[A-Za-z]:\\', fname):
-                            fname = fname.replace('\\', '/')
-                        item.image = fname
+                        fname = os.path.abspath(fname)
+                        if os.path.isfile(fname):
+                            if re.match(r'^[A-Za-z]:\\', fname):
+                                fname = fname.replace('\\', '/')
+                            fname = 'file://' + fname
+                            item.image = fname
     return messages
 
 
