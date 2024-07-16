@@ -122,6 +122,20 @@ def is_image(path_or_url: str) -> bool:
 
 
 def sanitize_chrome_file_path(file_path: str) -> str:
+    if os.path.exists(file_path):
+        return file_path
+
+    # Dealing with "file:///...":
+    new_path = urllib.parse.urlparse(file_path)
+    new_path = urllib.parse.unquote(new_path.path)
+    new_path = sanitize_windows_file_path(new_path)
+    if os.path.exists(new_path):
+        return new_path
+
+    return sanitize_windows_file_path(file_path)
+
+
+def sanitize_windows_file_path(file_path: str) -> str:
     # For Linux and macOS.
     if os.path.exists(file_path):
         return file_path
@@ -156,9 +170,7 @@ def save_url_to_local_work_dir(url: str, save_dir: str, save_filename: str = '')
     logger.info(f'Downloading {url} to {new_path}...')
     start_time = time.time()
     if not is_http_url(url):
-        parsed_url = urllib.parse.urlparse(url)
-        path = urllib.parse.unquote(parsed_url.path)
-        url = sanitize_chrome_file_path(path)
+        url = sanitize_chrome_file_path(url)
         shutil.copy(url, new_path)
     else:
         headers = {

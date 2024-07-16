@@ -2,7 +2,6 @@ import json
 import os
 import re
 import time
-import urllib.parse
 from collections import Counter
 from typing import Dict, List, Optional, Union
 
@@ -329,8 +328,6 @@ class SimpleDocParser(BaseTool):
                         r'^[A-Za-z]:\\', path) or re.match(r'^[A-Za-z]:/', path):
                     path = path
                 else:
-                    parsed_url = urllib.parse.urlparse(path)
-                    path = urllib.parse.unquote(parsed_url.path)
                     path = sanitize_chrome_file_path(path)
 
             os.makedirs(self.data_root, exist_ok=True)
