@@ -1,4 +1,5 @@
 import copy
+import logging
 import os
 from pprint import pformat
 from typing import Dict, Iterator, List, Optional
@@ -73,7 +74,8 @@ class TextChatAtOAI(BaseFnCallModel):
         generate_cfg: dict,
     ) -> Iterator[List[Message]]:
         messages = [msg.model_dump() for msg in messages]
-        logger.debug(f'LLM Input:\n{pformat(messages, indent=2)}')
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f'LLM Input:\n{pretty_format_messages(messages, indent=2)}')
         try:
             response = self._chat_complete_create(model=self.model, messages=messages, stream=True, **generate_cfg)
             if delta_stream:
@@ -95,9 +97,29 @@ class TextChatAtOAI(BaseFnCallModel):
         generate_cfg: dict,
     ) -> List[Message]:
         messages = [msg.model_dump() for msg in messages]
-        logger.debug(f'LLM Input:\n{pformat(messages, indent=2)}')
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f'LLM Input:\n{pretty_format_messages(messages, indent=2)}')
         try:
             response = self._chat_complete_create(model=self.model, messages=messages, stream=False, **generate_cfg)
             return [Message(ASSISTANT, response.choices[0].message.content)]
         except OpenAIError as ex:
             raise ModelServiceError(exception=ex)
+
+
+def pretty_format_messages(messages: List[dict], indent: int = 2) -> str:
+    messages_show = []
+    for msg in messages:
+        assert isinstance(msg, dict)
+        msg_show = copy.deepcopy(msg)
+        if isinstance(msg['content'], list):
+            content = []
+            for item in msg['content']:
+                (t, v), = item.items()
+                if (t != 'text') and v.startswith('data:'):
+                    v = v[:64] + ' ...'
+                content.append({t: v})
+        else:
+            content = msg['content']
+        msg_show['content'] = content
+        messages_show.append(msg_show)
+    return pformat(messages_show, indent=indent)

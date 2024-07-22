@@ -20,10 +20,8 @@ from typing import Dict, List, Optional, Union
 import json5
 
 from qwen_agent.log import logger
-from qwen_agent.settings import DEFAULT_WORKSPACE
-from qwen_agent.tools.base import BaseTool, register_tool
-from qwen_agent.utils.utils import (append_signal_handler, extract_code, has_chinese_chars, print_traceback,
-                                    save_url_to_local_work_dir)
+from qwen_agent.tools.base import BaseToolWithFileAccess, register_tool
+from qwen_agent.utils.utils import append_signal_handler, extract_code, has_chinese_chars, print_traceback
 
 LAUNCH_KERNEL_PY = """
 from ipykernel import kernelapp as app
@@ -56,15 +54,14 @@ append_signal_handler(signal.SIGINT, _kill_kernels_and_subprocesses)
 
 
 @register_tool('code_interpreter')
-class CodeInterpreter(BaseTool):
+class CodeInterpreter(BaseToolWithFileAccess):
     description = 'Python代码沙盒，可用于执行Python代码。'
     parameters = [{'name': 'code', 'type': 'string', 'description': '待执行的代码', 'required': True}]
 
     def __init__(self, cfg: Optional[Dict] = None):
         super().__init__(cfg)
-        default_work_dir = os.getenv('M6_CODE_INTERPRETER_WORK_DIR',
-                                     os.path.join(DEFAULT_WORKSPACE, 'tools', 'code_interpreter'))
-        self.work_dir: str = self.cfg.get('work_dir', default_work_dir)
+        self.work_dir: str = os.getenv('M6_CODE_INTERPRETER_WORK_DIR', self.work_dir)
+        self.work_dir: str = self.cfg.get('work_dir', self.work_dir)
         self.instance_id: str = str(uuid.uuid4())
 
     @property
@@ -77,11 +74,9 @@ class CodeInterpreter(BaseTool):
                 fmt = 'Enclose the code within triple backticks (`) at the beginning and end of the code.'
         return fmt
 
-    @property
-    def file_access(self) -> bool:
-        return True
-
     def call(self, params: Union[str, dict], files: List[str] = None, timeout: Optional[int] = 30, **kwargs) -> str:
+        super().call(params=params, files=files)  # copy remote files to work_dir
+
         try:
             params = json5.loads(params)
             code = params['code']
@@ -90,14 +85,6 @@ class CodeInterpreter(BaseTool):
 
         if not code.strip():
             return ''
-        # download file
-        if files:
-            os.makedirs(self.work_dir, exist_ok=True)
-            for file in files:
-                try:
-                    save_url_to_local_work_dir(file, self.work_dir)
-                except Exception:
-                    print_traceback()
 
         kernel_id: str = f'{self.instance_id}_{os.getpid()}'
         if kernel_id in _KERNEL_CLIENTS:

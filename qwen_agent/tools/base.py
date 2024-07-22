@@ -1,10 +1,12 @@
+import os
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Union
 
 import json5
 
 from qwen_agent.llm.schema import ContentItem
-from qwen_agent.utils.utils import has_chinese_chars, logger
+from qwen_agent.settings import DEFAULT_WORKSPACE
+from qwen_agent.utils.utils import has_chinese_chars, logger, print_traceback, save_url_to_local_work_dir
 
 TOOL_REGISTRY = {}
 
@@ -96,3 +98,29 @@ class BaseTool(ABC):
     @property
     def file_access(self) -> bool:
         return False
+
+
+class BaseToolWithFileAccess(BaseTool, ABC):
+
+    def __init__(self, cfg: Optional[Dict] = None):
+        super().__init__(cfg)
+        assert self.name
+        default_work_dir = os.path.join(DEFAULT_WORKSPACE, 'tools', self.name)
+        self.work_dir: str = self.cfg.get('work_dir', default_work_dir)
+
+    @property
+    def file_access(self) -> bool:
+        return True
+
+    def call(self, params: Union[str, dict], files: List[str] = None, **kwargs) -> str:
+        # Copy remote files to the working directory:
+        if files:
+            os.makedirs(self.work_dir, exist_ok=True)
+            for file in files:
+                try:
+                    save_url_to_local_work_dir(file, self.work_dir)
+                except Exception:
+                    print_traceback()
+
+        # Then do something with the files:
+        # ...

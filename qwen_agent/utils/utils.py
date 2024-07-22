@@ -1,3 +1,4 @@
+import base64
 import copy
 import hashlib
 import os
@@ -9,6 +10,7 @@ import sys
 import time
 import traceback
 import urllib.parse
+from io import BytesIO
 from typing import Any, List, Literal, Optional, Tuple, Union
 
 import json5
@@ -417,3 +419,42 @@ def build_text_completion_prompt(messages: List[Message]) -> str:
     assert prompt.endswith(im_end)
     prompt = prompt[:-len(im_end)]
     return prompt
+
+
+def encode_image_as_base64(path: str, max_short_side_length: int = -1) -> str:
+    from PIL import Image
+    image = Image.open(path)
+
+    if (max_short_side_length > 0) and (min(image.size) > max_short_side_length):
+        ori_size = image.size
+        image = resize_image(image, short_side_length=max_short_side_length)
+        logger.debug(f'Image "{path}" resized from {ori_size} to {image.size}.')
+
+    image = image.convert(mode='RGB')
+    buffered = BytesIO()
+    image.save(buffered, format='JPEG')
+    return 'data:image/jpg;base64,' + base64.b64encode(buffered.getvalue()).decode('utf-8')
+
+
+def load_image_from_base64(image_base64: Union[bytes, str]):
+    from PIL import Image
+    image = Image.open(BytesIO(base64.b64decode(image_base64)))
+    image.load()
+    return image
+
+
+def resize_image(img, short_side_length: int = 1080):
+    from PIL import Image
+    assert isinstance(img, Image.Image)
+
+    width, height = img.size
+
+    if width <= height:
+        new_width = short_side_length
+        new_height = int((short_side_length / width) * height)
+    else:
+        new_height = short_side_length
+        new_width = int((short_side_length / height) * width)
+
+    resized_img = img.resize((new_width, new_height), resample=Image.Resampling.BILINEAR)
+    return resized_img

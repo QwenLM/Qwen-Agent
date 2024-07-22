@@ -1,23 +1,27 @@
+import copy
+import os
 from typing import Iterator, List
 
 from qwen_agent.llm.base import register_llm
 from qwen_agent.llm.oai import TextChatAtOAI
 from qwen_agent.llm.schema import Message
+from qwen_agent.utils.utils import encode_image_as_base64
 
 
-def _check_supported_input(messages: List[Message]):
+def _convert_local_images_to_base64(messages: List[Message]) -> List[Message]:
+    messages_new = []
     for msg in messages:
         if isinstance(msg.content, list):
+            msg = copy.deepcopy(msg)
             for item in msg.content:
                 t, v = item.get_type_and_value()
-                if t not in ('text', 'image'):
-                    raise ValueError(f'QwenVLChatAtOAI does support content type "{t}" (value="{v}").')
                 if t == 'image':
-                    if not v.startswith(('http://', 'https://', 'data:')):
-                        raise ValueError('QwenVLChatAtOAI currently does support local image paths. '
-                                         f'Received image="{v}", but an http(s) URL or base64 is expected.')
+                    if (not v.startswith(('http://', 'https://', 'data:'))) and os.path.exists(v):
+                        item.image = encode_image_as_base64(v, max_short_side_length=1080)
         else:
             assert isinstance(msg.content, str)
+        messages_new.append(msg)
+    return messages_new
 
 
 @register_llm('qwenvl_oai')
@@ -33,7 +37,7 @@ class QwenVLChatAtOAI(TextChatAtOAI):
         delta_stream: bool,
         generate_cfg: dict,
     ) -> Iterator[List[Message]]:
-        _check_supported_input(messages)
+        messages = _convert_local_images_to_base64(messages)
         return super()._chat_stream(messages=messages, delta_stream=delta_stream, generate_cfg=generate_cfg)
 
     def _chat_no_stream(
@@ -41,5 +45,5 @@ class QwenVLChatAtOAI(TextChatAtOAI):
         messages: List[Message],
         generate_cfg: dict,
     ) -> List[Message]:
-        _check_supported_input(messages)
+        messages = _convert_local_images_to_base64(messages)
         return super()._chat_no_stream(messages=messages, generate_cfg=generate_cfg)
