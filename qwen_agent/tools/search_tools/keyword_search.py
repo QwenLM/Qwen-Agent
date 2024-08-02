@@ -2,9 +2,7 @@ import re
 import string
 from typing import List, Tuple
 
-import jieba
 import json5
-import snowballstemmer
 
 from qwen_agent.log import logger
 from qwen_agent.settings import DEFAULT_MAX_REF_TOKEN
@@ -74,8 +72,6 @@ WORDS_TO_IGNORE = [
     'paper', '文稿', '稿子', '论文', 'PDF', 'pdf', '这个', '这篇', '这', '我', '帮我', '那个', '下', '翻译', '说说', '讲讲', '介绍', 'summary'
 ]
 
-STEMMER = snowballstemmer.stemmer('english')
-
 ENGLISH_PUNCTUATIONS = string.punctuation.replace('%', '').replace('.', '').replace(
     '@', '')  # English punctuations to remove. We're separately handling %, ., and @
 CHINESE_PUNCTUATIONS = '。？！，、；：“”‘’（）《》【】……—『』「」_'
@@ -122,6 +118,7 @@ def tokenize_and_filter(input_text: str) -> str:
 def string_tokenizer(text: str) -> List[str]:
     text = text.lower().strip()
     if has_chinese_chars(text):
+        import jieba
         _wordlist_tmp = list(jieba.lcut(text))
         _wordlist = []
         for word in _wordlist_tmp:
@@ -139,7 +136,10 @@ def string_tokenizer(text: str) -> List[str]:
             continue
         else:
             _wordlist_res.append(word)
-    return STEMMER.stemWords(_wordlist_res)
+
+    import snowballstemmer
+    stemmer = snowballstemmer.stemmer('english')
+    return stemmer.stemWords(_wordlist_res)
 
 
 def split_text_into_keywords(text: str) -> List[str]:
@@ -158,6 +158,9 @@ def parse_keyword(text):
     except Exception:
         return split_text_into_keywords(text)
 
+    import snowballstemmer
+    stemmer = snowballstemmer.stemmer('english')
+
     # json format
     _wordlist = []
     try:
@@ -165,7 +168,7 @@ def parse_keyword(text):
             _wordlist.extend([kw.lower() for kw in res['keywords_zh']])
         if 'keywords_en' in res and isinstance(res['keywords_en'], list):
             _wordlist.extend([kw.lower() for kw in res['keywords_en']])
-        _wordlist = STEMMER.stemWords(_wordlist)
+        _wordlist = stemmer.stemWords(_wordlist)
         wordlist = []
         for x in _wordlist:
             if x in WORDS_TO_IGNORE:
@@ -175,4 +178,5 @@ def parse_keyword(text):
         wordlist += split_wordlist
         return wordlist
     except Exception:
+        # TODO: This catch is too broad.
         return split_text_into_keywords(text)

@@ -2,8 +2,8 @@ from typing import Iterator, List
 
 from qwen_agent.agents.assistant import Assistant
 from qwen_agent.agents.write_from_scratch import WriteFromScratch
+from qwen_agent.agents.writing import ContinueWriting
 from qwen_agent.llm.schema import ASSISTANT, CONTENT, Message
-from qwen_agent.prompts import ContinueWriting
 
 
 class ArticleAgent(Assistant):

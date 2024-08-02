@@ -11,22 +11,24 @@ Qwen-Agent是一个开发框架。开发者可基于本框架开发Agent应用�
 
 ## 安装
 
-- 安装稳定的版本：
+- 从 PyPI 安装稳定版本：
 ```bash
-pip install -U qwen-agent
+pip install -U qwen-agent[rag,code_interpreter]
+# 如果不使用 RAG 和代码解释器，可以使用 `pip install -U qwen-agent` 安装最小依赖。
 ```
 
-- 或者，直接从源代码安装最新的版本：
+- 或者，你可以从源码安装最新的开发版本：
 ```bash
 git clone https://github.com/QwenLM/Qwen-Agent.git
 cd Qwen-Agent
-pip install -e ./
+pip install -e ./[rag,code_interpreter]
+# 如果不使用 RAG 和代码解释器，可以使用 `pip install -e ./` 安装最小依赖。
 ```
 
-如需使用内置GUI支持，请通过以下方式安装GUI相关的可选依赖项：
+如果需要内置 GUI 支持，请选择性地安装可选依赖：
 ```bash
-pip install -U qwen-agent[gui]
-# 或，从源代码安装最新版本: pip install -e ./[gui]
+pip install -U qwen-agent[gui,rag,code_interpreter]
+# 或者通过源码安装 `pip install -e ./[gui,rag,code_interpreter]`
 ```
 
 ## 准备：模型服务

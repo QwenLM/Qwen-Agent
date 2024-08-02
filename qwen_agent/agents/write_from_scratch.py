@@ -5,8 +5,8 @@ import json5
 
 from qwen_agent import Agent
 from qwen_agent.agents.assistant import Assistant
+from qwen_agent.agents.writing import ExpandWriting, OutlineWriting
 from qwen_agent.llm.schema import ASSISTANT, CONTENT, USER, Message
-from qwen_agent.prompts import ExpandWriting, OutlineWriting
 
 default_plan = """{"action1": "summarize", "action2": "outline", "action3": "expand"}"""
 

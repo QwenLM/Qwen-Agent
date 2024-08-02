@@ -50,10 +50,11 @@ Keywords:
 
     def _run(self,
              messages: List[Message],
-             files: List[str] = [],
+             files: Optional[List[str]] = None,
              lang: str = 'en',
              **kwargs) -> Iterator[List[Message]]:
         messages = copy.deepcopy(messages)
+        files = files or []
         available_token = DEFAULT_MAX_INPUT_TOKENS - count_tokens(f'{self.PROMPT_TEMPLATE[lang]}') - count_tokens(
             messages[-1][CONTENT]) - 100
 

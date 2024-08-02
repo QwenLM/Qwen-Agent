@@ -1,8 +1,6 @@
 from typing import Dict, Optional
 
-from qwen_agent.llm.base import LLM_REGISTRY
-
-from .base import BaseChatModel, ModelServiceError
+from .base import LLM_REGISTRY, BaseChatModel, ModelServiceError
 from .oai import TextChatAtOAI
 from .openvino import OpenVINO
 from .qwen_dashscope import QwenChatAtDS

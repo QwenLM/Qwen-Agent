@@ -13,35 +13,6 @@ def get_version() -> str:
     return version
 
 
-def read_requirements():
-    with open('requirements.txt') as req:
-        content = req.read()
-        requirements = content.split('\n')
-
-    # Note: `pip install qwen-agent` by default installs the following deps for code_interpreter.
-    # However, if you do not want these optional deps, you can install qwen-agent via the following:
-    # ```bash
-    # curl -O https://raw.githubusercontent.com/QwenLM/Qwen-Agent/main/requirements.txt;
-    # pip install -r requirements.txt;
-    # pip install -U --no-deps qwen-agent;
-    # ```
-    code_interpreter_deps = [
-        'anyio>=3.7.1',
-        'fastapi>=0.103.1',
-        'jupyter>=1.0.0',
-        'matplotlib',
-        'numpy',
-        'pandas',
-        'pillow',
-        'seaborn',
-        'sympy',
-        'uvicorn>=0.23.2',
-    ]
-    requirements.extend(code_interpreter_deps)
-
-    return requirements
-
-
 def read_description() -> str:
     with open('README.md', 'r', encoding='UTF-8') as f:
         long_description = f.read()
@@ -64,8 +35,47 @@ setup(
             'gui/assets/*.jpeg'
         ],
     },
-    install_requires=read_requirements(),
+
+    # Minimal dependencies for Function Calling:
+    install_requires=[
+        'dashscope>=1.11.0',
+        'eval_type_backport',
+        'json5',
+        'jsonlines',
+        'openai',
+        'pydantic>=2.3.0',
+        'requests',
+        'tiktoken',
+    ],
     extras_require={
+        # Extra dependencies for RAG:
+        'rag': [
+            'charset-normalizer',
+            'rank_bm25',
+            'jieba',
+            'snowballstemmer',
+            'beautifulsoup4',
+            'pdfminer.six',
+            'pdfplumber',
+            'python-docx',
+            'python-pptx',
+        ],
+
+        # Extra dependencies for Code Interpreter:
+        'code_interpreter': [
+            'anyio>=3.7.1',
+            'fastapi>=0.103.1',
+            'jupyter>=1.0.0',
+            'matplotlib',
+            'numpy',
+            'pandas',
+            'pillow',
+            'seaborn',
+            'sympy',
+            'uvicorn>=0.23.2',
+        ],
+
+        # Extra dependencies for Gradio-based GUI:
         'gui': [
             'gradio==4.21.0',
             'modelscope-studio>=0.4.0',
