@@ -114,14 +114,15 @@ class Memory(Agent):
                 except Exception:
                     query = query
 
-            content = self._call_tool(
-                'retrieval',
+            content = self.function_map['retrieval'].call(
                 {
                     'query': query,
                     'files': rag_files
                 },
                 **kwargs,
             )
+            if not isinstance(content, str):
+                content = json.dumps(content, ensure_ascii=False, indent=4)
 
             yield [Message(role=ASSISTANT, content=content, name='memory')]
 

@@ -63,6 +63,7 @@ class CodeInterpreter(BaseToolWithFileAccess):
         self.work_dir: str = os.getenv('M6_CODE_INTERPRETER_WORK_DIR', self.work_dir)
         self.work_dir: str = self.cfg.get('work_dir', self.work_dir)
         self.instance_id: str = str(uuid.uuid4())
+        _check_deps_for_code_interpreter()
 
     @property
     def args_format(self) -> str:
@@ -259,6 +260,22 @@ class CodeInterpreter(BaseToolWithFileAccess):
         if image_server_url:
             return f'{image_server_url}/{image_file}'
         return local_image_file
+
+
+def _check_deps_for_code_interpreter():
+    try:
+        import matplotlib  # noqa
+        import matplotlib.pyplot as plt  # noqa
+        import numpy as np  # noqa
+        import pandas as pd  # noqa
+        import PIL.Image  # noqa
+        import seaborn as sns  # noqa
+        from jupyter_client import BlockingKernelClient  # noqa
+        from sympy import Eq, solve, symbols  # noqa
+    except ImportError as e:
+        raise ImportError(
+            'The dependencies for Code Interpreter support are not installed. '
+            'Please install the required dependencies by running: pip install qwen-agent[code_interpreter]') from e
 
 
 def _fix_matplotlib_cjk_font_issue():

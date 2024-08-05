@@ -8,6 +8,22 @@ from qwen_agent.tools.doc_parser import DocParser, Record
 from qwen_agent.tools.simple_doc_parser import PARSER_SUPPORTED_FILE_TYPES
 
 
+def _check_deps_for_rag():
+    try:
+        import charset_normalizer  # noqa
+        import jieba  # noqa
+        import pdfminer  # noqa
+        import pdfplumber  # noqa
+        import rank_bm25  # noqa
+        import snowballstemmer  # noqa
+        from bs4 import BeautifulSoup  # noqa
+        from docx import Document  # noqa
+        from pptx import Presentation  # noqa
+    except ImportError as e:
+        raise ImportError('The dependencies for RAG support are not installed. '
+                          'Please install the required dependencies by running: pip install qwen-agent[rag]') from e
+
+
 @register_tool('retrieval')
 class Retrieval(BaseTool):
     description = f'从给定文件列表中检索出和问题相关的内容，支持文件类型包括：{"/".join(PARSER_SUPPORTED_FILE_TYPES)}'
@@ -50,6 +66,9 @@ class Retrieval(BaseTool):
         Returns:
             The parsed file list or retrieved file list.
         """
+
+        # TODO: It this a good place to check the RAG deps?
+        _check_deps_for_rag()
 
         params = self._verify_json_format_args(params)
         files = params.get('files', [])
