@@ -6,6 +6,7 @@ from .openvino import OpenVINO
 from .qwen_dashscope import QwenChatAtDS
 from .qwenvl_dashscope import QwenVLChatAtDS
 from .qwenvl_oai import QwenVLChatAtOAI
+from .azure import TextChatAtAZURE
 
 
 def get_chat_model(cfg: Optional[Dict] = None) -> BaseChatModel:
@@ -44,6 +45,10 @@ def get_chat_model(cfg: Optional[Dict] = None) -> BaseChatModel:
             model_type = 'oai'
             return LLM_REGISTRY[model_type](cfg)
 
+    if 'azure_endpoint' in cfg:
+        model_type = 'azure'
+        return LLM_REGISTRY[model_type](cfg)
+    
     model = cfg.get('model', '')
 
     if 'qwen-vl' in model:
@@ -61,6 +66,7 @@ __all__ = [
     'BaseChatModel',
     'QwenChatAtDS',
     'TextChatAtOAI',
+    'TextChatAtAZURE',
     'QwenVLChatAtDS',
     'QwenVLChatAtOAI',
     'OpenVINO',
