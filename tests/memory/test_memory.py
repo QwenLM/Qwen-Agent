@@ -16,8 +16,8 @@ def test_memory():
     mem = Memory(llm=llm_cfg)
     messages = [
         Message('user', [
-            ContentItem(text='女孩成长历程'),
-            ContentItem(file=str(Path(__file__).resolve().parent.parent.parent / 'examples/resource/growing_girl.pdf'))
+            ContentItem(text='how to flip images'),
+            ContentItem(file=str(Path(__file__).resolve().parent.parent.parent / 'examples/resource/doc.pdf'))
         ])
     ]
     *_, last = mem.run(messages, max_ref_token=4000, parser_page_size=500)
