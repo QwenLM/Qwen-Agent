@@ -66,7 +66,7 @@ class Memory(Agent):
 
          This method stores the files in the knowledge base, and retrievals the relevant parts
          based on the query and returning them.
-         The currently supported file types include: .pdf, .docx, .pptx, .txt, and html.
+         The currently supported file types include: .pdf, .docx, .pptx, .txt, .csv, .tsv, .xlsx, .xls and html.
 
          Args:
              messages: A list of messages.

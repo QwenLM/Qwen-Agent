@@ -59,6 +59,8 @@ setup(
             'pdfplumber',
             'python-docx',
             'python-pptx',
+            'pandas',
+            'tabulate',
         ],
 
         # Extra dependencies for Code Interpreter:

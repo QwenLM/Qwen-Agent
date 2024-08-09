@@ -90,6 +90,69 @@ def parse_txt(path: str):
     return [{'page_num': 1, 'content': content}]
 
 
+def df_to_md(df) -> str:
+
+    def replace_long_dashes(text):
+        if text.replace('-', '').replace(':', '').strip():
+            return text
+        pattern = r'-{6,}'
+        replaced_text = re.sub(pattern, '-----', text)
+        return replaced_text
+
+    from tabulate import tabulate
+    md_table = tabulate(df, headers='keys', tablefmt='pipe', showindex=False)
+
+    md_table = '\n'.join([
+        '|'.join(replace_long_dashes(' ' + cell.strip() + ' ' if cell else '')
+                 for cell in row.split('|'))
+        for row in md_table.split('\n')
+    ])
+    return md_table
+
+
+def parse_excel(file_path: str, extract_image: bool = False) -> List[dict]:
+    if extract_image:
+        raise ValueError('Currently, extracting images is not supported!')
+
+    import pandas as pd
+
+    excel_file = pd.ExcelFile(file_path)
+    md_tables = []
+    for sheet_name in excel_file.sheet_names:
+        df = pd.read_excel(file_path, sheet_name=sheet_name)
+        md_table = df_to_md(df)
+        md_tables.append(f'### Sheet: {sheet_name}\n{md_table}')
+
+    return [{'page_num': i + 1, 'content': [{'table': md_tables[i]}]} for i in range(len(md_tables))]
+
+
+def parse_csv(file_path: str, extract_image: bool = False) -> List[dict]:
+    if extract_image:
+        raise ValueError('Currently, extracting images is not supported!')
+
+    import pandas as pd
+    md_tables = []
+    df = pd.read_csv(file_path, encoding_errors='replace', on_bad_lines='skip')
+    md_table = df_to_md(df)
+    md_tables.append(md_table)  # There is only one table available
+
+    return [{'page_num': i + 1, 'content': [{'table': md_tables[i]}]} for i in range(len(md_tables))]
+
+
+def parse_tsv(file_path: str, extract_image: bool = False) -> List[dict]:
+    if extract_image:
+        raise ValueError('Currently, extracting images is not supported!')
+
+    import pandas as pd
+    md_tables = []
+
+    df = pd.read_csv(file_path, sep='\t', encoding_errors='replace', on_bad_lines='skip')
+    md_table = df_to_md(df)
+    md_tables.append(md_table)  # There is only one table available
+
+    return [{'page_num': i + 1, 'content': [{'table': md_tables[i]}]} for i in range(len(md_tables))]
+
+
 def parse_html_bs(path: str, extract_image: bool = False):
     if extract_image:
         raise ValueError('Currently, extracting images is not supported!')
@@ -255,7 +318,7 @@ def table_converter(table):
     return table_string
 
 
-PARSER_SUPPORTED_FILE_TYPES = ['pdf', 'docx', 'pptx', 'txt', 'html']
+PARSER_SUPPORTED_FILE_TYPES = ['pdf', 'docx', 'pptx', 'txt', 'html', 'csv', 'tsv', 'xlsx', 'xls']
 
 
 def get_plain_doc(doc: list):
@@ -347,6 +410,12 @@ class SimpleDocParser(BaseTool):
                 parsed_file = parse_txt(path)
             elif f_type == 'html':
                 parsed_file = parse_html_bs(path, self.extract_image)
+            elif f_type == 'csv':
+                parsed_file = parse_csv(path, self.extract_image)
+            elif f_type == 'tsv':
+                parsed_file = parse_tsv(path, self.extract_image)
+            elif f_type in ['xlsx', 'xls']:
+                parsed_file = parse_excel(path, self.extract_image)
             else:
                 raise ValueError(
                     f'Failed: The current parser does not support this file type! Supported types: {"/".join(PARSER_SUPPORTED_FILE_TYPES)}'

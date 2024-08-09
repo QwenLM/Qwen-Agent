@@ -221,9 +221,9 @@ def get_content_type_by_head_request(path: str) -> str:
         return 'unk'
 
 
-def get_file_type(path: str) -> Literal['pdf', 'docx', 'pptx', 'txt', 'html', 'unk']:
+def get_file_type(path: str) -> Literal['pdf', 'docx', 'pptx', 'txt', 'html', 'csv', 'tsv', 'xlsx', 'xls', 'unk']:
     f_type = get_basename_from_url(path).split('.')[-1].lower()
-    if f_type in ['pdf', 'docx', 'pptx']:
+    if f_type in ['pdf', 'docx', 'pptx', 'csv', 'tsv', 'xlsx', 'xls']:
         # Specially supported file types
         return f_type
 

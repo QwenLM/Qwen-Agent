@@ -265,6 +265,8 @@ class DocParser(BaseTool):
         need_page = chunk[-1][1]  # Only need this page to prepend
         available_len = 150
         for i in range(len(chunk) - 1, -1, -1):
+            if not (isinstance(chunk[i], list) and len(chunk[i]) == 2):
+                continue
             if chunk[i][1] != need_page:
                 return overlap
             para = chunk[i][0]
