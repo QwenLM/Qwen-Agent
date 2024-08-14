@@ -16,6 +16,8 @@ def _convert_local_images_to_base64(messages: List[Message]) -> List[Message]:
             for item in msg.content:
                 t, v = item.get_type_and_value()
                 if t == 'image':
+                    if v.startswith('file://'):
+                        v = v[len('file://'):]
                     if (not v.startswith(('http://', 'https://', 'data:'))) and os.path.exists(v):
                         item.image = encode_image_as_base64(v, max_short_side_length=1080)
         else:
