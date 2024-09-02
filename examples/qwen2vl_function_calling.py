@@ -1,13 +1,16 @@
 import json
+import os
 import urllib.parse
 
 from qwen_agent.llm import get_chat_model
 from qwen_agent.llm.schema import ContentItem
+from qwen_agent.utils.utils import save_url_to_local_work_dir
 
 
 def image_gen(prompt: str) -> str:
     prompt = urllib.parse.quote(prompt)
     image_url = f'https://image.pollinations.ai/prompt/{prompt}'
+    image_url = save_url_to_local_work_dir(image_url, save_dir='./', save_filename='pic.jpg')
     return image_url
 
 
@@ -15,10 +18,16 @@ def test():
     # Config for the model
     llm_cfg_oai = {
         # Using Qwen2-VL deployed at any openai-compatible service such as vLLM:
-        'model_type': 'qwenvl_oai',
-        'model': 'Qwen/Qwen2-VL-72B-Instruct',
-        'model_server': 'http://localhost:8000/v1',  # api_base
-        'api_key': 'EMPTY',
+        # 'model_type': 'qwenvl_oai',
+        # 'model': 'Qwen2-VL-7B-Instruct',
+        # 'model_server': 'http://localhost:8000/v1',  # api_base
+        # 'api_key': 'EMPTY',
+
+        # Using Qwen2-VL provided by Alibaba Cloud DashScope:
+        'model_type': 'qwenvl_dashscope',
+        'model': 'qwen-vl-max-0809',
+        'api_key': os.getenv('DASHSCOPE_API_KEY'),
+        'generate_cfg': dict(max_retries=10,)
     }
     llm = get_chat_model(llm_cfg_oai)
 
@@ -29,7 +38,7 @@ def test():
         'content': [{
             'image': 'https://dashscope.oss-cn-beijing.aliyuncs.com/images/dog_and_girl.jpeg'
         }, {
-            'text': '图片中的内容是什么？请画一张内容相同，风格类似的图片。'
+            'text': '图片中的内容是什么？请画一张内容相同，风格类似的图片。把女人换成男人'
         }]
     }]
 

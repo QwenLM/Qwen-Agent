@@ -1,15 +1,15 @@
-from typing import Dict, Optional
+from typing import Union
 
+from .azure import TextChatAtAzure
 from .base import LLM_REGISTRY, BaseChatModel, ModelServiceError
 from .oai import TextChatAtOAI
 from .openvino import OpenVINO
 from .qwen_dashscope import QwenChatAtDS
 from .qwenvl_dashscope import QwenVLChatAtDS
 from .qwenvl_oai import QwenVLChatAtOAI
-from .azure import TextChatAtAZURE
 
 
-def get_chat_model(cfg: Optional[Dict] = None) -> BaseChatModel:
+def get_chat_model(cfg: Union[dict, str] = 'qwen-plus') -> BaseChatModel:
     """The interface of instantiating LLM objects.
 
     Args:
@@ -30,7 +30,9 @@ def get_chat_model(cfg: Optional[Dict] = None) -> BaseChatModel:
     Returns:
         LLM object.
     """
-    cfg = cfg or {}
+    if isinstance(cfg, str):
+        cfg = {'model': cfg}
+
     if 'model_type' in cfg:
         model_type = cfg['model_type']
         if model_type in LLM_REGISTRY:
@@ -40,15 +42,15 @@ def get_chat_model(cfg: Optional[Dict] = None) -> BaseChatModel:
 
     # Deduce model_type from model and model_server if model_type is not provided:
 
+    if 'azure_endpoint' in cfg:
+        model_type = 'azure'
+        return LLM_REGISTRY[model_type](cfg)
+
     if 'model_server' in cfg:
         if cfg['model_server'].strip().startswith('http'):
             model_type = 'oai'
             return LLM_REGISTRY[model_type](cfg)
 
-    if 'azure_endpoint' in cfg:
-        model_type = 'azure'
-        return LLM_REGISTRY[model_type](cfg)
-    
     model = cfg.get('model', '')
 
     if 'qwen-vl' in model:
@@ -66,7 +68,7 @@ __all__ = [
     'BaseChatModel',
     'QwenChatAtDS',
     'TextChatAtOAI',
-    'TextChatAtAZURE',
+    'TextChatAtAzure',
     'QwenVLChatAtDS',
     'QwenVLChatAtOAI',
     'OpenVINO',

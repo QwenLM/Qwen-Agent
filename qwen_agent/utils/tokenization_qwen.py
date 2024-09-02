@@ -50,7 +50,6 @@ class QWenTokenizer:
         vocab_file=None,
         errors='replace',
         extra_vocab_file=None,
-        **kwargs,
     ):
         if not vocab_file:
             vocab_file = VOCAB_FILES_NAMES['vocab_file']
@@ -138,7 +137,6 @@ class QWenTokenizer:
             text: str,
             allowed_special: Union[Set, str] = 'all',
             disallowed_special: Union[Collection, str] = (),
-            **kwargs,
     ) -> List[Union[bytes, str]]:
         """
         Converts a string in a sequence of tokens.
@@ -152,9 +150,6 @@ class QWenTokenizer:
             disallowed_special (`Literal["all"]` or `Collection`):
                 The surface forms of the tokens that should not be in regular texts and trigger errors.
                 Default to an empty tuple.
-
-            kwargs (additional keyword arguments, *optional*):
-                Will be passed to the underlying model specific encode method.
 
         Returns:
             `List[bytes|str]`: The list of tokens.
@@ -196,7 +191,6 @@ class QWenTokenizer:
         token_ids: Union[int, List[int]],
         skip_special_tokens: bool = False,
         errors: str = None,
-        **kwargs,
     ) -> str:
         if isinstance(token_ids, int):
             token_ids = [token_ids]

@@ -1,6 +1,7 @@
 import base64
 import copy
 import hashlib
+import json
 import os
 import re
 import shutil
@@ -259,6 +260,12 @@ def extract_urls(text: str) -> List[str]:
     return urls
 
 
+def extract_markdown_urls(md_text: str) -> List[str]:
+    pattern = r'!?\[[^\]]*\]\(([^\)]+)\)'
+    urls = re.findall(pattern, md_text)
+    return urls
+
+
 def extract_code(text: str) -> str:
     # Match triple backtick blocks first
     triple_match = re.search(r'```[^\n]*\n(.+?)```', text, re.DOTALL)
@@ -271,6 +278,23 @@ def extract_code(text: str) -> str:
             print_traceback(is_error=False)
     # If no code blocks found, return original text
     return text
+
+
+def json_loads(text: str) -> dict:
+    text = text.strip('\n')
+    if text.startswith('```') and text.endswith('\n```'):
+        text = '\n'.join(text.split('\n')[1:-1])
+    try:
+        return json.loads(text)
+    except json.decoder.JSONDecodeError as json_err:
+        try:
+            return json5.loads(text)
+        except ValueError:
+            raise json_err
+
+
+def json_dumps(obj: dict) -> str:
+    return json.dumps(obj, ensure_ascii=False, indent=2)
 
 
 def format_as_multimodal_message(
@@ -360,7 +384,7 @@ def extract_text_from_message(
     elif isinstance(msg.content, str):
         text = msg.content
     else:
-        raise TypeError
+        raise TypeError(f'List of str or str expected, but received {type(msg.content).__name__}.')
     return text.strip()
 
 
@@ -389,7 +413,11 @@ def merge_generate_cfgs(base_generate_cfg: Optional[dict], new_generate_cfg: Opt
     return generate_cfg
 
 
-def build_text_completion_prompt(messages: List[Message]) -> str:
+def build_text_completion_prompt(
+    messages: List[Message],
+    allow_special: bool = False,
+    default_system: str = DEFAULT_SYSTEM_MESSAGE,
+) -> str:
     im_start = '<|im_start|>'
     im_end = '<|im_end|>'
 
@@ -399,7 +427,7 @@ def build_text_completion_prompt(messages: List[Message]) -> str:
         prompt = f'{im_start}{SYSTEM}\n{sys}{im_end}'
         messages = messages[1:]
     else:
-        prompt = f'{im_start}{SYSTEM}\n{DEFAULT_SYSTEM_MESSAGE}{im_end}'
+        prompt = f'{im_start}{SYSTEM}\n{default_system}{im_end}'
 
     # Make sure we are completing the chat in the tone of the assistant
     if messages[-1].role != ASSISTANT:
@@ -407,14 +435,24 @@ def build_text_completion_prompt(messages: List[Message]) -> str:
 
     for msg in messages:
         assert isinstance(msg.content, str)
-        if msg.role == USER:
-            query = msg.content.lstrip('\n').rstrip()
-            prompt += f'\n{im_start}{USER}\n{query}{im_end}'
-        elif msg.role == ASSISTANT:
-            response = msg.content.lstrip('\n').rstrip()
-            prompt += f'\n{im_start}{ASSISTANT}\n{response}{im_end}'
+        content = msg.content.lstrip('\n').rstrip()
+        if allow_special:
+            assert msg.role in (USER, ASSISTANT, SYSTEM, FUNCTION)
+            if msg.function_call:
+                assert msg.role == ASSISTANT
+                tool_call = msg.function_call.arguments
+                try:
+                    tool_call = {'name': msg.function_call.name, 'arguments': json.loads(tool_call)}
+                    tool_call = json.dumps(tool_call, ensure_ascii=False, indent=2)
+                except json.decoder.JSONDecodeError:
+                    tool_call = '{"name": "' + msg.function_call.name + '", "arguments": ' + tool_call + '}'
+                if content:
+                    content += '\n'
+                content += f'<tool_call>\n{tool_call}\n</tool_call>'
         else:
-            raise ValueError
+            assert msg.role in (USER, ASSISTANT)
+            assert msg.function_call is None
+        prompt += f'\n{im_start}{msg.role}\n{content}{im_end}'
 
     assert prompt.endswith(im_end)
     prompt = prompt[:-len(im_end)]
@@ -458,3 +496,12 @@ def resize_image(img, short_side_length: int = 1080):
 
     resized_img = img.resize((new_width, new_height), resample=Image.Resampling.BILINEAR)
     return resized_img
+
+
+def get_last_usr_msg_idx(messages: List[Union[dict, Message]]) -> int:
+    i = len(messages) - 1
+    while (i >= 0) and (messages[i]['role'] != 'user'):
+        i -= 1
+    assert i >= 0, messages
+    assert messages[i]['role'] == 'user'
+    return i

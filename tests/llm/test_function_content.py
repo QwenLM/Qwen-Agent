@@ -16,6 +16,7 @@ from qwen_agent.llm import get_chat_model
 @pytest.mark.parametrize('gen_cfg2', [
     None,
     dict(function_choice='none'),
+    dict(function_choice='get_current_weather'),
 ])
 def test_function_content(cfg, gen_cfg1, gen_cfg2):
     if cfg == 0:
@@ -27,10 +28,9 @@ def test_function_content(cfg, gen_cfg1, gen_cfg2):
         })
     else:
         llm = get_chat_model({
-            # Use the model service provided by Together.AI:
-            'model': 'Qwen/Qwen1.5-7B-Chat',
-            'model_server': 'https://api.together.xyz',  # api_base
-            'api_key': os.getenv('TOGETHER_API_KEY'),
+            'model': 'qwen2-7b-instruct',
+            'model_server': 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+            'api_key': os.getenv('DASHSCOPE_API_KEY', 'none')
         })
 
     # Step 1: send the conversation and available functions to the model

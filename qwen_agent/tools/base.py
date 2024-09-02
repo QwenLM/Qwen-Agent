@@ -1,12 +1,11 @@
+import json
 import os
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Union
 
-import json5
-
 from qwen_agent.llm.schema import ContentItem
 from qwen_agent.settings import DEFAULT_WORKSPACE
-from qwen_agent.utils.utils import has_chinese_chars, logger, print_traceback, save_url_to_local_work_dir
+from qwen_agent.utils.utils import has_chinese_chars, json_loads, logger, print_traceback, save_url_to_local_work_dir
 
 TOOL_REGISTRY = {}
 
@@ -29,17 +28,68 @@ def register_tool(name, allow_overwrite=False):
     return decorator
 
 
+def is_tool_schema(obj: dict) -> bool:
+    """
+    Check if obj is a valid JSON schema describing a tool compatible with OpenAI's tool calling.
+    Example valid schema:
+    {
+      "name": "get_current_weather",
+      "description": "Get the current weather in a given location",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "location": {
+            "type": "string",
+            "description": "The city and state, e.g. San Francisco, CA"
+          },
+          "unit": {
+            "type": "string",
+            "enum": ["celsius", "fahrenheit"]
+          }
+        },
+        "required": ["location"]
+      }
+    }
+    """
+    import jsonschema
+    try:
+        assert set(obj.keys()) == {'name', 'description', 'parameters'}
+        assert isinstance(obj['name'], str)
+        assert obj['name'].strip()
+        assert isinstance(obj['description'], str)
+        assert isinstance(obj['parameters'], dict)
+
+        assert set(obj['parameters'].keys()) == {'type', 'properties', 'required'}
+        assert obj['parameters']['type'] == 'object'
+        assert isinstance(obj['parameters']['properties'], dict)
+        assert isinstance(obj['parameters']['required'], list)
+        assert set(obj['parameters']['required']).issubset(set(obj['parameters']['properties'].keys()))
+    except AssertionError:
+        return False
+    try:
+        jsonschema.validate(instance={}, schema=obj['parameters'])
+    except jsonschema.exceptions.SchemaError:
+        return False
+    except jsonschema.exceptions.ValidationError:
+        pass
+    return True
+
+
 class BaseTool(ABC):
     name: str = ''
     description: str = ''
-    parameters: List[Dict] = []
+    parameters: Union[List[dict], dict] = []
 
-    def __init__(self, cfg: Optional[Dict] = None):
+    def __init__(self, cfg: Optional[dict] = None):
         self.cfg = cfg or {}
         if not self.name:
             raise ValueError(
                 f'You must set {self.__class__.__name__}.name, either by @register_tool(name=...) or explicitly setting {self.__class__.__name__}.name'
             )
+        if isinstance(self.parameters, dict):
+            if not is_tool_schema({'name': self.name, 'description': self.description, 'parameters': self.parameters}):
+                raise ValueError(
+                    'The parameters, when provided as a dict, must confirm to a valid openai-compatible JSON schema.')
 
     @abstractmethod
     def call(self, params: Union[str, dict], **kwargs) -> Union[str, list, dict, List[ContentItem]]:
@@ -56,20 +106,29 @@ class BaseTool(ABC):
         """
         raise NotImplementedError
 
-    def _verify_json_format_args(self, params: Union[str, dict]) -> Union[str, dict]:
+    def _verify_json_format_args(self, params: Union[str, dict], strict_json: bool = False) -> dict:
         """Verify the parameters of the function call"""
-        try:
-            if isinstance(params, str):
-                params_json = json5.loads(params)
-            else:
-                params_json = params
+        if isinstance(params, str):
+            try:
+                if strict_json:
+                    params_json: dict = json.loads(params)
+                else:
+                    params_json: dict = json_loads(params)
+            except json.decoder.JSONDecodeError:
+                raise ValueError('Parameters must be formatted as a valid JSON!')
+        else:
+            params_json: dict = params
+        if isinstance(self.parameters, list):
             for param in self.parameters:
                 if 'required' in param and param['required']:
                     if param['name'] not in params_json:
                         raise ValueError('Parameters %s is required!' % param['name'])
-            return params_json
-        except Exception:
-            raise ValueError('Parameters cannot be converted to Json Format!')
+        elif isinstance(self.parameters, dict):
+            import jsonschema
+            jsonschema.validate(instance=params_json, schema=self.parameters)
+        else:
+            raise ValueError
+        return params_json
 
     @property
     def function(self) -> dict:  # Bad naming. It should be `function_info`.

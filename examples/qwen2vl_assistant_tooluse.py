@@ -46,17 +46,12 @@ class ExpressTracking(BaseToolWithFileAccess):
 
         host = 'https://wuliu.market.alicloudapi.com'
         path = '/kdi'
-        method = 'GET'
         appcode = os.environ['AppCode_ExpressTracking']  # 开通服务后 买家中心-查看AppCode
         querys = f'no={id}&type={company}'
 
-        bodys = {}
         url = host + path + '?' + querys
         header = {'Authorization': 'APPCODE ' + appcode}
-        try:
-            res = requests.get(url, headers=header)
-        except:
-            return 'URL错误'
+        res = requests.get(url, headers=header)
         httpStatusCode = res.status_code
 
         if (httpStatusCode == 200):
@@ -64,8 +59,9 @@ class ExpressTracking(BaseToolWithFileAccess):
             import json
             try:
                 out = json.loads(res.text)
-            except:
-                out = eval(res.text)
+            except json.decoder.JSONDecodeError:
+                import json5
+                out = json5.loads(res.text)
             return '```json' + json.dumps(out, ensure_ascii=False, indent=4) + '\n```'
         else:
             httpReason = res.headers['X-Ca-Error-Message']
@@ -143,10 +139,8 @@ class Area2Weather(BaseToolWithFileAccess):
 
         host = 'https://ali-weather.showapi.com'
         path = '/spot-to-weather'
-        method = 'GET'
         appcode = os.environ['AppCode_Area2Weather']  # 开通服务后 买家中心-查看AppCode
         querys = f'area={area}&needMoreDay={needMoreDay}&needIndex={needIndex}&needHourData={needHourData}&need3HourForcast={need3HourForcast}&needAlarm={needAlarm}'
-        bodys = {}
         url = host + path + '?' + querys
 
         request = urllib.request.Request(url)
@@ -181,10 +175,8 @@ class WeatherHour24(BaseToolWithFileAccess):
 
         host = 'https://ali-weather.showapi.com'
         path = '/hour24'
-        method = 'GET'
         appcode = os.environ('AppCode_weather_hour24')  # 开通服务后 买家中心-查看AppCode
         querys = f'area={area}&areaCode='
-        bodys = {}
         url = host + path + '?' + querys
 
         request = urllib.request.Request(url)
@@ -283,18 +275,13 @@ def init_agent_service():
     llm_cfg_vl = {
         # Using Qwen2-VL deployed at any openai-compatible service such as vLLM:
         # 'model_type': 'qwenvl_oai',
-        # 'model': 'Qwen/Qwen2-VL-72B-Instruct',
+        # 'model': 'Qwen2-VL-7B-Instruct',
         # 'model_server': 'http://localhost:8000/v1',  # api_base
         # 'api_key': 'EMPTY',
 
         # Using Qwen2-VL provided by Alibaba Cloud DashScope:
-        # 'model_type': 'qwenvl_dashscope',
-        # 'model': 'qwen2-vl-72b-instruct',
-        # 'api_key': os.getenv('DASHSCOPE_API_KEY'),
-
-        # TODO: Use qwen2-vl instead once qwen2-vl is released.
         'model_type': 'qwenvl_dashscope',
-        'model': 'qwen-vl-max',
+        'model': 'qwen-vl-max-0809',
         'api_key': os.getenv('DASHSCOPE_API_KEY'),
         'generate_cfg': dict(max_retries=10,)
     }

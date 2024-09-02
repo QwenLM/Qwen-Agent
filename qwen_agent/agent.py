@@ -21,7 +21,7 @@ class Agent(ABC):
 
     def __init__(self,
                  function_list: Optional[List[Union[str, Dict, BaseTool]]] = None,
-                 llm: Optional[Union[Dict, BaseChatModel]] = None,
+                 llm: Optional[Union[dict, BaseChatModel]] = None,
                  system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
                  name: Optional[str] = None,
                  description: Optional[str] = None,
@@ -48,7 +48,7 @@ class Agent(ABC):
             for tool in function_list:
                 self._init_tool(tool)
 
-        self.system_message = system_message
+        self.system_message = system_message or self.SYSTEM_MESSAGE
         self.name = name
         self.description = description
 
@@ -226,3 +226,10 @@ class Agent(ABC):
             text = ''
 
         return (func_name is not None), func_name, func_args, text
+
+
+# The most basic form of an agent is just a LLM, not augmented with any tool or workflow.
+class BasicAgent(Agent):
+
+    def _run(self, messages: List[Message], lang: str = 'en', **kwargs) -> Iterator[List[Message]]:
+        return self._call_llm(messages)

@@ -1,4 +1,4 @@
-from qwen_agent.agent import Agent
+from qwen_agent.agent import Agent, BasicAgent
 from qwen_agent.multi_agent_hub import MultiAgentHub
 
 from .article_agent import ArticleAgent
@@ -20,6 +20,7 @@ from .write_from_scratch import WriteFromScratch
 
 __all__ = [
     'Agent',
+    'BasicAgent',
     'MultiAgentHub',
     'DocQAAgent',
     'ParallelDocQA',

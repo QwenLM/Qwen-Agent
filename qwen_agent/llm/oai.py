@@ -80,12 +80,12 @@ class TextChatAtOAI(BaseFnCallModel):
             response = self._chat_complete_create(model=self.model, messages=messages, stream=True, **generate_cfg)
             if delta_stream:
                 for chunk in response:
-                    if hasattr(chunk.choices[0].delta, 'content') and chunk.choices[0].delta.content:
+                    if chunk.choices and hasattr(chunk.choices[0].delta, 'content') and chunk.choices[0].delta.content:
                         yield [Message(ASSISTANT, chunk.choices[0].delta.content)]
             else:
                 full_response = ''
                 for chunk in response:
-                    if hasattr(chunk.choices[0].delta, 'content') and chunk.choices[0].delta.content:
+                    if chunk.choices and hasattr(chunk.choices[0].delta, 'content') and chunk.choices[0].delta.content:
                         full_response += chunk.choices[0].delta.content
                         yield [Message(ASSISTANT, full_response)]
         except OpenAIError as ex:

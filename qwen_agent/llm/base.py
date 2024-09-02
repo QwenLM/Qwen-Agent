@@ -10,7 +10,7 @@ from qwen_agent.log import logger
 from qwen_agent.settings import DEFAULT_MAX_INPUT_TOKENS
 from qwen_agent.utils.tokenization_qwen import tokenizer
 from qwen_agent.utils.utils import (extract_text_from_message, format_as_multimodal_message, format_as_text_message,
-                                    has_chinese_messages, merge_generate_cfgs, print_traceback)
+                                    has_chinese_messages, merge_generate_cfgs)
 
 LLM_REGISTRY = {}
 
@@ -59,6 +59,13 @@ class BaseChatModel(ABC):
         self.max_retries = generate_cfg.pop('max_retries', 0)
         self.generate_cfg = generate_cfg
 
+    def quick_chat(self, prompt: str) -> str:
+        responses = self.chat(messages=[Message(role=USER, content=prompt)], stream=False)
+        assert len(responses) == 1
+        assert not responses[0].function_call
+        assert isinstance(responses[0].content, str)
+        return responses[0].content
+
     def chat(
         self,
         messages: List[Union[Message, Dict]],
@@ -90,6 +97,8 @@ class BaseChatModel(ABC):
             )
 
         generate_cfg = merge_generate_cfgs(base_generate_cfg=self.generate_cfg, new_generate_cfg=extra_generate_cfg)
+        if 'seed' not in generate_cfg:
+            generate_cfg['seed'] = random.randint(a=0, b=2**30)
         if 'lang' in generate_cfg:
             lang: Literal['en', 'zh'] = generate_cfg.pop('lang')
         else:
@@ -133,7 +142,7 @@ class BaseChatModel(ABC):
                 fncall_mode = False
 
         # Note: the preprocessor's behavior could change if it receives function_choice="none"
-        messages = self._preprocess_messages(messages, lang=lang, generate_cfg=generate_cfg)
+        messages = self._preprocess_messages(messages, lang=lang, generate_cfg=generate_cfg, functions=functions)
         if not self.support_multimodal_input:
             messages = [format_as_text_message(msg, add_upload_info=False) for msg in messages]
 
@@ -227,8 +236,13 @@ class BaseChatModel(ABC):
     ) -> List[Message]:
         raise NotImplementedError
 
-    def _preprocess_messages(self, messages: List[Message], lang: Literal['en', 'zh'],
-                             generate_cfg: dict) -> List[Message]:
+    def _preprocess_messages(
+        self,
+        messages: List[Message],
+        lang: Literal['en', 'zh'],
+        generate_cfg: dict,
+        functions: Optional[List[Dict]] = None,
+    ) -> List[Message]:
         messages = [format_as_multimodal_message(msg, add_upload_info=True, lang=lang) for msg in messages]
         return messages
 
@@ -457,7 +471,7 @@ def _raise_or_delay(
     if 'maximum context length' in str(e):
         raise e
 
-    print_traceback(is_error=False)
+    logger.warning('ModelServiceError - ' + str(e).strip('\n'))
 
     if num_retries >= max_retries:
         raise ModelServiceError(exception=Exception(f'Maximum number of retries ({max_retries}) exceeded.'))

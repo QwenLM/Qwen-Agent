@@ -33,9 +33,9 @@ def test_llm_oai(functions, stream, delta_stream):
 
     # settings
     llm_cfg = {
-        'model': os.getenv('TEST_MODEL', 'Qwen/Qwen1.5-14B-Chat'),
-        'model_server': os.getenv('TEST_MODEL_SERVER', 'https://api.together.xyz'),
-        'api_key': os.getenv('TEST_MODEL_SERVER_API_KEY', 'none')
+        'model': 'qwen2-7b-instruct',
+        'model_server': 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+        'api_key': os.getenv('DASHSCOPE_API_KEY', 'none')
     }
 
     llm = get_chat_model(llm_cfg)

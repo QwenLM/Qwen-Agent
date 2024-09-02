@@ -19,6 +19,11 @@ def read_description() -> str:
     return long_description
 
 
+# To update the package at PyPI:
+# ```bash
+# python setup.py sdist bdist_wheel
+# twine upload dist/*
+# ```
 setup(
     name='qwen-agent',
     version=get_version(),
