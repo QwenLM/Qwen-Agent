@@ -1,3 +1,4 @@
+import copy
 from typing import Union
 
 from .azure import TextChatAtAzure
@@ -14,17 +15,21 @@ def get_chat_model(cfg: Union[dict, str] = 'qwen-plus') -> BaseChatModel:
 
     Args:
         cfg: The LLM configuration, one example is:
-          llm_cfg = {
-            # Use the model service provided by DashScope:
-            'model': 'qwen-max',
-            'model_server': 'dashscope',
-            # Use your own model service compatible with OpenAI API:
-            # 'model': 'Qwen',
-            # 'model_server': 'http://127.0.0.1:7905/v1',
-            # (Optional) LLM hyper-parameters:
-            'generate_cfg': {
-                'top_p': 0.8
-            }
+          cfg = {
+              # Use the model service provided by DashScope:
+              'model': 'qwen-max',
+              'model_server': 'dashscope',
+
+              # Use your own model service compatible with OpenAI API:
+              # 'model': 'Qwen',
+              # 'model_server': 'http://127.0.0.1:7905/v1',
+
+              # (Optional) LLM hyper-parameters:
+              'generate_cfg': {
+                  'top_p': 0.8,
+                  'max_input_tokens': 6500,
+                  'max_retries': 10,
+              }
           }
 
     Returns:
@@ -36,6 +41,10 @@ def get_chat_model(cfg: Union[dict, str] = 'qwen-plus') -> BaseChatModel:
     if 'model_type' in cfg:
         model_type = cfg['model_type']
         if model_type in LLM_REGISTRY:
+            if model_type in ('oai', 'qwenvl_oai'):
+                if cfg.get('model_server', '').strip() == 'dashscope':
+                    cfg = copy.deepcopy(cfg)
+                    cfg['model_server'] = 'https://dashscope.aliyuncs.com/compatible-mode/v1'
             return LLM_REGISTRY[model_type](cfg)
         else:
             raise ValueError(f'Please set model_type from {str(LLM_REGISTRY.keys())}')

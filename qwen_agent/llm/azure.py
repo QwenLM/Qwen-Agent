@@ -1,4 +1,3 @@
-import copy
 import os
 from typing import Dict, Optional
 
@@ -15,18 +14,15 @@ class TextChatAtAzure(TextChatAtOAI):
         super().__init__(cfg)
         cfg = cfg or {}
 
-        api_base = cfg.get(
-            'api_base',
-            cfg.get(
-                'base_url',
-                cfg.get('model_server', cfg.get('azure_endpoint', '')),
-            ),
-        ).strip()
+        api_base = cfg.get('api_base')
+        api_base = api_base or cfg.get('base_url')
+        api_base = api_base or cfg.get('model_server')
+        api_base = api_base or cfg.get('azure_endpoint')
+        api_base = (api_base or '').strip()
 
-        api_key = cfg.get('api_key', '')
-        if not api_key:
-            api_key = os.getenv('OPENAI_API_KEY', 'EMPTY')
-        api_key = api_key.strip()
+        api_key = cfg.get('api_key')
+        api_key = api_key or os.getenv('OPENAI_API_KEY')
+        api_key = (api_key or 'EMPTY').strip()
 
         api_version = cfg.get('api_version', '2024-06-01')
 
@@ -39,19 +35,7 @@ class TextChatAtAzure(TextChatAtOAI):
             api_kwargs['api_version'] = api_version
 
         def _chat_complete_create(*args, **kwargs):
-            # OpenAI API v1 does not allow the following args, must pass by extra_body
-            extra_params = ['top_k', 'repetition_penalty']
-            if any((k in kwargs) for k in extra_params):
-                kwargs['extra_body'] = copy.deepcopy(kwargs.get('extra_body', {}))
-                for k in extra_params:
-                    if k in kwargs:
-                        kwargs['extra_body'][k] = kwargs.pop(k)
-            if 'request_timeout' in kwargs:
-                kwargs['timeout'] = kwargs.pop('request_timeout')
-
             client = openai.AzureOpenAI(**api_kwargs)
-
-            # client = openai.OpenAI(**api_kwargs)
             return client.chat.completions.create(*args, **kwargs)
 
         self._chat_complete_create = _chat_complete_create

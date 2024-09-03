@@ -279,6 +279,12 @@ def init_agent_service():
         # 'model_server': 'http://localhost:8000/v1',  # api_base
         # 'api_key': 'EMPTY',
 
+        # Using Qwen2-VL provided by Alibaba Cloud DashScope's openai-compatible service:
+        # 'model_type': 'qwenvl_oai',
+        # 'model': 'qwen-vl-max-0809',
+        # 'model_server': 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+        # 'api_key': os.getenv('DASHSCOPE_API_KEY'),
+
         # Using Qwen2-VL provided by Alibaba Cloud DashScope:
         'model_type': 'qwenvl_dashscope',
         'model': 'qwen-vl-max-0809',

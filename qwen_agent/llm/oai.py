@@ -22,21 +22,17 @@ class TextChatAtOAI(BaseFnCallModel):
 
     def __init__(self, cfg: Optional[Dict] = None):
         super().__init__(cfg)
-        self.model = self.model or 'gpt-3.5-turbo'
+        self.model = self.model or 'gpt-4o-mini'
         cfg = cfg or {}
 
-        api_base = cfg.get(
-            'api_base',
-            cfg.get(
-                'base_url',
-                cfg.get('model_server', ''),
-            ),
-        ).strip()
+        api_base = cfg.get('api_base')
+        api_base = api_base or cfg.get('base_url')
+        api_base = api_base or cfg.get('model_server')
+        api_base = (api_base or '').strip()
 
-        api_key = cfg.get('api_key', '')
-        if not api_key:
-            api_key = os.getenv('OPENAI_API_KEY', 'EMPTY')
-        api_key = api_key.strip()
+        api_key = cfg.get('api_key')
+        api_key = api_key or os.getenv('OPENAI_API_KEY')
+        api_key = (api_key or 'EMPTY').strip()
 
         if openai.__version__.startswith('0.'):
             if api_base:
@@ -73,9 +69,7 @@ class TextChatAtOAI(BaseFnCallModel):
         delta_stream: bool,
         generate_cfg: dict,
     ) -> Iterator[List[Message]]:
-        messages = [msg.model_dump() for msg in messages]
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug(f'LLM Input:\n{pretty_format_messages(messages, indent=2)}')
+        messages = self.convert_messages_to_dicts(messages)
         try:
             response = self._chat_complete_create(model=self.model, messages=messages, stream=True, **generate_cfg)
             if delta_stream:
@@ -96,30 +90,16 @@ class TextChatAtOAI(BaseFnCallModel):
         messages: List[Message],
         generate_cfg: dict,
     ) -> List[Message]:
-        messages = [msg.model_dump() for msg in messages]
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug(f'LLM Input:\n{pretty_format_messages(messages, indent=2)}')
+        messages = self.convert_messages_to_dicts(messages)
         try:
             response = self._chat_complete_create(model=self.model, messages=messages, stream=False, **generate_cfg)
             return [Message(ASSISTANT, response.choices[0].message.content)]
         except OpenAIError as ex:
             raise ModelServiceError(exception=ex)
 
-
-def pretty_format_messages(messages: List[dict], indent: int = 2) -> str:
-    messages_show = []
-    for msg in messages:
-        assert isinstance(msg, dict)
-        msg_show = copy.deepcopy(msg)
-        if isinstance(msg['content'], list):
-            content = []
-            for item in msg['content']:
-                (t, v), = item.items()
-                if (t != 'text') and v.startswith('data:'):
-                    v = v[:64] + ' ...'
-                content.append({t: v})
-        else:
-            content = msg['content']
-        msg_show['content'] = content
-        messages_show.append(msg_show)
-    return pformat(messages_show, indent=indent)
+    @staticmethod
+    def convert_messages_to_dicts(messages: List[Message]) -> List[dict]:
+        messages = [msg.model_dump() for msg in messages]
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f'LLM Input:\n{pformat(messages, indent=2)}')
+        return messages

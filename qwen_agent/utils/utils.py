@@ -471,7 +471,7 @@ def encode_image_as_base64(path: str, max_short_side_length: int = -1) -> str:
     image = image.convert(mode='RGB')
     buffered = BytesIO()
     image.save(buffered, format='JPEG')
-    return 'data:image/jpg;base64,' + base64.b64encode(buffered.getvalue()).decode('utf-8')
+    return 'data:image/jpeg;base64,' + base64.b64encode(buffered.getvalue()).decode('utf-8')
 
 
 def load_image_from_base64(image_base64: Union[bytes, str]):
