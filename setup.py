@@ -47,6 +47,7 @@ setup(
         'eval_type_backport',
         'json5',
         'jsonlines',
+        'jsonschema',
         'openai',
         'pydantic>=2.3.0',
         'requests',

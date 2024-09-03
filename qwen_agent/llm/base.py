@@ -60,7 +60,7 @@ class BaseChatModel(ABC):
         self.generate_cfg = generate_cfg
 
     def quick_chat(self, prompt: str) -> str:
-        responses = self.chat(messages=[Message(role=USER, content=prompt)], stream=False)
+        *_, responses = self.chat(messages=[Message(role=USER, content=prompt)])
         assert len(responses) == 1
         assert not responses[0].function_call
         assert isinstance(responses[0].content, str)

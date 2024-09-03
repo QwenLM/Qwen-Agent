@@ -57,13 +57,10 @@ def test_assistant_vl():
     agent = Assistant(llm=llm_cfg)
 
     messages = [
-        Message(
-            'user',
-            [
-                ContentItem(text='用一句话描述图片'),
-                ContentItem(image=  # NOQA
-                            'https://img01.sc115.com/uploads/sc/jpgs/1505/apic11540_sc115.com.jpg')
-            ])
+        Message('user', [
+            ContentItem(text='用一句话描述图片'),
+            ContentItem(image='https://dashscope.oss-cn-beijing.aliyuncs.com/images/dog_and_girl.jpeg'),
+        ])
     ]
 
     *_, last = agent.run(messages)

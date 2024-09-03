@@ -50,7 +50,7 @@ class VisualStorytelling(Agent):
 
 
 def test(query: Optional[str] = '看图说话',
-         image: str = 'https://img01.sc115.com/uploads3/sc/vector/201809/51413-20180914205509.jpg'):
+         image: str = 'https://dashscope.oss-cn-beijing.aliyuncs.com/images/dog_and_girl.jpeg'):
     # define a writer agent
     bot = VisualStorytelling(llm={'model': 'qwen-max'})
 
@@ -71,7 +71,7 @@ def app_tui():
     messages = []
     while True:
         query = input('user question: ')
-        # image example: https://img01.sc115.com/uploads3/sc/vector/201809/51413-20180914205509.jpg
+        # image example: https://dashscope.oss-cn-beijing.aliyuncs.com/images/dog_and_girl.jpeg
         image = input('image url: ').strip()
 
         if not image:

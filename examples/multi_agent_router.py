@@ -36,7 +36,7 @@ def init_agent_service():
 
 def test(
         query: str = 'hello',
-        image: str = 'https://img01.sc115.com/uploads/sc/jpgs/1505/apic11540_sc115.com.jpg',
+        image: str = 'https://dashscope.oss-cn-beijing.aliyuncs.com/images/dog_and_girl.jpeg',
         file: Optional[str] = os.path.join(ROOT_RESOURCE, 'poem.pdf'),
 ):
     # Define the agent
@@ -66,7 +66,7 @@ def app_tui():
     messages = []
     while True:
         query = input('user question: ')
-        # Image example: https://img01.sc115.com/uploads/sc/jpgs/1505/apic11540_sc115.com.jpg
+        # Image example: https://dashscope.oss-cn-beijing.aliyuncs.com/images/dog_and_girl.jpeg
         image = input('image url (press enter if no image): ')
         # File example: resource/poem.pdf
         file = input('file url (press enter if no file): ').strip()

@@ -34,11 +34,12 @@ def test_vl_mix_text(functions, stream, delta_stream):
     # Chat with vl llm
     llm_vl = get_chat_model(llm_cfg_vl)
     messages = [{
-        'role': 'user',
+        'role':
+            'user',
         'content': [{
             'text': '框出太阳'
         }, {
-            'image': 'https://img01.sc115.com/uploads/sc/jpgs/1505/apic11540_sc115.com.jpg'
+            'image': 'https://dashscope.oss-cn-beijing.aliyuncs.com/images/dog_and_girl.jpeg'
         }]
     }]
     response = llm_vl.chat(messages=messages, functions=None, stream=stream, delta_stream=delta_stream)

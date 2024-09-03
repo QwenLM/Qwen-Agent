@@ -23,7 +23,7 @@ def test_router():
     messages = [
         Message('user', [
             ContentItem(text='描述图片'),
-            ContentItem(image='https://img01.sc115.com/uploads/sc/jpgs/1505/apic11540_sc115.com.jpg'),
+            ContentItem(image='https://dashscope.oss-cn-beijing.aliyuncs.com/images/dog_and_girl.jpeg'),
         ])
     ]
 

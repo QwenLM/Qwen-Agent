@@ -37,7 +37,7 @@ def test_llm_vl_mix_text():
 
 
 @pytest.mark.parametrize('query', [None, '看图说话'])
-@pytest.mark.parametrize('image', ['https://img01.sc115.com/uploads3/sc/vector/201809/51413-20180914205509.jpg'])
+@pytest.mark.parametrize('image', ['https://dashscope.oss-cn-beijing.aliyuncs.com/images/dog_and_girl.jpeg'])
 def test_visual_storytelling(query, image):
     visual_storytelling(query=query, image=image)
 
@@ -69,7 +69,7 @@ def test_llm_riddles():
 
 
 @pytest.mark.parametrize('query', ['告诉我你现在知道什么了'])
-@pytest.mark.parametrize('image', [None, 'https://img01.sc115.com/uploads/sc/jpgs/1505/apic11540_sc115.com.jpg'])
+@pytest.mark.parametrize('image', [None, 'https://dashscope.oss-cn-beijing.aliyuncs.com/images/dog_and_girl.jpeg'])
 @pytest.mark.parametrize('file', [None, os.path.join(ROOT_RESOURCE, 'poem.pdf')])
 def test_multi_agent_router(query, image, file):
     multi_agent_router(query=query, image=image, file=file)

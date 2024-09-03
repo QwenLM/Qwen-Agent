@@ -29,9 +29,9 @@ def test():
         'role':
             'user',
         'content': [{
-            'text': '框出太阳并描述'
+            'text': '框出小狗并描述',
         }, {
-            'image': 'https://img01.sc115.com/uploads/sc/jpgs/1505/apic11540_sc115.com.jpg'
+            'image': 'https://dashscope.oss-cn-beijing.aliyuncs.com/images/dog_and_girl.jpeg',
         }]
     }]
     response = llm_vl.chat(messages, stream=True)
