@@ -16,6 +16,7 @@ from typing import Any, List, Literal, Optional, Tuple, Union
 
 import json5
 import requests
+from pydantic import BaseModel
 
 from qwen_agent.llm.schema import ASSISTANT, DEFAULT_SYSTEM_MESSAGE, FUNCTION, SYSTEM, USER, ContentItem, Message
 from qwen_agent.log import logger
@@ -293,8 +294,16 @@ def json_loads(text: str) -> dict:
             raise json_err
 
 
-def json_dumps(obj: dict) -> str:
-    return json.dumps(obj, ensure_ascii=False, indent=2)
+class PydanticJSONEncoder(json.JSONEncoder):
+
+    def default(self, obj):
+        if isinstance(obj, BaseModel):
+            return obj.model_dump()
+        return super().default(obj)
+
+
+def json_dumps(obj: dict, ensure_ascii=False, indent=2, **kwargs) -> str:
+    return json.dumps(obj, ensure_ascii=ensure_ascii, indent=indent, cls=PydanticJSONEncoder, **kwargs)
 
 
 def format_as_multimodal_message(

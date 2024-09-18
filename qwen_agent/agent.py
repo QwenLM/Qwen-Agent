@@ -232,4 +232,7 @@ class Agent(ABC):
 class BasicAgent(Agent):
 
     def _run(self, messages: List[Message], lang: str = 'en', **kwargs) -> Iterator[List[Message]]:
-        return self._call_llm(messages)
+        extra_generate_cfg = {'lang': lang}
+        if kwargs.get('seed') is not None:
+            extra_generate_cfg['seed'] = kwargs['seed']
+        return self._call_llm(messages, extra_generate_cfg=extra_generate_cfg)

@@ -64,6 +64,9 @@ def test():
             functions=functions,
             stream=True,
             extra_generate_cfg=dict(
+                # This will truncate the history until the input tokens are less than the limit.
+                max_input_tokens=6500,
+
                 # Note: set parallel_function_calls=True to enable parallel function calling
                 parallel_function_calls=True,  # Default: False
                 # Note: set function_choice='auto' to let the model decide whether to call a function or not
@@ -108,7 +111,10 @@ def test():
         for responses in llm.chat(
                 messages=messages,
                 functions=functions,
-                extra_generate_cfg={'parallel_function_calls': True},
+                extra_generate_cfg={
+                    'max_input_tokens': 6500,
+                    'parallel_function_calls': True,
+                },
                 stream=True,
         ):  # get a new response from the model where it can see the function response
             print(responses)
