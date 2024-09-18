@@ -1,4 +1,6 @@
 import copy
+import json
+import os
 import random
 import time
 from abc import ABC, abstractmethod
@@ -10,7 +12,7 @@ from qwen_agent.log import logger
 from qwen_agent.settings import DEFAULT_MAX_INPUT_TOKENS
 from qwen_agent.utils.tokenization_qwen import tokenizer
 from qwen_agent.utils.utils import (extract_text_from_message, format_as_multimodal_message, format_as_text_message,
-                                    has_chinese_messages, merge_generate_cfgs)
+                                    has_chinese_messages, json_dumps, merge_generate_cfgs, print_traceback)
 
 LLM_REGISTRY = {}
 
@@ -56,8 +58,22 @@ class BaseChatModel(ABC):
         cfg = cfg or {}
         self.model = cfg.get('model', '').strip()
         generate_cfg = copy.deepcopy(cfg.get('generate_cfg', {}))
+        cache_dir = cfg.get('cache_dir', generate_cfg.pop('cache_dir', None))
         self.max_retries = generate_cfg.pop('max_retries', 0)
         self.generate_cfg = generate_cfg
+
+        if cache_dir:
+            try:
+                import diskcache
+            except ImportError:
+                print_traceback(is_error=False)
+                logger.warning('Caching disabled because diskcache is not installed. Please `pip install diskcache`.')
+                cache_dir = None
+        if cache_dir:
+            os.makedirs(cache_dir, exist_ok=True)
+            self.cache = diskcache.Cache(directory=cache_dir)
+        else:
+            self.cache = None
 
     def quick_chat(self, prompt: str) -> str:
         *_, responses = self.chat(messages=[Message(role=USER, content=prompt)])
@@ -89,6 +105,31 @@ class BaseChatModel(ABC):
             the generated message list response by llm.
         """
 
+        # Unify the input messages to type List[Message]:
+        messages = copy.deepcopy(messages)
+        _return_message_type = 'dict'
+        new_messages = []
+        for msg in messages:
+            if isinstance(msg, dict):
+                new_messages.append(Message(**msg))
+            else:
+                new_messages.append(msg)
+                _return_message_type = 'message'
+        messages = new_messages
+
+        # Cache lookup:
+        if self.cache is not None:
+            cache_key = dict(messages=messages, functions=functions, extra_generate_cfg=extra_generate_cfg)
+            cache_key: str = json_dumps(cache_key, sort_keys=True)
+            cache_value: str = self.cache.get(cache_key)
+            if cache_value:
+                cache_value: List[dict] = json.loads(cache_value)
+                if _return_message_type == 'message':
+                    cache_value: List[Message] = [Message(**m) for m in cache_value]
+                if stream:
+                    cache_value: Iterator[List[Union[Message, dict]]] = iter([cache_value])
+                return cache_value
+
         if stream and delta_stream:
             logger.warning(
                 'Support for `delta_stream=True` is deprecated. '
@@ -103,18 +144,6 @@ class BaseChatModel(ABC):
             lang: Literal['en', 'zh'] = generate_cfg.pop('lang')
         else:
             lang: Literal['en', 'zh'] = 'zh' if has_chinese_messages(messages) else 'en'
-
-        messages = copy.deepcopy(messages)
-
-        _return_message_type = 'dict'
-        new_messages = []
-        for msg in messages:
-            if isinstance(msg, dict):
-                new_messages.append(Message(**msg))
-            else:
-                new_messages.append(msg)
-                _return_message_type = 'message'
-        messages = new_messages
 
         if messages[0].role != SYSTEM:
             messages = [Message(role=SYSTEM, content=DEFAULT_SYSTEM_MESSAGE)] + messages
@@ -183,6 +212,8 @@ class BaseChatModel(ABC):
             output = self._postprocess_messages(output, fncall_mode=fncall_mode, generate_cfg=generate_cfg)
             if not self.support_multimodal_output:
                 output = _format_as_text_messages(messages=output)
+            if self.cache:
+                self.cache.set(cache_key, json_dumps(output))
             return self._convert_messages_to_target_type(output, _return_message_type)
         else:
             assert stream
@@ -193,7 +224,18 @@ class BaseChatModel(ABC):
                 assert 'skip_stopword_postproc' not in generate_cfg
                 generate_cfg['skip_stopword_postproc'] = True
             output = self._postprocess_messages_iterator(output, fncall_mode=fncall_mode, generate_cfg=generate_cfg)
-            return self._convert_messages_iterator_to_target_type(output, _return_message_type)
+
+            def _format_and_cache() -> Iterator[List[Message]]:
+                o = []
+                for o in output:
+                    if o:
+                        if not self.support_multimodal_output:
+                            o = _format_as_text_messages(messages=o)
+                        yield o
+                if o and (self.cache is not None):
+                    self.cache.set(cache_key, json_dumps(o))
+
+            return self._convert_messages_iterator_to_target_type(_format_and_cache(), _return_message_type)
 
     def _chat(
         self,
@@ -266,11 +308,7 @@ class BaseChatModel(ABC):
     ) -> Iterator[List[Message]]:
         pre_msg = []
         for pre_msg in messages:
-            post_msg = self._postprocess_messages(pre_msg, fncall_mode=fncall_mode, generate_cfg=generate_cfg)
-            if not self.support_multimodal_output:
-                post_msg = _format_as_text_messages(messages=post_msg)
-            if post_msg:
-                yield post_msg
+            yield self._postprocess_messages(pre_msg, fncall_mode=fncall_mode, generate_cfg=generate_cfg)
         logger.debug(f'LLM Output:\n{pformat([_.model_dump() for _ in pre_msg], indent=2)}')
 
     def _convert_messages_to_target_type(self, messages: List[Message],
