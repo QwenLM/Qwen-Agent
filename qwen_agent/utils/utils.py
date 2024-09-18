@@ -444,7 +444,7 @@ def build_text_completion_prompt(
 
     for msg in messages:
         assert isinstance(msg.content, str)
-        content = msg.content.lstrip('\n').rstrip()
+        content = msg.content
         if allow_special:
             assert msg.role in (USER, ASSISTANT, SYSTEM, FUNCTION)
             if msg.function_call:

@@ -21,7 +21,7 @@ def _check_deps_for_rag():
         from pptx import Presentation  # noqa
     except ImportError as e:
         raise ImportError('The dependencies for RAG support are not installed. '
-                          'Please install the required dependencies by running: pip install qwen-agent[rag]') from e
+                          'Please install the required dependencies by running: pip install "qwen-agent[rag]"') from e
 
 
 @register_tool('retrieval')

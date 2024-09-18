@@ -15,7 +15,7 @@ It also comes with example applications such as Browser Assistant, Code Interpre
 
 - Install the stable version from PyPI:
 ```bash
-pip install -U qwen-agent[rag,code_interpreter]
+pip install -U "qwen-agent[rag,code_interpreter]"
 # Or `pip install -U qwen-agent` for minimal requirements if RAG and Code Interpreter are not being used.
 ```
 
@@ -23,14 +23,14 @@ pip install -U qwen-agent[rag,code_interpreter]
 ```bash
 git clone https://github.com/QwenLM/Qwen-Agent.git
 cd Qwen-Agent
-pip install -e ./[rag,code_interpreter]
+pip install -e ./"[rag,code_interpreter]"
 # Or `pip install -e ./` for minimal requirements if RAG and Code Interpreter are not being used.
 ```
 
 Optionally, please install the optional dependencies if built-in GUI support is needed via:
 ```bash
-pip install -U qwen-agent[gui,rag,code_interpreter]
-# Or install from the source via `pip install -e ./[gui,rag,code_interpreter]`
+pip install -U "qwen-agent[gui,rag,code_interpreter]"
+# Or install from the source via `pip install -e ./"[gui,rag,code_interpreter]"`
 ```
 
 ## Preparation: Model Service

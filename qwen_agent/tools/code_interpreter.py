@@ -275,7 +275,7 @@ def _check_deps_for_code_interpreter():
     except ImportError as e:
         raise ImportError(
             'The dependencies for Code Interpreter support are not installed. '
-            'Please install the required dependencies by running: pip install qwen-agent[code_interpreter]') from e
+            'Please install the required dependencies by running: pip install "qwen-agent[code_interpreter]"') from e
 
 
 def _fix_matplotlib_cjk_font_issue():
