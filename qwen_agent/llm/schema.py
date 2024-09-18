@@ -102,16 +102,18 @@ class Message(BaseModelCompatibleDict):
     content: Union[str, List[ContentItem]]
     name: Optional[str] = None
     function_call: Optional[FunctionCall] = None
+    extra: Optional[dict] = None
 
     def __init__(self,
                  role: str,
                  content: Optional[Union[str, List[ContentItem]]],
                  name: Optional[str] = None,
                  function_call: Optional[FunctionCall] = None,
+                 extra: Optional[dict] = None,
                  **kwargs):
         if content is None:
             content = ''
-        super().__init__(role=role, content=content, name=name, function_call=function_call)
+        super().__init__(role=role, content=content, name=name, function_call=function_call, extra=extra)
 
     def __repr__(self):
         return f'Message({self.model_dump()})'

@@ -4,6 +4,7 @@ from .code_interpreter import CodeInterpreter
 from .doc_parser import DocParser
 from .extract_doc_vocabulary import ExtractDocVocabulary
 from .image_gen import ImageGen
+from .python_executor import PythonExecutor
 from .retrieval import Retrieval
 from .search_tools import FrontPageSearch, HybridSearch, KeywordSearch, VectorSearch
 from .simple_doc_parser import SimpleDocParser
@@ -26,4 +27,5 @@ __all__ = [
     'HybridSearch',
     'FrontPageSearch',
     'ExtractDocVocabulary',
+    'PythonExecutor',
 ]

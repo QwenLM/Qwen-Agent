@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 from pprint import pformat
 from typing import Any, Dict, Iterator, List, Literal, Optional, Tuple, Union
 
-from qwen_agent.llm.schema import DEFAULT_SYSTEM_MESSAGE, SYSTEM, USER, Message
+from qwen_agent.llm.schema import ASSISTANT, DEFAULT_SYSTEM_MESSAGE, SYSTEM, USER, Message
 from qwen_agent.log import logger
 from qwen_agent.settings import DEFAULT_MAX_INPUT_TOKENS
 from qwen_agent.utils.tokenization_qwen import tokenizer
@@ -191,12 +191,17 @@ class BaseChatModel(ABC):
                     lang=lang,
                 )
             else:
-                return self._chat(
-                    messages,
-                    stream=stream,
-                    delta_stream=delta_stream,
-                    generate_cfg=generate_cfg,
-                )
+                # TODO: Optimize code structure
+                if messages[-1].role == ASSISTANT:
+                    assert not delta_stream, 'Continuation mode does not currently support `delta_stream`'
+                    return self._continue_assistant_response(messages, generate_cfg=generate_cfg, stream=stream)
+                else:
+                    return self._chat(
+                        messages,
+                        stream=stream,
+                        delta_stream=delta_stream,
+                        generate_cfg=generate_cfg,
+                    )
 
         if stream and delta_stream:
             # No retry for delta streaming
@@ -259,6 +264,14 @@ class BaseChatModel(ABC):
         generate_cfg: dict,
         lang: Literal['en', 'zh'],
     ) -> Union[List[Message], Iterator[List[Message]]]:
+        raise NotImplementedError
+
+    def _continue_assistant_response(
+        self,
+        messages: List[Message],
+        generate_cfg: dict,
+        stream: bool,
+    ) -> Iterator[List[Message]]:
         raise NotImplementedError
 
     @abstractmethod

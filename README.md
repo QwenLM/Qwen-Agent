@@ -9,13 +9,17 @@ Qwen-Agent is a framework for developing LLM applications based on the instructi
 memory capabilities of Qwen.
 It also comes with example applications such as Browser Assistant, Code Interpreter, and Custom Assistant.
 
+# News
+* 🔥🔥🔥 Sep 18, 2024: Added [Qwen2.5-Math Demo](./examples/tir_math.py), supports accessing models via DashScope API, and allows running code locally to experience Tool-Integrated Reasoning capabilities of Qwen2.5-Math.
+
+
 # Getting Started
 
 ## Installation
 
 - Install the stable version from PyPI:
 ```bash
-pip install -U "qwen-agent[rag,code_interpreter]"
+pip install -U "qwen-agent[rag,code_interpreter,python_executor,gui]"
 # Or `pip install -U qwen-agent` for minimal requirements if RAG and Code Interpreter are not being used.
 ```
 
@@ -23,7 +27,7 @@ pip install -U "qwen-agent[rag,code_interpreter]"
 ```bash
 git clone https://github.com/QwenLM/Qwen-Agent.git
 cd Qwen-Agent
-pip install -e ./"[rag,code_interpreter]"
+pip install -e ./"[rag,code_interpreter,python_executor]"
 # Or `pip install -e ./` for minimal requirements if RAG and Code Interpreter are not being used.
 ```
 

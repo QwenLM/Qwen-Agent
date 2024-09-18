@@ -69,6 +69,14 @@ setup(
             'tabulate',
         ],
 
+        # Extra dependencies for Python Executor(Simple Code Interpreter):
+        'python_executor': [
+            'pebble',
+            'multiprocess',
+            'timeout_decorator',
+            'python-dateutil',
+        ],
+
         # Extra dependencies for Code Interpreter:
         'code_interpreter': [
             'anyio>=3.7.1',
@@ -86,7 +94,7 @@ setup(
         # Extra dependencies for Gradio-based GUI:
         'gui': [
             'gradio==4.21.0',
-            'modelscope-studio>=0.4.0',
+            'modelscope-studio>=0.5.0',
         ],
     },
     url='https://github.com/QwenLM/Qwen-Agent',

@@ -91,17 +91,44 @@ class WebUI:
 
             with gr.Row(elem_classes='container'):
                 with gr.Column(scale=4):
-                    chatbot = mgr.Chatbot(
-                        value=convert_history_to_chatbot(messages=messages),
-                        avatar_images=[
-                            self.user_config,
-                            self.agent_config_list,
-                        ],
-                        height=900,
-                        avatar_image_width=80,
-                        flushing=False,
-                        show_copy_button=True,
-                    )
+                    chatbot = mgr.Chatbot(value=convert_history_to_chatbot(messages=messages),
+                                          avatar_images=[
+                                              self.user_config,
+                                              self.agent_config_list,
+                                          ],
+                                          height=900,
+                                          avatar_image_width=80,
+                                          flushing=False,
+                                          show_copy_button=True,
+                                          latex_delimiters=[{
+                                              'left': '\\(',
+                                              'right': '\\)',
+                                              'display': True
+                                          }, {
+                                              'left': '\\begin{equation}',
+                                              'right': '\\end{equation}',
+                                              'display': True
+                                          }, {
+                                              'left': '\\begin{align}',
+                                              'right': '\\end{align}',
+                                              'display': True
+                                          }, {
+                                              'left': '\\begin{alignat}',
+                                              'right': '\\end{alignat}',
+                                              'display': True
+                                          }, {
+                                              'left': '\\begin{gather}',
+                                              'right': '\\end{gather}',
+                                              'display': True
+                                          }, {
+                                              'left': '\\begin{CD}',
+                                              'right': '\\end{CD}',
+                                              'display': True
+                                          }, {
+                                              'left': '\\[',
+                                              'right': '\\]',
+                                              'display': True
+                                          }])
 
                     input = mgr.MultimodalInput(placeholder=self.input_placeholder,)
 

@@ -7,13 +7,16 @@
 
 Qwen-Agent是一个开发框架。开发者可基于本框架开发Agent应用，充分利用基于通义千问模型（Qwen）的指令遵循、工具使用、规划、记忆能力。本项目也提供了浏览器助手、代码解释器、自定义助手等示例应用。
 
+# 更新
+* 🔥🔥🔥Sep 18, 2024: 增加 [Qwen2.5-Math Demo](./examples/tir_math.py)，支持访问DashScope API调用模型，支持本地运行代码体验Tool-Integrated Reasoning能力。
+
 # 开始上手
 
 ## 安装
 
 - 从 PyPI 安装稳定版本：
 ```bash
-pip install -U "qwen-agent[rag,code_interpreter]"
+pip install -U "qwen-agent[rag,code_interpreter,python_executor,gui]"
 # 如果不使用 RAG 和代码解释器，可以使用 `pip install -U qwen-agent` 安装最小依赖。
 ```
 
@@ -21,7 +24,7 @@ pip install -U "qwen-agent[rag,code_interpreter]"
 ```bash
 git clone https://github.com/QwenLM/Qwen-Agent.git
 cd Qwen-Agent
-pip install -e ./"[rag,code_interpreter]"
+pip install -e ./"[rag,code_interpreter,python_executor]"
 # 如果不使用 RAG 和代码解释器，可以使用 `pip install -e ./` 安装最小依赖。
 ```
 

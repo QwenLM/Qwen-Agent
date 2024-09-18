@@ -16,6 +16,7 @@ from .group_chat_creator import GroupChatCreator
 from .human_simulator import HumanSimulator
 from .react_chat import ReActChat
 from .router import Router
+from .tir_agent import TIRMathAgent
 from .user_agent import UserAgent
 from .virtual_memory_agent import VirtualMemoryAgent
 from .write_from_scratch import WriteFromScratch
@@ -40,4 +41,5 @@ __all__ = [
     'FnCallAgent',
     'VirtualMemoryAgent',
     'DialogueRetrievalAgent',
+    'TIRMathAgent',
 ]
