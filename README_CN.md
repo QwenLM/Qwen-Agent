@@ -8,7 +8,7 @@
 Qwen-Agent是一个开发框架。开发者可基于本框架开发Agent应用，充分利用基于通义千问模型（Qwen）的指令遵循、工具使用、规划、记忆能力。本项目也提供了浏览器助手、代码解释器、自定义助手等示例应用。
 
 # 更新
-* 🔥🔥🔥Sep 18, 2024: 增加 [Qwen2.5-Math Demo](./examples/tir_math.py)，支持访问DashScope API调用模型，支持本地运行代码体验Tool-Integrated Reasoning能力。
+* 🔥🔥🔥Sep 18, 2024: 新增[Qwen2.5-Math Demo](./examples/tir_math.py)以展示Qwen2.5-Math基于工具的推理能力。注意：代码执行工具未进行沙箱保护，仅适用于本地测试，不可用于生产。
 
 # 开始上手
 
@@ -17,7 +17,12 @@ Qwen-Agent是一个开发框架。开发者可基于本框架开发Agent应用�
 - 从 PyPI 安装稳定版本：
 ```bash
 pip install -U "qwen-agent[rag,code_interpreter,python_executor,gui]"
-# 如果不使用 RAG 和代码解释器，可以使用 `pip install -U qwen-agent` 安装最小依赖。
+# 或者，使用 `pip install -U qwen-agent` 来安装最小依赖。
+# 可使用双括号指定如下的可选依赖：
+#   [gui] 用于提供基于 Gradio 的 GUI 支持；
+#   [rag] 用于支持 RAG；
+#   [code_interpreter] 用于提供代码解释器相关支持；
+#   [python_executor] 用于支持 Qwen2.5-Math 基于工具的推理。
 ```
 
 - 或者，你可以从源码安装最新的开发版本：
@@ -25,7 +30,7 @@ pip install -U "qwen-agent[rag,code_interpreter,python_executor,gui]"
 git clone https://github.com/QwenLM/Qwen-Agent.git
 cd Qwen-Agent
 pip install -e ./"[rag,code_interpreter,python_executor]"
-# 如果不使用 RAG 和代码解释器，可以使用 `pip install -e ./` 安装最小依赖。
+# 或者，使用 `pip install -e ./` 安装最小依赖。
 ```
 
 如果需要内置 GUI 支持，请选择性地安装可选依赖：

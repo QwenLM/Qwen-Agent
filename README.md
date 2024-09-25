@@ -10,8 +10,7 @@ memory capabilities of Qwen.
 It also comes with example applications such as Browser Assistant, Code Interpreter, and Custom Assistant.
 
 # News
-* 🔥🔥🔥 Sep 18, 2024: Added [Qwen2.5-Math Demo](./examples/tir_math.py), supports accessing models via DashScope API, and allows running code locally to experience Tool-Integrated Reasoning capabilities of Qwen2.5-Math.
-
+* 🔥🔥🔥 Sep 18, 2024: Added [Qwen2.5-Math Demo](./examples/tir_math.py) to showcase the Tool-Integrated Reasoning capabilities of Qwen2.5-Math. Note: The python executor is not sandboxed and is intended for local testing only, not for production use.
 
 # Getting Started
 
@@ -19,22 +18,21 @@ It also comes with example applications such as Browser Assistant, Code Interpre
 
 - Install the stable version from PyPI:
 ```bash
-pip install -U "qwen-agent[rag,code_interpreter,python_executor,gui]"
-# Or `pip install -U qwen-agent` for minimal requirements if RAG and Code Interpreter are not being used.
+pip install -U "qwen-agent[gui,rag,code_interpreter,python_executor]"
+# Or use `pip install -U qwen-agent` for the minimal requirements.
+# The optional requirements, specified in double brackets, are:
+#   [gui] for Gradio-based GUI support;
+#   [rag] for RAG support;
+#   [code_interpreter] for Code Interpreter support;
+#   [python_executor] for Tool-Integrated Reasoning with Qwen2.5-Math.
 ```
 
 - Alternatively, you can install the latest development version from the source:
 ```bash
 git clone https://github.com/QwenLM/Qwen-Agent.git
 cd Qwen-Agent
-pip install -e ./"[rag,code_interpreter,python_executor]"
-# Or `pip install -e ./` for minimal requirements if RAG and Code Interpreter are not being used.
-```
-
-Optionally, please install the optional dependencies if built-in GUI support is needed via:
-```bash
-pip install -U "qwen-agent[gui,rag,code_interpreter]"
-# Or install from the source via `pip install -e ./"[gui,rag,code_interpreter]"`
+pip install -e ./"[gui,rag,code_interpreter,python_executor]"
+# Or `pip install -e ./` for minimal requirements.
 ```
 
 ## Preparation: Model Service

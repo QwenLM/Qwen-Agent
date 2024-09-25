@@ -69,12 +69,15 @@ setup(
             'tabulate',
         ],
 
-        # Extra dependencies for Python Executor(Simple Code Interpreter):
+        # Extra dependencies for Python Executor, which is primarily for solving math problems:
         'python_executor': [
             'pebble',
             'multiprocess',
             'timeout_decorator',
             'python-dateutil',
+            'sympy',
+            'numpy',
+            'scipy',
         ],
 
         # Extra dependencies for Code Interpreter:
@@ -93,8 +96,12 @@ setup(
 
         # Extra dependencies for Gradio-based GUI:
         'gui': [
-            'gradio==4.21.0',
-            'modelscope-studio>=0.5.0',
+            # Gradio has bad version compatibility. Therefore, we use `==` instead of `>=`.
+            'pydantic==2.9.2',
+            'pydantic-core==2.23.4',
+            'gradio==4.44.0',
+            'gradio-client==1.3.0',
+            'modelscope-studio==0.5.0',
         ],
     },
     url='https://github.com/QwenLM/Qwen-Agent',

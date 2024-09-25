@@ -26,10 +26,14 @@ class BaseModelCompatibleDict(BaseModel):
         setattr(self, key, value)
 
     def model_dump(self, **kwargs):
-        return super().model_dump(exclude_none=True, **kwargs)
+        if 'exclude_none' not in kwargs:
+            kwargs['exclude_none'] = True
+        return super().model_dump(**kwargs)
 
     def model_dump_json(self, **kwargs):
-        return super().model_dump_json(exclude_none=True, **kwargs)
+        if 'exclude_none' not in kwargs:
+            kwargs['exclude_none'] = True
+        return super().model_dump_json(**kwargs)
 
     def get(self, key, default=None):
         try:

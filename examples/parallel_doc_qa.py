@@ -3,7 +3,7 @@ from qwen_agent.gui import WebUI
 
 
 def test():
-    bot = ParallelDocQA(llm={'model': 'qwen2-72b-instruct', 'generate_cfg': {'max_retries': 10}})
+    bot = ParallelDocQA(llm={'model': 'qwen2.5-72b-instruct', 'generate_cfg': {'max_retries': 10}})
     messages = [
         {
             'role': 'user',
@@ -25,7 +25,7 @@ def app_gui():
     # Define the agent
     bot = ParallelDocQA(
         llm={
-            'model': 'qwen2-72b-instruct',
+            'model': 'qwen2.5-72b-instruct',
             'generate_cfg': {
                 'max_retries': 10
             }
