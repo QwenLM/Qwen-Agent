@@ -12,7 +12,7 @@ from qwen_agent.log import logger
 from qwen_agent.settings import DEFAULT_MAX_INPUT_TOKENS
 from qwen_agent.utils.tokenization_qwen import tokenizer
 from qwen_agent.utils.utils import (extract_text_from_message, format_as_multimodal_message, format_as_text_message,
-                                    has_chinese_messages, json_dumps, merge_generate_cfgs, print_traceback)
+                                    has_chinese_messages, json_dumps_compact, merge_generate_cfgs, print_traceback)
 
 LLM_REGISTRY = {}
 
@@ -120,7 +120,7 @@ class BaseChatModel(ABC):
         # Cache lookup:
         if self.cache is not None:
             cache_key = dict(messages=messages, functions=functions, extra_generate_cfg=extra_generate_cfg)
-            cache_key: str = json_dumps(cache_key, sort_keys=True)
+            cache_key: str = json_dumps_compact(cache_key, sort_keys=True)
             cache_value: str = self.cache.get(cache_key)
             if cache_value:
                 cache_value: List[dict] = json.loads(cache_value)
@@ -218,7 +218,7 @@ class BaseChatModel(ABC):
             if not self.support_multimodal_output:
                 output = _format_as_text_messages(messages=output)
             if self.cache:
-                self.cache.set(cache_key, json_dumps(output))
+                self.cache.set(cache_key, json_dumps_compact(output))
             return self._convert_messages_to_target_type(output, _return_message_type)
         else:
             assert stream
@@ -238,7 +238,7 @@ class BaseChatModel(ABC):
                             o = _format_as_text_messages(messages=o)
                         yield o
                 if o and (self.cache is not None):
-                    self.cache.set(cache_key, json_dumps(o))
+                    self.cache.set(cache_key, json_dumps_compact(o))
 
             return self._convert_messages_iterator_to_target_type(_format_and_cache(), _return_message_type)
 

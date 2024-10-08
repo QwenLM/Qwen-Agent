@@ -42,8 +42,9 @@ class HumanSimulator(Agent):
             begin_msg = 'Please role-play as a human user and make your first request.\n\nBegin!'
             messages = [Message(role='user', content=begin_msg)] + messages
         *_, respones = self._call_llm(messages=messages)
+        rng = random.Random(kwargs.get('seed', 42))
         try:
-            text = random.choice(json.loads(respones[-1].content))
+            text = rng.choice(json.loads(respones[-1].content))
             if (not isinstance(text, str)) or (not text):
                 text = STOP
             respones[-1].content = text

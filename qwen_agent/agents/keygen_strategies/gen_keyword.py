@@ -60,7 +60,7 @@ Keywords:
         super().__init__(function_list, llm, system_message, **kwargs)
         self.extra_generate_cfg = merge_generate_cfgs(
             base_generate_cfg=self.extra_generate_cfg,
-            new_generate_cfg={'stop': ['Observation:', 'Observation:\n']},
+            new_generate_cfg={'stop': ['Observation:']},
         )
 
     def _run(self, messages: List[Message], lang: str = 'en', **kwargs) -> Iterator[List[Message]]:

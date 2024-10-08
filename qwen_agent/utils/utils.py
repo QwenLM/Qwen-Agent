@@ -302,7 +302,11 @@ class PydanticJSONEncoder(json.JSONEncoder):
         return super().default(obj)
 
 
-def json_dumps(obj: dict, ensure_ascii=False, indent=2, **kwargs) -> str:
+def json_dumps_pretty(obj: dict, ensure_ascii=False, indent=2, **kwargs) -> str:
+    return json.dumps(obj, ensure_ascii=ensure_ascii, indent=indent, cls=PydanticJSONEncoder, **kwargs)
+
+
+def json_dumps_compact(obj: dict, ensure_ascii=False, indent=None, **kwargs) -> str:
     return json.dumps(obj, ensure_ascii=ensure_ascii, indent=indent, cls=PydanticJSONEncoder, **kwargs)
 
 
