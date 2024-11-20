@@ -19,12 +19,15 @@ def get_current_weather(location, unit='fahrenheit'):
         return json.dumps({'location': location, 'temperature': 'unknown'})
 
 
-def test():
+def test(fncall_prompt_type: str = 'qwen'):
     llm = get_chat_model({
         # Use the model service provided by DashScope:
         'model': 'qwen1.5-14b-chat',
         'model_server': 'dashscope',
         'api_key': os.getenv('DASHSCOPE_API_KEY'),
+        'generate_cfg': {
+            'fncall_prompt_type': fncall_prompt_type
+        },
 
         # Use the OpenAI-compatible model service provided by DashScope:
         # 'model': 'qwen1.5-14b-chat',
@@ -122,4 +125,8 @@ def test():
 
 
 if __name__ == '__main__':
-    test()
+    # Run example of function calling with QwenFnCallPrompt
+    # test()
+
+    # Run example of function calling with NousFnCallPrompt
+    test(fncall_prompt_type='nous')

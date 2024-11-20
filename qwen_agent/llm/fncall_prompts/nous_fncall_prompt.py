@@ -3,7 +3,7 @@ import json
 from typing import List, Literal, Union
 
 from qwen_agent.llm.fncall_prompts.base_fncall_prompt import BaseFnCallPrompt
-from qwen_agent.llm.schema import ASSISTANT, FUNCTION, SYSTEM, USER, ContentItem, Message
+from qwen_agent.llm.schema import ASSISTANT, FUNCTION, SYSTEM, USER, ContentItem, FunctionCall, Message
 
 
 class NousFnCallPrompt(BaseFnCallPrompt):
@@ -73,7 +73,74 @@ class NousFnCallPrompt(BaseFnCallPrompt):
     ) -> List[Message]:
         if function_choice != 'auto':
             raise NotImplementedError
-        raise NotImplementedError
+
+        # Convert plaintext responses to function_call responses:
+        new_messages = []
+        for msg in messages:
+            role, content = msg.role, msg.content
+            assert isinstance(content, list)
+
+            if role in (SYSTEM, USER):
+                new_messages.append(Message(role=role, content=content))
+                continue
+
+            new_content = []
+            for item in content:
+                item_type, item_text = item.get_type_and_value()
+
+                if item_type != 'text':  # multimodal
+                    new_content.append(item)
+                    continue
+
+                i = item_text.find('<tool_call>')
+
+                # If no function call:
+                if i < 0:
+                    show_text = item_text
+                    if show_text:
+                        new_content.append(ContentItem(text=show_text))
+                    continue
+
+                # split tool-call to separate assistant msg
+                tool_call_list = item_text.split('<tool_call>')
+                for txt in tool_call_list:
+                    if not txt.strip():
+                        continue
+                    if '</tool_call>' not in txt:
+                        new_content.append(ContentItem(text=txt))
+                        continue
+
+                    one_tool_call_txt = txt.split('</tool_call>')
+                    if len(one_tool_call_txt) != 2:
+                        # error of tool-call
+                        new_content.append(ContentItem(text=txt))
+                        continue
+
+                    # The right tool-call response
+                    if new_content:
+                        new_messages.append(Message(
+                            role=role,
+                            content=new_content,
+                        ))  # split thought and function call
+                        new_content = []
+
+                    fn = json.loads(one_tool_call_txt[0].strip())
+                    new_messages.append(
+                        Message(
+                            role=ASSISTANT,
+                            content=[],
+                            function_call=FunctionCall(
+                                name=fn['name'],
+                                arguments=json.dumps(fn['arguments'], ensure_ascii=False),
+                            ),
+                        ))
+
+                    if one_tool_call_txt[1].strip():
+                        new_content.append(ContentItem(text=one_tool_call_txt[1]))
+
+            if new_content:
+                new_messages.append(Message(role=role, content=new_content))
+        return new_messages
 
 
 FN_CALL_TEMPLATE = """# Tools
