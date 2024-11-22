@@ -93,7 +93,6 @@ class NousFnCallPrompt(BaseFnCallPrompt):
                     continue
 
                 i = item_text.find('<tool_call>')
-
                 # If no function call:
                 if i < 0:
                     show_text = item_text
@@ -103,20 +102,41 @@ class NousFnCallPrompt(BaseFnCallPrompt):
 
                 # split tool-call to separate assistant msg
                 tool_call_list = item_text.split('<tool_call>')
-                for txt in tool_call_list:
+                pre_thought = tool_call_list[0]
+                if pre_thought.strip():
+                    new_content.append(ContentItem(text=pre_thought))
+                for txt in tool_call_list[1:]:
                     if not txt.strip():
                         continue
+
                     if '</tool_call>' not in txt:
-                        new_content.append(ContentItem(text=txt))
+                        # incomplete </tool_call>: This is to better represent incomplete tool calls in streaming output
+                        fn_name, fn_args = extract_fn(txt)
+                        if fn_name:  # need to call function
+                            if new_content:
+                                new_messages.append(Message(
+                                    role=role,
+                                    content=new_content,
+                                ))  # split thought and function call
+                                new_content = []
+                            new_messages.append(
+                                Message(
+                                    role=ASSISTANT,
+                                    content=[],
+                                    function_call=FunctionCall(
+                                        name=fn_name,
+                                        arguments=fn_args,
+                                    ),
+                                ))
+                        else:
+                            show_text = remove_incomplete_special_tokens(txt)
+                            if show_text:
+                                new_content.append(ContentItem(text=show_text))
                         continue
 
                     one_tool_call_txt = txt.split('</tool_call>')
-                    if len(one_tool_call_txt) != 2:
-                        # error of tool-call
-                        new_content.append(ContentItem(text=txt))
-                        continue
 
-                    # The right tool-call response
+                    # The complete tool-call response
                     if new_content:
                         new_messages.append(Message(
                             role=role,
@@ -156,3 +176,29 @@ For each function call, return a json object with function name and arguments wi
 <tool_call>
 {{"name": <function-name>, "arguments": <args-json-object>}}
 </tool_call>"""
+
+
+# Mainly for removing incomplete special tokens when streaming the output
+# This assumes that '<tool_call>\n{"name": "' is the special token for the NousFnCallPrompt
+def remove_incomplete_special_tokens(text: str) -> str:
+    if text in '<tool_call>\n{"name": "':
+        text = ''
+    return text
+
+
+def extract_fn(text: str):
+    fn_name, fn_args = '', ''
+    fn_name_s = '"name": "'
+    fn_name_e = '", "'
+    fn_args_s = '"arguments": '
+    i = text.find(fn_name_s)
+    j = text.find(fn_name_e)
+    k = text.find(fn_args_s)
+    if i > 0:
+        if j == -1:
+            fn_name = text[i + len(fn_name_s):]
+        else:
+            fn_name = text[i + len(fn_name_s):j]
+    if k > 0:
+        fn_args = text[k + len(fn_args_s):]
+    return fn_name, fn_args
