@@ -14,6 +14,7 @@ import subprocess
 import sys
 import time
 import uuid
+import threading
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
@@ -48,9 +49,12 @@ def _kill_kernels_and_subprocesses(_sig_num=None, _frame=None):
 
 
 # Make sure all subprocesses are terminated even if killed abnormally:
-atexit.register(_kill_kernels_and_subprocesses)
-append_signal_handler(signal.SIGTERM, _kill_kernels_and_subprocesses)
-append_signal_handler(signal.SIGINT, _kill_kernels_and_subprocesses)
+# If not running in the main thread, (for example run in streamlit)
+# register a signal would cause a RuntimeError
+if threading.current_thread() is threading.main_thread():
+    atexit.register(_kill_kernels_and_subprocesses)
+    append_signal_handler(signal.SIGTERM, _kill_kernels_and_subprocesses)
+    append_signal_handler(signal.SIGINT, _kill_kernels_and_subprocesses)
 
 
 @register_tool('code_interpreter')
