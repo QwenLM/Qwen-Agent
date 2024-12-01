@@ -134,7 +134,7 @@ while True:
     messages.extend(response)
 ```
 
-In addition to using built-in agent implentations such as `class Assistant`, you can also develop your own agent implemetation by inheriting from `class Agent`.
+In addition to using built-in agent implementations such as `class Assistant`, you can also develop your own agent implemetation by inheriting from `class Agent`.
 Please refer to the [examples](https://github.com/QwenLM/Qwen-Agent/blob/main/examples) directory for more usage examples.
 
 # FAQ
