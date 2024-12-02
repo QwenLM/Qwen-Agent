@@ -135,7 +135,15 @@ while True:
 ```
 
 In addition to using built-in agent implentations such as `class Assistant`, you can also develop your own agent implemetation by inheriting from `class Agent`.
-Please refer to the [examples](https://github.com/QwenLM/Qwen-Agent/blob/main/examples) directory for more usage examples.
+
+The framework also provides a convenient GUI interface, supporting the rapid deployment of Gradio Demos for Agents.
+For example, in the case above, you can quickly launch a Gradio Demo using the following code:
+
+```py
+from qwen_agent.gui import WebUI
+WebUI(bot).run()  # bot is the agent defined in the above code, we do not repeat the definition here for saving space.
+```
+Now you can chat with the Agent in the web UI. Please refer to the [examples](https://github.com/QwenLM/Qwen-Agent/blob/main/examples) directory for more usage examples.
 
 # FAQ
 

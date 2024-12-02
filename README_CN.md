@@ -134,7 +134,17 @@ while True:
     messages.extend(response)
 ```
 
-除了使用框架自带的智能体实现（如`class Assistant`），您也可以通过继承`class Agent`来自行开发您的智能体实现。更多使用示例，请参阅[examples](./examples)目录。
+除了使用框架自带的智能体实现（如`class Assistant`），您也可以通过继承`class Agent`来自行开发您的智能体实现。
+
+框架还提供了便捷的GUI接口，支持为Agent快速部署Gradio Demo。
+例如上面的例子中，可以使用以下代码快速启动Gradio Demo：
+
+```py
+from qwen_agent.gui import WebUI
+WebUI(bot).run()  # bot is the agent defined in the above code, we do not repeat the definition here for saving space.
+```
+
+现在您可以在Web UI中和Agent对话了。更多使用示例，请参阅[examples](./examples)目录。
 
 # FAQ
 
