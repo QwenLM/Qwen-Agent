@@ -5,7 +5,7 @@ import json5
 
 from qwen_agent.agents import GroupChat, GroupChatCreator
 from qwen_agent.agents.user_agent import PENDING_USER_INPUT
-from qwen_agent.gui.gradio import gr, mgr
+from qwen_agent.gui.gradio_dep import gr, mgr, ms
 from qwen_agent.llm.schema import ContentItem, Message
 
 
@@ -260,50 +260,50 @@ with gr.Blocks(theme='soft') as demo:
         'Current GroupChat: (If editing, please maintain this JSON format)',
         value=json.dumps(CFGS, indent=4, ensure_ascii=False),
         interactive=True)
+    with ms.Application():
+        with gr.Tab('Chat', elem_id='chat-tab'):
+            with gr.Column():
+                chatbot = mgr.Chatbot(elem_id='chatbot', height=750, show_copy_button=True, flushing=False)
+                with gr.Row():
+                    with gr.Column(scale=3, min_width=0):
+                        auto_speak_button = gr.Button('Randomly select an agent to speak first')
+                        auto_speak_button.click(app, display_config, chatbot)
+                    with gr.Column(scale=10):
+                        chat_txt = gr.Textbox(
+                            show_label=False,
+                            placeholder='Chat with Qwen...',
+                            container=False,
+                        )
+                    with gr.Column(scale=1, min_width=0):
+                        chat_clr_bt = gr.Button('Clear')
 
-    with gr.Tab('Chat', elem_id='chat-tab'):
-        with gr.Column():
-            chatbot = mgr.Chatbot(elem_id='chatbot', height=750, show_copy_button=True, flushing=False)
-            with gr.Row():
-                with gr.Column(scale=3, min_width=0):
-                    auto_speak_button = gr.Button('Randomly select an agent to speak first')
-                    auto_speak_button.click(app, display_config, chatbot)
-                with gr.Column(scale=10):
-                    chat_txt = gr.Textbox(
-                        show_label=False,
-                        placeholder='Chat with Qwen...',
-                        container=False,
-                    )
-                with gr.Column(scale=1, min_width=0):
-                    chat_clr_bt = gr.Button('Clear')
+                chat_txt.submit(add_text, [chat_txt, display_config], [chatbot, chat_txt],
+                                queue=False).then(app, display_config, chatbot)
 
-            chat_txt.submit(add_text, [chat_txt, display_config], [chatbot, chat_txt],
-                            queue=False).then(app, display_config, chatbot)
+                chat_clr_bt.click(chat_clear, None, [chatbot], queue=False)
 
-            chat_clr_bt.click(chat_clear, None, [chatbot], queue=False)
+            demo.load(chat_clear, None, [chatbot], queue=False)
 
-        demo.load(chat_clear, None, [chatbot], queue=False)
+        with gr.Tab('Create', elem_id='chat-tab'):
+            with gr.Column(scale=9, min_width=0):
+                chatbot = mgr.Chatbot(elem_id='chatbot0', height=750, show_copy_button=True, flushing=False)
+                with gr.Row():
+                    with gr.Column(scale=13):
+                        chat_txt = gr.Textbox(
+                            show_label=False,
+                            placeholder='Chat with Qwen...',
+                            container=False,
+                        )
+                    with gr.Column(scale=1, min_width=0):
+                        chat_clr_bt = gr.Button('Clear')
 
-    with gr.Tab('Create', elem_id='chat-tab'):
-        with gr.Column(scale=9, min_width=0):
-            chatbot = mgr.Chatbot(elem_id='chatbot0', height=750, show_copy_button=True, flushing=False)
-            with gr.Row():
-                with gr.Column(scale=13):
-                    chat_txt = gr.Textbox(
-                        show_label=False,
-                        placeholder='Chat with Qwen...',
-                        container=False,
-                    )
-                with gr.Column(scale=1, min_width=0):
-                    chat_clr_bt = gr.Button('Clear')
+                txt_msg = chat_txt.submit(add_text_create, [chatbot, chat_txt], [chatbot, chat_txt],
+                                          queue=False).then(app_create, [chatbot, display_config],
+                                                            [chatbot, display_config])
+                txt_msg.then(lambda: gr.update(interactive=True), None, [chat_txt], queue=False)
 
-            txt_msg = chat_txt.submit(add_text_create, [chatbot, chat_txt], [chatbot, chat_txt],
-                                      queue=False).then(app_create, [chatbot, display_config],
-                                                        [chatbot, display_config])
-            txt_msg.then(lambda: gr.update(interactive=True), None, [chat_txt], queue=False)
-
-            chat_clr_bt.click(chat_clear_create, None, [chatbot, chat_txt], queue=False)
-        demo.load(chat_clear_create, None, [chatbot, chat_txt], queue=False)
+                chat_clr_bt.click(chat_clear_create, None, [chatbot, chat_txt], queue=False)
+    demo.load(chat_clear_create, None, [chatbot, chat_txt], queue=False)
 
 if __name__ == '__main__':
     demo.queue().launch()

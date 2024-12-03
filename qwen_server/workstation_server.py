@@ -8,7 +8,7 @@ try:
 except ImportError:
     pass
 from qwen_agent.agents import ArticleAgent, Assistant, ReActChat
-from qwen_agent.gui import gr, mgr
+from qwen_agent.gui import gr, mgr, ms
 from qwen_agent.gui.utils import get_avatar_image
 from qwen_agent.llm import get_chat_model
 from qwen_agent.llm.base import ModelServiceError
@@ -85,7 +85,7 @@ def chat_clear():
 
 def chat_clear_pure():
     app_global_para['pure_messages'] = []
-    return None, None
+    return []
 
 
 def chat_clear_last():
@@ -498,96 +498,98 @@ with gr.Blocks(css=css, js=js, theme='soft') as demo:
         """)
 
     with gr.Tab('Chat', elem_id='chat-tab'):
-        with gr.Column():
-            chatbot = mgr.Chatbot(
-                elem_id='chatbot',
-                height=680,
-                show_copy_button=True,
-                avatar_images=[None, get_avatar_image('qwen')],
-                flushing=False,
-            )
-            with gr.Row():
-                with gr.Column(scale=1, min_width=0):
-                    file_btn = gr.UploadButton('Upload', file_types=['file'])
+        with ms.Application():
+            with gr.Column():
+                chatbot = mgr.Chatbot(
+                    elem_id='chatbot',
+                    height=680,
+                    show_copy_button=True,
+                    avatar_images=[None, get_avatar_image('qwen')],
+                    flushing=False,
+                )
+                with gr.Row():
+                    with gr.Column(scale=1, min_width=0):
+                        file_btn = gr.UploadButton('Upload', file_types=['file'])
 
-                with gr.Column(scale=13):
-                    chat_txt = gr.Textbox(
-                        show_label=False,
-                        placeholder='Chat with Qwen...',
-                        container=False,
-                    )
-                with gr.Column(scale=1, min_width=0):
-                    chat_clr_bt = gr.Button('Clear')
+                    with gr.Column(scale=13):
+                        chat_txt = gr.Textbox(
+                            show_label=False,
+                            placeholder='Chat with Qwen...',
+                            container=False,
+                        )
+                    with gr.Column(scale=1, min_width=0):
+                        chat_clr_bt = gr.Button('Clear')
 
-                with gr.Column(scale=1, min_width=0):
-                    chat_stop_bt = gr.Button('Stop')
-                with gr.Column(scale=1, min_width=0):
-                    chat_re_bt = gr.Button('Again')
-            with gr.Row():
-                with gr.Column(scale=2, min_width=0):
-                    plug_bt = gr.Dropdown(
-                        [CI_OPTION, DOC_OPTION],
-                        label='Plugin',
-                        info='',
-                        value=DOC_OPTION,
-                    )
-                with gr.Column(scale=8, min_width=0):
-                    hidden_file_path = gr.Textbox(interactive=False, label='The uploaded file is displayed here')
+                    with gr.Column(scale=1, min_width=0):
+                        chat_stop_bt = gr.Button('Stop')
+                    with gr.Column(scale=1, min_width=0):
+                        chat_re_bt = gr.Button('Again')
+                with gr.Row():
+                    with gr.Column(scale=2, min_width=0):
+                        plug_bt = gr.Dropdown(
+                            [CI_OPTION, DOC_OPTION],
+                            label='Plugin',
+                            info='',
+                            value=DOC_OPTION,
+                        )
+                    with gr.Column(scale=8, min_width=0):
+                        hidden_file_path = gr.Textbox(interactive=False, label='The uploaded file is displayed here')
 
-            txt_msg = chat_txt.submit(add_text, [chatbot, chat_txt], [chatbot, chat_txt],
-                                      queue=False).then(bot, [chatbot, plug_bt], chatbot)
-            txt_msg.then(lambda: gr.update(interactive=True), None, [chat_txt], queue=False)
+                txt_msg = chat_txt.submit(add_text, [chatbot, chat_txt], [chatbot, chat_txt],
+                                          queue=False).then(bot, [chatbot, plug_bt], chatbot)
+                txt_msg.then(lambda: gr.update(interactive=True), None, [chat_txt], queue=False)
 
-            re_txt_msg = (chat_re_bt.click(rm_text, [chatbot], [chatbot, chat_txt],
-                                           queue=False).then(chat_clear_last, None,
-                                                             None).then(bot, [chatbot, plug_bt], chatbot))
-            re_txt_msg.then(lambda: gr.update(interactive=True), None, [chat_txt], queue=False)
+                re_txt_msg = (chat_re_bt.click(rm_text, [chatbot], [chatbot, chat_txt],
+                                               queue=False).then(chat_clear_last, None,
+                                                                 None).then(bot, [chatbot, plug_bt], chatbot))
+                re_txt_msg.then(lambda: gr.update(interactive=True), None, [chat_txt], queue=False)
 
-            file_msg = file_btn.upload(add_file, [file_btn, plug_bt], [hidden_file_path], queue=False)
-            file_msg.then(update_browser_list, None, browser_list)
+                file_msg = file_btn.upload(add_file, [file_btn, plug_bt], [hidden_file_path], queue=False)
+                file_msg.then(update_browser_list, None, browser_list)
 
-            chat_clr_bt.click(chat_clear, None, [chatbot, hidden_file_path], queue=False)
-            # re_bt.click(re_bot, chatbot, chatbot)
-            chat_stop_bt.click(chat_clear_last, None, None, cancels=[txt_msg, re_txt_msg], queue=False)
+                chat_clr_bt.click(chat_clear, None, [chatbot, hidden_file_path], queue=False)
+                # re_bt.click(re_bot, chatbot, chatbot)
+                chat_stop_bt.click(chat_clear_last, None, None, cancels=[txt_msg, re_txt_msg], queue=False)
 
-            plug_bt.change(choose_plugin, plug_bt, [file_btn, hidden_file_path])
+                plug_bt.change(choose_plugin, plug_bt, [file_btn, hidden_file_path])
 
     with gr.Tab('Pure Chat', elem_id='pure-chat-tab'):
         gr.Markdown('Note: The chat box on this tab will not use any browsing history!')
-        with gr.Column():
-            pure_chatbot = mgr.Chatbot(
-                elem_id='pure_chatbot',
-                height=680,
-                show_copy_button=True,
-                avatar_images=[None, get_avatar_image('qwen')],
-                flushing=False,
-            )
-            with gr.Row():
-                with gr.Column(scale=13):
-                    chat_txt = gr.Textbox(
-                        show_label=False,
-                        placeholder='Chat with Qwen...',
-                        container=False,
-                    )
-                with gr.Column(scale=1, min_width=0):
-                    chat_clr_bt = gr.Button('Clear')
-                with gr.Column(scale=1, min_width=0):
-                    chat_stop_bt = gr.Button('Stop')
-                with gr.Column(scale=1, min_width=0):
-                    chat_re_bt = gr.Button('Again')
+        with ms.Application():
+            with gr.Column():
+                pure_chatbot = mgr.Chatbot(
+                    elem_id='pure_chatbot',
+                    height=680,
+                    show_copy_button=True,
+                    avatar_images=[None, get_avatar_image('qwen')],
+                    flushing=False,
+                )
+                with gr.Row():
+                    with gr.Column(scale=13):
+                        chat_txt = gr.Textbox(
+                            show_label=False,
+                            placeholder='Chat with Qwen...',
+                            container=False,
+                        )
+                    with gr.Column(scale=1, min_width=0):
+                        chat_clr_bt = gr.Button('Clear')
+                    with gr.Column(scale=1, min_width=0):
+                        chat_stop_bt = gr.Button('Stop')
+                    with gr.Column(scale=1, min_width=0):
+                        chat_re_bt = gr.Button('Again')
 
-            txt_msg = chat_txt.submit(pure_add_text, [pure_chatbot, chat_txt], [pure_chatbot, chat_txt],
-                                      queue=False).then(pure_bot, pure_chatbot, pure_chatbot)
-            txt_msg.then(lambda: gr.update(interactive=True), None, [chat_txt], queue=False)
+                txt_msg = chat_txt.submit(pure_add_text, [pure_chatbot, chat_txt], [pure_chatbot, chat_txt],
+                                          queue=False).then(pure_bot, pure_chatbot, pure_chatbot)
+                txt_msg.then(lambda: gr.update(interactive=True), None, [chat_txt], queue=False)
 
-            re_txt_msg = chat_re_bt.click(rm_text, [pure_chatbot], [pure_chatbot, chat_txt],
-                                          queue=False).then(pure_chat_clear_last, None,
-                                                            None).then(pure_bot, pure_chatbot, pure_chatbot)
-            re_txt_msg.then(lambda: gr.update(interactive=True), None, [chat_txt], queue=False)
+                re_txt_msg = chat_re_bt.click(rm_text, [pure_chatbot], [pure_chatbot, chat_txt],
+                                              queue=False).then(pure_chat_clear_last, None,
+                                                                None).then(pure_bot, pure_chatbot, pure_chatbot)
+                re_txt_msg.then(lambda: gr.update(interactive=True), None, [chat_txt], queue=False)
 
-            chat_clr_bt.click(chat_clear_pure, None, pure_chatbot, queue=False)
+                chat_clr_bt.click(chat_clear_pure, None, pure_chatbot, queue=False)
 
-            chat_stop_bt.click(pure_chat_clear_last, None, None, cancels=[txt_msg, re_txt_msg], queue=False)
+                chat_stop_bt.click(pure_chat_clear_last, None, None, cancels=[txt_msg, re_txt_msg], queue=False)
 
     date1.change(update_app_global_para, [date1, date2],
                  None).then(update_browser_list, None, browser_list).then(chat_clear, None, [chatbot, hidden_file_path])
