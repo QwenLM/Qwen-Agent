@@ -135,7 +135,7 @@ while True:
     messages.extend(response)
 ```
 
-In addition to using built-in agent implentations such as `class Assistant`, you can also develop your own agent implemetation by inheriting from `class Agent`.
+In addition to using built-in agent implementations such as `class Assistant`, you can also develop your own agent implemetation by inheriting from `class Agent`.
 
 The framework also provides a convenient GUI interface, supporting the rapid deployment of Gradio Demos for Agents.
 For example, in the case above, you can quickly launch a Gradio Demo using the following code:
