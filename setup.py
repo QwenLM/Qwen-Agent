@@ -101,7 +101,7 @@ setup(
             'pydantic-core==2.23.4',
             'gradio>=5.0.0',
             'gradio-client==1.4.0',
-            'modelscope-studio~=1.0.0b',
+            'modelscope_studio==1.0.0-beta.8',
         ],
     },
     url='https://github.com/QwenLM/Qwen-Agent',
