@@ -8,6 +8,7 @@
 Qwen-Agent是一个开发框架。开发者可基于本框架开发Agent应用，充分利用基于通义千问模型（Qwen）的指令遵循、工具使用、规划、记忆能力。本项目也提供了浏览器助手、代码解释器、自定义助手等示例应用。
 
 # 更新
+* Dec 3, 2024: GUI 升级为基于 Gradio 5。注意：如果需要使用GUI，Python版本需要3.10及以上。
 * 🔥🔥🔥Sep 18, 2024: 新增[Qwen2.5-Math Demo](./examples/tir_math.py)以展示Qwen2.5-Math基于工具的推理能力。注意：代码执行工具未进行沙箱保护，仅适用于本地测试，不可用于生产。
 
 # 开始上手
@@ -134,7 +135,17 @@ while True:
     messages.extend(response)
 ```
 
-除了使用框架自带的智能体实现（如`class Assistant`），您也可以通过继承`class Agent`来自行开发您的智能体实现。更多使用示例，请参阅[examples](./examples)目录。
+除了使用框架自带的智能体实现（如`class Assistant`），您也可以通过继承`class Agent`来自行开发您的智能体实现。
+
+框架还提供了便捷的GUI接口，支持为Agent快速部署Gradio Demo。
+例如上面的例子中，可以使用以下代码快速启动Gradio Demo：
+
+```py
+from qwen_agent.gui import WebUI
+WebUI(bot).run()  # bot is the agent defined in the above code, we do not repeat the definition here for saving space.
+```
+
+现在您可以在Web UI中和Agent对话了。更多使用示例，请参阅[examples](./examples)目录。
 
 # FAQ
 
