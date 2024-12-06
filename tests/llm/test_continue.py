@@ -13,7 +13,7 @@ from qwen_agent.llm.schema import Message
     'model_server': 'dashscope'
 }, {
     'model': 'qwen2-7b-instruct',
-    'model_server': 'https://dashscope.aliyuncs.com/compatible-mode/v1/',
+    'model_server': 'https://dashscope.aliyuncs.com/compatible-mode/v1',
     'api_key': os.getenv('DASHSCOPE_API_KEY', 'none')
 }])
 def test_continue(stream, delta_stream, llm_cfg):
