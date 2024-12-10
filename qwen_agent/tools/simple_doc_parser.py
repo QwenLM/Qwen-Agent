@@ -5,8 +5,6 @@ import time
 from collections import Counter
 from typing import Dict, List, Optional, Union
 
-import json5
-
 from qwen_agent.log import logger
 from qwen_agent.settings import DEFAULT_WORKSPACE
 from qwen_agent.tools.base import BaseTool, register_tool
@@ -100,6 +98,9 @@ def df_to_md(df) -> str:
         return replaced_text
 
     from tabulate import tabulate
+    df = df.dropna(how='all')
+    df = df.dropna(axis=1, how='all')
+    df = df.fillna('')
     md_table = tabulate(df, headers='keys', tablefmt='pipe', showindex=False)
 
     md_table = '\n'.join([
@@ -375,11 +376,7 @@ class SimpleDocParser(BaseTool):
         try:
             # Directly load the parsed doc
             parsed_file = self.db.get(cached_name_ori)
-            try:
-                parsed_file = json5.loads(parsed_file)
-            except ValueError:
-                logger.warning(f'Encountered ValueError raised by json5. Fall back to json. File: {cached_name_ori}')
-                parsed_file = json.loads(parsed_file)
+            parsed_file = json.loads(parsed_file)
             logger.info(f'Read parsed {path} from cache.')
         except KeyNotExistsError:
             logger.info(f'Start parsing {path}...')

@@ -15,6 +15,7 @@ FUNCTION = 'function'
 
 FILE = 'file'
 IMAGE = 'image'
+AUDIO = 'audio'
 
 
 class BaseModelCompatibleDict(BaseModel):
@@ -64,9 +65,14 @@ class ContentItem(BaseModelCompatibleDict):
     text: Optional[str] = None
     image: Optional[str] = None
     file: Optional[str] = None
+    audio: Optional[str] = None
 
-    def __init__(self, text: Optional[str] = None, image: Optional[str] = None, file: Optional[str] = None):
-        super().__init__(text=text, image=image, file=file)
+    def __init__(self,
+                 text: Optional[str] = None,
+                 image: Optional[str] = None,
+                 file: Optional[str] = None,
+                 audio: Optional[str] = None):
+        super().__init__(text=text, image=image, file=file, audio=audio)
 
     @model_validator(mode='after')
     def check_exclusivity(self):
@@ -77,21 +83,23 @@ class ContentItem(BaseModelCompatibleDict):
             provided_fields += 1
         if self.file:
             provided_fields += 1
+        if self.audio:
+            provided_fields += 1
 
         if provided_fields != 1:
-            raise ValueError("Exactly one of 'text', 'image', or 'file' must be provided.")
+            raise ValueError("Exactly one of 'text', 'image', 'file', or 'audio' must be provided.")
         return self
 
     def __repr__(self):
         return f'ContentItem({self.model_dump()})'
 
-    def get_type_and_value(self) -> Tuple[Literal['text', 'image', 'file'], str]:
+    def get_type_and_value(self) -> Tuple[Literal['text', 'image', 'file', 'audio'], str]:
         (t, v), = self.model_dump().items()
-        assert t in ('text', 'image', 'file')
+        assert t in ('text', 'image', 'file', 'audio')
         return t, v
 
     @property
-    def type(self) -> Literal['text', 'image', 'file']:
+    def type(self) -> Literal['text', 'image', 'file', 'audio']:
         t, v = self.get_type_and_value()
         return t
 

@@ -1,8 +1,7 @@
 import copy
 import datetime
+import json
 from typing import Dict, Iterator, List, Literal, Optional, Union
-
-import json5
 
 from qwen_agent.agents.fncall_agent import FnCallAgent
 from qwen_agent.llm import BaseChatModel
@@ -41,7 +40,7 @@ def format_knowledge_to_source_and_content(result: Union[str, List[dict]]) -> Li
     if isinstance(result, str):
         result = f'{result}'.strip()
         try:
-            docs = json5.loads(result)
+            docs = json.loads(result)
         except Exception:
             print_traceback()
             knowledge.append({'source': '上传的文档', 'content': result})

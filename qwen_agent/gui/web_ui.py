@@ -7,7 +7,7 @@ from qwen_agent import Agent, MultiAgentHub
 from qwen_agent.agents.user_agent import PENDING_USER_INPUT
 from qwen_agent.gui.gradio_utils import format_cover_html
 from qwen_agent.gui.utils import convert_fncall_to_text, convert_history_to_chatbot, get_avatar_image
-from qwen_agent.llm.schema import CONTENT, FILE, IMAGE, NAME, ROLE, USER, Message
+from qwen_agent.llm.schema import AUDIO, CONTENT, FILE, IMAGE, NAME, ROLE, USER, Message
 from qwen_agent.log import logger
 from qwen_agent.utils.utils import print_traceback
 
@@ -212,6 +212,8 @@ class WebUI:
             for file in _input.files:
                 if file.mime_type.startswith('image/'):
                     _history[-1][CONTENT].append({IMAGE: 'file://' + file.path})
+                elif file.mime_type.startswith('audio/'):
+                    _history[-1][CONTENT].append({AUDIO: 'file://' + file.path})
                 else:
                     _history[-1][CONTENT].append({FILE: file.path})
 

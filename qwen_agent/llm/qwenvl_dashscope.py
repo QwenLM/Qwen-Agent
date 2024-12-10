@@ -93,6 +93,22 @@ def _format_local_files(messages: List[Message]) -> List[Message]:
                                 fname = fname.replace('\\', '/')
                             fname = 'file://' + fname
                             item.image = fname
+                if item.audio:
+                    fname = item.audio
+                    if not fname.startswith((
+                            'http://',
+                            'https://',
+                            'file://',
+                            'data:',  # base64 such as f"data:image/jpg;base64,{image_base64}"
+                    )):
+                        if fname.startswith('~'):
+                            fname = os.path.expanduser(fname)
+                        fname = os.path.abspath(fname)
+                        if os.path.isfile(fname):
+                            if re.match(r'^[A-Za-z]:\\', fname):
+                                fname = fname.replace('\\', '/')
+                            fname = 'file://' + fname
+                            item.audio = fname
     return messages
 
 

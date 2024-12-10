@@ -326,7 +326,7 @@ def format_as_multimodal_message(
             k, v = item.get_type_and_value()
             if k == 'text':
                 content.append(ContentItem(text=v))
-            if k == 'image':
+            if k in ('image', 'audio'):
                 content.append(item)
             if k in ('file', 'image'):
                 # Move 'file' out of 'content' since it's not natively supported by models

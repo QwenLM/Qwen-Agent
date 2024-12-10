@@ -4,7 +4,6 @@ import re
 import time
 from typing import Dict, List, Optional, Union
 
-import json5
 from pydantic import BaseModel
 
 from qwen_agent.log import logger
@@ -90,12 +89,7 @@ class DocParser(BaseTool):
         try:
             # Directly load the chunked doc
             record = self.db.get(cached_name_chunking)
-            try:
-                record = json5.loads(record)
-            except ValueError:
-                logger.warning(
-                    f'Encountered ValueError raised by json5. Fall back to json. File: {cached_name_chunking}')
-                record = json.loads(record)
+            record = json.loads(record)
             logger.info(f'Read chunked {url} from cache.')
             return record
         except KeyNotExistsError:
