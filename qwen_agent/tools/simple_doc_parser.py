@@ -198,6 +198,8 @@ def parse_pdf(pdf_path: str, extract_image: bool = False) -> List[dict]:
     from pdfminer.layout import LTImage, LTRect, LTTextContainer
 
     doc = []
+    import pdfplumber
+    pdf = pdfplumber.open(pdf_path)
     for i, page_layout in enumerate(extract_pages(pdf_path)):
         page = {'page_num': page_layout.pageid, 'content': []}
 
@@ -212,7 +214,7 @@ def parse_pdf(pdf_path: str, extract_image: bool = False) -> List[dict]:
         for element in elements:
             if isinstance(element, LTRect):
                 if not tables:
-                    tables = extract_tables(pdf_path, i)
+                    tables = extract_tables(pdf, i)
                 if table_num < len(tables):
                     table_string = table_converter(tables[table_num])
                     table_num += 1
@@ -298,9 +300,7 @@ def get_font(element):
         return []
 
 
-def extract_tables(pdf_path, page_num):
-    import pdfplumber
-    pdf = pdfplumber.open(pdf_path)
+def extract_tables(pdf, page_num):
     table_page = pdf.pages[page_num]
     tables = table_page.extract_tables()
     return tables
