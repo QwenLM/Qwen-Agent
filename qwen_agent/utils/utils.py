@@ -328,7 +328,7 @@ def format_as_multimodal_message(
                 content.append(ContentItem(text=v))
             if k in ('image', 'audio'):
                 content.append(item)
-            if k in ('file', 'image'):
+            if k == 'file':
                 # Move 'file' out of 'content' since it's not natively supported by models
                 files.append(v)
         if add_upload_info and files and (msg.role in (SYSTEM, USER)):
@@ -338,16 +338,10 @@ def format_as_multimodal_message(
                 has_zh = (lang == 'zh')
             upload = []
             for f in [get_basename_from_url(f) for f in files]:
-                if is_image(f):
-                    if has_zh:
-                        upload.append(f'![图片]({f})')
-                    else:
-                        upload.append(f'![image]({f})')
+                if has_zh:
+                    upload.append(f'[文件]({f})')
                 else:
-                    if has_zh:
-                        upload.append(f'[文件]({f})')
-                    else:
-                        upload.append(f'[file]({f})')
+                    upload.append(f'[file]({f})')
             upload = ' '.join(upload)
             if has_zh:
                 upload = f'（上传了 {upload}）\n\n'
