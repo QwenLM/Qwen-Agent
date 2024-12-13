@@ -78,38 +78,39 @@ def _format_local_files(messages: List[Message]) -> List[Message]:
         if isinstance(msg.content, list):
             for item in msg.content:
                 if item.image:
-                    fname = item.image
-                    if not fname.startswith((
-                            'http://',
-                            'https://',
-                            'file://',
-                            'data:',  # base64 such as f"data:image/jpg;base64,{image_base64}"
-                    )):
-                        if fname.startswith('~'):
-                            fname = os.path.expanduser(fname)
-                        fname = os.path.abspath(fname)
-                        if os.path.isfile(fname):
-                            if re.match(r'^[A-Za-z]:\\', fname):
-                                fname = fname.replace('\\', '/')
-                            fname = 'file://' + fname
-                            item.image = fname
+                    item.image = _conv_fname(item.image)
                 if item.audio:
-                    fname = item.audio
-                    if not fname.startswith((
-                            'http://',
-                            'https://',
-                            'file://',
-                            'data:',  # base64 such as f"data:image/jpg;base64,{image_base64}"
-                    )):
-                        if fname.startswith('~'):
-                            fname = os.path.expanduser(fname)
-                        fname = os.path.abspath(fname)
-                        if os.path.isfile(fname):
-                            if re.match(r'^[A-Za-z]:\\', fname):
-                                fname = fname.replace('\\', '/')
-                            fname = 'file://' + fname
-                            item.audio = fname
+                    item.audio = _conv_fname(item.audio)
+                if item.video:
+                    if isinstance(item.video, str):
+                        item.video = _conv_fname(item.video)
+                    else:
+                        assert isinstance(item.video, list)
+                        new_url = []
+                        for fname in item.video:
+                            new_url.append(_conv_fname(fname))
+                        item.video = new_url
     return messages
+
+
+def _conv_fname(fname: str) -> str:
+    ori_fname = fname
+    if not fname.startswith((
+            'http://',
+            'https://',
+            'file://',
+            'data:',  # base64 such as f"data:image/jpg;base64,{image_base64}"
+    )):
+        if fname.startswith('~'):
+            fname = os.path.expanduser(fname)
+        fname = os.path.abspath(fname)
+        if os.path.isfile(fname):
+            if re.match(r'^[A-Za-z]:\\', fname):
+                fname = fname.replace('\\', '/')
+            fname = 'file://' + fname
+            return fname
+
+    return ori_fname
 
 
 def _extract_vl_response(response) -> List[Message]:

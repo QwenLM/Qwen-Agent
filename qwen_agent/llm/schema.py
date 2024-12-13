@@ -16,6 +16,7 @@ FUNCTION = 'function'
 FILE = 'file'
 IMAGE = 'image'
 AUDIO = 'audio'
+VIDEO = 'video'
 
 
 class BaseModelCompatibleDict(BaseModel):
@@ -66,13 +67,15 @@ class ContentItem(BaseModelCompatibleDict):
     image: Optional[str] = None
     file: Optional[str] = None
     audio: Optional[str] = None
+    video: Optional[Union[str, list]] = None
 
     def __init__(self,
                  text: Optional[str] = None,
                  image: Optional[str] = None,
                  file: Optional[str] = None,
-                 audio: Optional[str] = None):
-        super().__init__(text=text, image=image, file=file, audio=audio)
+                 audio: Optional[str] = None,
+                 video: Optional[Union[str, list]] = None):
+        super().__init__(text=text, image=image, file=file, audio=audio, video=video)
 
     @model_validator(mode='after')
     def check_exclusivity(self):
@@ -85,21 +88,23 @@ class ContentItem(BaseModelCompatibleDict):
             provided_fields += 1
         if self.audio:
             provided_fields += 1
+        if self.video:
+            provided_fields += 1
 
         if provided_fields != 1:
-            raise ValueError("Exactly one of 'text', 'image', 'file', or 'audio' must be provided.")
+            raise ValueError("Exactly one of 'text', 'image', 'file', 'audio', or 'video' must be provided.")
         return self
 
     def __repr__(self):
         return f'ContentItem({self.model_dump()})'
 
-    def get_type_and_value(self) -> Tuple[Literal['text', 'image', 'file', 'audio'], str]:
+    def get_type_and_value(self) -> Tuple[Literal['text', 'image', 'file', 'audio', 'video'], str]:
         (t, v), = self.model_dump().items()
-        assert t in ('text', 'image', 'file', 'audio')
+        assert t in ('text', 'image', 'file', 'audio', 'video')
         return t, v
 
     @property
-    def type(self) -> Literal['text', 'image', 'file', 'audio']:
+    def type(self) -> Literal['text', 'image', 'file', 'audio', 'video']:
         t, v = self.get_type_and_value()
         return t
 

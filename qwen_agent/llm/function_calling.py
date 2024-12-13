@@ -29,7 +29,7 @@ class BaseFnCallModel(BaseChatModel, ABC):
         generate_cfg: dict,
         functions: Optional[List[Dict]] = None,
     ) -> List[Message]:
-        messages = super()._preprocess_messages(messages, lang=lang, generate_cfg=generate_cfg)
+        messages = super()._preprocess_messages(messages, lang=lang, generate_cfg=generate_cfg, functions=functions)
         if (not functions) or (generate_cfg.get('function_choice', 'auto') == 'none'):
             messages = self._remove_fncall_messages(messages, lang=lang)
         else:

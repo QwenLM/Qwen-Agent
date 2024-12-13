@@ -313,6 +313,7 @@ def json_dumps_compact(obj: dict, ensure_ascii=False, indent=None, **kwargs) -> 
 def format_as_multimodal_message(
     msg: Message,
     add_upload_info: bool,
+    add_multimodel_upload_info: bool,
     lang: Literal['auto', 'en', 'zh'] = 'auto',
 ) -> Message:
     assert msg.role in (USER, ASSISTANT, SYSTEM, FUNCTION)
@@ -324,12 +325,14 @@ def format_as_multimodal_message(
         files = []
         for item in msg.content:
             k, v = item.get_type_and_value()
-            if k == 'text':
-                content.append(ContentItem(text=v))
-            if k in ('image', 'audio'):
+            if k in ('text', 'image', 'audio', 'video'):
                 content.append(item)
             if k == 'file':
                 # Move 'file' out of 'content' since it's not natively supported by models
+                files.append(v)
+            if add_multimodel_upload_info and k == 'image':
+                # Indicate the image name
+                # Not considering audio and video for now
                 files.append(v)
         if add_upload_info and files and (msg.role in (SYSTEM, USER)):
             if lang == 'auto':
@@ -338,10 +341,16 @@ def format_as_multimodal_message(
                 has_zh = (lang == 'zh')
             upload = []
             for f in [get_basename_from_url(f) for f in files]:
-                if has_zh:
-                    upload.append(f'[文件]({f})')
+                if is_image(f):
+                    if has_zh:
+                        upload.append(f'![图片]({f})')
+                    else:
+                        upload.append(f'![image]({f})')
                 else:
-                    upload.append(f'[file]({f})')
+                    if has_zh:
+                        upload.append(f'[文件]({f})')
+                    else:
+                        upload.append(f'[file]({f})')
             upload = ' '.join(upload)
             if has_zh:
                 upload = f'（上传了 {upload}）\n\n'
@@ -372,7 +381,10 @@ def format_as_text_message(
     add_upload_info: bool,
     lang: Literal['auto', 'en', 'zh'] = 'auto',
 ) -> Message:
-    msg = format_as_multimodal_message(msg, add_upload_info=add_upload_info, lang=lang)
+    msg = format_as_multimodal_message(msg,
+                                       add_upload_info=add_upload_info,
+                                       add_multimodel_upload_info=add_upload_info,
+                                       lang=lang)
     text = ''
     for item in msg.content:
         if item.type == 'text':

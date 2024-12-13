@@ -298,7 +298,12 @@ class BaseChatModel(ABC):
         generate_cfg: dict,
         functions: Optional[List[Dict]] = None,
     ) -> List[Message]:
-        messages = [format_as_multimodal_message(msg, add_upload_info=True, lang=lang) for msg in messages]
+        messages = [
+            format_as_multimodal_message(msg,
+                                         add_upload_info=True,
+                                         add_multimodel_upload_info=(functions is not None),
+                                         lang=lang) for msg in messages
+        ]
         return messages
 
     def _postprocess_messages(
@@ -307,7 +312,10 @@ class BaseChatModel(ABC):
         fncall_mode: bool,
         generate_cfg: dict,
     ) -> List[Message]:
-        messages = [format_as_multimodal_message(msg, add_upload_info=False) for msg in messages]
+        messages = [
+            format_as_multimodal_message(msg, add_upload_info=False, add_multimodel_upload_info=False)
+            for msg in messages
+        ]
         if not generate_cfg.get('skip_stopword_postproc', False):
             stop = generate_cfg.get('stop', [])
             messages = _postprocess_stop_words(messages, stop=stop)
