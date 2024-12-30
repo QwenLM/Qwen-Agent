@@ -37,7 +37,7 @@ class ChatApi:
             if is_new_line and last:
                 res = self.add_type(last[-1])
                 last_msg = ''
-                if not add_full_msg or res['type'] != 'message':
+                if add_full_msg or res['type'] != 'message':
                     yield res
             if now_is_msg:
                 msg = now['content']
@@ -50,7 +50,7 @@ class ChatApi:
         if last:
             res = self.add_type(last[-1])
             last_msg = ''
-            if not add_full_msg or res['type'] != 'message':
+            if add_full_msg or res['type'] != 'message':
                 yield res
 
     def gen(self, response):
