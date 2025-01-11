@@ -5,9 +5,18 @@
 <p>
 <br>
 
+<p align="center">
+          💜 <a href="https://chat.qwenlm.ai/"><b>Qwen Chat</b></a>&nbsp&nbsp | &nbsp&nbsp🤗 <a href="https://huggingface.co/Qwen">Hugging Face</a>&nbsp&nbsp | &nbsp&nbsp🤖 <a href="https://modelscope.cn/organization/qwen">ModelScope</a>&nbsp&nbsp | &nbsp&nbsp 📑 <a href="https://qwenlm.github.io/">Blog</a> &nbsp&nbsp ｜ &nbsp&nbsp📖 <a href="https://qwen.readthedocs.io/">Documentation</a>
+
+<br>
+💬 <a href="https://github.com/QwenLM/Qwen/blob/main/assets/wechat.png">WeChat (微信)</a>&nbsp&nbsp | &nbsp&nbsp🫨 <a href="https://discord.gg/CV4E9rpNSD">Discord</a>&nbsp&nbsp
+</p>
+
+
 Qwen-Agent is a framework for developing LLM applications based on the instruction following, tool usage, planning, and
-memory capabilities of Qwen.
-It also comes with example applications such as Browser Assistant, Code Interpreter, and Custom Assistant.
+memory capabilities of Qwen. 
+It also comes with example applications such as Browser Assistant, Code Interpreter, and Custom Assistant. 
+Now Qwen-Agent plays as the backend of [Qwen Chat](https://chat.qwenlm.ai/). 
 
 # News
 * Dec 3, 2024: Upgrade GUI to Gradio 5 based. Note: GUI requires Python 3.10 or higher.
