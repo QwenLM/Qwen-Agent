@@ -1,4 +1,4 @@
-"""A weather forecast assistant implemented by assistant"""
+"""A sqlite database assistant implemented by assistant"""
 
 import os
 import asyncio
