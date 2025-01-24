@@ -5,7 +5,7 @@ from typing import Dict, Iterator, List, Literal, Optional, Union
 
 from qwen_agent.agents.fncall_agent import FnCallAgent
 from qwen_agent.llm import BaseChatModel
-from qwen_agent.llm.schema import CONTENT, DEFAULT_SYSTEM_MESSAGE, ROLE, SYSTEM, Message
+from qwen_agent.llm.schema import CONTENT, DEFAULT_SYSTEM_MESSAGE, ROLE, SYSTEM, ContentItem, Message
 from qwen_agent.log import logger
 from qwen_agent.tools import BaseTool
 from qwen_agent.utils.utils import get_basename_from_url, print_traceback
@@ -125,7 +125,11 @@ class Assistant(FnCallAgent):
 
         if knowledge_prompt:
             if messages[0][ROLE] == SYSTEM:
-                messages[0][CONTENT] += '\n\n' + knowledge_prompt
+                if isinstance(messages[0][CONTENT], str):
+                    messages[0][CONTENT] += '\n\n' + knowledge_prompt
+                else:
+                    assert isinstance(messages[0][CONTENT], list)
+                    messages[0][CONTENT] += [ContentItem(text='\n\n' + knowledge_prompt)]
             else:
                 messages = [Message(role=SYSTEM, content=knowledge_prompt)] + messages
         return messages

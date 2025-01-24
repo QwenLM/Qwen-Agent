@@ -10,7 +10,7 @@ import dashscope
 from qwen_agent.llm.base import ModelServiceError, register_llm
 from qwen_agent.llm.function_calling import BaseFnCallModel
 from qwen_agent.llm.qwen_dashscope import initialize_dashscope
-from qwen_agent.llm.schema import ContentItem, Message
+from qwen_agent.llm.schema import ASSISTANT, ContentItem, Message
 from qwen_agent.log import logger
 
 
@@ -37,6 +37,9 @@ class QwenVLChatAtDS(BaseFnCallModel):
 
         messages = _format_local_files(messages)
         messages = [msg.model_dump() for msg in messages]
+        if 'partial' in generate_cfg:
+            messages[-1]['partial'] = True
+            del generate_cfg['partial']
         logger.debug(f'LLM Input:\n{pformat(messages, indent=2)}')
         response = dashscope.MultiModalConversation.call(model=self.model,
                                                          messages=messages,
@@ -48,7 +51,7 @@ class QwenVLChatAtDS(BaseFnCallModel):
             if chunk.status_code == HTTPStatus.OK:
                 yield _extract_vl_response(chunk)
             else:
-                raise ModelServiceError(code=chunk.code, message=chunk.message)
+                raise ModelServiceError(code=chunk.code, message=chunk.message, extra={'model_service_info': chunk})
 
     def _chat_no_stream(
         self,
@@ -57,6 +60,9 @@ class QwenVLChatAtDS(BaseFnCallModel):
     ) -> List[Message]:
         messages = _format_local_files(messages)
         messages = [msg.model_dump() for msg in messages]
+        if 'partial' in generate_cfg:
+            messages[-1]['partial'] = True
+            del generate_cfg['partial']
         logger.debug(f'LLM Input:\n{pformat(messages, indent=2)}')
         response = dashscope.MultiModalConversation.call(model=self.model,
                                                          messages=messages,
@@ -66,7 +72,19 @@ class QwenVLChatAtDS(BaseFnCallModel):
         if response.status_code == HTTPStatus.OK:
             return _extract_vl_response(response=response)
         else:
-            raise ModelServiceError(code=response.code, message=response.message)
+            raise ModelServiceError(code=response.code,
+                                    message=response.message,
+                                    extra={'model_service_info': response})
+
+    def _continue_assistant_response(
+        self,
+        messages: List[Message],
+        generate_cfg: dict,
+        stream: bool,
+    ) -> Iterator[List[Message]]:
+        if messages[-1].role == ASSISTANT:
+            generate_cfg['partial'] = True
+        return self._chat(messages, stream=stream, delta_stream=False, generate_cfg=generate_cfg)
 
 
 # DashScope Qwen-VL requires the following format for local files:
@@ -123,4 +141,4 @@ def _extract_vl_response(response) -> List[Message]:
             for k, v in item.items():
                 if k in ('text', 'box'):
                     text_content.append(ContentItem(text=v))
-    return [Message(role=output.role, content=text_content)]
+    return [Message(role=output.role, content=text_content, extra={'model_service_info': response})]

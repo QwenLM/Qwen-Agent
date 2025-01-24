@@ -5,7 +5,7 @@ import json5
 
 from qwen_agent.agents import Assistant
 from qwen_agent.llm import BaseChatModel
-from qwen_agent.llm.schema import DEFAULT_SYSTEM_MESSAGE, SYSTEM, USER, Message
+from qwen_agent.llm.schema import DEFAULT_SYSTEM_MESSAGE, SYSTEM, USER, ContentItem, Message
 from qwen_agent.tools import BaseTool
 
 MEMORY_PROMPT = """
@@ -53,7 +53,7 @@ class MemoAssistant(Assistant):
             yield rsp
 
     def _prepend_storage_info_to_sys(self, messages: List[Message]) -> List[Message]:
-        new_messages = copy.deepcopy(messages)
+        messages = copy.deepcopy(messages)
         all_kv = {}
         # Obtained from message, with the purpose of facilitating control of information volume
         for msg in messages:
@@ -71,10 +71,14 @@ class MemoAssistant(Assistant):
         all_kv_str = '\n'.join([f'{k}: {v}' for k, v in all_kv.items()])
         sys_memory_prompt = MEMORY_PROMPT.format(storage_info=all_kv_str)
         if messages[0].role == SYSTEM:
-            new_messages[0].content += sys_memory_prompt
+            if isinstance(messages[0].content, str):
+                messages[0].content += '\n\n' + sys_memory_prompt
+            else:
+                assert isinstance(messages[0].content, list)
+                messages[0].content += [ContentItem(text='\n\n' + sys_memory_prompt)]
         else:
-            new_messages = [Message(role=SYSTEM, content=sys_memory_prompt)] + messages
-        return new_messages
+            messages = [Message(role=SYSTEM, content=sys_memory_prompt)] + messages
+        return messages
 
     def _truncate_dialogue_history(self, messages: List[Message]) -> List[Message]:
         # This simulates a very small window, retaining only the most recent three rounds of conversation

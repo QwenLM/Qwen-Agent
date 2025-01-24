@@ -33,10 +33,10 @@ class BaseFnCallModel(BaseChatModel, ABC):
         if (not functions) or (generate_cfg.get('function_choice', 'auto') == 'none'):
             messages = self._remove_fncall_messages(messages, lang=lang)
         else:
-            validate_num_fncall_results(
-                messages=messages,
-                support_multimodal_input=self.support_multimodal_input,
-            )
+            # validate_num_fncall_results(
+            #     messages=messages,
+            #     support_multimodal_input=self.support_multimodal_input,
+            # )
             messages = self.fncall_prompt.preprocess_fncall_messages(
                 messages=messages,
                 functions=functions,

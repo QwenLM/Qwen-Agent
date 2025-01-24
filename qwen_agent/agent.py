@@ -9,6 +9,8 @@ from qwen_agent.llm.base import BaseChatModel
 from qwen_agent.llm.schema import CONTENT, DEFAULT_SYSTEM_MESSAGE, ROLE, SYSTEM, ContentItem, Message
 from qwen_agent.log import logger
 from qwen_agent.tools import TOOL_REGISTRY, BaseTool
+from qwen_agent.tools.base import ToolServiceError
+from qwen_agent.tools.simple_doc_parser import DocParserError
 from qwen_agent.utils.utils import has_chinese_messages, merge_generate_cfgs
 
 
@@ -91,6 +93,24 @@ class Agent(ABC):
             else:
                 kwargs['lang'] = 'en'
 
+        if self.system_message:
+            if new_messages[0][ROLE] != SYSTEM:
+                # Add the system instruction to the agent, default to `DEFAULT_SYSTEM_MESSAGE`
+                new_messages.insert(0, Message(role=SYSTEM, content=self.system_message))
+            else:
+                # When the messages contain system message
+                if self.system_message != DEFAULT_SYSTEM_MESSAGE:
+                    # If the user has set a special system that does not exist in messages, add
+                    if isinstance(new_messages[0][CONTENT], str):
+                        if not new_messages[0][CONTENT].startswith(self.system_message):
+                            new_messages[0][CONTENT] = self.system_message + '\n\n' + new_messages[0][CONTENT]
+                    else:
+                        assert isinstance(new_messages[0][CONTENT], list)
+                        assert new_messages[0][CONTENT][0].text
+                        if not new_messages[0][CONTENT][0].text.startswith(self.system_message):
+                            new_messages[0][CONTENT] = [ContentItem(text=self.system_message + '\n\n')
+                                                       ] + new_messages[0][CONTENT]  # noqa
+
         for rsp in self._run(messages=new_messages, **kwargs):
             for i in range(len(rsp)):
                 if not rsp[i].name and self.name:
@@ -137,15 +157,6 @@ class Agent(ABC):
         Yields:
             The response generator of LLM.
         """
-        messages = copy.deepcopy(messages)
-        if self.system_message:
-            if messages[0][ROLE] != SYSTEM:
-                messages.insert(0, Message(role=SYSTEM, content=self.system_message))
-            elif isinstance(messages[0][CONTENT], str):
-                messages[0][CONTENT] = self.system_message + '\n\n' + messages[0][CONTENT]
-            else:
-                assert isinstance(messages[0][CONTENT], list)
-                messages[0][CONTENT] = [ContentItem(text=self.system_message + '\n\n')] + messages[0][CONTENT]
         return self.llm.chat(messages=messages,
                              functions=functions,
                              stream=stream,
@@ -169,6 +180,8 @@ class Agent(ABC):
         tool = self.function_map[tool_name]
         try:
             tool_result = tool.call(tool_args, **kwargs)
+        except (ToolServiceError, DocParserError) as ex:
+            raise ex
         except Exception as ex:
             exception_type = type(ex).__name__
             exception_message = str(ex)

@@ -126,11 +126,11 @@ class QwenFnCallPrompt(BaseFnCallPrompt):
         # Convert plaintext responses to function_call responses:
         new_messages = []
         for msg in messages:
-            role, content = msg.role, msg.content
+            role, content, extra = msg.role, msg.content, msg.extra
             assert isinstance(content, list)
 
             if role in (SYSTEM, USER):
-                new_messages.append(Message(role=role, content=content))
+                new_messages.append(Message(role=role, content=content, extra=extra))
                 continue
 
             new_content = []
@@ -165,6 +165,7 @@ class QwenFnCallPrompt(BaseFnCallPrompt):
                         new_messages.append(Message(
                             role=role,
                             content=new_content,
+                            extra=extra,
                         ))  # split thought and function call
                         new_content = []
                     item_text = item_text[i:]
@@ -196,6 +197,7 @@ class QwenFnCallPrompt(BaseFnCallPrompt):
                                     name=fn_name,
                                     arguments=fn_args,
                                 ),
+                                extra=extra,
                             ))
 
                 # Keep only one function call if parallelism is disabled
@@ -211,7 +213,7 @@ class QwenFnCallPrompt(BaseFnCallPrompt):
                 return new_messages
 
             if new_content:
-                new_messages.append(Message(role=role, content=new_content))
+                new_messages.append(Message(role=role, content=new_content, extra=extra))
         return new_messages
 
 

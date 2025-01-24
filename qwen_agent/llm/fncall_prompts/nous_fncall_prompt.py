@@ -77,11 +77,11 @@ class NousFnCallPrompt(BaseFnCallPrompt):
         # Convert plaintext responses to function_call responses:
         new_messages = []
         for msg in messages:
-            role, content = msg.role, msg.content
+            role, content, extra = msg.role, msg.content, msg.extra
             assert isinstance(content, list)
 
             if role in (SYSTEM, USER):
-                new_messages.append(Message(role=role, content=content))
+                new_messages.append(Message(role=role, content=content, extra=extra))
                 continue
 
             new_content = []
@@ -117,6 +117,7 @@ class NousFnCallPrompt(BaseFnCallPrompt):
                                 new_messages.append(Message(
                                     role=role,
                                     content=new_content,
+                                    extra=extra,
                                 ))  # split thought and function call
                                 new_content = []
                             new_messages.append(
@@ -127,6 +128,7 @@ class NousFnCallPrompt(BaseFnCallPrompt):
                                         name=fn_name,
                                         arguments=fn_args,
                                     ),
+                                    extra=extra,
                                 ))
                         else:
                             show_text = remove_incomplete_special_tokens(txt)
@@ -141,6 +143,7 @@ class NousFnCallPrompt(BaseFnCallPrompt):
                         new_messages.append(Message(
                             role=role,
                             content=new_content,
+                            extra=extra,
                         ))  # split thought and function call
                         new_content = []
 
@@ -153,13 +156,14 @@ class NousFnCallPrompt(BaseFnCallPrompt):
                                 name=fn['name'],
                                 arguments=json.dumps(fn['arguments'], ensure_ascii=False),
                             ),
+                            extra=extra,
                         ))
 
                     if one_tool_call_txt[1].strip():
                         new_content.append(ContentItem(text=one_tool_call_txt[1]))
 
             if new_content:
-                new_messages.append(Message(role=role, content=new_content))
+                new_messages.append(Message(role=role, content=new_content, extra=extra))
         return new_messages
 
 

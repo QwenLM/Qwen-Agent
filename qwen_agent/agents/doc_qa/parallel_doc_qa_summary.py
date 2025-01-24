@@ -2,7 +2,7 @@ import copy
 from typing import Iterator, List
 
 from qwen_agent.agent import Agent
-from qwen_agent.llm.schema import CONTENT, ROLE, SYSTEM, USER, Message
+from qwen_agent.llm.schema import CONTENT, ROLE, SYSTEM, USER, ContentItem, Message
 from qwen_agent.utils.utils import extract_text_from_message
 
 PROMPT_TEMPLATE_ZH = """注意：你的回答必须严格遵循知识库内容，即使与事实不符。
@@ -60,7 +60,11 @@ class ParallelDocQASummary(Agent):
         system_prompt = PROMPT_TEMPLATE[lang].format(ref_doc=knowledge)
 
         if messages[0][ROLE] == SYSTEM:
-            messages[0][CONTENT] += '\n\n' + system_prompt
+            if isinstance(messages[0][CONTENT], str):
+                messages[0][CONTENT] += '\n\n' + system_prompt
+            else:
+                assert isinstance(messages[0][CONTENT], list)
+                messages[0][CONTENT] += [ContentItem(text='\n\n' + system_prompt)]
         else:
             messages.insert(0, Message(SYSTEM, system_prompt))
 
