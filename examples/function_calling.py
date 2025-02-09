@@ -25,8 +25,9 @@ def test(fncall_prompt_type: str = 'qwen'):
         'model': 'qwen2.5-72b-instruct',
         'model_server': 'dashscope',
         'api_key': os.getenv('DASHSCOPE_API_KEY'),
+        'fncall_prompt_type': fncall_prompt_type,
         'generate_cfg': {
-            'fncall_prompt_type': fncall_prompt_type
+            # 'fncall_prompt_type': fncall_prompt_type
         },
 
         # Use the OpenAI-compatible model service provided by DashScope:

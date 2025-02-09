@@ -10,7 +10,7 @@ class BaseFnCallModel(BaseChatModel, ABC):
 
     def __init__(self, cfg: Optional[Dict] = None):
         super().__init__(cfg)
-        fncall_prompt_type = self.generate_cfg.get('fncall_prompt_type', 'qwen')
+        fncall_prompt_type = cfg.get('fncall_prompt_type', 'qwen')
         if fncall_prompt_type == 'qwen':
             from qwen_agent.llm.fncall_prompts.qwen_fncall_prompt import FN_STOP_WORDS, QwenFnCallPrompt
             self.fncall_prompt = QwenFnCallPrompt()
