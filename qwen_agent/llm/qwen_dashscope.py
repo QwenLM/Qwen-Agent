@@ -53,9 +53,15 @@ class QwenChatAtDS(BaseFnCallModel):
             stream=False,
             **generate_cfg)
         if response.status_code == HTTPStatus.OK:
-            return [Message(ASSISTANT, response.output.choices[0].message.content)]
+            return [
+                Message(role=ASSISTANT,
+                        content=response.output.choices[0].message.content,
+                        extra={'model_service_info': response})
+            ]
         else:
-            raise ModelServiceError(code=response.code, message=response.message)
+            raise ModelServiceError(code=response.code,
+                                    message=response.message,
+                                    extra={'model_service_info': response})
 
     def _continue_assistant_response(
         self,
@@ -81,10 +87,12 @@ class QwenChatAtDS(BaseFnCallModel):
 
     @staticmethod
     def _delta_stream_output(response) -> Iterator[List[Message]]:
+        # The model_service_info is for reference only
         last_len = 0
         delay_len = 5
         in_delay = False
         text = ''
+        chunk = None
         for chunk in response:
             if chunk.status_code == HTTPStatus.OK:
                 text = chunk.output.choices[0].message.content
@@ -95,20 +103,20 @@ class QwenChatAtDS(BaseFnCallModel):
                     in_delay = False
                     real_text = text[:-delay_len]
                     now_rsp = real_text[last_len:]
-                    yield [Message(ASSISTANT, now_rsp)]
+                    yield [Message(ASSISTANT, now_rsp, extra={'model_service_info': chunk})]
                     last_len = len(real_text)
             else:
-                raise ModelServiceError(code=chunk.code, message=chunk.message)
+                raise ModelServiceError(code=chunk.code, message=chunk.message, extra={'model_service_info': chunk})
         if text and (in_delay or (last_len != len(text))):
-            yield [Message(ASSISTANT, text[last_len:])]
+            yield [Message(ASSISTANT, text[last_len:], extra={'model_service_info': chunk})]
 
     @staticmethod
     def _full_stream_output(response) -> Iterator[List[Message]]:
         for chunk in response:
             if chunk.status_code == HTTPStatus.OK:
-                yield [Message(ASSISTANT, chunk.output.choices[0].message.content)]
+                yield [Message(ASSISTANT, chunk.output.choices[0].message.content, extra={'model_service_info': chunk})]
             else:
-                raise ModelServiceError(code=chunk.code, message=chunk.message)
+                raise ModelServiceError(code=chunk.code, message=chunk.message, extra={'model_service_info': chunk})
 
 
 def initialize_dashscope(cfg: Optional[Dict] = None) -> None:

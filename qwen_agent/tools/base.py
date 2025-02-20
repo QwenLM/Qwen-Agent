@@ -10,6 +10,23 @@ from qwen_agent.utils.utils import has_chinese_chars, json_loads, logger, print_
 TOOL_REGISTRY = {}
 
 
+class ToolServiceError(Exception):
+
+    def __init__(self,
+                 exception: Optional[Exception] = None,
+                 code: Optional[str] = None,
+                 message: Optional[str] = None,
+                 extra: Optional[dict] = None):
+        if exception is not None:
+            super().__init__(exception)
+        else:
+            super().__init__(f'\nError code: {code}. Error message: {message}')
+        self.exception = exception
+        self.code = code
+        self.message = message
+        self.extra = extra
+
+
 def register_tool(name, allow_overwrite=False):
 
     def decorator(cls):

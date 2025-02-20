@@ -31,7 +31,8 @@ class ModelServiceError(Exception):
     def __init__(self,
                  exception: Optional[Exception] = None,
                  code: Optional[str] = None,
-                 message: Optional[str] = None):
+                 message: Optional[str] = None,
+                 extra: Optional[dict] = None):
         if exception is not None:
             super().__init__(exception)
         else:
@@ -39,6 +40,7 @@ class ModelServiceError(Exception):
         self.exception = exception
         self.code = code
         self.message = message
+        self.extra = extra
 
 
 class BaseChatModel(ABC):
@@ -298,10 +300,13 @@ class BaseChatModel(ABC):
         generate_cfg: dict,
         functions: Optional[List[Dict]] = None,
     ) -> List[Message]:
+        add_multimodel_upload_info = False
+        if functions:
+            add_multimodel_upload_info = True
         messages = [
             format_as_multimodal_message(msg,
                                          add_upload_info=True,
-                                         add_multimodel_upload_info=(functions is not None),
+                                         add_multimodel_upload_info=add_multimodel_upload_info,
                                          lang=lang) for msg in messages
         ]
         return messages

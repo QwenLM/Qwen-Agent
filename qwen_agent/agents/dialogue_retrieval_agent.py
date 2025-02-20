@@ -64,7 +64,7 @@ class DialogueRetrievalAgent(Assistant):
 
         # Save content as file: This file is related to the session and the time
         content = '\n'.join(content)
-        file_path = os.path.join(DEFAULT_WORKSPACE, f'dialogue_history_{session_id}_{datetime.datetime.now()}.txt')
+        file_path = os.path.join(DEFAULT_WORKSPACE, f'dialogue_history_{session_id}_{datetime.datetime.now():%Y%m%d_%H%M%S}.txt')
         save_text_to_file(file_path, content)
 
         new_content = [ContentItem(text=query), ContentItem(file=file_path)]

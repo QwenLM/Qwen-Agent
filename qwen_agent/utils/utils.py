@@ -367,12 +367,11 @@ def format_as_multimodal_message(
                 content = [ContentItem(text=upload)] + content
     else:
         raise TypeError
-    msg = Message(
-        role=msg.role,
-        content=content,
-        name=msg.name if msg.role == FUNCTION else None,
-        function_call=msg.function_call,
-    )
+    msg = Message(role=msg.role,
+                  content=content,
+                  name=msg.name if msg.role == FUNCTION else None,
+                  function_call=msg.function_call,
+                  extra=msg.extra)
     return msg
 
 

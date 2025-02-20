@@ -3,7 +3,7 @@ from typing import Dict, Iterator, List, Optional, Union
 
 from qwen_agent import Agent
 from qwen_agent.llm.base import BaseChatModel
-from qwen_agent.llm.schema import CONTENT, DEFAULT_SYSTEM_MESSAGE, ROLE, SYSTEM, USER, Message
+from qwen_agent.llm.schema import CONTENT, DEFAULT_SYSTEM_MESSAGE, ROLE, SYSTEM, USER, ContentItem, Message
 from qwen_agent.tools import BaseTool
 from qwen_agent.utils.utils import merge_generate_cfgs
 
@@ -123,7 +123,11 @@ class ParallelDocQAMember(Agent):
 
         system_prompt = SYSTEM_PROMPT_TEMPLATE[lang].format(no_response=NO_RESPONSE)
         if messages[0][ROLE] == SYSTEM:
-            messages[0][CONTENT] += '\n\n' + system_prompt
+            if isinstance(messages[0][CONTENT], str):
+                messages[0][CONTENT] += '\n\n' + system_prompt
+            else:
+                assert isinstance(messages[0][CONTENT], list)
+                messages[0][CONTENT] += [ContentItem(text='\n\n' + system_prompt)]
         else:
             messages.insert(0, Message(SYSTEM, system_prompt))
 
