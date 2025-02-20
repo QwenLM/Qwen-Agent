@@ -8,7 +8,7 @@ from qwen_agent.llm import get_chat_model
 from qwen_agent.llm.base import BaseChatModel
 from qwen_agent.llm.schema import CONTENT, DEFAULT_SYSTEM_MESSAGE, ROLE, SYSTEM, ContentItem, Message
 from qwen_agent.log import logger
-from qwen_agent.tools import TOOL_REGISTRY, BaseTool
+from qwen_agent.tools import TOOL_REGISTRY, BaseTool, MCPManager
 from qwen_agent.tools.base import ToolServiceError
 from qwen_agent.tools.simple_doc_parser import DocParserError
 from qwen_agent.utils.utils import has_chinese_messages, merge_generate_cfgs
@@ -205,6 +205,13 @@ class Agent(ABC):
             if tool_name in self.function_map:
                 logger.warning(f'Repeatedly adding tool {tool_name}, will use the newest tool in function list')
             self.function_map[tool_name] = tool
+        elif isinstance(tool, dict) and 'mcpServers' in tool:
+            tools = MCPManager().initConfig(tool)
+            for tool in tools:
+                tool_name = tool.name
+                if tool_name in self.function_map:
+                    logger.warning(f'Repeatedly adding tool {tool_name}, will use the newest tool in function list')
+                self.function_map[tool_name] = tool
         else:
             if isinstance(tool, dict):
                 tool_name = tool['name']

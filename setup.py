@@ -52,6 +52,7 @@ setup(
         'pydantic>=2.3.0',
         'requests',
         'tiktoken',
+        'mcp',
     ],
     extras_require={
         # Extra dependencies for RAG:
