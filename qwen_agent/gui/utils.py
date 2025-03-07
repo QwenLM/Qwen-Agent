@@ -25,6 +25,7 @@ TOOL_OUTPUT = '''
 
 {tool_output}
 </details>
+
 '''
 
 
