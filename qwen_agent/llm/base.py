@@ -63,6 +63,7 @@ class BaseChatModel(ABC):
         cache_dir = cfg.get('cache_dir', generate_cfg.pop('cache_dir', None))
         self.max_retries = generate_cfg.pop('max_retries', 0)
         self.generate_cfg = generate_cfg
+        self.model_type = cfg.get('model_type', '')
 
         if cache_dir:
             try:
@@ -119,6 +120,25 @@ class BaseChatModel(ABC):
                 _return_message_type = 'message'
         messages = new_messages
 
+        # RM think for non-qwq
+        if 'qwq' not in self.model.lower():
+            SPECIAL_THOUGHT_TOKEN = '<think>'
+            new_messages = []
+            for msg in messages:
+                if msg.role == ASSISTANT:
+                    if isinstance(msg.content, str):
+                        if SPECIAL_THOUGHT_TOKEN in msg.content:
+                            msg.content = _rm_think(msg.content)
+                    elif isinstance(msg.content, list):
+                        for i, item in enumerate(msg.content):
+                            if item.text:
+                                if SPECIAL_THOUGHT_TOKEN in item.text:
+                                    item.text = _rm_think(item.text)
+                                    msg.content[i] = item
+                                break
+                new_messages.append(msg)
+            messages = new_messages
+
         # Cache lookup:
         if self.cache is not None:
             cache_key = dict(messages=messages, functions=functions, extra_generate_cfg=extra_generate_cfg)
@@ -146,6 +166,8 @@ class BaseChatModel(ABC):
             lang: Literal['en', 'zh'] = generate_cfg.pop('lang')
         else:
             lang: Literal['en', 'zh'] = 'zh' if has_chinese_messages(messages) else 'en'
+        if self.model_type == 'qwen_dashscope' and stream:
+            generate_cfg['incremental_output'] = True
 
         if messages[0].role != SYSTEM:
             messages = [Message(role=SYSTEM, content=DEFAULT_SYSTEM_MESSAGE)] + messages
@@ -301,7 +323,7 @@ class BaseChatModel(ABC):
         functions: Optional[List[Dict]] = None,
     ) -> List[Message]:
         add_multimodel_upload_info = False
-        if functions:
+        if functions or (not self.support_multimodal_input):
             add_multimodel_upload_info = True
         messages = [
             format_as_multimodal_message(msg,
@@ -442,30 +464,38 @@ def _truncate_input_messages_roughly(messages: List[Message], max_tokens: int) -
     def _count_tokens(msg: Message) -> int:
         return tokenizer.count_tokens(extract_text_from_message(msg, add_upload_info=True))
 
-    token_cnt = _count_tokens(sys_msg)
-    truncated = []
-    for i, turn in enumerate(reversed(turns)):
-        cur_turn_msgs = []
-        cur_token_cnt = 0
-        for m in reversed(turn):
-            cur_turn_msgs.append(m)
-            cur_token_cnt += _count_tokens(m)
-        # Check "i == 0" so that at least one user message is included
-        if (i == 0) or (token_cnt + cur_token_cnt <= max_tokens):
-            truncated.extend(cur_turn_msgs)
-            token_cnt += cur_token_cnt
+    def _truncate_message(msg: Message, max_tokens: int):
+        if isinstance(msg.content, str):
+            content = tokenizer.truncate(msg.content, max_token=max_tokens)
         else:
-            break
-    # Always include the system message
-    truncated.append(sys_msg)
-    truncated.reverse()
+            text = []
+            for item in msg.content:
+                if not item.text:
+                    return None
+                text.append(item.text)
+            text = '\n'.join(text)
+            content = tokenizer.truncate(text, max_token=max_tokens)
+        return Message(role=msg.role, content=content)
 
-    if len(truncated) < 2:  # one system message + one or more user messages
-        raise ModelServiceError(
-            code='400',
-            message='At least one user message should be provided.',
-        )
-    if token_cnt > max_tokens:
+    available_token = max_tokens - _count_tokens(sys_msg)
+    token_cnt = 0
+    new_messages = []
+    for i in range(len(messages) - 1, 0, -1):
+        cur_token_cnt = _count_tokens(messages[i])
+        if cur_token_cnt <= available_token:
+            new_messages = [messages[i]] + new_messages
+            available_token -= cur_token_cnt
+        else:
+            if (messages[i].role == USER) and (i != len(messages) - 1):
+                _msg = _truncate_message(messages[i], max_tokens=available_token)
+                if _msg:
+                    new_messages = [_msg] + new_messages
+                break
+            else:
+                token_cnt = (max_tokens - available_token) + cur_token_cnt
+                break
+    new_messages = [messages[0]] + new_messages
+    if len(new_messages) < 2:
         raise ModelServiceError(
             code='400',
             message=f'The input messages exceed the maximum context length ({max_tokens} tokens) after '
@@ -473,7 +503,7 @@ def _truncate_input_messages_roughly(messages: List[Message], max_tokens: int) -
             'To configure the context limit, please specifiy "max_input_tokens" in the model generate_cfg. '
             f'Example: generate_cfg = {{..., "max_input_tokens": {(token_cnt // 100 + 1) * 100}}}',
         )
-    return truncated
+    return new_messages
 
 
 def retry_model_service(
@@ -545,3 +575,9 @@ def _raise_or_delay(
     delay = min(delay * exponential_base, max_delay) * jitter
     time.sleep(delay)
     return num_retries, delay
+
+
+def _rm_think(text: str) -> str:
+    if '</think>' in text:
+        return text.split('</think>')[-1].lstrip()
+    return text

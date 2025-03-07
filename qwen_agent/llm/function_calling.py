@@ -19,6 +19,9 @@ class BaseFnCallModel(BaseChatModel, ABC):
         elif fncall_prompt_type == 'nous':
             from qwen_agent.llm.fncall_prompts.nous_fncall_prompt import NousFnCallPrompt
             self.fncall_prompt = NousFnCallPrompt()
+        elif fncall_prompt_type == 'nous_think':
+            from qwen_agent.llm.fncall_prompts.nous_fncall_prompt_think import NousFnCallPromptThink
+            self.fncall_prompt = NousFnCallPromptThink()
         else:
             raise NotImplementedError
 

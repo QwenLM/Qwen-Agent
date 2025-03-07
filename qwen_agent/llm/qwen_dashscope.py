@@ -7,9 +7,10 @@ import dashscope
 
 from qwen_agent.llm.base import ModelServiceError, register_llm
 from qwen_agent.llm.function_calling import BaseFnCallModel
-from qwen_agent.llm.schema import ASSISTANT, Message
+from qwen_agent.llm.schema import ASSISTANT, DEFAULT_SYSTEM_MESSAGE, Message
 from qwen_agent.log import logger
-from qwen_agent.utils.utils import build_text_completion_prompt
+
+# from qwen_agent.utils.utils import build_text_completion_prompt
 
 
 @register_llm('qwen_dashscope')
@@ -27,6 +28,11 @@ class QwenChatAtDS(BaseFnCallModel):
         generate_cfg: dict,
     ) -> Iterator[List[Message]]:
         messages = [msg.model_dump() for msg in messages]
+        # RM default system
+        if messages[0]['role'] == 'system' and messages[0]['content'] == DEFAULT_SYSTEM_MESSAGE:
+            messages = messages[1:]
+        if messages[-1]['role'] == ASSISTANT:
+            messages[-1]['partial'] = True
         logger.debug(f'LLM Input:\n{pformat(messages, indent=2)}')
         response = dashscope.Generation.call(
             self.model,
@@ -45,6 +51,11 @@ class QwenChatAtDS(BaseFnCallModel):
         generate_cfg: dict,
     ) -> List[Message]:
         messages = [msg.model_dump() for msg in messages]
+        # RM default system
+        if messages[0]['role'] == 'system' and messages[0]['content'] == DEFAULT_SYSTEM_MESSAGE:
+            messages = messages[1:]
+        if messages[-1]['role'] == ASSISTANT:
+            messages[-1]['partial'] = True
         logger.debug(f'LLM Input:\n{pformat(messages, indent=2)}')
         response = dashscope.Generation.call(
             self.model,
@@ -69,52 +80,46 @@ class QwenChatAtDS(BaseFnCallModel):
         generate_cfg: dict,
         stream: bool,
     ) -> Iterator[List[Message]]:
-        prompt = build_text_completion_prompt(messages)
-        logger.debug(f'LLM Input:\n{pformat(prompt, indent=2)}')
-        response = dashscope.Generation.call(
-            self.model,
-            prompt=prompt,  # noqa
-            result_format='message',
-            stream=True,
-            use_raw_prompt=True,
-            **generate_cfg)
-        it = self._full_stream_output(response)
-        if stream:
-            return it  # streaming the response
-        else:
-            *_, final_response = it  # return the final response without streaming
-            return final_response
+        return self._chat(messages, stream=stream, delta_stream=False, generate_cfg=generate_cfg)
 
     @staticmethod
     def _delta_stream_output(response) -> Iterator[List[Message]]:
-        # The model_service_info is for reference only
-        last_len = 0
-        delay_len = 5
-        in_delay = False
-        text = ''
-        chunk = None
+        is_thought = False
         for chunk in response:
             if chunk.status_code == HTTPStatus.OK:
-                text = chunk.output.choices[0].message.content
-                if (len(text) - last_len) <= delay_len:
-                    in_delay = True
-                    continue
+                if chunk.output.choices[0].message.get('reasoning_content', ''):
+                    if not is_thought:
+                        content = '<think>\n' + chunk.output.choices[0].message.reasoning_content
+                        is_thought = True
+                    else:
+                        content = chunk.output.choices[0].message.reasoning_content
                 else:
-                    in_delay = False
-                    real_text = text[:-delay_len]
-                    now_rsp = real_text[last_len:]
-                    yield [Message(ASSISTANT, now_rsp, extra={'model_service_info': chunk})]
-                    last_len = len(real_text)
+                    if is_thought:
+                        content = '\n</think>\n\n' + chunk.output.choices[0].message.content
+                        is_thought = False
+                    else:
+                        content = chunk.output.choices[0].message.content
+                yield [Message(ASSISTANT, content, extra={'model_service_info': chunk})]
             else:
                 raise ModelServiceError(code=chunk.code, message=chunk.message, extra={'model_service_info': chunk})
-        if text and (in_delay or (last_len != len(text))):
-            yield [Message(ASSISTANT, text[last_len:], extra={'model_service_info': chunk})]
 
     @staticmethod
     def _full_stream_output(response) -> Iterator[List[Message]]:
+        full_text = ''
+        is_thought = False
         for chunk in response:
             if chunk.status_code == HTTPStatus.OK:
-                yield [Message(ASSISTANT, chunk.output.choices[0].message.content, extra={'model_service_info': chunk})]
+                if chunk.output.choices[0].message.get('reasoning_content', ''):
+                    if not is_thought:
+                        full_text += '<think>\n'
+                        is_thought = True
+                    full_text += chunk.output.choices[0].message.reasoning_content
+                elif chunk.output.choices[0].message.content:
+                    if is_thought:
+                        full_text += '\n</think>\n\n'
+                        is_thought = False
+                    full_text += chunk.output.choices[0].message.content
+                yield [Message(ASSISTANT, full_text, extra={'model_service_info': chunk})]
             else:
                 raise ModelServiceError(code=chunk.code, message=chunk.message, extra={'model_service_info': chunk})
 

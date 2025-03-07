@@ -1,5 +1,7 @@
 import copy
 import json
+import os
+import re
 from typing import List, Literal, Union
 
 from qwen_agent.llm.fncall_prompts.base_fncall_prompt import BaseFnCallPrompt
@@ -7,9 +9,10 @@ from qwen_agent.llm.schema import ASSISTANT, FUNCTION, SYSTEM, USER, ContentItem
 
 
 class NousFnCallPrompt(BaseFnCallPrompt):
+    THINKING_MODE = False
 
-    @staticmethod
     def preprocess_fncall_messages(
+        self,
         messages: List[Message],
         functions: List[dict],
         lang: Literal['en', 'zh'],
@@ -31,11 +34,30 @@ class NousFnCallPrompt(BaseFnCallPrompt):
                 messages.append(msg)
             elif role == ASSISTANT:
                 content = (content or [])
+                if self.THINKING_MODE:
+                    _content = []
+                    for c in content:
+                        if c.text and '<think>' in c.text:
+                            c.text = re.sub(r'<think>.*?</think>', '', c.text, flags=re.DOTALL).strip()
+                            if c.text:
+                                _content.append(ContentItem(text=c.text))
+                        else:
+                            _content.append(c)
+                    content = _content
                 fn_call = msg.function_call
                 if fn_call:
-                    fc = {'name': fn_call.name, 'arguments': json.loads(fn_call.arguments)}
-                    fc = json.dumps(fc, ensure_ascii=False)
-                    fc = f'<tool_call>\n{fc}\n</tool_call>'
+                    if (not SPECIAL_CODE_MODE) or (CODE_TOOL_PATTERN not in fn_call.name):
+                        fc = {'name': fn_call.name, 'arguments': json.loads(fn_call.arguments)}
+                        fc = json.dumps(fc, ensure_ascii=False)
+                        fc = f'<tool_call>\n{fc}\n</tool_call>'
+                    else:
+                        para = json.loads(fn_call.arguments)
+                        code = para['code']
+                        para['code'] = ''
+                        fc = {'name': fn_call.name, 'arguments': para}
+                        fc = json.dumps(fc, ensure_ascii=False)
+                        fc = f'<tool_call>\n{fc}\n<code>\n{code}\n</code>\n</tool_call>'
+
                     content.append(ContentItem(text=fc))
                 if messages[-1].role == ASSISTANT:
                     messages[-1].content.append(ContentItem(text='\n'))
@@ -57,16 +79,20 @@ class NousFnCallPrompt(BaseFnCallPrompt):
                 raise TypeError
 
         tool_descs = [{'type': 'function', 'function': f} for f in functions]
+        tool_names = [function.get('name_for_model', function.get('name', '')) for function in functions]
         tool_descs = '\n'.join([json.dumps(f, ensure_ascii=False) for f in tool_descs])
-        tool_system = FN_CALL_TEMPLATE.format(tool_descs=tool_descs)
+        if SPECIAL_CODE_MODE and any([CODE_TOOL_PATTERN in x for x in tool_names]):
+            tool_system = FN_CALL_TEMPLATE_WITH_CI.format(tool_descs=tool_descs)
+        else:
+            tool_system = FN_CALL_TEMPLATE.format(tool_descs=tool_descs)
         if messages[0].role == SYSTEM:
             messages[0].content.append(ContentItem(text='\n\n' + tool_system))
         else:
             messages = [Message(role=SYSTEM, content=[ContentItem(text=tool_system)])] + messages
         return messages
 
-    @staticmethod
     def postprocess_fncall_messages(
+        self,
         messages: List[Message],
         parallel_function_calls: bool = True,
         function_choice: Union[Literal['auto'], str] = 'auto',
@@ -91,6 +117,14 @@ class NousFnCallPrompt(BaseFnCallPrompt):
                 if item_type != 'text':  # multimodal
                     new_content.append(item)
                     continue
+                if self.THINKING_MODE:
+                    if '</think>' not in item_text:
+                        new_content.append(ContentItem(text=item_text))
+                        continue
+                    _item_text = item_text.split('</think>')
+                    # assert len(_item_text) == 2
+                    new_content.append(ContentItem(text='</think>'.join(_item_text[:-1]) + '</think>'))
+                    item_text = _item_text[-1]
 
                 i = item_text.find('<tool_call>')
                 # If no function call:
@@ -146,8 +180,18 @@ class NousFnCallPrompt(BaseFnCallPrompt):
                             extra=extra,
                         ))  # split thought and function call
                         new_content = []
-
-                    fn = json.loads(one_tool_call_txt[0].strip())
+                    if SPECIAL_CODE_MODE and '<code>' in one_tool_call_txt[0] and '</code>' in one_tool_call_txt[0]:
+                        _snips = one_tool_call_txt[0].split('<code>')
+                        fn = None
+                        for i, _s in enumerate(_snips):
+                            if i == 0:
+                                fn = json.loads(_s)
+                            else:
+                                # TODO: support more flexible params
+                                code = _s.replace('</code>', '')
+                                fn['arguments']['code'] = code
+                    else:
+                        fn = json.loads(one_tool_call_txt[0].strip())
                     new_messages.append(
                         Message(
                             role=ASSISTANT,
@@ -179,6 +223,29 @@ You are provided with function signatures within <tools></tools> XML tags:
 For each function call, return a json object with function name and arguments within <tool_call></tool_call> XML tags:
 <tool_call>
 {{"name": <function-name>, "arguments": <args-json-object>}}
+</tool_call>"""
+
+SPECIAL_CODE_MODE = os.getenv('SPECIAL_CODE_MODE', 'false').lower() == 'true'
+CODE_TOOL_PATTERN = 'code_interpreter'
+FN_CALL_TEMPLATE_WITH_CI = """# Tools
+
+You may call one or more functions to assist with the user query.
+
+You are provided with function signatures within <tools></tools> XML tags:
+<tools>
+{tool_descs}
+</tools>
+
+For each function call, return a json object with function name and arguments within <tool_call></tool_call> XML tags:
+<tool_call>
+{{"name": <function-name>, "arguments": <args-json-object>}}
+</tool_call>
+For code parameters, use placeholders first, and then put the code within <code></code> XML tags, such as:
+<tool_call>
+{{"name": <function-name>, "arguments": {{"code": ""}}}}
+<code>
+Here is the code.
+</code>
 </tool_call>"""
 
 

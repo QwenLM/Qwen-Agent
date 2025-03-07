@@ -37,9 +37,8 @@ class QwenVLChatAtDS(BaseFnCallModel):
 
         messages = _format_local_files(messages)
         messages = [msg.model_dump() for msg in messages]
-        if 'partial' in generate_cfg:
+        if messages[-1]['role'] == ASSISTANT:
             messages[-1]['partial'] = True
-            del generate_cfg['partial']
         logger.debug(f'LLM Input:\n{pformat(messages, indent=2)}')
         response = dashscope.MultiModalConversation.call(model=self.model,
                                                          messages=messages,
@@ -60,9 +59,8 @@ class QwenVLChatAtDS(BaseFnCallModel):
     ) -> List[Message]:
         messages = _format_local_files(messages)
         messages = [msg.model_dump() for msg in messages]
-        if 'partial' in generate_cfg:
+        if messages[-1]['role'] == ASSISTANT:
             messages[-1]['partial'] = True
-            del generate_cfg['partial']
         logger.debug(f'LLM Input:\n{pformat(messages, indent=2)}')
         response = dashscope.MultiModalConversation.call(model=self.model,
                                                          messages=messages,
@@ -82,8 +80,6 @@ class QwenVLChatAtDS(BaseFnCallModel):
         generate_cfg: dict,
         stream: bool,
     ) -> Iterator[List[Message]]:
-        if messages[-1].role == ASSISTANT:
-            generate_cfg['partial'] = True
         return self._chat(messages, stream=stream, delta_stream=False, generate_cfg=generate_cfg)
 
 
