@@ -41,7 +41,6 @@ class FnCallAgent(Agent):
 
         if not hasattr(self, 'mem'):
             # Default to use Memory to manage files
-            # Default to use Memory to manage files
             if 'qwq' in self.llm.model or 'qvq' in self.llm.model:
                 mem_llm = {
                     'model': 'qwen-turbo-latest',

@@ -19,6 +19,7 @@ def init_agent_service():
 
     tools = [
         'image_gen',
+        # 'web_search',  # Apply for an apikey here (https://serper.dev) and set it as an environment variable by `export SERPER_API_KEY=xxxxxx`
     ]
     bot = Assistant(
         llm=llm_cfg,
