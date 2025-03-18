@@ -16,9 +16,10 @@
 Qwen-Agent is a framework for developing LLM applications based on the instruction following, tool usage, planning, and
 memory capabilities of Qwen.
 It also comes with example applications such as Browser Assistant, Code Interpreter, and Custom Assistant.
-Now Qwen-Agent plays as the backend of [Qwen Chat](https://chat.qwenlm.ai/).
+Now Qwen-Agent plays as the backend of [Qwen Chat](https://chat.qwen.ai/).
 
 # News
+* Mar 18, 2025: Support for the `reasoning_content` field; adjust the default [Function Call template](./qwen_agent/llm/fncall_prompts/nous_fncall_prompt.py).
 * 🔥🔥🔥Mar 7, 2025: Added [QwQ-32B Tool-call Demo](./examples/assistant_qwq.py). It supports parallel, multi-step, and multi-turn tool calls.
 * Dec 3, 2024: Upgrade GUI to Gradio 5 based. Note: GUI requires Python 3.10 or higher.
 * Sep 18, 2024: Added [Qwen2.5-Math Demo](./examples/tir_math.py) to showcase the Tool-Integrated Reasoning capabilities of Qwen2.5-Math. Note: The python executor is not sandboxed and is intended for local testing only, not for production use.
@@ -72,6 +73,7 @@ import urllib.parse
 import json5
 from qwen_agent.agents import Assistant
 from qwen_agent.tools.base import BaseTool, register_tool
+from qwen_agent.utils.output_beautify import typewriter_print
 
 
 # Step 1 (Optional): Add a custom tool named `my_image_gen`.
@@ -133,14 +135,15 @@ bot = Assistant(llm=llm_cfg,
 messages = []  # This stores the chat history.
 while True:
     # For example, enter the query "draw a dog and rotate it 90 degrees".
-    query = input('user query: ')
+    query = input('\nuser query: ')
     # Append the user query to the chat history.
     messages.append({'role': 'user', 'content': query})
     response = []
+    response_plain_text = ''
+    print('bot response:')
     for response in bot.run(messages=messages):
         # Streaming output.
-        print('bot response:')
-        pprint.pprint(response, indent=2)
+        response_plain_text = typewriter_print(response, response_plain_text)
     # Append the bot responses to the chat history.
     messages.extend(response)
 ```

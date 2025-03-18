@@ -4,6 +4,7 @@ import os
 
 from qwen_agent.agents import Assistant
 from qwen_agent.gui import WebUI
+from qwen_agent.utils.output_beautify import typewriter_print
 
 ROOT_RESOURCE = os.path.join(os.path.dirname(__file__), 'resource')
 
@@ -13,10 +14,9 @@ def init_agent_service():
         'model': 'qwq-32b',
         'model_type': 'qwen_dashscope',
         'generate_cfg': {
-            'fncall_prompt_type': 'nous_think',
-        }
+            'fncall_prompt_type': 'nous'
+        },
     }
-
     tools = [
         'image_gen',
         # 'web_search',  # Apply for an apikey here (https://serper.dev) and set it as an environment variable by `export SERPER_API_KEY=xxxxxx`
@@ -36,9 +36,9 @@ def test(query: str = '画一只猫，再画一只狗，最后画他们一起玩
 
     # Chat
     messages = [{'role': 'user', 'content': query}]
-
+    response_plain_text = ''
     for response in bot.run(messages=messages):
-        print('bot response:', response)
+        response_plain_text = typewriter_print(response, response_plain_text)
 
 
 def app_tui():
@@ -51,8 +51,9 @@ def app_tui():
         query = input('user question: ')
         messages.append({'role': 'user', 'content': query})
         response = []
+        response_plain_text = ''
         for response in bot.run(messages=messages):
-            print('bot response:', response)
+            response_plain_text = typewriter_print(response, response_plain_text)
         messages.extend(response)
 
 

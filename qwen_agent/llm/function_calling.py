@@ -10,7 +10,7 @@ class BaseFnCallModel(BaseChatModel, ABC):
 
     def __init__(self, cfg: Optional[Dict] = None):
         super().__init__(cfg)
-        fncall_prompt_type = self.generate_cfg.get('fncall_prompt_type', 'qwen')
+        fncall_prompt_type = self.generate_cfg.get('fncall_prompt_type', 'nous')
         if fncall_prompt_type == 'qwen':
             from qwen_agent.llm.fncall_prompts.qwen_fncall_prompt import FN_STOP_WORDS, QwenFnCallPrompt
             self.fncall_prompt = QwenFnCallPrompt()
@@ -19,11 +19,10 @@ class BaseFnCallModel(BaseChatModel, ABC):
         elif fncall_prompt_type == 'nous':
             from qwen_agent.llm.fncall_prompts.nous_fncall_prompt import NousFnCallPrompt
             self.fncall_prompt = NousFnCallPrompt()
-        elif fncall_prompt_type == 'nous_think':
-            from qwen_agent.llm.fncall_prompts.nous_fncall_prompt_think import NousFnCallPromptThink
-            self.fncall_prompt = NousFnCallPromptThink()
         else:
             raise NotImplementedError
+        if 'fncall_prompt_type' in self.generate_cfg:
+            del self.generate_cfg['fncall_prompt_type']
 
     def _preprocess_messages(
         self,

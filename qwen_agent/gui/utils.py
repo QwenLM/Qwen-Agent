@@ -1,7 +1,7 @@
 import os
 from typing import Dict, List
 
-from qwen_agent.llm.schema import ASSISTANT, CONTENT, FUNCTION, NAME, ROLE, SYSTEM, USER
+from qwen_agent.llm.schema import ASSISTANT, CONTENT, FUNCTION, NAME, REASONING_CONTENT, ROLE, SYSTEM, USER
 
 THINK = '''
 <details open>
@@ -57,7 +57,8 @@ def convert_fncall_to_text(messages: List[Dict]) -> List[Dict]:
     new_messages = []
 
     for msg in messages:
-        role, content, name = msg[ROLE], msg[CONTENT], msg.get(NAME, None)
+        role, content, reasoning_content, name = msg[ROLE], msg[CONTENT], msg.get(REASONING_CONTENT,
+                                                                                  ''), msg.get(NAME, None)
         content = (content or '').lstrip('\n').rstrip().replace('```', '')
 
         # if role is system or user, just append the message
@@ -66,16 +67,9 @@ def convert_fncall_to_text(messages: List[Dict]) -> List[Dict]:
 
         # if role is assistant, append the message and add function call details
         elif role == ASSISTANT:
-            if '<think>' in content:
-                ti = content.find('<think>')
-                te = content.find('</think>')
-                if te == -1:
-                    te = len(content)
-                thought = content[ti + len('<think>'):te]
-                _content = content[:ti] + THINK.format(thought=thought)
-                if te < len(content):
-                    _content += content[te:]
-                content = _content
+            if reasoning_content:
+                thought = reasoning_content
+                content = THINK.format(thought=thought) + content
 
             fn_call = msg.get(f'{FUNCTION}_call', {})
             if fn_call:

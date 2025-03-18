@@ -10,8 +10,6 @@ from qwen_agent.llm.function_calling import BaseFnCallModel
 from qwen_agent.llm.schema import ASSISTANT, DEFAULT_SYSTEM_MESSAGE, Message
 from qwen_agent.log import logger
 
-# from qwen_agent.utils.utils import build_text_completion_prompt
-
 
 @register_llm('qwen_dashscope')
 class QwenChatAtDS(BaseFnCallModel):
@@ -84,42 +82,33 @@ class QwenChatAtDS(BaseFnCallModel):
 
     @staticmethod
     def _delta_stream_output(response) -> Iterator[List[Message]]:
-        is_thought = False
         for chunk in response:
             if chunk.status_code == HTTPStatus.OK:
-                if chunk.output.choices[0].message.get('reasoning_content', ''):
-                    if not is_thought:
-                        content = '<think>\n' + chunk.output.choices[0].message.reasoning_content
-                        is_thought = True
-                    else:
-                        content = chunk.output.choices[0].message.reasoning_content
-                else:
-                    if is_thought:
-                        content = '\n</think>\n\n' + chunk.output.choices[0].message.content
-                        is_thought = False
-                    else:
-                        content = chunk.output.choices[0].message.content
-                yield [Message(ASSISTANT, content, extra={'model_service_info': chunk})]
+                yield [
+                    Message(role=ASSISTANT,
+                            content=chunk.output.choices[0].message.content,
+                            reasoning_content=chunk.output.choices[0].message.reasoning_content,
+                            extra={'model_service_info': chunk})
+                ]
             else:
                 raise ModelServiceError(code=chunk.code, message=chunk.message, extra={'model_service_info': chunk})
 
     @staticmethod
     def _full_stream_output(response) -> Iterator[List[Message]]:
-        full_text = ''
-        is_thought = False
+        full_content = ''
+        full_reasoning_content = ''
         for chunk in response:
             if chunk.status_code == HTTPStatus.OK:
                 if chunk.output.choices[0].message.get('reasoning_content', ''):
-                    if not is_thought:
-                        full_text += '<think>\n'
-                        is_thought = True
-                    full_text += chunk.output.choices[0].message.reasoning_content
-                elif chunk.output.choices[0].message.content:
-                    if is_thought:
-                        full_text += '\n</think>\n\n'
-                        is_thought = False
-                    full_text += chunk.output.choices[0].message.content
-                yield [Message(ASSISTANT, full_text, extra={'model_service_info': chunk})]
+                    full_reasoning_content += chunk.output.choices[0].message.reasoning_content
+                if chunk.output.choices[0].message.content:
+                    full_content += chunk.output.choices[0].message.content
+                yield [
+                    Message(role=ASSISTANT,
+                            content=full_content,
+                            reasoning_content=full_reasoning_content,
+                            extra={'model_service_info': chunk})
+                ]
             else:
                 raise ModelServiceError(code=chunk.code, message=chunk.message, extra={'model_service_info': chunk})
 

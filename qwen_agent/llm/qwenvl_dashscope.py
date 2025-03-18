@@ -130,6 +130,14 @@ def _conv_fname(fname: str) -> str:
 def _extract_vl_response(response) -> List[Message]:
     output = response.output.choices[0].message
     text_content = []
+    reasoning_content = []
+    if output.get('reasoning_content', ''):
+        for item in output.reasoning_content:
+            if isinstance(item, str):
+                reasoning_content.append(ContentItem(text=item))
+            else:
+                raise TypeError
+
     for item in output.content:
         if isinstance(item, str):
             text_content.append(ContentItem(text=item))
@@ -137,4 +145,9 @@ def _extract_vl_response(response) -> List[Message]:
             for k, v in item.items():
                 if k in ('text', 'box'):
                     text_content.append(ContentItem(text=v))
-    return [Message(role=output.role, content=text_content, extra={'model_service_info': response})]
+    return [
+        Message(role=output.role,
+                content=text_content,
+                reasoning_content=reasoning_content,
+                extra={'model_service_info': response})
+    ]

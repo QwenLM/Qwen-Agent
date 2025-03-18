@@ -103,12 +103,17 @@ class NousFnCallPrompt(BaseFnCallPrompt):
         # Convert plaintext responses to function_call responses:
         new_messages = []
         for msg in messages:
-            role, content, extra = msg.role, msg.content, msg.extra
+            role, content, reasoning_content, extra = msg.role, msg.content, msg.reasoning_content, msg.extra
             assert isinstance(content, list)
 
             if role in (SYSTEM, USER):
-                new_messages.append(Message(role=role, content=content, extra=extra))
+                new_messages.append(
+                    Message(role=role, content=content, reasoning_content=reasoning_content, extra=extra))
                 continue
+
+            # Reasoning content is placed in a separate message
+            if reasoning_content:
+                new_messages.append(Message(role=role, content='', reasoning_content=reasoning_content, extra=extra))
 
             new_content = []
             for item in content:
@@ -117,14 +122,6 @@ class NousFnCallPrompt(BaseFnCallPrompt):
                 if item_type != 'text':  # multimodal
                     new_content.append(item)
                     continue
-                if self.THINKING_MODE:
-                    if '</think>' not in item_text:
-                        new_content.append(ContentItem(text=item_text))
-                        continue
-                    _item_text = item_text.split('</think>')
-                    # assert len(_item_text) == 2
-                    new_content.append(ContentItem(text='</think>'.join(_item_text[:-1]) + '</think>'))
-                    item_text = _item_text[-1]
 
                 i = item_text.find('<tool_call>')
                 # If no function call:
@@ -154,20 +151,17 @@ class NousFnCallPrompt(BaseFnCallPrompt):
                                     extra=extra,
                                 ))  # split thought and function call
                                 new_content = []
-                            new_messages.append(
-                                Message(
-                                    role=ASSISTANT,
-                                    content=[],
-                                    function_call=FunctionCall(
-                                        name=fn_name,
-                                        arguments=fn_args,
-                                    ),
-                                    extra=extra,
-                                ))
-                        else:
-                            show_text = remove_incomplete_special_tokens(txt)
-                            if show_text:
-                                new_content.append(ContentItem(text=show_text))
+                            # TODO: process incomplete tool-call messages
+                            # new_messages.append(
+                            #     Message(
+                            #         role=ASSISTANT,
+                            #         content=[],
+                            #         function_call=FunctionCall(
+                            #             name=fn_name,
+                            #             arguments=fn_args,
+                            #         ),
+                            #         extra=extra,
+                            #     ))
                         continue
 
                     one_tool_call_txt = txt.split('</tool_call>')
@@ -202,9 +196,9 @@ class NousFnCallPrompt(BaseFnCallPrompt):
                             ),
                             extra=extra,
                         ))
-
-                    if one_tool_call_txt[1].strip():
-                        new_content.append(ContentItem(text=one_tool_call_txt[1]))
+                    # Expected not to output extra tails
+                    # if one_tool_call_txt[1].strip():
+                    #     new_content.append(ContentItem(text=one_tool_call_txt[1]))
 
             if new_content:
                 new_messages.append(Message(role=role, content=new_content, extra=extra))
@@ -268,6 +262,7 @@ def extract_fn(text: str):
     if i > 0:
         if j == -1:
             fn_name = text[i + len(fn_name_s):]
+            fn_name = fn_name.split('"')[0]
         else:
             fn_name = text[i + len(fn_name_s):j]
     if k > 0:

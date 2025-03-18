@@ -6,8 +6,10 @@
 <br>
 
 Qwen-Agent是一个开发框架。开发者可基于本框架开发Agent应用，充分利用基于通义千问模型（Qwen）的指令遵循、工具使用、规划、记忆能力。本项目也提供了浏览器助手、代码解释器、自定义助手等示例应用。
+现在，Qwen-Agent 作为 [Qwen Chat](https://chat.qwen.ai/) 的后端运行。
 
 # 更新
+* Mar 18, 2025: 支持`reasoning_content`字段；调整默认的[Function Call模版](./qwen_agent/llm/fncall_prompts/nous_fncall_prompt.py)
 * 🔥🔥🔥Mar 7, 2025: 新增[QwQ-32B Tool-call Demo](./examples/assistant_qwq.py)，支持并行、多步、多轮工具调用。
 * Dec 3, 2024: GUI 升级为基于 Gradio 5。注意：如果需要使用GUI，Python版本需要3.10及以上。
 * Sep 18, 2024: 新增[Qwen2.5-Math Demo](./examples/tir_math.py)以展示Qwen2.5-Math基于工具的推理能力。注意：代码执行工具未进行沙箱保护，仅适用于本地测试，不可用于生产。
@@ -62,6 +64,7 @@ import urllib.parse
 import json5
 from qwen_agent.agents import Assistant
 from qwen_agent.tools.base import BaseTool, register_tool
+from qwen_agent.utils.output_beautify import typewriter_print
 
 
 # 步骤 1（可选）：添加一个名为 `my_image_gen` 的自定义工具。
@@ -124,14 +127,15 @@ bot = Assistant(llm=llm_cfg,
 messages = []  # 这里储存聊天历史。
 while True:
     # 例如，输入请求 "绘制一只狗并将其旋转 90 度"。
-    query = input('用户请求: ')
+    query = input('\n用户请求: ')
     # 将用户请求添加到聊天历史。
     messages.append({'role': 'user', 'content': query})
     response = []
+    response_plain_text = ''
+    print('机器人回应:')
     for response in bot.run(messages=messages):
         # 流式输出。
-        print('机器人回应:')
-        pprint.pprint(response, indent=2)
+        response_plain_text = typewriter_print(response, response_plain_text)
     # 将机器人的回应添加到聊天历史。
     messages.extend(response)
 ```

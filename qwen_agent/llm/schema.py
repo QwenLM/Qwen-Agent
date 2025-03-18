@@ -6,6 +6,7 @@ DEFAULT_SYSTEM_MESSAGE = 'You are a helpful assistant.'
 
 ROLE = 'role'
 CONTENT = 'content'
+REASONING_CONTENT = 'reasoning_content'
 NAME = 'name'
 
 SYSTEM = 'system'
@@ -117,20 +118,29 @@ class ContentItem(BaseModelCompatibleDict):
 class Message(BaseModelCompatibleDict):
     role: str
     content: Union[str, List[ContentItem]]
+    reasoning_content: Optional[Union[str, List[ContentItem]]] = None
     name: Optional[str] = None
     function_call: Optional[FunctionCall] = None
     extra: Optional[dict] = None
 
     def __init__(self,
                  role: str,
-                 content: Optional[Union[str, List[ContentItem]]],
+                 content: Union[str, List[ContentItem]],
+                 reasoning_content: Optional[Union[str, List[ContentItem]]] = None,
                  name: Optional[str] = None,
                  function_call: Optional[FunctionCall] = None,
                  extra: Optional[dict] = None,
                  **kwargs):
         if content is None:
             content = ''
-        super().__init__(role=role, content=content, name=name, function_call=function_call, extra=extra)
+        if reasoning_content is None:
+            reasoning_content = ''
+        super().__init__(role=role,
+                         content=content,
+                         reasoning_content=reasoning_content,
+                         name=name,
+                         function_call=function_call,
+                         extra=extra)
 
     def __repr__(self):
         return f'Message({self.model_dump()})'
