@@ -135,7 +135,7 @@ class TextChatAtOAI(BaseFnCallModel):
 
     @staticmethod
     def convert_messages_to_dicts(messages: List[Message]) -> List[dict]:
-        messages = [msg.model_dump() for msg in messages]
+        messages = [msg.model_dump(exclude={'reasoning_content'}) for msg in messages]
         # RM default system
         if messages[0]['role'] == 'system' and messages[0]['content'] == DEFAULT_SYSTEM_MESSAGE:
             messages = messages[1:]
