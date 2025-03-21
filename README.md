@@ -160,6 +160,18 @@ WebUI(bot).run()  # bot is the agent defined in the above code, we do not repeat
 ```
 Now you can chat with the Agent in the web UI. Please refer to the [examples](https://github.com/QwenLM/Qwen-Agent/blob/main/examples) directory for more usage examples.
 
+If you need to provide API interfaces, you can quickly launch an API server using the following code:
+
+```py
+from qwen_agent.api import ChatApi
+ChatApi(bot).run_apiserver()  # bot is the agent defined in the above code, we do not repeat the definition here for saving space.
+```
+Now you can chat with the Agent with api.
+
+```
+curl -vvv http://127.0.0.1:8080/chat -H "Content-Type: application/json" -d '{"messages": [{"role":"user","content":"介绍一下自己"}],"stream":true}'
+```
+
 # FAQ
 
 ## Do you have function calling (aka tool calling)?
