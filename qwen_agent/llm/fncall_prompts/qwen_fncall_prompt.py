@@ -106,11 +106,12 @@ class QwenFnCallPrompt(BaseFnCallPrompt):
 
         # Prepend a prefix for function_choice:
         if function_choice not in ('auto', 'none'):
-            output = messages[0].content[0].text
-            if output.lstrip().startswith(FN_ARGS):
-                # Prepend this prefix only if the model correctly completes it
-                output = f'{FN_NAME}: {function_choice}\n' + output
-            messages[0].content[0].text = output
+            if messages and messages[0].content:
+                output = messages[0].content[0].text
+                if output.lstrip().startswith(FN_ARGS):
+                    # Prepend this prefix only if the model correctly completes it
+                    output = f'{FN_NAME}: {function_choice}\n' + output
+                messages[0].content[0].text = output
 
         # Remove ': ' brought by continued generation of function calling
         last_msg = messages[-1].content

@@ -126,7 +126,7 @@ def test(fncall_prompt_type: str = 'qwen'):
 
 if __name__ == '__main__':
     # Run example of function calling with QwenFnCallPrompt
-    test()
+    # test()
 
     # Run example of function calling with NousFnCallPrompt
-    # test(fncall_prompt_type='nous')
+    test(fncall_prompt_type='nous')

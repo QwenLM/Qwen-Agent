@@ -369,6 +369,7 @@ def format_as_multimodal_message(
         raise TypeError
     msg = Message(role=msg.role,
                   content=content,
+                  reasoning_content=msg.reasoning_content,
                   name=msg.name if msg.role == FUNCTION else None,
                   function_call=msg.function_call,
                   extra=msg.extra)

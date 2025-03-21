@@ -37,9 +37,8 @@ class QwenVLChatAtDS(BaseFnCallModel):
 
         messages = _format_local_files(messages)
         messages = [msg.model_dump() for msg in messages]
-        if 'partial' in generate_cfg:
+        if messages[-1]['role'] == ASSISTANT:
             messages[-1]['partial'] = True
-            del generate_cfg['partial']
         logger.debug(f'LLM Input:\n{pformat(messages, indent=2)}')
         response = dashscope.MultiModalConversation.call(model=self.model,
                                                          messages=messages,
@@ -60,9 +59,8 @@ class QwenVLChatAtDS(BaseFnCallModel):
     ) -> List[Message]:
         messages = _format_local_files(messages)
         messages = [msg.model_dump() for msg in messages]
-        if 'partial' in generate_cfg:
+        if messages[-1]['role'] == ASSISTANT:
             messages[-1]['partial'] = True
-            del generate_cfg['partial']
         logger.debug(f'LLM Input:\n{pformat(messages, indent=2)}')
         response = dashscope.MultiModalConversation.call(model=self.model,
                                                          messages=messages,
@@ -82,8 +80,6 @@ class QwenVLChatAtDS(BaseFnCallModel):
         generate_cfg: dict,
         stream: bool,
     ) -> Iterator[List[Message]]:
-        if messages[-1].role == ASSISTANT:
-            generate_cfg['partial'] = True
         return self._chat(messages, stream=stream, delta_stream=False, generate_cfg=generate_cfg)
 
 
@@ -134,6 +130,14 @@ def _conv_fname(fname: str) -> str:
 def _extract_vl_response(response) -> List[Message]:
     output = response.output.choices[0].message
     text_content = []
+    reasoning_content = []
+    if output.get('reasoning_content', ''):
+        for item in output.reasoning_content:
+            if isinstance(item, str):
+                reasoning_content.append(ContentItem(text=item))
+            else:
+                raise TypeError
+
     for item in output.content:
         if isinstance(item, str):
             text_content.append(ContentItem(text=item))
@@ -141,4 +145,9 @@ def _extract_vl_response(response) -> List[Message]:
             for k, v in item.items():
                 if k in ('text', 'box'):
                     text_content.append(ContentItem(text=v))
-    return [Message(role=output.role, content=text_content, extra={'model_service_info': response})]
+    return [
+        Message(role=output.role,
+                content=text_content,
+                reasoning_content=reasoning_content,
+                extra={'model_service_info': response})
+    ]

@@ -6,8 +6,6 @@ from typing import Dict, Iterator, List, Optional
 
 import openai
 
-from qwen_agent.utils.utils import build_text_completion_prompt
-
 if openai.__version__.startswith('0.'):
     from openai.error import OpenAIError  # noqa
 else:
@@ -15,7 +13,7 @@ else:
 
 from qwen_agent.llm.base import ModelServiceError, register_llm
 from qwen_agent.llm.function_calling import BaseFnCallModel
-from qwen_agent.llm.schema import ASSISTANT, Message
+from qwen_agent.llm.schema import ASSISTANT, DEFAULT_SYSTEM_MESSAGE, Message
 from qwen_agent.log import logger
 
 
@@ -92,14 +90,27 @@ class TextChatAtOAI(BaseFnCallModel):
             response = self._chat_complete_create(model=self.model, messages=messages, stream=True, **generate_cfg)
             if delta_stream:
                 for chunk in response:
-                    if chunk.choices and hasattr(chunk.choices[0].delta, 'content') and chunk.choices[0].delta.content:
-                        yield [Message(ASSISTANT, chunk.choices[0].delta.content)]
+                    if chunk.choices:
+                        if hasattr(chunk.choices[0].delta,
+                                   'reasoning_content') and chunk.choices[0].delta.reasoning_content:
+                            yield [
+                                Message(role=ASSISTANT,
+                                        content='',
+                                        reasoning_content=chunk.choices[0].delta.reasoning_content)
+                            ]
+                        if hasattr(chunk.choices[0].delta, 'content') and chunk.choices[0].delta.content:
+                            yield [Message(role=ASSISTANT, content=chunk.choices[0].delta.content)]
             else:
                 full_response = ''
+                full_reasoning_content = ''
                 for chunk in response:
-                    if chunk.choices and hasattr(chunk.choices[0].delta, 'content') and chunk.choices[0].delta.content:
-                        full_response += chunk.choices[0].delta.content
-                        yield [Message(ASSISTANT, full_response)]
+                    if chunk.choices:
+                        if hasattr(chunk.choices[0].delta,
+                                   'reasoning_content') and chunk.choices[0].delta.reasoning_content:
+                            full_reasoning_content += chunk.choices[0].delta.reasoning_content
+                        if hasattr(chunk.choices[0].delta, 'content') and chunk.choices[0].delta.content:
+                            full_response += chunk.choices[0].delta.content
+                        yield [Message(role=ASSISTANT, content=full_response, reasoning_content=full_reasoning_content)]
         except OpenAIError as ex:
             raise ModelServiceError(exception=ex)
 
@@ -111,58 +122,23 @@ class TextChatAtOAI(BaseFnCallModel):
         messages = self.convert_messages_to_dicts(messages)
         try:
             response = self._chat_complete_create(model=self.model, messages=messages, stream=False, **generate_cfg)
-            return [Message(ASSISTANT, response.choices[0].message.content)]
+            if hasattr(response.choices[0].message, 'reasoning_content'):
+                return [
+                    Message(role=ASSISTANT,
+                            content=response.choices[0].message.content,
+                            reasoning_content=response.choices[0].message.reasoning_content)
+                ]
+            else:
+                return [Message(role=ASSISTANT, content=response.choices[0].message.content)]
         except OpenAIError as ex:
             raise ModelServiceError(exception=ex)
 
-    def _continue_assistant_response(
-        self,
-        messages: List[Message],
-        generate_cfg: dict,
-        stream: bool,
-    ) -> Iterator[List[Message]]:
-        if ('qwen' in self.model) and ('vl' not in self.model):
-            # We can call the completion interface according to the chat template of Qwen
-            # Only support for text llm
-            try:
-                return self._continue_assistant_response_by_completion(messages=messages,
-                                                                       generate_cfg=generate_cfg,
-                                                                       stream=stream)
-            except OpenAIError:
-                logger.warning(
-                    'This OAI interface does not support the completion interface, we will use the chat completion interface.'
-                )
-
-        # For other models, the chat templates is uncertain, so use dialogue simulation to completion
-        return super()._continue_assistant_response(messages=messages, generate_cfg=generate_cfg, stream=stream)
-
-    def _continue_assistant_response_by_completion(
-        self,
-        messages: List[Message],
-        generate_cfg: dict,
-        stream: bool,
-    ) -> Iterator[List[Message]]:
-        prompt = build_text_completion_prompt(messages)
-        logger.debug(f'LLM Input:\n{pformat(prompt, indent=2)}')
-        response = self._complete_create(model=self.model, prompt=prompt, stream=True, **generate_cfg)
-        it = self._full_stream_output(response)
-        if stream:
-            return it  # streaming the response
-        else:
-            *_, final_response = it  # return the final response without streaming
-            return final_response
-
-    @staticmethod
-    def _full_stream_output(response) -> Iterator[List[Message]]:
-        full_response = ''
-        for chunk in response:
-            if chunk.choices and hasattr(chunk.choices[0], 'text') and chunk.choices[0].text:
-                full_response += chunk.choices[0].text
-                yield [Message(ASSISTANT, full_response)]
-
     @staticmethod
     def convert_messages_to_dicts(messages: List[Message]) -> List[dict]:
-        messages = [msg.model_dump() for msg in messages]
+        messages = [msg.model_dump(exclude={'reasoning_content'}) for msg in messages]
+        # RM default system
+        if messages[0]['role'] == 'system' and messages[0]['content'] == DEFAULT_SYSTEM_MESSAGE:
+            messages = messages[1:]
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(f'LLM Input:\n{pformat(messages, indent=2)}')
         return messages

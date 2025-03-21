@@ -22,13 +22,13 @@ def test_function_content(cfg, gen_cfg1, gen_cfg2):
     if cfg == 0:
         llm = get_chat_model({
             # Use the model service provided by DashScope:
-            'model': 'qwen2-7b-instruct',
+            'model': 'qwen2.5-7b-instruct',
             'model_server': 'dashscope',
             'api_key': os.getenv('DASHSCOPE_API_KEY'),
         })
     else:
         llm = get_chat_model({
-            'model': 'qwen2-7b-instruct',
+            'model': 'qwen2.5-7b-instruct',
             'model_server': 'https://dashscope.aliyuncs.com/compatible-mode/v1',
             'api_key': os.getenv('DASHSCOPE_API_KEY', 'none')
         })

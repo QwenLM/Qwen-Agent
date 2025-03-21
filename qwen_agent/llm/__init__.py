@@ -73,6 +73,7 @@ def get_chat_model(cfg: Union[dict, str] = 'qwen-plus') -> BaseChatModel:
 
     if 'qwen' in model.lower():
         model_type = 'qwen_dashscope'
+        cfg['model_type'] = model_type
         return LLM_REGISTRY[model_type](cfg)
 
     raise ValueError(f'Invalid model cfg: {cfg}')

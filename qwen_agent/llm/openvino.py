@@ -112,7 +112,8 @@ class OpenVINO(BaseFnCallModel):
                 stopping_criteria=self._get_stopping_criteria(generate_cfg=generate_cfg),
             ))
         del generate_cfg['stop']
-
+        del generate_cfg['seed']
+        
         def generate_and_signal_complete():
             self.ov_model.generate(**generate_cfg)
 
@@ -142,6 +143,8 @@ class OpenVINO(BaseFnCallModel):
                 stopping_criteria=self._get_stopping_criteria(generate_cfg=generate_cfg),
             ))
         del generate_cfg['stop']
+        del generate_cfg['seed']
+
         response = self.ov_model.generate(**generate_cfg)
         response = response[:, len(input_token[0]):]
         answer = self.tokenizer.batch_decode(response, skip_special_tokens=True)[0]
