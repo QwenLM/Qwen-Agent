@@ -126,7 +126,21 @@ class MCPManager:
                 tools.append(agent_tool)
         return tools
 
+    @staticmethod
+    def remove_title_items(data):
+        if isinstance(data, dict):
+            for key in list(data.keys()):
+                if key == "title":
+                    del data[key]
+                else:
+                    MCPManager.remove_title_items(data[key])
+        elif isinstance(data, list):
+            for item in data:
+                MCPManager.remove_title_items(item)
+
     def create_tool_class(self, register_name, server_name, tool_name, tool_desc, tool_parameters):
+        MCPManager.remove_title_items(tool_parameters)
+        
         @register_tool(register_name)
         class ToolClass(BaseTool):
             description = tool_desc
