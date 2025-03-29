@@ -162,6 +162,49 @@ Now you can chat with the Agent in the web UI. Please refer to the [examples](ht
 
 # FAQ
 
+## How to Use MCP?
+
+You can select the required tools on the open-source [MCP server website](https://github.com/modelcontextprotocol/servers) and configure the relevant environment.
+
+Example of MCP invocation format:
+```
+{
+    "mcpServers": {
+        "memory": {
+            "command": "npx",
+            "args": ["-y", "@modelcontextprotocol/server-memory"]
+        },
+        "filesystem": {
+            "command": "npx",
+            "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/allowed/files"]
+        }
+        "sqlite" : {
+            "command": "uvx",
+            "args": [
+                "mcp-server-sqlite",
+                "--db-path",
+                "test.db"
+            ]
+        }
+    }
+}
+```
+For more details, you can refer to the [MCP usage example](./examples/assistant_mcp_sqlite_bot.py)
+
+The dependencies required to run this example are as follows:
+```
+# Node.js (Download and install the latest version from the Node.js official website)
+# uv 0.4.18 or higher (Check with uv --version)
+# Git (Check with git --version)
+# SQLite (Check with sqlite3 --version)
+
+# For macOS users, you can install these components using Homebrew:
+brew install uv git sqlite3
+
+# For Windows users, you can install these components using winget:
+winget install --id=astral-sh.uv -e
+winget install git.git sqlite.sqlite
+```
 ## Do you have function calling (aka tool calling)?
 
 Yes. The LLM classes provide [function calling](https://github.com/QwenLM/Qwen-Agent/blob/main/examples/function_calling.py). Additionally, some Agent classes also are built upon the function calling capability, e.g., FnCallAgent and ReActChat.

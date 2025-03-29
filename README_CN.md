@@ -156,6 +156,48 @@ WebUI(bot).run()  # bot is the agent defined in the above code, we do not repeat
 现在您可以在Web UI中和Agent对话了。更多使用示例，请参阅[examples](./examples)目录。
 
 # FAQ
+## 如何使用MCP？
+可以在开源的[MCP Sever网站](https://github.com/modelcontextprotocol/servers)上选择需要的工具，并配置相关环境。
+
+Qwen-Agent中MCP调用格式：
+```
+{
+    "mcpServers": {
+        "memory": {
+            "command": "npx",
+            "args": ["-y", "@modelcontextprotocol/server-memory"]
+        },
+        "filesystem": {
+            "command": "npx",
+            "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/allowed/files"]
+        }
+        "sqlite" : {
+            "command": "uvx",
+            "args": [
+                "mcp-server-sqlite",
+                "--db-path",
+                "test.db"
+            ]
+        }
+    }
+}
+```
+具体可参考[MCP使用例子](./examples/assistant_mcp_sqlite_bot.py)
+
+运行该例子需要额外安装的依赖有：
+```
+# Node.js（访问 Node.js 官网下载并安装最新版本, https://nodejs.org/）
+# uv 0.4.18 或更高版本 (使用 uv --version 检查)
+# Git (git --version 检查)
+# SQLite (sqlite3 --version 检查)
+
+# 对于 macOS 用户，可以使用 Homebrew 安装这些组件：
+brew install uv git sqlite3
+
+# 对于 Windows 用户，可以使用 winget 安装这些组件：
+winget install --id=astral-sh.uv -e
+winget install git.git sqlite.sqlite
+```
 
 ## 支持函数调用（也称为工具调用）吗？
 

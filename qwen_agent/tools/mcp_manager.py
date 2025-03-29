@@ -44,13 +44,6 @@ class MCPManager:
             "filesystem": {
                 "command": "npx",
                 "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/allowed/files"]
-            },
-            "github": {
-                "command": "npx",
-                "args": ["-y", "@modelcontextprotocol/server-github"],
-                "env": {
-                    "GITHUB_PERSONAL_ACCESS_TOKEN": "<YOUR_TOKEN>"
-                }
             }
          }
         }
@@ -118,8 +111,22 @@ class MCPManager:
                 # The required field in inputSchema may be empty and needs to be initialized.
                 if 'required' not in parameters:
                     parameters['required'] = []
+                # Remove keys from parameters that do not conform to the standard OpenAI schema
+                # Check if the required fields exist
+                required_fields = {'type', 'properties', 'required'}
+                missing_fields = required_fields - parameters.keys()
+                if missing_fields:
+                    raise ValueError(f'Missing required fields in schema: {missing_fields}')
+
+                # Keep only the necessary fields
+                cleaned_parameters = {
+                    'type': parameters['type'],
+                    'properties': parameters['properties'],
+                    'required': parameters['required']
+                }
                 register_name = server_name + '-' + tool.name
-                agent_tool = self.create_tool_class(register_name, server_name, tool.name, tool.description, parameters)
+                agent_tool = self.create_tool_class(register_name, server_name, tool.name, tool.description,
+                                                    cleaned_parameters)
                 tools.append(agent_tool)
         return tools
 
