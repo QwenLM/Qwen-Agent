@@ -19,7 +19,7 @@ It also comes with example applications such as Browser Assistant, Code Interpre
 Now Qwen-Agent plays as the backend of [Qwen Chat](https://chat.qwen.ai/).
 
 # News
-* Mar 18, 2025: Support for the `reasoning_content` field; adjust the default [Function Call template](./qwen_agent/llm/fncall_prompts/nous_fncall_prompt.py).
+* Mar 18, 2025: Support for the `reasoning_content` field; adjust the default [Function Call template](./qwen_agent/llm/fncall_prompts/nous_fncall_prompt.py), which is applicable to the Qwen2.5 series general models and QwQ-32B. If you need to use the old version of the template, please refer to the [example](./examples/function_calling.py) for passing parameters.
 * 🔥🔥🔥Mar 7, 2025: Added [QwQ-32B Tool-call Demo](./examples/assistant_qwq.py). It supports parallel, multi-step, and multi-turn tool calls.
 * Dec 3, 2024: Upgrade GUI to Gradio 5 based. Note: GUI requires Python 3.10 or higher.
 * Sep 18, 2024: Added [Qwen2.5-Math Demo](./examples/tir_math.py) to showcase the Tool-Integrated Reasoning capabilities of Qwen2.5-Math. Note: The python executor is not sandboxed and is intended for local testing only, not for production use.
@@ -30,20 +30,20 @@ Now Qwen-Agent plays as the backend of [Qwen Chat](https://chat.qwen.ai/).
 
 - Install the stable version from PyPI:
 ```bash
-pip install -U "qwen-agent[gui,rag,code_interpreter,python_executor]"
+pip install -U "qwen-agent[gui,rag,code_interpreter,mcp]"
 # Or use `pip install -U qwen-agent` for the minimal requirements.
 # The optional requirements, specified in double brackets, are:
 #   [gui] for Gradio-based GUI support;
 #   [rag] for RAG support;
 #   [code_interpreter] for Code Interpreter support;
-#   [python_executor] for Tool-Integrated Reasoning with Qwen2.5-Math.
+#   [mcp] for MCP support.
 ```
 
 - Alternatively, you can install the latest development version from the source:
 ```bash
 git clone https://github.com/QwenLM/Qwen-Agent.git
 cd Qwen-Agent
-pip install -e ./"[gui,rag,code_interpreter,python_executor]"
+pip install -e ./"[gui,rag,code_interpreter,mcp]"
 # Or `pip install -e ./` for minimal requirements.
 ```
 
@@ -102,13 +102,13 @@ class MyImageGen(BaseTool):
 # Step 2: Configure the LLM you are using.
 llm_cfg = {
     # Use the model service provided by DashScope:
-    'model': 'qwen-max',
+    'model': 'qwen-max-latest',
     'model_server': 'dashscope',
     # 'api_key': 'YOUR_DASHSCOPE_API_KEY',
     # It will use the `DASHSCOPE_API_KEY' environment variable if 'api_key' is not set here.
 
     # Use a model service compatible with the OpenAI API, such as vLLM or Ollama:
-    # 'model': 'Qwen2-7B-Chat',
+    # 'model': 'Qwen2.5-7B-Instruct',
     # 'model_server': 'http://localhost:8000/v1',  # base_url, also known as api_base
     # 'api_key': 'EMPTY',
 

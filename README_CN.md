@@ -16,7 +16,7 @@ Qwen-Agent是一个开发框架。开发者可基于本框架开发Agent应用�
 现在，Qwen-Agent 作为 [Qwen Chat](https://chat.qwen.ai/) 的后端运行。
 
 # 更新
-* Mar 18, 2025: 支持`reasoning_content`字段；调整默认的[Function Call模版](./qwen_agent/llm/fncall_prompts/nous_fncall_prompt.py)
+* Mar 18, 2025: 支持`reasoning_content`字段；调整默认的[Function Call模版](./qwen_agent/llm/fncall_prompts/nous_fncall_prompt.py)（适用于Qwen2.5系列通用模型、QwQ-32B）。如果需要使用旧版模版：请参考[样例](./examples/function_calling.py)传递参数。
 * 🔥🔥🔥Mar 7, 2025: 新增[QwQ-32B Tool-call Demo](./examples/assistant_qwq.py)，支持并行、多步、多轮工具调用。
 * Dec 3, 2024: GUI 升级为基于 Gradio 5。注意：如果需要使用GUI，Python版本需要3.10及以上。
 * Sep 18, 2024: 新增[Qwen2.5-Math Demo](./examples/tir_math.py)以展示Qwen2.5-Math基于工具的推理能力。注意：代码执行工具未进行沙箱保护，仅适用于本地测试，不可用于生产。
@@ -27,28 +27,23 @@ Qwen-Agent是一个开发框架。开发者可基于本框架开发Agent应用�
 
 - 从 PyPI 安装稳定版本：
 ```bash
-pip install -U "qwen-agent[rag,code_interpreter,python_executor,gui]"
+pip install -U "qwen-agent[rag,code_interpreter,gui,mcp]"
 # 或者，使用 `pip install -U qwen-agent` 来安装最小依赖。
 # 可使用双括号指定如下的可选依赖：
 #   [gui] 用于提供基于 Gradio 的 GUI 支持；
 #   [rag] 用于支持 RAG；
 #   [code_interpreter] 用于提供代码解释器相关支持；
-#   [python_executor] 用于支持 Qwen2.5-Math 基于工具的推理。
+#   [mcp] 用于支持 MCP。
 ```
 
 - 或者，你可以从源码安装最新的开发版本：
 ```bash
 git clone https://github.com/QwenLM/Qwen-Agent.git
 cd Qwen-Agent
-pip install -e ./"[rag,code_interpreter,python_executor]"
+pip install -e ./"[gui,rag,code_interpreter,mcp]"
 # 或者，使用 `pip install -e ./` 安装最小依赖。
 ```
 
-如果需要内置 GUI 支持，请选择性地安装可选依赖：
-```bash
-pip install -U "qwen-agent[gui,rag,code_interpreter]"
-# 或者通过源码安装 `pip install -e ./"[gui,rag,code_interpreter]"`
-```
 
 ## 准备：模型服务
 
@@ -100,13 +95,13 @@ class MyImageGen(BaseTool):
 # 步骤 2：配置您所使用的 LLM。
 llm_cfg = {
     # 使用 DashScope 提供的模型服务：
-    'model': 'qwen-max',
+    'model': 'qwen-max-latest',
     'model_server': 'dashscope',
     # 'api_key': 'YOUR_DASHSCOPE_API_KEY',
     # 如果这里没有设置 'api_key'，它将读取 `DASHSCOPE_API_KEY` 环境变量。
 
     # 使用与 OpenAI API 兼容的模型服务，例如 vLLM 或 Ollama：
-    # 'model': 'Qwen2-7B-Chat',
+    # 'model': 'Qwen2.5-7B-Instruct',
     # 'model_server': 'http://localhost:8000/v1',  # base_url，也称为 api_base
     # 'api_key': 'EMPTY',
 

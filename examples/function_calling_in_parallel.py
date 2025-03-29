@@ -28,9 +28,12 @@ def test():
         # 'api_key': os.getenv('DASHSCOPE_API_KEY'),
 
         # Use the OpenAI-compatible model service provided by DashScope:
-        'model': 'qwen2-72b-instruct',
+        'model': 'qwen-plus-latest',
         'model_server': 'https://dashscope.aliyuncs.com/compatible-mode/v1',
         'api_key': os.getenv('DASHSCOPE_API_KEY'),
+        'generate_cfg': {
+            'fncall_prompt_type': 'qwen'
+        },
     })
 
     # Step 1: send the conversation and available functions to the model

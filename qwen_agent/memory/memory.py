@@ -44,6 +44,9 @@ class Memory(Agent):
         self.parser_page_size: int = self.cfg.get('parser_page_size', DEFAULT_PARSER_PAGE_SIZE)
         self.rag_searchers = self.cfg.get('rag_searchers', DEFAULT_RAG_SEARCHERS)
         self.rag_keygen_strategy = self.cfg.get('rag_keygen_strategy', DEFAULT_RAG_KEYGEN_STRATEGY)
+        if not llm:
+            # There is no suitable model available for keygen
+            self.rag_keygen_strategy = 'none'
 
         function_list = function_list or []
         super().__init__(function_list=[{

@@ -54,11 +54,13 @@ def get_chat_model(cfg: Union[dict, str] = 'qwen-plus') -> BaseChatModel:
 
     if 'azure_endpoint' in cfg:
         model_type = 'azure'
+        cfg['model_type'] = model_type
         return LLM_REGISTRY[model_type](cfg)
 
     if 'model_server' in cfg:
         if cfg['model_server'].strip().startswith('http'):
             model_type = 'oai'
+            cfg['model_type'] = model_type
             return LLM_REGISTRY[model_type](cfg)
 
     model = cfg.get('model', '')

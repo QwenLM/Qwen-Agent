@@ -374,6 +374,82 @@ class BaseChatModel(ABC):
         for messages in messages_iter:
             yield self._convert_messages_to_target_type(messages, target_type)
 
+    def quick_chat_oai(self, messages: List[dict], tools: Optional[list] = None) -> dict:
+        """
+        This is a temporary OpenAI-compatible interface that is encapsulated and may change at any time.
+        It is mainly used for temporary interfaces and should not be overly dependent.
+        - Only supports full streaming
+        - The message is in dict format
+        - Only supports text LLM
+        """
+
+        def _convert_to_qwen_agent_messages(messages):
+            new_messages = []
+            for msg in messages:
+                if msg['role'] in ['system', 'user']:
+                    new_messages.append(msg)
+                elif msg['role'] == 'tool':
+                    msg['role'] = 'function'
+                    new_messages.append(msg)
+                elif msg['role'] == 'assistant':
+                    if msg['content']:
+                        new_messages.append({'role': 'assistant', 'content': msg['content']})
+                    if msg.get('tool_calls'):
+                        for tool in msg.get('tool_calls'):
+                            new_messages.append({
+                                'role': 'assistant',
+                                'content': '',
+                                'function_call': {
+                                    'name': tool['function']['name'],
+                                    'arguments': tool['function']['arguments']
+                                }
+                            })
+            return new_messages
+
+        def _convert_to_oai_message(data):
+            message = {'role': 'assistant', 'content': '', 'reasoning_content': '', 'tool_calls': []}
+
+            for item in data:
+                if item.get('reasoning_content'):
+                    message['reasoning_content'] += item['reasoning_content']
+
+                if item.get('content'):
+                    message['content'] += item['content']
+
+                if 'function_call' in item:
+                    tool_call = {
+                        'id': f"{len(message['tool_calls']) + 1}",
+                        'type': 'function',
+                        'function': {
+                            'name': item['function_call']['name'],
+                            'arguments': item['function_call']['arguments']
+                        }
+                    }
+                    message['tool_calls'].append(tool_call)
+            # Fake token usage
+            response = {
+                'choices': [{
+                    'message': message
+                }],
+                'usage': {
+                    'prompt_tokens': 0,
+                    'completion_tokens': 0,
+                    'total_tokens': 0
+                }
+            }
+            return response
+
+        if tools:
+            functions = [tool['function'] for tool in tools]
+        else:
+            functions = None
+        for rsp in self.chat(
+                messages=_convert_to_qwen_agent_messages(messages),
+                functions=functions,
+                stream=True,
+        ):
+            yield _convert_to_oai_message(rsp)
+
 
 def _format_as_text_messages(messages: List[Message]) -> List[Message]:
     for msg in messages:

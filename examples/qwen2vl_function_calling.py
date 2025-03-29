@@ -33,7 +33,10 @@ def test():
         'model_type': 'qwenvl_dashscope',
         'model': 'qwen-vl-max-0809',
         'api_key': os.getenv('DASHSCOPE_API_KEY'),
-        'generate_cfg': dict(max_retries=10,)
+        'generate_cfg': {
+            'max_retries': 10,
+            'fncall_prompt_type': 'qwen'
+        }
     }
     llm = get_chat_model(llm_cfg_oai)
 

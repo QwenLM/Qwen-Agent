@@ -1,21 +1,18 @@
-import json
-import urllib.parse
 import asyncio
+import json
 import threading
-from typing import Optional, Union, List, Dict
 from contextlib import AsyncExitStack
+from typing import Dict, Optional, Union
 
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
+from dotenv import load_dotenv
 
 from qwen_agent.log import logger
 from qwen_agent.tools.base import BaseTool, register_tool
 
-from dotenv import load_dotenv
 
 class MCPManager:
     _instance = None  # Private class variable to store the unique instance
-    
+
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
             cls._instance = super(MCPManager, cls).__new__(cls, *args, **kwargs)
@@ -35,7 +32,7 @@ class MCPManager:
     def start_loop(self):
         asyncio.set_event_loop(self.loop)
         self.loop.run_forever()
-    
+
     def is_valid_mcp_servers(self, config: dict):
         """Example of mcp servers configuration:
         {
@@ -90,11 +87,11 @@ class MCPManager:
             result = future.result()  # You can specify a timeout if desired
             return result
         except Exception as e:
-            logger.info(f"Error executing function: {e}")
+            logger.info(f'Error executing function: {e}')
             return None
 
     async def init_config_async(self, config: Dict):
-        tools : list = []
+        tools: list = []
         mcp_servers = config['mcpServers']
         for server_name in mcp_servers:
             client = MCPClient()
@@ -121,12 +118,13 @@ class MCPManager:
                 # The required field in inputSchema may be empty and needs to be initialized.
                 if 'required' not in parameters:
                     parameters['required'] = []
-                register_name = server_name + "-" + tool.name
+                register_name = server_name + '-' + tool.name
                 agent_tool = self.create_tool_class(register_name, server_name, tool.name, tool.description, parameters)
                 tools.append(agent_tool)
         return tools
 
     def create_tool_class(self, register_name, server_name, tool_name, tool_desc, tool_parameters):
+
         @register_tool(register_name)
         class ToolClass(BaseTool):
             description = tool_desc
@@ -142,11 +140,11 @@ class MCPManager:
                     result = future.result()
                     return result
                 except Exception as e:
-                    logger.info(f"Error executing function: {e}")
+                    logger.info(f'Error executing function: {e}')
                     return None
-                return "Function executed"
+                return 'Function executed'
 
-        ToolClass.__name__ = f"{register_name}_Class"
+        ToolClass.__name__ = f'{register_name}_Class'
         return ToolClass()
 
     async def clearup(self):
@@ -154,19 +152,22 @@ class MCPManager:
 
 
 class MCPClient:
+
     def __init__(self):
+        from mcp import ClientSession
+
         # Initialize session and client objects
         self.session: Optional[ClientSession] = None
-        self.tools : list = None
+        self.tools: list = None
 
     async def connection_server(self, exit_stack, mcp_server):
+        from mcp import ClientSession, StdioServerParameters
+        from mcp.client.stdio import stdio_client
         """Connect to an MCP server and retrieve the available tools."""
         try:
-            server_params = StdioServerParameters(
-                command = mcp_server["command"],
-                args = mcp_server["args"],
-                env = mcp_server.get("env", None)
-            )
+            server_params = StdioServerParameters(command=mcp_server['command'],
+                                                  args=mcp_server['args'],
+                                                  env=mcp_server.get('env', None))
             stdio_transport = await exit_stack.enter_async_context(stdio_client(server_params))
             self.stdio, self.write = stdio_transport
             self.session = await exit_stack.enter_async_context(ClientSession(self.stdio, self.write))
@@ -176,12 +177,12 @@ class MCPClient:
             list_tools = await self.session.list_tools()
             self.tools = list_tools.tools
         except Exception as e:
-            logger.info(f"Failed to connect to server: {e}")
-        
+            logger.info(f'Failed to connect to server: {e}')
+
     async def execute_function(self, tool_name, tool_args: dict):
         response = await self.session.call_tool(tool_name, tool_args)
         for content in response.content:
             if content.type == 'text':
                 return content.text
             else:
-                return "execute error"
+                return 'execute error'
