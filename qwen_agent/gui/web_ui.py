@@ -96,7 +96,7 @@ class WebUI:
                                                   self.user_config,
                                                   self.agent_config_list,
                                               ],
-                                              height=900,
+                                              height=850,
                                               avatar_image_width=80,
                                               flushing=False,
                                               show_copy_button=True,

@@ -102,9 +102,9 @@ setup(
             # Gradio has bad version compatibility. Therefore, we use `==` instead of `>=`.
             'pydantic==2.9.2',
             'pydantic-core==2.23.4',
-            'gradio>=5.0.0',
-            'gradio-client==1.4.0',
-            'modelscope_studio==1.0.0-beta.8',
+            'gradio==5.23.1',
+            'gradio-client==1.8.0',
+            'modelscope_studio==1.1.7',
         ],
     },
     url='https://github.com/QwenLM/Qwen-Agent',

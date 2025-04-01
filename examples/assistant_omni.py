@@ -41,7 +41,10 @@ def app_gui():
             'model_type': 'qwenomni_oai',
             'model': 'qwen-omni-turbo-latest',
             'base_url': 'https://dashscope.aliyuncs.com/compatible-mode/v1'
-        })
+        },
+        name='Qwen Omni',
+        description='Support audio, video, image, and text input!',
+    )
     WebUI(bot).run()
 
 
