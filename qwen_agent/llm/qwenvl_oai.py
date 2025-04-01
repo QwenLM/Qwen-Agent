@@ -9,7 +9,8 @@ from qwen_agent.llm.base import register_llm
 from qwen_agent.llm.oai import TextChatAtOAI
 from qwen_agent.llm.schema import ContentItem, Message
 from qwen_agent.log import logger
-from qwen_agent.utils.utils import encode_image_as_base64
+from qwen_agent.utils.utils import (encode_audio_as_base64, encode_image_as_base64, encode_video_as_base64,
+                                    rm_default_system)
 
 
 @register_llm('qwenvl_oai')
@@ -23,6 +24,9 @@ class QwenVLChatAtOAI(TextChatAtOAI):
     def convert_messages_to_dicts(messages: List[Message]) -> List[dict]:
         new_messages = []
 
+        # RM default system
+        messages = rm_default_system(messages)
+
         for msg in messages:
             content = msg.content
             if isinstance(content, str):
@@ -32,17 +36,37 @@ class QwenVLChatAtOAI(TextChatAtOAI):
             new_content = []
             for item in content:
                 t, v = item.get_type_and_value()
-                if t == 'text':
+                if t == 'text' and v:
                     new_content.append({'type': 'text', 'text': v})
-                if t == 'image':
-                    if v.startswith('file://'):
-                        v = v[len('file://'):]
-                    if not v.startswith(('http://', 'https://', 'data:')):
-                        if os.path.exists(v):
-                            v = encode_image_as_base64(v, max_short_side_length=1080)
+                if t in ['image', 'video', 'audio']:
+                    if isinstance(v, str):
+                        v = conv_multimodel_value(t, v)
+                    if isinstance(v, list):
+                        new_v = []
+                        for _v in v:
+                            new_v.append(conv_multimodel_value(t, _v))
+                        v = new_v
+                    if isinstance(v, dict):
+                        v['data'] = conv_multimodel_value(t, v['data'])
+
+                    if t == 'image':
+                        new_content.append({'type': 'image_url', 'image_url': {'url': v}})
+                    elif t == 'video':
+                        if isinstance(v, str):
+                            new_content.append({'type': 'video_url', 'video_url': {'url': v}})
+                        elif isinstance(v, list):
+                            new_content.append({'type': 'video', 'video': v})
                         else:
-                            raise ModelServiceError(f'Local image "{v}" does not exist.')
-                    new_content.append({'type': 'image_url', 'image_url': {'url': v}})
+                            raise TypeError
+                    elif t == 'audio':
+                        if isinstance(v, str):
+                            new_content.append({'type': 'input_audio', 'input_audio': {'data': v}})
+                        elif isinstance(v, dict):
+                            new_content.append({'type': 'input_audio', 'input_audio': v})
+                        else:
+                            raise TypeError
+                    else:
+                        raise TypeError
 
             new_msg = msg.model_dump()
             new_msg['content'] = new_content
@@ -54,6 +78,29 @@ class QwenVLChatAtOAI(TextChatAtOAI):
                 for item in msg['content']:
                     if item.get('image_url', {}).get('url', '').startswith('data:'):
                         item['image_url']['url'] = item['image_url']['url'][:64] + '...'
+                    if item.get('video_url', {}).get('url', '').startswith('data:'):
+                        item['video_url']['url'] = item['video_url']['url'][:64] + '...'
+                    if item.get('input_audio', {}).get('data', '').startswith('data:'):
+                        item['input_audio']['data'] = item['input_audio']['data'][:64] + '...'
+
             logger.debug(f'LLM Input:\n{pformat(lite_messages, indent=2)}')
 
         return new_messages
+
+
+def conv_multimodel_value(t, v):
+    if v.startswith('file://'):
+        v = v[len('file://'):]
+    if not v.startswith(('http://', 'https://', 'data:')):
+        if os.path.exists(v):
+            if t == 'image':
+                v = encode_image_as_base64(v, max_short_side_length=1080)
+            elif t == 'video':
+                v = encode_video_as_base64(v)
+            elif t == 'audio':
+                v = encode_audio_as_base64(v)
+            else:
+                raise TypeError
+        else:
+            raise ModelServiceError(f'Local file "{v}" does not exist.')
+    return v

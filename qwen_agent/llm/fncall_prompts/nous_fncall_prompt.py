@@ -4,6 +4,8 @@ import os
 import re
 from typing import List, Literal, Union
 
+import json5
+
 from qwen_agent.llm.fncall_prompts.base_fncall_prompt import BaseFnCallPrompt
 from qwen_agent.llm.schema import ASSISTANT, FUNCTION, SYSTEM, USER, ContentItem, FunctionCall, Message
 
@@ -29,7 +31,7 @@ class NousFnCallPrompt(BaseFnCallPrompt):
         # Change function_call responses to plaintext responses:
         messages = []
         for msg in copy.deepcopy(ori_messages):
-            role, content = msg.role, msg.content
+            role, content, reasoning_content = msg.role, msg.content, msg.reasoning_content
             if role in (SYSTEM, USER):
                 messages.append(msg)
             elif role == ASSISTANT:
@@ -47,11 +49,11 @@ class NousFnCallPrompt(BaseFnCallPrompt):
                 fn_call = msg.function_call
                 if fn_call:
                     if (not SPECIAL_CODE_MODE) or (CODE_TOOL_PATTERN not in fn_call.name):
-                        fc = {'name': fn_call.name, 'arguments': json.loads(fn_call.arguments)}
+                        fc = {'name': fn_call.name, 'arguments': json5.loads(fn_call.arguments)}
                         fc = json.dumps(fc, ensure_ascii=False)
                         fc = f'<tool_call>\n{fc}\n</tool_call>'
                     else:
-                        para = json.loads(fn_call.arguments)
+                        para = json5.loads(fn_call.arguments)
                         code = para['code']
                         para['code'] = ''
                         fc = {'name': fn_call.name, 'arguments': para}
@@ -63,7 +65,8 @@ class NousFnCallPrompt(BaseFnCallPrompt):
                     messages[-1].content.append(ContentItem(text='\n'))
                     messages[-1].content.extend(content)
                 else:
-                    messages.append(Message(role=role, content=content))
+                    # TODO: Assuming there will only be one continuous reasoning_content here
+                    messages.append(Message(role=role, content=content, reasoning_content=reasoning_content))
             elif role == FUNCTION:
                 assert isinstance(content, list)
                 assert len(content) == 1
@@ -152,16 +155,16 @@ class NousFnCallPrompt(BaseFnCallPrompt):
                                 ))  # split thought and function call
                                 new_content = []
                             # TODO: process incomplete tool-call messages
-                            # new_messages.append(
-                            #     Message(
-                            #         role=ASSISTANT,
-                            #         content=[],
-                            #         function_call=FunctionCall(
-                            #             name=fn_name,
-                            #             arguments=fn_args,
-                            #         ),
-                            #         extra=extra,
-                            #     ))
+                            new_messages.append(
+                                Message(
+                                    role=ASSISTANT,
+                                    content=[],
+                                    function_call=FunctionCall(
+                                        name=fn_name,
+                                        arguments=fn_args,
+                                    ),
+                                    extra=extra,
+                                ))
                         continue
 
                     one_tool_call_txt = txt.split('</tool_call>')
@@ -179,13 +182,13 @@ class NousFnCallPrompt(BaseFnCallPrompt):
                         fn = None
                         for i, _s in enumerate(_snips):
                             if i == 0:
-                                fn = json.loads(_s)
+                                fn = json5.loads(_s)
                             else:
                                 # TODO: support more flexible params
                                 code = _s.replace('</code>', '')
                                 fn['arguments']['code'] = code
                     else:
-                        fn = json.loads(one_tool_call_txt[0].strip())
+                        fn = json5.loads(one_tool_call_txt[0].strip())
                     new_messages.append(
                         Message(
                             role=ASSISTANT,
@@ -257,14 +260,17 @@ def extract_fn(text: str):
     fn_name_e = '", "'
     fn_args_s = '"arguments": '
     i = text.find(fn_name_s)
-    j = text.find(fn_name_e)
     k = text.find(fn_args_s)
     if i > 0:
-        if j == -1:
-            fn_name = text[i + len(fn_name_s):]
-            fn_name = fn_name.split('"')[0]
-        else:
-            fn_name = text[i + len(fn_name_s):j]
+        _text = text[i + len(fn_name_s):]
+        j = _text.find(fn_name_e)
+        if j > -1:
+            fn_name = _text[:j]
     if k > 0:
         fn_args = text[k + len(fn_args_s):]
+
+    if len(fn_args) > 5:
+        fn_args = fn_args[:-5]
+    else:
+        fn_args = ''
     return fn_name, fn_args

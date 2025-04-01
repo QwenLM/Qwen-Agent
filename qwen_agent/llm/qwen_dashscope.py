@@ -7,8 +7,9 @@ import dashscope
 
 from qwen_agent.llm.base import ModelServiceError, register_llm
 from qwen_agent.llm.function_calling import BaseFnCallModel
-from qwen_agent.llm.schema import ASSISTANT, DEFAULT_SYSTEM_MESSAGE, Message
+from qwen_agent.llm.schema import ASSISTANT, Message
 from qwen_agent.log import logger
+from qwen_agent.utils.utils import rm_default_system
 
 
 @register_llm('qwen_dashscope')
@@ -25,10 +26,9 @@ class QwenChatAtDS(BaseFnCallModel):
         delta_stream: bool,
         generate_cfg: dict,
     ) -> Iterator[List[Message]]:
-        messages = [msg.model_dump() for msg in messages]
         # RM default system
-        if messages[0]['role'] == 'system' and messages[0]['content'] == DEFAULT_SYSTEM_MESSAGE:
-            messages = messages[1:]
+        messages = rm_default_system(messages)
+        messages = [msg.model_dump() for msg in messages]
         if messages[-1]['role'] == ASSISTANT:
             messages[-1]['partial'] = True
         logger.debug(f'LLM Input:\n{pformat(messages, indent=2)}')
@@ -48,10 +48,9 @@ class QwenChatAtDS(BaseFnCallModel):
         messages: List[Message],
         generate_cfg: dict,
     ) -> List[Message]:
-        messages = [msg.model_dump() for msg in messages]
         # RM default system
-        if messages[0]['role'] == 'system' and messages[0]['content'] == DEFAULT_SYSTEM_MESSAGE:
-            messages = messages[1:]
+        messages = rm_default_system(messages)
+        messages = [msg.model_dump() for msg in messages]
         if messages[-1]['role'] == ASSISTANT:
             messages[-1]['partial'] = True
         logger.debug(f'LLM Input:\n{pformat(messages, indent=2)}')
@@ -65,6 +64,7 @@ class QwenChatAtDS(BaseFnCallModel):
             return [
                 Message(role=ASSISTANT,
                         content=response.output.choices[0].message.content,
+                        reasoning_content=response.output.choices[0].message.get('reasoning_content', ''),
                         extra={'model_service_info': response})
             ]
         else:

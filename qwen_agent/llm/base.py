@@ -56,6 +56,10 @@ class BaseChatModel(ABC):
         # Does the model generate multimodal outputs beyond texts? It affects how we post-process the output.
         return False
 
+    @property
+    def support_audio_input(self) -> bool:
+        return False
+
     def __init__(self, cfg: Optional[Dict] = None):
         cfg = cfg or {}
         self.model = cfg.get('model', '').strip()
@@ -64,6 +68,8 @@ class BaseChatModel(ABC):
         self.max_retries = generate_cfg.pop('max_retries', 0)
         self.generate_cfg = generate_cfg
         self.model_type = cfg.get('model_type', '')
+        if 'dashscope' in self.model_type:
+            self.generate_cfg['incremental_output'] = True
 
         if cache_dir:
             try:
@@ -166,8 +172,8 @@ class BaseChatModel(ABC):
             lang: Literal['en', 'zh'] = generate_cfg.pop('lang')
         else:
             lang: Literal['en', 'zh'] = 'zh' if has_chinese_messages(messages) else 'en'
-        if self.model_type == 'qwen_dashscope' and stream:
-            generate_cfg['incremental_output'] = True
+        if not stream and 'incremental_output' in generate_cfg:
+            generate_cfg.pop('incremental_output')
 
         if messages[0].role != SYSTEM:
             messages = [Message(role=SYSTEM, content=DEFAULT_SYSTEM_MESSAGE)] + messages
@@ -325,10 +331,14 @@ class BaseChatModel(ABC):
         add_multimodel_upload_info = False
         if functions or (not self.support_multimodal_input):
             add_multimodel_upload_info = True
+        add_audio_upload_info = False
+        if functions or (not self.support_audio_input):
+            add_audio_upload_info = True
         messages = [
             format_as_multimodal_message(msg,
                                          add_upload_info=True,
                                          add_multimodel_upload_info=add_multimodel_upload_info,
+                                         add_audio_upload_info=add_audio_upload_info,
                                          lang=lang) for msg in messages
         ]
         return messages
@@ -340,8 +350,10 @@ class BaseChatModel(ABC):
         generate_cfg: dict,
     ) -> List[Message]:
         messages = [
-            format_as_multimodal_message(msg, add_upload_info=False, add_multimodel_upload_info=False)
-            for msg in messages
+            format_as_multimodal_message(msg,
+                                         add_upload_info=False,
+                                         add_multimodel_upload_info=False,
+                                         add_audio_upload_info=False) for msg in messages
         ]
         if not generate_cfg.get('skip_stopword_postproc', False):
             stop = generate_cfg.get('stop', [])

@@ -67,14 +67,14 @@ class ContentItem(BaseModelCompatibleDict):
     text: Optional[str] = None
     image: Optional[str] = None
     file: Optional[str] = None
-    audio: Optional[str] = None
+    audio: Optional[Union[str, dict]] = None
     video: Optional[Union[str, list]] = None
 
     def __init__(self,
                  text: Optional[str] = None,
                  image: Optional[str] = None,
                  file: Optional[str] = None,
-                 audio: Optional[str] = None,
+                 audio: Optional[Union[str, dict]] = None,
                  video: Optional[Union[str, list]] = None):
         super().__init__(text=text, image=image, file=file, audio=audio, video=video)
 

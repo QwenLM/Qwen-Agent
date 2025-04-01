@@ -53,8 +53,11 @@ class BaseFnCallPrompt(object):
                     raise ValueError('This sample requires parallel_function_calls=True.')
 
         messages = [
-            format_as_multimodal_message(msg, add_upload_info=True, add_multimodel_upload_info=True, lang=lang)
-            for msg in messages
+            format_as_multimodal_message(msg,
+                                         add_upload_info=True,
+                                         add_multimodel_upload_info=True,
+                                         add_audio_upload_info=True,
+                                         lang=lang) for msg in messages
         ]
         for m in messages:
             for item in m.content:

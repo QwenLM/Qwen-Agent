@@ -7,6 +7,7 @@ from .oai import TextChatAtOAI
 from .openvino import OpenVINO
 from .qwen_dashscope import QwenChatAtDS
 from .qwenaudio_dashscope import QwenAudioChatAtDS
+from .qwenomni_oai import QwenOmniChatAtOAI
 from .qwenvl_dashscope import QwenVLChatAtDS
 from .qwenvl_oai import QwenVLChatAtOAI
 
@@ -67,10 +68,12 @@ def get_chat_model(cfg: Union[dict, str] = 'qwen-plus') -> BaseChatModel:
 
     if '-vl' in model.lower():
         model_type = 'qwenvl_dashscope'
+        cfg['model_type'] = model_type
         return LLM_REGISTRY[model_type](cfg)
 
     if '-audio' in model.lower():
         model_type = 'qwenaudio_dashscope'
+        cfg['model_type'] = model_type
         return LLM_REGISTRY[model_type](cfg)
 
     if 'qwen' in model.lower():
@@ -89,6 +92,7 @@ __all__ = [
     'QwenVLChatAtDS',
     'QwenVLChatAtOAI',
     'QwenAudioChatAtDS',
+    'QwenOmniChatAtOAI',
     'OpenVINO',
     'get_chat_model',
     'ModelServiceError',

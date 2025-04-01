@@ -6,6 +6,8 @@ from typing import Dict, Iterator, List, Optional
 
 import openai
 
+from qwen_agent.utils.utils import rm_default_system
+
 if openai.__version__.startswith('0.'):
     from openai.error import OpenAIError  # noqa
 else:
@@ -13,7 +15,7 @@ else:
 
 from qwen_agent.llm.base import ModelServiceError, register_llm
 from qwen_agent.llm.function_calling import BaseFnCallModel
-from qwen_agent.llm.schema import ASSISTANT, DEFAULT_SYSTEM_MESSAGE, Message
+from qwen_agent.llm.schema import ASSISTANT, Message
 from qwen_agent.log import logger
 
 
@@ -135,10 +137,14 @@ class TextChatAtOAI(BaseFnCallModel):
 
     @staticmethod
     def convert_messages_to_dicts(messages: List[Message]) -> List[dict]:
-        messages = [msg.model_dump(exclude={'reasoning_content'}) for msg in messages]
         # RM default system
-        if messages[0]['role'] == 'system' and messages[0]['content'] == DEFAULT_SYSTEM_MESSAGE:
-            messages = messages[1:]
+        messages = rm_default_system(messages)
+
+        # TODO: Change when the VLLM deployed model needs to pass reasoning_complete.
+        #  At this time, in order to be compatible with lower versions of vLLM,
+        #  and reasoning content is currently not useful
+        messages = [msg.model_dump(exclude={'reasoning_content'}) for msg in messages]
+
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(f'LLM Input:\n{pformat(messages, indent=2)}')
         return messages
