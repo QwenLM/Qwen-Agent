@@ -206,7 +206,7 @@ class BaseChatModel(ABC):
             messages = [format_as_text_message(msg, add_upload_info=False) for msg in messages]
 
         if not fncall_mode:
-            for k in ['parallel_function_calls', 'function_choice']:
+            for k in ['parallel_function_calls', 'function_choice', 'thought_in_content']:
                 if k in generate_cfg:
                     del generate_cfg[k]
 

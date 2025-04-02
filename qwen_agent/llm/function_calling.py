@@ -112,7 +112,7 @@ class BaseFnCallModel(BaseChatModel, ABC):
             raise NotImplementedError('Please use stream=True with delta_stream=False, because delta_stream=True'
                                       ' is not implemented for function calling due to some technical reasons.')
         generate_cfg = copy.deepcopy(generate_cfg)
-        for k in ['parallel_function_calls', 'function_choice']:
+        for k in ['parallel_function_calls', 'function_choice', 'thought_in_content']:
             if k in generate_cfg:
                 del generate_cfg[k]
         return self._continue_assistant_response(messages, generate_cfg=generate_cfg, stream=stream)

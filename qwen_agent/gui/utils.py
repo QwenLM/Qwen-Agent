@@ -71,6 +71,17 @@ def convert_fncall_to_text(messages: List[Dict]) -> List[Dict]:
                 thought = reasoning_content
                 content = THINK.format(thought=thought) + content
 
+            if '<think>' in content:
+                ti = content.find('<think>')
+                te = content.find('</think>')
+                if te == -1:
+                    te = len(content)
+                thought = content[ti + len('<think>'):te]
+                _content = content[:ti] + THINK.format(thought=thought)
+                if te < len(content):
+                    _content += content[te:]
+                content = _content
+
             fn_call = msg.get(f'{FUNCTION}_call', {})
             if fn_call:
                 f_name = fn_call['name']

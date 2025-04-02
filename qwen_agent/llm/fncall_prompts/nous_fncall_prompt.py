@@ -1,7 +1,6 @@
 import copy
 import json
 import os
-import re
 from typing import List, Literal, Union
 
 import json5
@@ -11,7 +10,6 @@ from qwen_agent.llm.schema import ASSISTANT, FUNCTION, SYSTEM, USER, ContentItem
 
 
 class NousFnCallPrompt(BaseFnCallPrompt):
-    THINKING_MODE = False
 
     def preprocess_fncall_messages(
         self,
@@ -36,16 +34,6 @@ class NousFnCallPrompt(BaseFnCallPrompt):
                 messages.append(msg)
             elif role == ASSISTANT:
                 content = (content or [])
-                if self.THINKING_MODE:
-                    _content = []
-                    for c in content:
-                        if c.text and '<think>' in c.text:
-                            c.text = re.sub(r'<think>.*?</think>', '', c.text, flags=re.DOTALL).strip()
-                            if c.text:
-                                _content.append(ContentItem(text=c.text))
-                        else:
-                            _content.append(c)
-                    content = _content
                 fn_call = msg.function_call
                 if fn_call:
                     if (not SPECIAL_CODE_MODE) or (CODE_TOOL_PATTERN not in fn_call.name):
@@ -99,6 +87,7 @@ class NousFnCallPrompt(BaseFnCallPrompt):
         messages: List[Message],
         parallel_function_calls: bool = True,
         function_choice: Union[Literal['auto'], str] = 'auto',
+        thought_in_content: bool = False,
     ) -> List[Message]:
         if function_choice != 'auto':
             raise NotImplementedError
@@ -125,6 +114,14 @@ class NousFnCallPrompt(BaseFnCallPrompt):
                 if item_type != 'text':  # multimodal
                     new_content.append(item)
                     continue
+                if thought_in_content:
+                    if '</think>' not in item_text:
+                        new_content.append(ContentItem(text=item_text))
+                        continue
+                    _item_text = item_text.split('</think>')
+                    # assert len(_item_text) == 2
+                    new_content.append(ContentItem(text='</think>'.join(_item_text[:-1]) + '</think>'))
+                    item_text = _item_text[-1]
 
                 i = item_text.find('<tool_call>')
                 # If no function call:
