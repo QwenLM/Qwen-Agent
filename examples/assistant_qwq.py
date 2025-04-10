@@ -14,7 +14,13 @@ def init_agent_service():
         'model': 'qwq-32b',
         'model_type': 'qwen_dashscope',
         'generate_cfg': {
-            'fncall_prompt_type': 'nous'
+            'fncall_prompt_type': 'nous',
+
+            # This parameter needs to be passed in when the deployed model is an reasoning model (e.g. qwq-32b) and *does not* support the reasoning_content field (e.g. deploying qwq-32b directly with an old version of vLLM)
+            # Add: When the content is `<think>this is the thought</think>this is the answer`
+            # Do not add: When the response has been separated by reasoning_content and content
+            # This parameter will affect the parsing strategy of tool call
+            # 'thought_in_content': True,
         },
     }
     tools = [

@@ -60,6 +60,7 @@ class BaseFnCallModel(BaseChatModel, ABC):
                 messages=messages,
                 parallel_function_calls=generate_cfg.get('parallel_function_calls', False),
                 function_choice=generate_cfg.get('function_choice', 'auto'),
+                thought_in_content=generate_cfg.get('thought_in_content', False),
             )
         return messages
 

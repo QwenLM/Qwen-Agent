@@ -91,7 +91,6 @@ class NousFnCallPrompt(BaseFnCallPrompt):
     ) -> List[Message]:
         if function_choice != 'auto':
             raise NotImplementedError
-
         # Convert plaintext responses to function_call responses:
         new_messages = []
         for msg in messages:
