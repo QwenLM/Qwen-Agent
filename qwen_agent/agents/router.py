@@ -63,7 +63,12 @@ class Router(Assistant, MultiAgentHub):
                 # If the model generates a non-existent agent, the first agent will be used by default.
                 selected_agent_name = self.agent_names[0]
             selected_agent = self.agents[self.agent_names.index(selected_agent_name)]
-            for response in selected_agent.run(messages=messages, lang=lang, **kwargs):
+            
+            new_messages = copy.deepcopy(messages)
+            if new_messages[0][ROLE] == SYSTEM:
+                new_messages.pop(0)
+                
+            for response in selected_agent.run(messages=new_messages, lang=lang, **kwargs):
                 for i in range(len(response)):
                     if response[i].role == ASSISTANT:
                         response[i].name = selected_agent_name
