@@ -126,25 +126,6 @@ class BaseChatModel(ABC):
                 _return_message_type = 'message'
         messages = new_messages
 
-        # RM think for non-qwq
-        if 'qwq' not in self.model.lower():
-            SPECIAL_THOUGHT_TOKEN = '<think>'
-            new_messages = []
-            for msg in messages:
-                if msg.role == ASSISTANT:
-                    if isinstance(msg.content, str):
-                        if SPECIAL_THOUGHT_TOKEN in msg.content:
-                            msg.content = _rm_think(msg.content)
-                    elif isinstance(msg.content, list):
-                        for i, item in enumerate(msg.content):
-                            if item.text:
-                                if SPECIAL_THOUGHT_TOKEN in item.text:
-                                    item.text = _rm_think(item.text)
-                                    msg.content[i] = item
-                                break
-                new_messages.append(msg)
-            messages = new_messages
-
         # Cache lookup:
         if self.cache is not None:
             cache_key = dict(messages=messages, functions=functions, extra_generate_cfg=extra_generate_cfg)
@@ -667,5 +648,5 @@ def _raise_or_delay(
 
 def _rm_think(text: str) -> str:
     if '</think>' in text:
-        return text.split('</think>')[-1].lstrip()
+        return text.split('</think>')[-1].lstrip('\n')
     return text
