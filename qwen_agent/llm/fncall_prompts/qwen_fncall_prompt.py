@@ -10,13 +10,12 @@ from qwen_agent.utils.utils import extract_text_from_message
 class QwenFnCallPrompt(BaseFnCallPrompt):
 
     @staticmethod
-    def preprocess_fncall_messages(
-        messages: List[Message],
-        functions: List[dict],
-        lang: Literal['en', 'zh'],
-        parallel_function_calls: bool = True,
-        function_choice: Union[Literal['auto'], str] = 'auto',
-    ) -> List[Message]:
+    def preprocess_fncall_messages(messages: List[Message],
+                                   functions: List[dict],
+                                   lang: Literal['en', 'zh'],
+                                   parallel_function_calls: bool = True,
+                                   function_choice: Union[Literal['auto'], str] = 'auto',
+                                   **kwargs) -> List[Message]:
         ori_messages = messages
 
         # Change function_call responses to plaintext responses:
@@ -97,11 +96,10 @@ class QwenFnCallPrompt(BaseFnCallPrompt):
         return messages
 
     @staticmethod
-    def postprocess_fncall_messages(
-        messages: List[Message],
-        parallel_function_calls: bool = True,
-        function_choice: Union[Literal['auto'], str] = 'auto',
-    ) -> List[Message]:
+    def postprocess_fncall_messages(messages: List[Message],
+                                    parallel_function_calls: bool = True,
+                                    function_choice: Union[Literal['auto'], str] = 'auto',
+                                    **kwargs) -> List[Message]:
         messages = copy.deepcopy(messages)
 
         # Prepend a prefix for function_choice:

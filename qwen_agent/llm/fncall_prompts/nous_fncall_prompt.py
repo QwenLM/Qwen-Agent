@@ -11,14 +11,13 @@ from qwen_agent.llm.schema import ASSISTANT, FUNCTION, SYSTEM, USER, ContentItem
 
 class NousFnCallPrompt(BaseFnCallPrompt):
 
-    def preprocess_fncall_messages(
-        self,
-        messages: List[Message],
-        functions: List[dict],
-        lang: Literal['en', 'zh'],
-        parallel_function_calls: bool = True,
-        function_choice: Union[Literal['auto'], str] = 'auto',
-    ) -> List[Message]:
+    def preprocess_fncall_messages(self,
+                                   messages: List[Message],
+                                   functions: List[dict],
+                                   lang: Literal['en', 'zh'],
+                                   parallel_function_calls: bool = True,
+                                   function_choice: Union[Literal['auto'], str] = 'auto',
+                                   **kwargs) -> List[Message]:
         del lang  # ignored
         del parallel_function_calls  # ignored
         if function_choice != 'auto':

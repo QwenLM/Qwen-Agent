@@ -7,13 +7,12 @@ from qwen_agent.utils.utils import format_as_multimodal_message, format_as_text_
 class BaseFnCallPrompt(object):
 
     @staticmethod
-    def preprocess_fncall_messages(
-        messages: List[Message],
-        functions: List[dict],
-        lang: Literal['en', 'zh'],
-        parallel_function_calls: bool = True,
-        function_choice: Union[Literal['auto'], str] = 'auto',
-    ) -> List[Message]:
+    def preprocess_fncall_messages(messages: List[Message],
+                                   functions: List[dict],
+                                   lang: Literal['en', 'zh'],
+                                   parallel_function_calls: bool = True,
+                                   function_choice: Union[Literal['auto'], str] = 'auto',
+                                   **kwargs) -> List[Message]:
         """
         Preprocesss the messages and add the function calling prompt,
         assuming the input and output messages are in the multimodal format.
@@ -22,11 +21,10 @@ class BaseFnCallPrompt(object):
         raise NotImplementedError
 
     @staticmethod
-    def postprocess_fncall_messages(
-        messages: List[Message],
-        parallel_function_calls: bool = True,
-        function_choice: Union[Literal['auto'], str] = 'auto',
-    ) -> List[Message]:
+    def postprocess_fncall_messages(messages: List[Message],
+                                    parallel_function_calls: bool = True,
+                                    function_choice: Union[Literal['auto'], str] = 'auto',
+                                    **kwargs) -> List[Message]:
         """
         Transform the plaintext model output into structured function call messages,
         return in the multimodal format for consistency.
