@@ -4,7 +4,7 @@ from typing import Dict, Iterator, List, Optional, Union
 from qwen_agent import Agent, MultiAgentHub
 from qwen_agent.agents.assistant import Assistant
 from qwen_agent.llm import BaseChatModel
-from qwen_agent.llm.schema import ASSISTANT, ROLE, Message
+from qwen_agent.llm.schema import ASSISTANT, ROLE, SYSTEM, Message
 from qwen_agent.log import logger
 from qwen_agent.tools import BaseTool
 from qwen_agent.utils.utils import merge_generate_cfgs
@@ -63,11 +63,11 @@ class Router(Assistant, MultiAgentHub):
                 # If the model generates a non-existent agent, the first agent will be used by default.
                 selected_agent_name = self.agent_names[0]
             selected_agent = self.agents[self.agent_names.index(selected_agent_name)]
-            
+
             new_messages = copy.deepcopy(messages)
-            if new_messages[0][ROLE] == SYSTEM:
+            if new_messages and new_messages[0][ROLE] == SYSTEM:
                 new_messages.pop(0)
-                
+
             for response in selected_agent.run(messages=new_messages, lang=lang, **kwargs):
                 for i in range(len(response)):
                     if response[i].role == ASSISTANT:

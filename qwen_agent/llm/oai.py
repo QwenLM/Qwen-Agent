@@ -6,7 +6,6 @@ from typing import Dict, Iterator, List, Optional
 
 import openai
 
-from qwen_agent.utils.utils import rm_default_system
 
 if openai.__version__.startswith('0.'):
     from openai.error import OpenAIError  # noqa
@@ -137,9 +136,6 @@ class TextChatAtOAI(BaseFnCallModel):
 
     @staticmethod
     def convert_messages_to_dicts(messages: List[Message]) -> List[dict]:
-        # RM default system
-        messages = rm_default_system(messages)
-
         # TODO: Change when the VLLM deployed model needs to pass reasoning_complete.
         #  At this time, in order to be compatible with lower versions of vLLM,
         #  and reasoning content is currently not useful

@@ -59,7 +59,7 @@ class ParallelDocQASummary(Agent):
 
         system_prompt = PROMPT_TEMPLATE[lang].format(ref_doc=knowledge)
 
-        if messages[0][ROLE] == SYSTEM:
+        if messages and messages[0][ROLE] == SYSTEM:
             if isinstance(messages[0][CONTENT], str):
                 messages[0][CONTENT] += '\n\n' + system_prompt
             else:

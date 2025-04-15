@@ -122,7 +122,7 @@ class ParallelDocQAMember(Agent):
         messages = copy.deepcopy(messages)
 
         system_prompt = SYSTEM_PROMPT_TEMPLATE[lang].format(no_response=NO_RESPONSE)
-        if messages[0][ROLE] == SYSTEM:
+        if messages and messages[0][ROLE] == SYSTEM:
             if isinstance(messages[0][CONTENT], str):
                 messages[0][CONTENT] += '\n\n' + system_prompt
             else:

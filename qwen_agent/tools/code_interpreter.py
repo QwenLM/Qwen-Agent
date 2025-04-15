@@ -12,9 +12,9 @@ import signal
 import stat
 import subprocess
 import sys
+import threading
 import time
 import uuid
-import threading
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
@@ -59,8 +59,8 @@ if threading.current_thread() is threading.main_thread():
 
 @register_tool('code_interpreter')
 class CodeInterpreter(BaseToolWithFileAccess):
-    description = 'Python代码沙盒，可用于执行Python代码。'
-    parameters = [{'name': 'code', 'type': 'string', 'description': '待执行的代码', 'required': True}]
+    description = 'Python code sandbox, which can be used to execute Python code.'
+    parameters = [{'name': 'code', 'type': 'string', 'description': 'The python code.', 'required': True}]
 
     def __init__(self, cfg: Optional[Dict] = None):
         super().__init__(cfg)

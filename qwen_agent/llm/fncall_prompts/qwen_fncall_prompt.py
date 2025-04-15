@@ -62,7 +62,7 @@ class QwenFnCallPrompt(BaseFnCallPrompt):
         tool_descs = '\n\n'.join(get_function_description(function, lang=lang) for function in functions)
         tool_names = ','.join(function.get('name_for_model', function.get('name', '')) for function in functions)
         tool_system = tool_desc_template.format(tool_descs=tool_descs, tool_names=tool_names)
-        if messages[0].role == SYSTEM:
+        if messages and messages[0].role == SYSTEM:
             messages[0].content.append(ContentItem(text='\n\n' + tool_system))
         else:
             messages = [Message(role=SYSTEM, content=[ContentItem(text=tool_system)])] + messages

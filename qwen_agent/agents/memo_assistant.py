@@ -70,7 +70,7 @@ class MemoAssistant(Assistant):
                     pass
         all_kv_str = '\n'.join([f'{k}: {v}' for k, v in all_kv.items()])
         sys_memory_prompt = MEMORY_PROMPT.format(storage_info=all_kv_str)
-        if messages[0].role == SYSTEM:
+        if messages and messages[0].role == SYSTEM:
             if isinstance(messages[0].content, str):
                 messages[0].content += '\n\n' + sys_memory_prompt
             else:
@@ -94,7 +94,7 @@ class MemoAssistant(Assistant):
             new_messages = [msg] + new_messages
             k -= 1
 
-        if k > -1 and messages[0].role == SYSTEM:
+        if k > -1 and messages and messages[0].role == SYSTEM:
             new_messages = [messages[0]] + new_messages
 
         return new_messages

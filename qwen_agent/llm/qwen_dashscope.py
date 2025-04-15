@@ -9,7 +9,6 @@ from qwen_agent.llm.base import ModelServiceError, register_llm
 from qwen_agent.llm.function_calling import BaseFnCallModel
 from qwen_agent.llm.schema import ASSISTANT, Message
 from qwen_agent.log import logger
-from qwen_agent.utils.utils import rm_default_system
 
 
 @register_llm('qwen_dashscope')
@@ -26,8 +25,6 @@ class QwenChatAtDS(BaseFnCallModel):
         delta_stream: bool,
         generate_cfg: dict,
     ) -> Iterator[List[Message]]:
-        # RM default system
-        messages = rm_default_system(messages)
         messages = [msg.model_dump() for msg in messages]
         if messages[-1]['role'] == ASSISTANT:
             messages[-1]['partial'] = True
@@ -48,8 +45,6 @@ class QwenChatAtDS(BaseFnCallModel):
         messages: List[Message],
         generate_cfg: dict,
     ) -> List[Message]:
-        # RM default system
-        messages = rm_default_system(messages)
         messages = [msg.model_dump() for msg in messages]
         if messages[-1]['role'] == ASSISTANT:
             messages[-1]['partial'] = True

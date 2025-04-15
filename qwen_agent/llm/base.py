@@ -126,6 +126,9 @@ class BaseChatModel(ABC):
                 _return_message_type = 'message'
         messages = new_messages
 
+        if not messages:
+            raise ValueError("Messages can not be empty.")
+
         # Cache lookup:
         if self.cache is not None:
             cache_key = dict(messages=messages, functions=functions, extra_generate_cfg=extra_generate_cfg)
@@ -156,7 +159,7 @@ class BaseChatModel(ABC):
         if not stream and 'incremental_output' in generate_cfg:
             generate_cfg.pop('incremental_output')
 
-        if messages[0].role != SYSTEM:
+        if DEFAULT_SYSTEM_MESSAGE and messages[0].role != SYSTEM:
             messages = [Message(role=SYSTEM, content=DEFAULT_SYSTEM_MESSAGE)] + messages
 
         # Not precise. It's hard to estimate tokens related with function calling and multimodal items.
@@ -508,8 +511,6 @@ def _truncate_at_stop_word(text: str, stop: List[str]):
 
 
 def _truncate_input_messages_roughly(messages: List[Message], max_tokens: int) -> List[Message]:
-    sys_msg = messages[0]
-    assert sys_msg.role == SYSTEM  # The default system is prepended if none exists
     if len([m for m in messages if m.role == SYSTEM]) >= 2:
         raise ModelServiceError(
             code='400',
@@ -518,8 +519,10 @@ def _truncate_input_messages_roughly(messages: List[Message], max_tokens: int) -
         )
 
     turns = []
-    for m in messages[1:]:
-        if m.role == USER:
+    for m in messages:
+        if m.role == SYSTEM:
+            continue
+        elif m.role == USER:
             turns.append([m])
         else:
             if turns:
@@ -545,11 +548,19 @@ def _truncate_input_messages_roughly(messages: List[Message], max_tokens: int) -
             text = '\n'.join(text)
             content = tokenizer.truncate(text, max_token=max_tokens)
         return Message(role=msg.role, content=content)
-
-    available_token = max_tokens - _count_tokens(sys_msg)
+    
+    if messages and messages[0].role == SYSTEM:
+        sys_msg = messages[0]
+        available_token = max_tokens - _count_tokens(sys_msg)
+    else:
+        sys_msg = None
+        available_token = max_tokens
+    
     token_cnt = 0
     new_messages = []
-    for i in range(len(messages) - 1, 0, -1):
+    for i in range(len(messages) - 1, -1, -1):
+        if messages[i].role == SYSTEM:
+            continue
         cur_token_cnt = _count_tokens(messages[i])
         if cur_token_cnt <= available_token:
             new_messages = [messages[i]] + new_messages
@@ -563,12 +574,15 @@ def _truncate_input_messages_roughly(messages: List[Message], max_tokens: int) -
             else:
                 token_cnt = (max_tokens - available_token) + cur_token_cnt
                 break
-    new_messages = [messages[0]] + new_messages
-    if len(new_messages) < 2:
+    
+    if sys_msg is not None:
+        new_messages = [sys_msg] + new_messages
+
+    if (sys_msg is not None and len(new_messages) < 2) or (sys_msg is None and len(new_messages) < 1):
         raise ModelServiceError(
             code='400',
             message=f'The input messages exceed the maximum context length ({max_tokens} tokens) after '
-            f'keeping only the system message and the latest one user message (around {token_cnt} tokens). '
+            f'keeping only the system message (if exists) and the latest one user message (around {token_cnt} tokens). '
             'To configure the context limit, please specifiy "max_input_tokens" in the model generate_cfg. '
             f'Example: generate_cfg = {{..., "max_input_tokens": {(token_cnt // 100 + 1) * 100}}}',
         )

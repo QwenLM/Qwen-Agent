@@ -124,7 +124,7 @@ class Assistant(FnCallAgent):
             knowledge_prompt = KNOWLEDGE_TEMPLATE[lang].format(knowledge='\n\n'.join(snippets))
 
         if knowledge_prompt:
-            if messages[0][ROLE] == SYSTEM:
+            if messages and messages[0][ROLE] == SYSTEM:
                 if isinstance(messages[0][CONTENT], str):
                     messages[0][CONTENT] += '\n\n' + knowledge_prompt
                 else:

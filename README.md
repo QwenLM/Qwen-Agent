@@ -119,8 +119,7 @@ llm_cfg = {
 }
 
 # Step 3: Create an agent. Here we use the `Assistant` agent as an example, which is capable of using tools and reading files.
-system_instruction = '''You are a helpful assistant.
-After receiving the user's request, you should:
+system_instruction = '''After receiving the user's request, you should:
 - first draw an image and obtain the image url,
 - then run code `request.get(image_url)` to download the image,
 - and finally select an image operation from the given document to process the image.

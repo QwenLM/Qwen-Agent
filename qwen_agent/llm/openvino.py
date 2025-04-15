@@ -26,8 +26,7 @@ class OpenVINO(BaseFnCallModel):
             'model_type': 'openvino',
             'device': 'cpu'
             }
-        system_instruction = '''You are a helpful assistant.
-        After receiving the user's request, you should:
+        system_instruction = '''After receiving the user's request, you should:
         - first draw an image and obtain the image url,
         - then run code `request.get(image_url)` to download the image,
         - and finally select an image operation from the given document to process the image.

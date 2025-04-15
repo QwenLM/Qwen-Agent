@@ -48,8 +48,10 @@ class NousFnCallPrompt(BaseFnCallPrompt):
                         fc = f'<tool_call>\n{fc}\n<code>\n{code}\n</code>\n</tool_call>'
 
                     content.append(ContentItem(text=fc))
-                if messages[-1].role == ASSISTANT:
-                    messages[-1].content.append(ContentItem(text='\n'))
+                if messages and messages[-1].role == ASSISTANT:
+                    if messages[-1].content and messages[-1].content[-1].text and (
+                            not messages[-1].content[-1].text.endswith('\n')):
+                        messages[-1].content.append(ContentItem(text='\n'))
                     messages[-1].content.extend(content)
                 else:
                     # TODO: Assuming there will only be one continuous reasoning_content here
@@ -75,7 +77,7 @@ class NousFnCallPrompt(BaseFnCallPrompt):
             tool_system = FN_CALL_TEMPLATE_WITH_CI.format(tool_descs=tool_descs)
         else:
             tool_system = FN_CALL_TEMPLATE.format(tool_descs=tool_descs)
-        if messages[0].role == SYSTEM:
+        if messages and messages[0].role == SYSTEM:
             messages[0].content.append(ContentItem(text='\n\n' + tool_system))
         else:
             messages = [Message(role=SYSTEM, content=[ContentItem(text=tool_system)])] + messages

@@ -12,7 +12,6 @@ from qwen_agent.llm.function_calling import BaseFnCallModel
 from qwen_agent.llm.qwen_dashscope import initialize_dashscope
 from qwen_agent.llm.schema import ASSISTANT, ContentItem, Message
 from qwen_agent.log import logger
-from qwen_agent.utils.utils import rm_default_system
 
 
 @register_llm('qwenvl_dashscope')
@@ -39,7 +38,7 @@ class QwenVLChatAtDS(BaseFnCallModel):
         messages = _format_local_files(messages)
         if not self.support_audio_input:
             messages = rm_unsupported_modality(messages)
-        messages = rm_default_system(messages)
+        
         messages = [msg.model_dump() for msg in messages]
         if messages[-1]['role'] == ASSISTANT:
             messages[-1]['partial'] = True
@@ -82,7 +81,7 @@ class QwenVLChatAtDS(BaseFnCallModel):
         messages = _format_local_files(messages)
         if not self.support_audio_input:
             messages = rm_unsupported_modality(messages)
-        messages = rm_default_system(messages)
+        
         messages = [msg.model_dump() for msg in messages]
         if messages[-1]['role'] == ASSISTANT:
             messages[-1]['partial'] = True

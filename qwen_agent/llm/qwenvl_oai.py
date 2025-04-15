@@ -9,8 +9,7 @@ from qwen_agent.llm.base import register_llm
 from qwen_agent.llm.oai import TextChatAtOAI
 from qwen_agent.llm.schema import ContentItem, Message
 from qwen_agent.log import logger
-from qwen_agent.utils.utils import (encode_audio_as_base64, encode_image_as_base64, encode_video_as_base64,
-                                    rm_default_system)
+from qwen_agent.utils.utils import (encode_audio_as_base64, encode_image_as_base64, encode_video_as_base64)
 
 
 @register_llm('qwenvl_oai')
@@ -23,9 +22,6 @@ class QwenVLChatAtOAI(TextChatAtOAI):
     @staticmethod
     def convert_messages_to_dicts(messages: List[Message]) -> List[dict]:
         new_messages = []
-
-        # RM default system
-        messages = rm_default_system(messages)
 
         for msg in messages:
             content = msg.content

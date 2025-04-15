@@ -50,7 +50,7 @@ class BasicDocQA(Assistant):
 
         messages = copy.deepcopy(messages)
         system_prompt = PROMPT_TEMPLATE[lang].format(ref_doc=knowledge)
-        if messages[0][ROLE] == SYSTEM:
+        if messages and messages[0][ROLE] == SYSTEM:
             messages[0][CONTENT] += '\n\n' + system_prompt
         else:
             messages.insert(0, Message(SYSTEM, system_prompt))

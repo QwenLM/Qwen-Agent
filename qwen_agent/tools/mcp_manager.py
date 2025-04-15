@@ -56,15 +56,23 @@ class MCPManager:
         # Check each sub-item under "mcpServers"
         for key in mcp_servers:
             server = mcp_servers[key]
-            # Each sub-item must be a dictionary and contain the keys "command" and "args"
-            if not isinstance(server, dict) or 'command' not in server or 'args' not in server:
+            # Each sub-item must be a dictionary
+            if not isinstance(server, dict):
                 return False
-            # "command" must be a string
-            if not isinstance(server['command'], str):
-                return False
-            # "args" must be a list
-            if not isinstance(server['args'], list):
-                return False
+            if 'command' in server:
+                # "command" must be a string
+                if not isinstance(server['command'], str):
+                    return False
+                # "args" must be a list
+                if 'args' not in server or not isinstance(server['args'], list):
+                    return False
+            if 'url' in server:
+                # "url" must be a string
+                if not isinstance(server['url'], str):
+                    return False
+                # "headers" must be a dictionary
+                if 'headers' in server and not isinstance(server['headers'], dict):
+                    return False
             # If the "env" key exists, it must be a dictionary
             if 'env' in server and not isinstance(server['env'], dict):
                 return False
@@ -170,26 +178,46 @@ class MCPClient:
     async def connection_server(self, exit_stack, mcp_server):
         from mcp import ClientSession, StdioServerParameters
         from mcp.client.stdio import stdio_client
+        from mcp.client.sse import sse_client
         """Connect to an MCP server and retrieve the available tools."""
         try:
-            server_params = StdioServerParameters(command=mcp_server['command'],
-                                                  args=mcp_server['args'],
-                                                  env=mcp_server.get('env', None))
-            stdio_transport = await exit_stack.enter_async_context(stdio_client(server_params))
-            self.stdio, self.write = stdio_transport
-            self.session = await exit_stack.enter_async_context(ClientSession(self.stdio, self.write))
+            if 'url' in mcp_server:
+                self._streams_context = sse_client(url=mcp_server.get('url'), headers=mcp_server.get('headers', {"Accept": "text/event-stream"}))
+                streams = await self._streams_context.__aenter__()
+
+                self._session_context = ClientSession(*streams)
+                self.session: ClientSession = await self._session_context.__aenter__()
+            else:
+                server_params = StdioServerParameters(
+                    command = mcp_server["command"],
+                    args = mcp_server["args"],
+                    env = mcp_server.get("env", None)
+                )
+                stdio_transport = await exit_stack.enter_async_context(stdio_client(server_params))
+                self.stdio, self.write = stdio_transport
+                self.session = await exit_stack.enter_async_context(ClientSession(self.stdio, self.write))
 
             await self.session.initialize()
 
             list_tools = await self.session.list_tools()
             self.tools = list_tools.tools
         except Exception as e:
-            logger.info(f'Failed to connect to server: {e}')
+            logger.info(f"Failed to connect to server: {e}")
+
+    async def cleanup(self):
+        """Properly clean up the session and streams"""
+        if self._session_context:
+            await self._session_context.__aexit__(None, None, None)
+        if self._streams_context:
+            await self._streams_context.__aexit__(None, None, None)
 
     async def execute_function(self, tool_name, tool_args: dict):
         response = await self.session.call_tool(tool_name, tool_args)
+        texts = []
         for content in response.content:
             if content.type == 'text':
-                return content.text
-            else:
-                return 'execute error'
+                texts.append(content.text)
+        if texts:
+            return '\n\n'.join(texts)
+        else:
+            return 'execute error'

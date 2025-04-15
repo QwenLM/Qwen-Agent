@@ -257,7 +257,7 @@ class DocQA(Agent):
              **kwargs) -> Iterator[List[Message]]:
         messages = copy.deepcopy(messages)
         system_prompt = PROMPT_TEMPLATE[lang].format(ref_doc=knowledge)
-        if messages[0][ROLE] == SYSTEM:
+        if messages and messages[0][ROLE] == SYSTEM:
             messages[0][CONTENT] += system_prompt
         else:
             messages.insert(0, Message(SYSTEM, system_prompt))
