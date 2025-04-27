@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 from pprint import pformat
 from typing import Any, Dict, Iterator, List, Literal, Optional, Tuple, Union
 
-from qwen_agent.llm.schema import ASSISTANT, DEFAULT_SYSTEM_MESSAGE, SYSTEM, USER, Message
+from qwen_agent.llm.schema import ASSISTANT, DEFAULT_SYSTEM_MESSAGE, SYSTEM, USER, FUNCTION, Message
 from qwen_agent.log import logger
 from qwen_agent.settings import DEFAULT_MAX_INPUT_TOKENS
 from qwen_agent.utils.tokenization_qwen import tokenizer
@@ -536,9 +536,9 @@ def _truncate_input_messages_roughly(messages: List[Message], max_tokens: int) -
     def _count_tokens(msg: Message) -> int:
         return tokenizer.count_tokens(extract_text_from_message(msg, add_upload_info=True))
 
-    def _truncate_message(msg: Message, max_tokens: int):
+    def _truncate_message(msg: Message, max_tokens: int, keep_both_sides: bool = False):
         if isinstance(msg.content, str):
-            content = tokenizer.truncate(msg.content, max_token=max_tokens)
+            content = tokenizer.truncate(msg.content, max_token=max_tokens, keep_both_sides=keep_both_sides)
         else:
             text = []
             for item in msg.content:
@@ -546,7 +546,7 @@ def _truncate_input_messages_roughly(messages: List[Message], max_tokens: int) -
                     return None
                 text.append(item.text)
             text = '\n'.join(text)
-            content = tokenizer.truncate(text, max_token=max_tokens)
+            content = tokenizer.truncate(text, max_token=max_tokens, keep_both_sides=keep_both_sides)
         return Message(role=msg.role, content=content)
     
     if messages and messages[0].role == SYSTEM:
@@ -571,6 +571,12 @@ def _truncate_input_messages_roughly(messages: List[Message], max_tokens: int) -
                 if _msg:
                     new_messages = [_msg] + new_messages
                 break
+            elif messages[i].role == FUNCTION:
+                _msg = _truncate_message(messages[i], max_tokens=available_token, keep_both_sides=True)
+                if _msg:
+                    new_messages = [_msg] + new_messages
+                else:
+                    break
             else:
                 token_cnt = (max_tokens - available_token) + cur_token_cnt
                 break

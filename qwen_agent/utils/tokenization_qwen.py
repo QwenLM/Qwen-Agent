@@ -204,9 +204,24 @@ class QWenTokenizer:
     def count_tokens(self, text: str) -> int:
         return len(self.tokenize(text))
 
-    def truncate(self, text: str, max_token: int, start_token: int = 0) -> str:
-        token_list = self.tokenize(text)
-        token_list = token_list[start_token:min(len(token_list), start_token + max_token)]
+    def truncate(self, text: str, max_token: int, start_token: int = 0, keep_both_sides: bool = False) -> str:
+        token_list = self.tokenize(text)[start_token:]
+        if len(token_list) <= max_token:
+            return self.convert_tokens_to_string(token_list)
+
+        if keep_both_sides:
+            ellipsis_tokens = self.tokenize("...")
+            ellipsis_len = len(ellipsis_tokens)
+            available = max_token - ellipsis_len
+            if available <= 0: # Degenerate case: not enough space even for "..."
+                return self.convert_tokens_to_string(token_list[:max_token])
+
+            left_len = available // 2
+            right_len = available - left_len
+            token_list = token_list[:left_len] + ellipsis_tokens + token_list[-right_len:]
+        else:
+            token_list = token_list[:max_token]
+
         return self.convert_tokens_to_string(token_list)
 
 
