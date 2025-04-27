@@ -1,13 +1,17 @@
 import asyncio
 import json
 import threading
+import uuid
+import atexit
+import time
 from contextlib import AsyncExitStack
 from typing import Dict, Optional, Union
 
 from dotenv import load_dotenv
 
 from qwen_agent.log import logger
-from qwen_agent.tools.base import BaseTool, register_tool
+from qwen_agent.tools.base import BaseTool
+from qwen_agent.utils.utils import append_signal_handler
 
 
 class MCPManager:
@@ -16,18 +20,41 @@ class MCPManager:
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
             cls._instance = super(MCPManager, cls).__new__(cls, *args, **kwargs)
-            cls._instance.__init__()
         return cls._instance
 
     def __init__(self):
-        if not hasattr(self, 'clients'):
+        if not hasattr(self, 'clients'): # The singleton should only be inited once
             """Set a new event loop in a separate thread"""
+            try:
+                import mcp
+            except ImportError as e:
+                raise ImportError('Could not import mcp. Please install mcp with `pip install -U mcp`.') from e
+
             load_dotenv()  # Load environment variables from .env file
             self.clients: dict = {}
-            self.exit_stack = AsyncExitStack()
             self.loop = asyncio.new_event_loop()
             self.loop_thread = threading.Thread(target=self.start_loop, daemon=True)
             self.loop_thread.start()
+
+            # A fallback way to terminate MCP tool processes after Qwen-Agent exits
+            self.processes = []
+            self.monkey_patch_mcp_create_platform_compatible_process()
+    
+    def monkey_patch_mcp_create_platform_compatible_process(self):
+        try:
+            import mcp.client.stdio
+            target = mcp.client.stdio._create_platform_compatible_process
+        except (ModuleNotFoundError, AttributeError) as e:
+            raise ImportError(
+                'Qwen-Agent needs to monkey patch MCP for process cleanup. '
+                'Please upgrade MCP to a higher version with `pip install -U mcp`.'
+            ) from e
+
+        async def _monkey_patched_create_platform_compatible_process(*args, **kwargs):
+            process = await target(*args, **kwargs)
+            self.processes.append(process)
+            return process
+        mcp.client.stdio._create_platform_compatible_process = _monkey_patched_create_platform_compatible_process
 
     def start_loop(self):
         asyncio.set_event_loop(self.loop)
@@ -79,17 +106,17 @@ class MCPManager:
         return True
 
     def initConfig(self, config: Dict):
-        logger.info(f'Initialize from config {config}. ')
+        logger.info(f'Initializing MCP tools from mcpservers config: {config}')
         if not self.is_valid_mcp_servers(config):
-            raise ValueError('Config format error')
+            raise ValueError('Config of mcpservers is not valid')
         # Submit coroutine to the event loop and wait for the result
         future = asyncio.run_coroutine_threadsafe(self.init_config_async(config), self.loop)
         try:
             result = future.result()  # You can specify a timeout if desired
             return result
         except Exception as e:
-            logger.info(f'Error executing function: {e}')
-            return None
+            logger.info(f'Failed in initializing MCP tools: {e}')
+            raise e
 
     async def init_config_async(self, config: Dict):
         tools: list = []
@@ -97,8 +124,10 @@ class MCPManager:
         for server_name in mcp_servers:
             client = MCPClient()
             server = mcp_servers[server_name]
-            await client.connection_server(self.exit_stack, server)  # Attempt to connect to the server
-            self.clients[server_name] = client  # Add to clients dict after successful connection
+            await client.connection_server(server)  # Attempt to connect to the server
+
+            client_id = server_name + '_' + str(uuid.uuid4()) # To allow the same server name be used across different running agents
+            self.clients[client_id] = client  # Add to clients dict after successful connection
             for tool in client.tools:
                 """MCP tool example:
                 {
@@ -133,37 +162,55 @@ class MCPManager:
                     'required': parameters['required']
                 }
                 register_name = server_name + '-' + tool.name
-                agent_tool = self.create_tool_class(register_name, server_name, tool.name, tool.description,
-                                                    cleaned_parameters)
+                agent_tool = self.create_tool_class(register_name=register_name, register_client_id=client_id, 
+                                                    tool_name=tool.name, tool_desc=tool.description, tool_parameters=cleaned_parameters)
                 tools.append(agent_tool)
         return tools
 
-    def create_tool_class(self, register_name, server_name, tool_name, tool_desc, tool_parameters):
+    def create_tool_class(self, register_name, register_client_id, tool_name, tool_desc, tool_parameters):
 
-        @register_tool(register_name)
         class ToolClass(BaseTool):
+            name = register_name
             description = tool_desc
             parameters = tool_parameters
+            client_id = register_client_id
 
             def call(self, params: Union[str, dict], **kwargs) -> str:
                 tool_args = json.loads(params)
                 # Submit coroutine to the event loop and wait for the result
                 manager = MCPManager()
-                client = manager.clients[server_name]
+                client = manager.clients[register_client_id]
                 future = asyncio.run_coroutine_threadsafe(client.execute_function(tool_name, tool_args), manager.loop)
                 try:
                     result = future.result()
                     return result
                 except Exception as e:
-                    logger.info(f'Error executing function: {e}')
-                    return None
-                return 'Function executed'
+                    logger.info(f'Failed in executing MCP tool: {e}')
+                    raise e
 
         ToolClass.__name__ = f'{register_name}_Class'
         return ToolClass()
 
-    async def clearup(self):
-        await self.exit_stack.aclose()
+    def shutdown(self):
+        futures = []
+        for client_id in list(self.clients.keys()):
+            client :MCPClient = self.clients[client_id]
+            future = asyncio.run_coroutine_threadsafe(client.cleanup(), self.loop)
+            futures.append(future)
+            del self.clients[client_id]
+        time.sleep(1) # Wait for the graceful cleanups, otherwise fall back
+        
+        # fallback
+        if asyncio.all_tasks(self.loop):
+            logger.info('There are still tasks in `MCPManager().loop`, force terminating the MCP tool processes. There may be some exceptions.')
+            for process in self.processes:
+                try:
+                    process.terminate()
+                except ProcessLookupError:
+                    pass # it's ok, the process may exit earlier
+        
+        self.loop.call_soon_threadsafe(self.loop.stop)
+        self.loop_thread.join()
 
 
 class MCPClient:
@@ -174,8 +221,9 @@ class MCPClient:
         # Initialize session and client objects
         self.session: Optional[ClientSession] = None
         self.tools: list = None
+        self.exit_stack = AsyncExitStack()
 
-    async def connection_server(self, exit_stack, mcp_server):
+    async def connection_server(self, mcp_server):
         from mcp import ClientSession, StdioServerParameters
         from mcp.client.stdio import stdio_client
         from mcp.client.sse import sse_client
@@ -183,33 +231,26 @@ class MCPClient:
         try:
             if 'url' in mcp_server:
                 self._streams_context = sse_client(url=mcp_server.get('url'), headers=mcp_server.get('headers', {"Accept": "text/event-stream"}))
-                streams = await self._streams_context.__aenter__()
-
+                streams = await self.exit_stack.enter_async_context(self._streams_context)
                 self._session_context = ClientSession(*streams)
-                self.session: ClientSession = await self._session_context.__aenter__()
+                self.session = await self.exit_stack.enter_async_context(self._session_context)
             else:
                 server_params = StdioServerParameters(
                     command = mcp_server["command"],
                     args = mcp_server["args"],
                     env = mcp_server.get("env", None)
                 )
-                stdio_transport = await exit_stack.enter_async_context(stdio_client(server_params))
+                stdio_transport = await self.exit_stack.enter_async_context(stdio_client(server_params))
                 self.stdio, self.write = stdio_transport
-                self.session = await exit_stack.enter_async_context(ClientSession(self.stdio, self.write))
+                self.session = await self.exit_stack.enter_async_context(ClientSession(self.stdio, self.write))
+                logger.info(f'Will initialize a MCP stdio_client, if this takes forever, please check whether the mcp config is correct: {mcp_server}')
 
             await self.session.initialize()
-
             list_tools = await self.session.list_tools()
             self.tools = list_tools.tools
         except Exception as e:
-            logger.info(f"Failed to connect to server: {e}")
-
-    async def cleanup(self):
-        """Properly clean up the session and streams"""
-        if self._session_context:
-            await self._session_context.__aexit__(None, None, None)
-        if self._streams_context:
-            await self._streams_context.__aexit__(None, None, None)
+            logger.info(f"Failed in connecting to MCP server: {e}")
+            raise e
 
     async def execute_function(self, tool_name, tool_args: dict):
         response = await self.session.call_tool(tool_name, tool_args)
@@ -221,3 +262,21 @@ class MCPClient:
             return '\n\n'.join(texts)
         else:
             return 'execute error'
+
+    async def cleanup(self):
+        await self.exit_stack.aclose()
+
+
+def _cleanup_mcp(_sig_num=None, _frame=None):
+    if MCPManager._instance is None:
+        return
+    manager = MCPManager()
+    manager.shutdown()
+
+
+# Make sure all subprocesses are terminated even if killed abnormally:
+# If not running in the main thread, (for example run in streamlit)
+# register a signal would cause a RuntimeError
+if threading.current_thread() is threading.main_thread():
+    atexit.register(_cleanup_mcp)
+
