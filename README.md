@@ -176,7 +176,7 @@ Example of MCP invocation format:
         "filesystem": {
             "command": "npx",
             "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/allowed/files"]
-        }
+        },
         "sqlite" : {
             "command": "uvx",
             "args": [

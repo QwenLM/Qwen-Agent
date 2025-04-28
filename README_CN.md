@@ -169,7 +169,7 @@ Qwen-Agent中MCP调用格式：
         "filesystem": {
             "command": "npx",
             "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/allowed/files"]
-        }
+        },
         "sqlite" : {
             "command": "uvx",
             "args": [
