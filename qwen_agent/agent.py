@@ -12,6 +12,7 @@ from qwen_agent.tools import TOOL_REGISTRY, BaseTool, MCPManager
 from qwen_agent.tools.base import ToolServiceError
 from qwen_agent.tools.simple_doc_parser import DocParserError
 from qwen_agent.utils.utils import has_chinese_messages, merge_generate_cfgs
+import types
 
 
 class Agent(ABC):
@@ -192,6 +193,9 @@ class Agent(ABC):
             return tool_result
         elif isinstance(tool_result, list) and all(isinstance(item, ContentItem) for item in tool_result):
             return tool_result  # multimodal tool results
+        elif isinstance(tool_result, types.GeneratorType):
+            # 这里是generator的返回
+            return tool_result
         else:
             return json.dumps(tool_result, ensure_ascii=False, indent=4)
 
