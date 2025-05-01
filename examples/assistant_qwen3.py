@@ -17,13 +17,12 @@ def init_agent_service():
         #     # 'thought_in_content': True,
         #
         #     # When using the Dash Scope API, pass the parameter of whether to enable thinking mode in this way
-        #     'extra_body': {
-        #         "enable_thinking": True,
-        #         # "thinking_budget": 32768
-        #     },
+        #     'enable_thinking': False,
         #
         #     # When using vLLM API, pass the parameter of whether to enable thinking mode in this way
-        #     "chat_template_kwargs": {"enable_thinking": True}
+        #     # 'chat_template_kwargs': {
+        #     #     'enable_thinking': False
+        #     # }
         # },
     }
     tools = [
@@ -41,11 +40,10 @@ def init_agent_service():
         },
         'code_interpreter',  # Built-in tools
     ]
-    bot = Assistant(
-        llm=llm_cfg,
-        function_list=tools,
-        name='Qwen3 Tool-calling Demo',
-        description="I'm a demo using the Qwen-32B tool calling. Welcome to add and play with your own tools!")
+    bot = Assistant(llm=llm_cfg,
+                    function_list=tools,
+                    name='Qwen3 Tool-calling Demo',
+                    description="I'm a demo using the Qwen3 tool calling. Welcome to add and play with your own tools!")
 
     return bot
 
