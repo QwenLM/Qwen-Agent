@@ -59,7 +59,7 @@ variable `DASHSCOPE_API_KEY` to your unique DashScope API key.
 
 - Alternatively, if you prefer to deploy and use your own model service, please follow the instructions provided in the README of Qwen2 for deploying an OpenAI-compatible API service.
 Specifically, consult the [vLLM](https://github.com/QwenLM/Qwen2?tab=readme-ov-file#vllm) section for high-throughput GPU deployment or the [Ollama](https://github.com/QwenLM/Qwen2?tab=readme-ov-file#ollama) section for local CPU (+GPU) deployment.
-For the QwQ model, it is recommended to add the `--enable-reasoning` and `--reasoning-parser deepseek_r1` parameters when starting the service. **Do not** add the `--enable-auto-tool-choice` and `--tool-call-parser hermes` parameters, as Qwen-Agent will parse the tool outputs from vLLM on its own.
+For the QwQ and Qwen3 model, it is recommended to add the `--enable-reasoning` and `--reasoning-parser deepseek_r1` parameters when starting the service. **Do not** add the `--enable-auto-tool-choice` and `--tool-call-parser hermes` parameters, as Qwen-Agent will parse the tool outputs from vLLM on its own.
 
 ## Developing Your Own Agent
 
