@@ -19,8 +19,8 @@ def init_agent_service():
         #     # When using the Dash Scope API, pass the parameter of whether to enable thinking mode in this way
         #     'enable_thinking': False,
         #
-        #     # When using vLLM API, pass the parameter of whether to enable thinking mode in this way
-        #     # 'chat_template_kwargs': {
+        #     # When using OAI API, pass the parameter of whether to enable thinking mode in this way
+        #     # 'extra_body': {
         #     #     'enable_thinking': False
         #     # }
         # },
