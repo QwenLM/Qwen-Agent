@@ -16,7 +16,7 @@ Qwen-Agent是一个开发框架。开发者可基于本框架开发Agent应用�
 现在，Qwen-Agent 作为 [Qwen Chat](https://chat.qwen.ai/) 的后端运行。
 
 # 更新
-* 🔥🔥🔥May 1, 2025: 新增 [Qwen3 Tool-call Demo](./examples/assistant_qwen3.py).
+* 🔥🔥🔥May 1, 2025: 新增 [Qwen3 Tool-call Demo](./examples/assistant_qwen3.py)；新增 [MCP cookbooks](./examples/)。
 * Mar 18, 2025: 支持`reasoning_content`字段；调整默认的[Function Call模版](./qwen_agent/llm/fncall_prompts/nous_fncall_prompt.py)（适用于Qwen2.5系列通用模型、QwQ-32B）。如果需要使用旧版模版：请参考[样例](./examples/function_calling.py)传递参数。
 * Mar 7, 2025: 新增[QwQ-32B Tool-call Demo](./examples/assistant_qwq.py)，支持并行、多步、多轮工具调用。
 * Dec 3, 2024: GUI 升级为基于 Gradio 5。注意：如果需要使用GUI，Python版本需要3.10及以上。
