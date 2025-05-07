@@ -11,7 +11,6 @@ from dotenv import load_dotenv
 
 from qwen_agent.log import logger
 from qwen_agent.tools.base import BaseTool
-from qwen_agent.utils.utils import append_signal_handler
 
 
 class MCPManager:
@@ -106,9 +105,9 @@ class MCPManager:
         return True
 
     def initConfig(self, config: Dict):
-        logger.info(f'Initializing MCP tools from mcpservers config: {config}')
         if not self.is_valid_mcp_servers(config):
             raise ValueError('Config of mcpservers is not valid')
+        logger.info(f'Initializing MCP tools from mcp servers: {list(config["mcpServers"].keys())}')
         # Submit coroutine to the event loop and wait for the result
         future = asyncio.run_coroutine_threadsafe(self.init_config_async(config), self.loop)
         try:
@@ -124,7 +123,7 @@ class MCPManager:
         for server_name in mcp_servers:
             client = MCPClient()
             server = mcp_servers[server_name]
-            await client.connection_server(server)  # Attempt to connect to the server
+            await client.connection_server(mcp_server_name=server_name, mcp_server=server)  # Attempt to connect to the server
 
             client_id = server_name + '_' + str(uuid.uuid4()) # To allow the same server name be used across different running agents
             self.clients[client_id] = client  # Add to clients dict after successful connection
@@ -223,7 +222,7 @@ class MCPClient:
         self.tools: list = None
         self.exit_stack = AsyncExitStack()
 
-    async def connection_server(self, mcp_server):
+    async def connection_server(self, mcp_server_name, mcp_server):
         from mcp import ClientSession, StdioServerParameters
         from mcp.client.stdio import stdio_client
         from mcp.client.sse import sse_client
@@ -243,7 +242,7 @@ class MCPClient:
                 stdio_transport = await self.exit_stack.enter_async_context(stdio_client(server_params))
                 self.stdio, self.write = stdio_transport
                 self.session = await self.exit_stack.enter_async_context(ClientSession(self.stdio, self.write))
-                logger.info(f'Will initialize a MCP stdio_client, if this takes forever, please check whether the mcp config is correct: {mcp_server}')
+                logger.info(f'Initializing a MCP stdio_client, if this takes forever, please check the config of this mcp server: {mcp_server_name}')
 
             await self.session.initialize()
             list_tools = await self.session.list_tools()
@@ -274,9 +273,6 @@ def _cleanup_mcp(_sig_num=None, _frame=None):
     manager.shutdown()
 
 
-# Make sure all subprocesses are terminated even if killed abnormally:
-# If not running in the main thread, (for example run in streamlit)
-# register a signal would cause a RuntimeError
+# Make sure all subprocesses are terminated even if killed abnormally
 if threading.current_thread() is threading.main_thread():
     atexit.register(_cleanup_mcp)
-
