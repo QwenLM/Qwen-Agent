@@ -1,4 +1,5 @@
 """An agent implemented by assistant with qwen3"""
+import os  # noqa
 
 from qwen_agent.agents import Assistant
 from qwen_agent.gui import WebUI
@@ -7,24 +8,46 @@ from qwen_agent.utils.output_beautify import typewriter_print
 
 def init_agent_service():
     llm_cfg = {
+        # Use the model service provided by DashScope:
         'model': 'qwen3-235b-a22b',
         'model_type': 'qwen_dashscope',
 
         # 'generate_cfg': {
-        #     # Add: When the content is `<think>this is the thought</think>this is the answer`
-        #     # Do not add: When the response has been separated by reasoning_content and content
-        #     # This parameter will affect the parsing strategy of tool call
-        #     # 'thought_in_content': True,
-        #
         #     # When using the Dash Scope API, pass the parameter of whether to enable thinking mode in this way
         #     'enable_thinking': False,
-        #
-        #     # When using OAI API, pass the parameter of whether to enable thinking mode in this way
-        #     # 'extra_body': {
-        #     #     'enable_thinking': False
-        #     # }
         # },
     }
+    # llm_cfg = {
+    #     # Use the OpenAI-compatible model service provided by DashScope:
+    #     'model': 'qwen3-235b-a22b',
+    #     'model_server': 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+    #     'api_key': os.getenv('DASHSCOPE_API_KEY'),
+    #
+    #     # 'generate_cfg': {
+    #     #     # When using Dash Scope OAI API, pass the parameter of whether to enable thinking mode in this way
+    #     #     'extra_body': {
+    #     #         'enable_thinking': False
+    #     #     },
+    #     # },
+    # }
+    # llm_cfg = {
+    #     # Use your own model service compatible with OpenAI API by vLLM/SGLang:
+    #     'model': 'Qwen/Qwen3-32B',
+    #     'model_server': 'http://localhost:8000/v1',  # api_base
+    #     'api_key': 'EMPTY',
+    #
+    #     'generate_cfg': {
+    #         # When using vLLM/SGLang OAI API, pass the parameter of whether to enable thinking mode in this way
+    #         'extra_body': {
+    #             'chat_template_kwargs': {'enable_thinking': False}
+    #         },
+    #
+    #         # Add: When the content is `<think>this is the thought</think>this is the answer`
+    #         # Do not add: When the response has been separated by reasoning_content and content
+    #         # This parameter will affect the parsing strategy of tool call
+    #         # 'thought_in_content': True,
+    #     },
+    # }
     tools = [
         {
             'mcpServers': {  # You can specify the MCP configuration file
