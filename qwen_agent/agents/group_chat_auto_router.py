@@ -1,8 +1,9 @@
+import copy
 from typing import Dict, Iterator, List, Optional, Union
 
 from qwen_agent import Agent
 from qwen_agent.llm import BaseChatModel
-from qwen_agent.llm.schema import Message
+from qwen_agent.llm.schema import Message, SYSTEM
 from qwen_agent.tools import BaseTool
 from qwen_agent.utils.utils import has_chinese_chars
 
@@ -55,9 +56,10 @@ Only return the role name from [{agent_names}] or '[STOP]'. Do not reply any oth
                          **kwargs)
 
     def _run(self, messages: List[Message], lang: str = 'en', **kwargs) -> Iterator[List[Message]]:
-
-        dialogue = []
+        dialogue = [] # convert existing messages into a prompt
         for msg in messages:
+            if msg.role == SYSTEM:
+                continue
             if msg.role == 'function' or not msg.content:
                 continue
             if isinstance(msg.content, list):
@@ -74,6 +76,6 @@ Only return the role name from [{agent_names}] or '[STOP]'. Do not reply any oth
 
         if not dialogue:
             dialogue.append('对话刚开始，请任意选择一个发言人，别选真实用户')
-        new_messages = [Message('user', '\n'.join(dialogue))]
-
+        assert messages[0].role == SYSTEM
+        new_messages = [copy.deepcopy(messages[0]), Message('user', '\n'.join(dialogue))]
         return self._call_llm(messages=new_messages)
