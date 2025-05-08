@@ -133,8 +133,6 @@ class Message(BaseModelCompatibleDict):
                  **kwargs):
         if content is None:
             content = ''
-        if reasoning_content is None:
-            reasoning_content = ''
         super().__init__(role=role,
                          content=content,
                          reasoning_content=reasoning_content,
