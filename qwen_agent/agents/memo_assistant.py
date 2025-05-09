@@ -49,7 +49,7 @@ class MemoAssistant(Assistant):
         new_message = self._prepend_storage_info_to_sys(messages)
         new_message = self._truncate_dialogue_history(new_message)
 
-        for rsp in super()._run(new_message, lang, max_ref_token, **kwargs):
+        for rsp in super()._run(new_message, lang, '', **kwargs):
             yield rsp
 
     def _prepend_storage_info_to_sys(self, messages: List[Message]) -> List[Message]:
