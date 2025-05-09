@@ -8,6 +8,31 @@ from qwen_agent.llm import BaseChatModel
 from qwen_agent.llm.schema import DEFAULT_SYSTEM_MESSAGE, SYSTEM, USER, ContentItem, Message
 from qwen_agent.tools import BaseTool
 
+KNOWLEDGE_TEMPLATE_ZH = """# 知识库
+
+{knowledge}"""
+
+KNOWLEDGE_TEMPLATE_EN = """# Knowledge Base
+
+{knowledge}"""
+
+KNOWLEDGE_TEMPLATE = {'zh': KNOWLEDGE_TEMPLATE_ZH, 'en': KNOWLEDGE_TEMPLATE_EN}
+
+KNOWLEDGE_SNIPPET_ZH = """## 来自 {source} 的内容：
+
+```
+{content}
+```"""
+
+KNOWLEDGE_SNIPPET_EN = """## The content from {source}:
+
+```
+{content}
+```"""
+
+KNOWLEDGE_SNIPPET = {'zh': KNOWLEDGE_SNIPPET_ZH, 'en': KNOWLEDGE_SNIPPET_EN}
+
+
 MEMORY_PROMPT = """
 在对话过程中，你可以随时使用storage工具来存储你认为需要记住的信息，同时也随时可以读取曾经可能存储了的历史信息。
 这将有助于你在和用户的长对话中，记住某些重要的信息，比如用户的喜好、特殊信息、或重大事件等。
@@ -20,7 +45,7 @@ MEMORY_PROMPT = """
 {storage_info}
 </info>
 
-你的记忆很短暂，请频繁的调用工具存储重要对话内容。
+你的记忆很短暂，请频繁的调用工具存储或读取重要对话内容。
 """
 
 
@@ -43,13 +68,15 @@ class MemoAssistant(Assistant):
 
     def _run(self,
              messages: List[Message],
-             lang: str = 'en',
+             lang: str = 'zh',
+             knowledge: str = '',
              max_ref_token: int = 4000,
              **kwargs) -> Iterator[List[Message]]:
+        messages = self._prepend_knowledge_prompt(messages=messages, lang=lang, knowledge=knowledge, **kwargs)
         new_message = self._prepend_storage_info_to_sys(messages)
         new_message = self._truncate_dialogue_history(new_message)
 
-        for rsp in super()._run(new_message, lang, max_ref_token, **kwargs):
+        for rsp in super()._run(new_message, lang, knowledge, **kwargs):
             yield rsp
 
     def _prepend_storage_info_to_sys(self, messages: List[Message]) -> List[Message]:
@@ -83,7 +110,7 @@ class MemoAssistant(Assistant):
     def _truncate_dialogue_history(self, messages: List[Message]) -> List[Message]:
         # This simulates a very small window, retaining only the most recent three rounds of conversation
         new_messages = []
-        available_turn = 4
+        available_turn = 400
         k = len(messages) - 1
         while k > -1:
             msg = messages[k]
