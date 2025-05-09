@@ -465,14 +465,13 @@ def build_text_completion_prompt(
     im_start = '<|im_start|>'
     im_end = '<|im_end|>'
 
-    if default_system:
-        if messages and messages[0].role == SYSTEM:
-            sys = messages[0].content
-            assert isinstance(sys, str)
-            prompt = f'{im_start}{SYSTEM}\n{sys}{im_end}'
-            messages = messages[1:]
-        else:
-            prompt = f'{im_start}{SYSTEM}\n{default_system}{im_end}'
+    if messages and messages[0].role == SYSTEM:
+        sys = messages[0].content
+        assert isinstance(sys, str)
+        prompt = f'{im_start}{SYSTEM}\n{sys}{im_end}'
+        messages = messages[1:]
+    else:
+        prompt = f'{im_start}{SYSTEM}\n{default_system}{im_end}'
 
     # Make sure we are completing the chat in the tone of the assistant
     if messages[-1].role != ASSISTANT:
