@@ -473,6 +473,8 @@ def build_text_completion_prompt(
             messages = messages[1:]
         else:
             prompt = f'{im_start}{SYSTEM}\n{default_system}{im_end}'
+    else:
+        prompt = ""
 
     # Make sure we are completing the chat in the tone of the assistant
     if messages[-1].role != ASSISTANT:

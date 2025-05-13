@@ -99,7 +99,7 @@ class OpenVINO(BaseFnCallModel):
     ) -> Iterator[List[Message]]:
         from transformers import TextIteratorStreamer
         generate_cfg = copy.deepcopy(generate_cfg)
-        prompt = build_text_completion_prompt(messages)
+        prompt = build_text_completion_prompt(messages, allow_special=True)
         logger.debug(f'LLM Input:\n{pformat(prompt, indent=2)}')
         input_token = self.tokenizer(prompt, return_tensors='pt').input_ids
         streamer = TextIteratorStreamer(self.tokenizer, timeout=60.0, skip_prompt=True, skip_special_tokens=True)
@@ -132,7 +132,7 @@ class OpenVINO(BaseFnCallModel):
         generate_cfg: dict,
     ) -> List[Message]:
         generate_cfg = copy.deepcopy(generate_cfg)
-        prompt = build_text_completion_prompt(messages)
+        prompt = build_text_completion_prompt(messages, allow_special=True)
         logger.debug(f'LLM Input:\n{pformat(prompt, indent=2)}')
         input_token = self.tokenizer(prompt, return_tensors='pt').input_ids
         generate_cfg.update(
