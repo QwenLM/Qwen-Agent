@@ -123,7 +123,17 @@ def initialize_dashscope(cfg: Optional[Dict] = None) -> None:
         base_websocket_api_url = os.getenv('DASHSCOPE_WEBSOCKET_URL', None)
 
     api_key = api_key.strip()
-    dashscope.api_key = api_key
+    if api_key in ('', 'EMPTY'):
+        if dashscope.api_key is None or dashscope.api_key in ('', 'EMPTY'):
+            logger.warning('No valid dashscope api_key found in cfg, environment variable `DASHSCOPE_API_KEY` or dashscope.api_key, the model call may raise errors.')
+        else:
+            logger.info('No dashscope api_key found in cfg, using the dashscope.api_key that has already been set.')
+    else: # valid api_key
+        if api_key != dashscope.api_key:
+            logger.info('Setting the dashscope api_key.')
+            dashscope.api_key = api_key
+        # or do nothing since both keys are the same
+  
     if base_http_api_url is not None:
         dashscope.base_http_api_url = base_http_api_url.strip()
     if base_websocket_api_url is not None:
