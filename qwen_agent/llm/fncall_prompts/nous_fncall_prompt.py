@@ -59,7 +59,6 @@ class NousFnCallPrompt(BaseFnCallPrompt):
             elif role == FUNCTION:
                 assert isinstance(content, list)
                 assert len(content) == 1
-                assert content[0].text
                 fc = f'<tool_response>\n{content[0].text}\n</tool_response>'
                 content = [ContentItem(text=fc)]
                 if messages[-1].role == USER:

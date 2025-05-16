@@ -320,8 +320,7 @@ def format_as_multimodal_message(
     assert msg.role in (USER, ASSISTANT, SYSTEM, FUNCTION)
     content: List[ContentItem] = []
     if isinstance(msg.content, str):  # if text content
-        if msg.content:
-            content = [ContentItem(text=msg.content)]
+        content = [ContentItem(text=msg.content)]
     elif isinstance(msg.content, list):  # if multimodal content
         files = []
         for item in msg.content:
