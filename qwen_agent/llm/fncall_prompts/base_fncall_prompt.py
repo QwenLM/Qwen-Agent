@@ -53,7 +53,7 @@ class BaseFnCallPrompt(object):
         messages = [
             format_as_multimodal_message(msg,
                                          add_upload_info=True,
-                                         add_multimodel_upload_info=True,
+                                         add_multimodal_upload_info=True,
                                          add_audio_upload_info=True,
                                          lang=lang) for msg in messages
         ]
