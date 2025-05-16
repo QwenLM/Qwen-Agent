@@ -104,7 +104,7 @@ class MyImageGen(BaseTool):
 llm_cfg = {
     # Use the model service provided by DashScope:
     'model': 'qwen-max-latest',
-    'model_server': 'dashscope',
+    'model_type': 'qwen_dashscope',
     # 'api_key': 'YOUR_DASHSCOPE_API_KEY',
     # It will use the `DASHSCOPE_API_KEY' environment variable if 'api_key' is not set here.
 
@@ -208,6 +208,44 @@ winget install git.git sqlite.sqlite
 ## Do you have function calling (aka tool calling)?
 
 Yes. The LLM classes provide [function calling](https://github.com/QwenLM/Qwen-Agent/blob/main/examples/function_calling.py). Additionally, some Agent classes also are built upon the function calling capability, e.g., FnCallAgent and ReActChat.
+
+The current default tool calling template natively supports **Parallel Function Calls**.
+
+## How to pass LLM parameters to the Agent?
+```py
+llm_cfg = {
+    # The model name being used:
+    'model': 'qwen3-32b',
+    # The model service being used:
+    'model_type': 'qwen_dashscope',
+    # If 'api_key' is not set here, it will default to reading the `DASHSCOPE_API_KEY` environment variable:
+    'api_key': 'YOUR_DASHSCOPE_API_KEY',
+
+    # Using an OpenAI API compatible model service, such as vLLM or Ollama:
+    # 'model': 'qwen3-32b',
+    # 'model_server': 'http://localhost:8000/v1',  # base_url, also known as api_base
+    # 'api_key': 'EMPTY',
+
+    # (Optional) LLM hyperparameters:
+    'generate_cfg': {
+        # This parameter will affect the tool-call parsing logic. Default is False:
+          # Set to True: when content is `<think>this is the thought</think>this is the answer`
+          # Set to False: when response consists of reasoning_content and content
+        # 'thought_in_content': True,
+
+        # tool-call template: default is nous (recommended for qwen3):
+        # 'fncall_prompt_type': 'nous'
+
+        # Maximum input length, messages will be truncated if they exceed this length, please adjust according to model API:
+        # 'max_input_tokens': 58000
+
+        # Translation:
+
+        # Parameters that will be passed directly to the model API, such as top_p, enable_thinking, etc., according to the API specifications:
+        # 'top_p': 0.8
+    }
+}
+```
 
 ## How to do question-answering over super-long documents involving 1M tokens?
 

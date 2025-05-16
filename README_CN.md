@@ -97,7 +97,7 @@ class MyImageGen(BaseTool):
 llm_cfg = {
     # 使用 DashScope 提供的模型服务：
     'model': 'qwen-max-latest',
-    'model_server': 'dashscope',
+    'model_type': 'qwen_dashscope',
     # 'api_key': 'YOUR_DASHSCOPE_API_KEY',
     # 如果这里没有设置 'api_key'，它将读取 `DASHSCOPE_API_KEY` 环境变量。
 
@@ -202,6 +202,42 @@ winget install git.git sqlite.sqlite
 ## 支持函数调用（也称为工具调用）吗？
 
 支持，LLM类提供了[函数调用](https://github.com/QwenLM/Qwen-Agent/blob/main/examples/function_calling.py)的支持。此外，一些Agent类如FnCallAgent和ReActChat也是基于函数调用功能构建的。
+
+目前的默认工具调用模版原生支持 **并行工具调用**（Parallel Function call）。
+
+## 如何传递LLM参数给Agent？
+```py
+llm_cfg = {
+    # 使用的模型名：
+    'model': 'qwen3-32b',
+    # 使用的模型服务：
+    'model_type': 'qwen_dashscope',
+    # 如果这里没有设置 'api_key'，它将默认读取 `DASHSCOPE_API_KEY` 环境变量：
+    'api_key': 'YOUR_DASHSCOPE_API_KEY',
+
+    # 使用与 OpenAI API 兼容的模型服务，例如 vLLM 或 Ollama：
+    # 'model': 'qwen3-32b',
+    # 'model_server': 'http://localhost:8000/v1',  # base_url，也称为 api_base
+    # 'api_key': 'EMPTY',
+
+    # （可选） LLM 的超参数：
+    'generate_cfg': {
+        # 这个参数将影响tool-call解析逻辑。默认为False：
+          # 设置为True：当content为 `<think>this is the thought</think>this is the answer`
+          # 设置为False: 当回复为 reasoning_content 和 content
+        # 'thought_in_content': True,
+
+        # tool-call template：默认为nous（qwen3 推荐）
+        # 'fncall_prompt_type': 'nous'
+
+        # 最大输入长度，超过该长度会对messages截断，请根据模型API调整
+        # 'max_input_tokens': 58000
+
+        # 将直接输入模型API的参数，例如top_p, enable_thinking等，根据API规范传入：
+        # 'top_p': 0.8
+    }
+}
+```
 
 ## 如何让AI基于超长文档进行问答？
 
