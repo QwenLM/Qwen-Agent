@@ -239,8 +239,6 @@ llm_cfg = {
         # Maximum input length, messages will be truncated if they exceed this length, please adjust according to model API:
         # 'max_input_tokens': 58000
 
-        # Translation:
-
         # Parameters that will be passed directly to the model API, such as top_p, enable_thinking, etc., according to the API specifications:
         # 'top_p': 0.8
     }

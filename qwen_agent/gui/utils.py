@@ -77,10 +77,13 @@ def convert_fncall_to_text(messages: List[Dict]) -> List[Dict]:
                 if te == -1:
                     te = len(content)
                 thought = content[ti + len('<think>'):te]
-                _content = content[:ti] + THINK.format(thought=thought)
+                if thought.strip():
+                    _content = content[:ti] + THINK.format(thought=thought)
+                else:
+                    _content = content[:ti]
                 if te < len(content):
                     _content += content[te:]
-                content = _content
+                content = _content.strip('\n')
 
             fn_call = msg.get(f'{FUNCTION}_call', {})
             if fn_call:
