@@ -5,6 +5,7 @@ from typing import Optional
 
 from qwen_agent.agents import ReActChat
 from qwen_agent.gui import WebUI
+from qwen_agent.utils.output_beautify import typewriter_print
 
 ROOT_RESOURCE = os.path.join(os.path.dirname(__file__), 'resource')
 
@@ -63,8 +64,11 @@ def app_tui():
             messages.append({'role': 'user', 'content': [{'text': query}, {'file': file}]})
 
         response = []
+        response_plain_text = ''
+
+        print('bot response:')
         for response in bot.run(messages):
-            print('bot response:', response)
+            response_plain_text = typewriter_print(response, response_plain_text)
         messages.extend(response)
 
 
