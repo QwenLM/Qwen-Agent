@@ -70,7 +70,7 @@ def app_tui():
         for response in bot.run(messages):
             response_plain_text = typewriter_print(response, response_plain_text)
         messages.extend(response)
-
+        print('\n')
 
 def app_gui():
     bot = init_agent_service()
