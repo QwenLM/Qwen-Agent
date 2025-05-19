@@ -8,31 +8,6 @@ from qwen_agent.llm import BaseChatModel
 from qwen_agent.llm.schema import DEFAULT_SYSTEM_MESSAGE, SYSTEM, USER, ContentItem, Message
 from qwen_agent.tools import BaseTool
 
-KNOWLEDGE_TEMPLATE_ZH = """# 知识库
-
-{knowledge}"""
-
-KNOWLEDGE_TEMPLATE_EN = """# Knowledge Base
-
-{knowledge}"""
-
-KNOWLEDGE_TEMPLATE = {'zh': KNOWLEDGE_TEMPLATE_ZH, 'en': KNOWLEDGE_TEMPLATE_EN}
-
-KNOWLEDGE_SNIPPET_ZH = """## 来自 {source} 的内容：
-
-```
-{content}
-```"""
-
-KNOWLEDGE_SNIPPET_EN = """## The content from {source}:
-
-```
-{content}
-```"""
-
-KNOWLEDGE_SNIPPET = {'zh': KNOWLEDGE_SNIPPET_ZH, 'en': KNOWLEDGE_SNIPPET_EN}
-
-
 MEMORY_PROMPT = """
 在对话过程中，你可以随时使用storage工具来存储你认为需要记住的信息，同时也随时可以读取曾经可能存储了的历史信息。
 这将有助于你在和用户的长对话中，记住某些重要的信息，比如用户的喜好、特殊信息、或重大事件等。

@@ -131,6 +131,10 @@ class WebUI:
                                               }])
 
                         input = mgr.MultimodalInput(placeholder=self.input_placeholder,)
+                        audio_input = gr.Audio(
+                            sources=["microphone"],
+                            type="filepath"
+                        )
 
                     with gr.Column(scale=1):
                         if len(self.agent_list) > 1:
@@ -163,8 +167,8 @@ class WebUI:
 
                     input_promise = input.submit(
                         fn=self.add_text,
-                        inputs=[input, chatbot, history],
-                        outputs=[input, chatbot, history],
+                        inputs=[input, audio_input, chatbot, history],
+                        outputs=[input, audio_input, chatbot, history],
                         queue=False,
                     )
 
@@ -197,7 +201,7 @@ class WebUI:
         yield agent_selector, self._create_agent_info_block(agent_selector), self._create_agent_plugins_block(
             agent_selector)
 
-    def add_text(self, _input, _chatbot, _history):
+    def add_text(self, _input, _audio_input, _chatbot, _history):
         _history.append({
             ROLE: USER,
             CONTENT: [{
@@ -207,6 +211,12 @@ class WebUI:
 
         if self.user_config[NAME]:
             _history[-1][NAME] = self.user_config[NAME]
+        
+        # if got audio from microphone, append it to the multimodal inputs
+        if _audio_input:
+            from qwen_agent.gui.gradio_dep import gr, mgr, ms
+            audio_input_file = gr.data_classes.FileData(path=_audio_input, mime_type="audio/wav")
+            _input.files.append(audio_input_file)
 
         if _input.files:
             for file in _input.files:
@@ -223,7 +233,7 @@ class WebUI:
 
         from qwen_agent.gui.gradio_dep import gr
 
-        yield gr.update(interactive=False, value=None), _chatbot, _history
+        yield gr.update(interactive=False, value=None), None, _chatbot, _history
 
     def add_mention(self, _chatbot, _agent_selector):
         if len(self.agent_list) == 1:

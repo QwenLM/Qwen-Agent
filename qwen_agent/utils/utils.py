@@ -461,17 +461,23 @@ def build_text_completion_prompt(
     allow_special: bool = False,
     default_system: str = DEFAULT_SYSTEM_MESSAGE,
 ) -> str:
+    logger.warning(
+        'Support for `build_text_completion_prompt` is deprecated. '
+        'Please use `tokenizer.apply_chat_template(...)` instead to construct the prompt from messages.'
+    )
+
     im_start = '<|im_start|>'
     im_end = '<|im_end|>'
 
-    if default_system:
-        if messages and messages[0].role == SYSTEM:
-            sys = messages[0].content
-            assert isinstance(sys, str)
-            prompt = f'{im_start}{SYSTEM}\n{sys}{im_end}'
-            messages = messages[1:]
-        else:
-            prompt = f'{im_start}{SYSTEM}\n{default_system}{im_end}'
+    if messages and messages[0].role == SYSTEM:
+        sys = messages[0].content
+        assert isinstance(sys, str)
+        prompt = f'{im_start}{SYSTEM}\n{sys}{im_end}'
+        messages = messages[1:]
+    elif default_system:
+        prompt = f'{im_start}{SYSTEM}\n{default_system}{im_end}'
+    else:
+        prompt = ''
 
     # Make sure we are completing the chat in the tone of the assistant
     if messages[-1].role != ASSISTANT:
@@ -496,7 +502,9 @@ def build_text_completion_prompt(
         else:
             assert msg.role in (USER, ASSISTANT)
             assert msg.function_call is None
-        prompt += f'\n{im_start}{msg.role}\n{content}{im_end}'
+        if prompt:
+            prompt += '\n'
+        prompt += f'{im_start}{msg.role}\n{content}{im_end}'
 
     assert prompt.endswith(im_end)
     prompt = prompt[:-len(im_end)]

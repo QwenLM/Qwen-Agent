@@ -5,6 +5,7 @@ from .azure import TextChatAtAzure
 from .base import LLM_REGISTRY, BaseChatModel, ModelServiceError
 from .oai import TextChatAtOAI
 from .openvino import OpenVINO
+from .transformers_llm import Transformers
 from .qwen_dashscope import QwenChatAtDS
 from .qwenaudio_dashscope import QwenAudioChatAtDS
 from .qwenomni_oai import QwenOmniChatAtOAI
@@ -94,6 +95,7 @@ __all__ = [
     'QwenAudioChatAtDS',
     'QwenOmniChatAtOAI',
     'OpenVINO',
+    'Transformers',
     'get_chat_model',
     'ModelServiceError',
 ]
