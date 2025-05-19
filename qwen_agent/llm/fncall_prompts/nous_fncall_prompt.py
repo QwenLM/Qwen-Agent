@@ -7,6 +7,7 @@ import json5
 
 from qwen_agent.llm.fncall_prompts.base_fncall_prompt import BaseFnCallPrompt
 from qwen_agent.llm.schema import ASSISTANT, FUNCTION, SYSTEM, USER, ContentItem, FunctionCall, Message
+from qwen_agent.log import logger
 
 
 class NousFnCallPrompt(BaseFnCallPrompt):
@@ -36,7 +37,12 @@ class NousFnCallPrompt(BaseFnCallPrompt):
                 fn_call = msg.function_call
                 if fn_call:
                     if (not SPECIAL_CODE_MODE) or (CODE_TOOL_PATTERN not in fn_call.name):
-                        fc = {'name': fn_call.name, 'arguments': json5.loads(fn_call.arguments)}
+                        arguments = fn_call.arguments
+                        try:
+                            arguments = json5.loads(arguments)
+                        except Exception:
+                            logger.warning('Invalid json tool-calling arguments')
+                        fc = {'name': fn_call.name, 'arguments': arguments}
                         fc = json.dumps(fc, ensure_ascii=False)
                         fc = f'<tool_call>\n{fc}\n</tool_call>'
                     else:
@@ -173,9 +179,9 @@ class NousFnCallPrompt(BaseFnCallPrompt):
                             extra=extra,
                         ))  # split thought and function call
                         new_content = []
+                    fn = None
                     if SPECIAL_CODE_MODE and '<code>' in one_tool_call_txt[0] and '</code>' in one_tool_call_txt[0]:
                         _snips = one_tool_call_txt[0].split('<code>')
-                        fn = None
                         for i, _s in enumerate(_snips):
                             if i == 0:
                                 fn = json5.loads(_s)
@@ -184,17 +190,32 @@ class NousFnCallPrompt(BaseFnCallPrompt):
                                 code = _s.replace('</code>', '')
                                 fn['arguments']['code'] = code
                     else:
-                        fn = json5.loads(one_tool_call_txt[0].strip())
-                    new_messages.append(
-                        Message(
-                            role=ASSISTANT,
-                            content=[],
-                            function_call=FunctionCall(
-                                name=fn['name'],
-                                arguments=json.dumps(fn['arguments'], ensure_ascii=False),
-                            ),
-                            extra=extra,
-                        ))
+                        try:
+                            fn = json5.loads(one_tool_call_txt[0].strip())
+                        except Exception:
+                            logger.warning('Invalid json tool-calling arguments')
+                            fn_name, fn_args = extract_fn(one_tool_call_txt[0].strip())
+                            new_messages.append(
+                                Message(
+                                    role=ASSISTANT,
+                                    content=[],
+                                    function_call=FunctionCall(
+                                        name=fn_name,
+                                        arguments=fn_args,
+                                    ),
+                                    extra=extra,
+                                ))
+                    if fn:
+                        new_messages.append(
+                            Message(
+                                role=ASSISTANT,
+                                content=[],
+                                function_call=FunctionCall(
+                                    name=fn['name'],
+                                    arguments=json.dumps(fn['arguments'], ensure_ascii=False),
+                                ),
+                                extra=extra,
+                            ))
                     # Expected not to output extra tails
                     # if one_tool_call_txt[1].strip():
                     #     new_content.append(ContentItem(text=one_tool_call_txt[1]))
@@ -264,9 +285,9 @@ def extract_fn(text: str):
             fn_name = _text[:j]
     if k > 0:
         fn_args = text[k + len(fn_args_s):]
-
-    if len(fn_args) > 5:
-        fn_args = fn_args[:-5]
+    fn_args = fn_args.strip()
+    if len(fn_args) > 2:
+        fn_args = fn_args[:-1]
     else:
         fn_args = ''
     return fn_name, fn_args
