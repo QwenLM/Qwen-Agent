@@ -6,12 +6,10 @@ import atexit
 import time
 from contextlib import AsyncExitStack
 from typing import Dict, Optional, Union
-
 from dotenv import load_dotenv
 
 from qwen_agent.log import logger
 from qwen_agent.tools.base import BaseTool
-
 
 class MCPManager:
     _instance = None  # Private class variable to store the unique instance
@@ -164,6 +162,67 @@ class MCPManager:
                 agent_tool = self.create_tool_class(register_name=register_name, register_client_id=client_id, 
                                                     tool_name=tool.name, tool_desc=tool.description, tool_parameters=cleaned_parameters)
                 tools.append(agent_tool)
+            
+            if client.resources:
+                """MCP resource example:
+                {
+                    uri: string;           // Unique identifier for the resource
+                    name: string;          // Human-readable name
+                    description?: string;  // Optional description
+                    mimeType?: string;     // Optional MIME type
+                }
+                """
+                # List resources 
+                list_resources_tool_name = server_name + '-' + 'list_resources'
+                list_resources_params = {
+                    'type': 'object',
+                    'properties': {},
+                    'required': []
+                }
+                list_resources_agent_tool = self.create_tool_class(
+                    register_name=list_resources_tool_name,
+                    register_client_id=client_id,
+                    tool_name='list_resources',
+                    tool_desc='Servers expose a list of concrete resources through this tool. By invoking it, you can discover the available resources and obtain resource templates, which help clients understand how to construct valid URIs. These URI formats will be used as input parameters for the read_resource function. ',
+                    tool_parameters=list_resources_params
+                )
+                tools.append(list_resources_agent_tool)
+                
+                # Read resource 
+                resources_template_str = '' # Check if there are resource templates
+                try:
+                    list_resource_templates = await client.session.list_resource_templates() # Check if the server has resources tesmplate
+                    if list_resource_templates.resourceTemplates:
+                        resources_template_str = '\n'.join(str(template) for template in list_resource_templates.resourceTemplates)
+                
+                except Exception as e:
+                    logger.info(f'Failed in listing MCP resource templates: {e}')
+                
+                read_resource_tool_name = server_name + '-' + 'read_resource'
+                read_resource_params = {
+                    'type': 'object',
+                    'properties': {
+                        'uri': {
+                            'type': 'string',
+                            'description': 'The URI identifying the specific resource to access'
+                        }
+                    },
+                    'required': ['uri']
+                }
+                original_tool_desc = 'Request to access a resource provided by a connected MCP server. Resources represent data sources that can be used as context, such as files, API responses, or system information.'
+                if resources_template_str:
+                    tool_desc = original_tool_desc + '\nResource Templates:\n' + resources_template_str
+                else:
+                    tool_desc = original_tool_desc
+                read_resource_agent_tool = self.create_tool_class(
+                    register_name=read_resource_tool_name,
+                    register_client_id=client_id,
+                    tool_name='read_resource',
+                    tool_desc=tool_desc,
+                    tool_parameters=read_resource_params
+                )
+                tools.append(read_resource_agent_tool)
+        
         return tools
 
     def create_tool_class(self, register_name, register_client_id, tool_name, tool_desc, tool_parameters):
@@ -221,7 +280,7 @@ class MCPClient:
         self.session: Optional[ClientSession] = None
         self.tools: list = None
         self.exit_stack = AsyncExitStack()
-
+        self.resources: bool= False
     async def connection_server(self, mcp_server_name, mcp_server):
         from mcp import ClientSession, StdioServerParameters
         from mcp.client.stdio import stdio_client
@@ -247,20 +306,58 @@ class MCPClient:
             await self.session.initialize()
             list_tools = await self.session.list_tools()
             self.tools = list_tools.tools
+            try:    
+                list_resources = await self.session.list_resources() # Check if the server has resources
+                if list_resources.resources:
+                    self.resources = True
+            except Exception as e:
+                logger.info(f"No list resources: {e}")
         except Exception as e:
             logger.info(f"Failed in connecting to MCP server: {e}")
             raise e
 
     async def execute_function(self, tool_name, tool_args: dict):
-        response = await self.session.call_tool(tool_name, tool_args)
-        texts = []
-        for content in response.content:
-            if content.type == 'text':
-                texts.append(content.text)
-        if texts:
-            return '\n\n'.join(texts)
+        from mcp.types import TextResourceContents,BlobResourceContents
+        if tool_name == 'list_resources':
+            try:
+                list_resources = await self.session.list_resources()
+                if list_resources.resources:
+                    resources_str = '\n\n'.join(str(resource) for resource in list_resources.resources)
+                else:
+                    resources_str = 'No resources found'
+                return resources_str
+            except Exception as e:
+                logger.info(f"No list resources: {e}")
+                return f"Error: {e}"
+        elif tool_name == 'read_resource':
+            try:
+                uri = tool_args.get('uri')
+                if not uri:
+                    raise ValueError("URI is required for read_resource")
+                read_resource = await self.session.read_resource(uri)
+                texts = []
+                for resource in read_resource.contents: 
+                    if isinstance(resource, TextResourceContents):
+                        texts.append(resource.text)
+                    # if isinstance(resource, BlobResourceContents):
+                    #     texts.append(resource.blob)
+                if texts:
+                    return '\n\n'.join(texts)
+                else:
+                    return 'Failed to read resource'    
+            except Exception as e:
+                logger.info(f"Failed to read resource: {e}")
+                return f"Error: {e}"
         else:
-            return 'execute error'
+            response = await self.session.call_tool(tool_name, tool_args)
+            texts = []
+            for content in response.content:
+                if content.type == 'text':
+                    texts.append(content.text)
+            if texts:
+                return '\n\n'.join(texts)
+            else:
+                return 'execute error'
 
     async def cleanup(self):
         await self.exit_stack.aclose()
