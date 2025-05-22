@@ -17,7 +17,7 @@ limitations under the License.
 [中文](https://github.com/QwenLM/Qwen-Agent/blob/main/README_CN.md) ｜ English
 
 <p align="center">
-    <img src="https://qianwen-res.oss-cn-beijing.aliyuncs.com/assets/qwen_agent/logo-qwen-agent.png" width="400"/>
+    <img src="https://qianwen-res.oss-accelerate-overseas.aliyuncs.com/logo_qwen_agent.png" width="400"/>
 <p>
 <br>
 
