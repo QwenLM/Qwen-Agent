@@ -285,13 +285,35 @@ class MCPClient:
         from mcp import ClientSession, StdioServerParameters
         from mcp.client.stdio import stdio_client
         from mcp.client.sse import sse_client
+        from mcp.client.streamable_http import streamablehttp_client
         """Connect to an MCP server and retrieve the available tools."""
         try:
             if 'url' in mcp_server:
-                self._streams_context = sse_client(url=mcp_server.get('url'), headers=mcp_server.get('headers', {"Accept": "text/event-stream"}))
-                streams = await self.exit_stack.enter_async_context(self._streams_context)
-                self._session_context = ClientSession(*streams)
-                self.session = await self.exit_stack.enter_async_context(self._session_context)
+                url = mcp_server.get('url')
+                if mcp_server.get('type', 'sse')=='streamable-http':
+                    # streamable-http mode
+                    """streamable-http mode mcp example:
+                    {"mcpServers": {
+                            "streamable-mcp-server": {
+                            "type": "streamable-http",
+                            "url":"http://0.0.0.0:8000/mcp"
+                            }
+                        }
+                    }
+                    """
+                    self._streams_context = streamablehttp_client(url=url)
+                    read_stream, write_stream, get_session_id = await self.exit_stack.enter_async_context(self._streams_context)
+                    self._session_context = ClientSession(read_stream, write_stream)
+                    self.session = await self.exit_stack.enter_async_context(self._session_context)
+                else:
+                    # sse mode
+                    headers = mcp_server.get('headers', {"Accept": "text/event-stream"})
+                    self._streams_context = sse_client(url, headers)
+                    streams = await self.exit_stack.enter_async_context(self._streams_context)
+                    self._session_context = ClientSession(*streams)
+                    self.session = await self.exit_stack.enter_async_context(self._session_context)
+                
+                
             else:
                 server_params = StdioServerParameters(
                     command = mcp_server["command"],
