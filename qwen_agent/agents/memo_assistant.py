@@ -1,3 +1,17 @@
+# Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import copy
 from typing import Dict, Iterator, List, Optional, Union
 
@@ -41,17 +55,11 @@ class MemoAssistant(Assistant):
                          description=description,
                          files=files)
 
-    def _run(self,
-             messages: List[Message],
-             lang: str = 'zh',
-             knowledge: str = '',
-             max_ref_token: int = 4000,
-             **kwargs) -> Iterator[List[Message]]:
-        messages = self._prepend_knowledge_prompt(messages=messages, lang=lang, knowledge=knowledge, **kwargs)
+    def _run(self, messages: List[Message], lang: str = 'zh', knowledge: str = '', **kwargs) -> Iterator[List[Message]]:
         new_message = self._prepend_storage_info_to_sys(messages)
         new_message = self._truncate_dialogue_history(new_message)
 
-        for rsp in super()._run(new_message, lang, knowledge, **kwargs):
+        for rsp in super()._run(new_message, lang=lang, knowledge=knowledge, **kwargs):
             yield rsp
 
     def _prepend_storage_info_to_sys(self, messages: List[Message]) -> List[Message]:
