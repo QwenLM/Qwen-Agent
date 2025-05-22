@@ -28,7 +28,7 @@ llm_cfg = {
             # Use your own model service compatible with OpenAI API:
             # 'model': 'Qwen',
             # 'model_server': 'http://127.0.0.1:7905/v1',
-            # (Optional) LLM hyper-paramters:
+            # (Optional) LLM hyper-parameters:
             'generate_cfg': {
                 'top_p': 0.8
             }
