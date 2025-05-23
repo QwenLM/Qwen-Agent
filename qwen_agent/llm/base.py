@@ -122,7 +122,7 @@ class BaseChatModel(ABC):
             delta_stream: Whether to stream the response incrementally.
               (1) When False (recommended): Stream the full response every iteration.
               (2) When True: Stream the chunked response, i.e, delta responses.
-            extra_generate_cfg: Extra LLM generation hyper-paramters.
+            extra_generate_cfg: Extra LLM generation hyper-parameters.
 
         Returns:
             the generated message list response by llm.
