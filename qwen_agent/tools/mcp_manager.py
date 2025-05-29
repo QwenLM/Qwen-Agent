@@ -1,11 +1,11 @@
 # Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #    http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -13,19 +13,20 @@
 # limitations under the License.
 
 import asyncio
+import atexit
+import datetime
 import json
 import threading
-import uuid
-import atexit
 import time
+import uuid
 from contextlib import AsyncExitStack
 from typing import Dict, Optional, Union
+
 from dotenv import load_dotenv
-import contextlib
-import datetime
 
 from qwen_agent.log import logger
 from qwen_agent.tools.base import BaseTool
+
 
 class MCPManager:
     _instance = None  # Private class variable to store the unique instance
@@ -36,10 +37,10 @@ class MCPManager:
         return cls._instance
 
     def __init__(self):
-        if not hasattr(self, 'clients'): # The singleton should only be inited once
+        if not hasattr(self, 'clients'):  # The singleton should only be inited once
             """Set a new event loop in a separate thread"""
             try:
-                import mcp
+                import mcp  # noqa
             except ImportError as e:
                 raise ImportError('Could not import mcp. Please install mcp with `pip install -U mcp`.') from e
 
@@ -52,41 +53,40 @@ class MCPManager:
             # A fallback way to terminate MCP tool processes after Qwen-Agent exits
             self.processes = []
             self.monkey_patch_mcp_create_platform_compatible_process()
-    
+
     def monkey_patch_mcp_create_platform_compatible_process(self):
         try:
             import mcp.client.stdio
             target = mcp.client.stdio._create_platform_compatible_process
         except (ModuleNotFoundError, AttributeError) as e:
-            raise ImportError(
-                'Qwen-Agent needs to monkey patch MCP for process cleanup. '
-                'Please upgrade MCP to a higher version with `pip install -U mcp`.'
-            ) from e
+            raise ImportError('Qwen-Agent needs to monkey patch MCP for process cleanup. '
+                              'Please upgrade MCP to a higher version with `pip install -U mcp`.') from e
 
         async def _monkey_patched_create_platform_compatible_process(*args, **kwargs):
             process = await target(*args, **kwargs)
             self.processes.append(process)
             return process
+
         mcp.client.stdio._create_platform_compatible_process = _monkey_patched_create_platform_compatible_process
 
     def start_loop(self):
         asyncio.set_event_loop(self.loop)
-        
+
         # Set a global exception handler to silently handle cross-task exceptions from MCP SSE connections
         def exception_handler(loop, context):
             exception = context.get('exception')
             if exception:
                 # Silently handle cross-task exceptions from MCP SSE connections
-                if (isinstance(exception, RuntimeError) and 
-                    'Attempted to exit cancel scope in a different task' in str(exception)):
+                if (isinstance(exception, RuntimeError) and
+                        'Attempted to exit cancel scope in a different task' in str(exception)):
                     return  # Silently ignore this type of exception
-                if (isinstance(exception, BaseExceptionGroup) and 
-                    'Attempted to exit cancel scope in a different task' in str(exception)):
+                if (isinstance(exception, BaseExceptionGroup) and  # noqa
+                        'Attempted to exit cancel scope in a different task' in str(exception)):  # noqa
                     return  # Silently ignore this type of exception
-            
+
             # Other exceptions are handled normally
             loop.default_exception_handler(context)
-        
+
         self.loop.set_exception_handler(exception_handler)
         self.loop.run_forever()
 
@@ -154,9 +154,11 @@ class MCPManager:
         for server_name in mcp_servers:
             client = MCPClient()
             server = mcp_servers[server_name]
-            await client.connection_server(mcp_server_name=server_name, mcp_server=server)  # Attempt to connect to the server
+            await client.connection_server(mcp_server_name=server_name,
+                                           mcp_server=server)  # Attempt to connect to the server
 
-            client_id = server_name + '_' + str(uuid.uuid4()) # To allow the same server name be used across different running agents
+            client_id = server_name + '_' + str(
+                uuid.uuid4())  # To allow the same server name be used across different running agents
             client.client_id = client_id  # Ensure client_id is set on the client instance
             self.clients[client_id] = client  # Add to clients dict after successful connection
             for tool in client.tools:
@@ -193,10 +195,13 @@ class MCPManager:
                     'required': parameters['required']
                 }
                 register_name = server_name + '-' + tool.name
-                agent_tool = self.create_tool_class(register_name=register_name, register_client_id=client_id, 
-                                                    tool_name=tool.name, tool_desc=tool.description, tool_parameters=cleaned_parameters)
+                agent_tool = self.create_tool_class(register_name=register_name,
+                                                    register_client_id=client_id,
+                                                    tool_name=tool.name,
+                                                    tool_desc=tool.description,
+                                                    tool_parameters=cleaned_parameters)
                 tools.append(agent_tool)
-            
+
             if client.resources:
                 """MCP resource example:
                 {
@@ -206,32 +211,31 @@ class MCPManager:
                     mimeType?: string;     // Optional MIME type
                 }
                 """
-                # List resources 
+                # List resources
                 list_resources_tool_name = server_name + '-' + 'list_resources'
-                list_resources_params = {
-                    'type': 'object',
-                    'properties': {},
-                    'required': []
-                }
+                list_resources_params = {'type': 'object', 'properties': {}, 'required': []}
                 list_resources_agent_tool = self.create_tool_class(
                     register_name=list_resources_tool_name,
                     register_client_id=client_id,
                     tool_name='list_resources',
-                    tool_desc='Servers expose a list of concrete resources through this tool. By invoking it, you can discover the available resources and obtain resource templates, which help clients understand how to construct valid URIs. These URI formats will be used as input parameters for the read_resource function. ',
-                    tool_parameters=list_resources_params
-                )
+                    tool_desc='Servers expose a list of concrete resources through this tool. '
+                    'By invoking it, you can discover the available resources and obtain resource templates, which help clients understand how to construct valid URIs. '
+                    'These URI formats will be used as input parameters for the read_resource function. ',
+                    tool_parameters=list_resources_params)
                 tools.append(list_resources_agent_tool)
-                
-                # Read resource 
-                resources_template_str = '' # Check if there are resource templates
+
+                # Read resource
+                resources_template_str = ''  # Check if there are resource templates
                 try:
-                    list_resource_templates = await client.session.list_resource_templates() # Check if the server has resources tesmplate
+                    list_resource_templates = await client.session.list_resource_templates(
+                    )  # Check if the server has resources tesmplate
                     if list_resource_templates.resourceTemplates:
-                        resources_template_str = '\n'.join(str(template) for template in list_resource_templates.resourceTemplates)
-                
+                        resources_template_str = '\n'.join(
+                            str(template) for template in list_resource_templates.resourceTemplates)
+
                 except Exception as e:
                     logger.info(f'Failed in listing MCP resource templates: {e}')
-                
+
                 read_resource_tool_name = server_name + '-' + 'read_resource'
                 read_resource_params = {
                     'type': 'object',
@@ -248,15 +252,13 @@ class MCPManager:
                     tool_desc = original_tool_desc + '\nResource Templates:\n' + resources_template_str
                 else:
                     tool_desc = original_tool_desc
-                read_resource_agent_tool = self.create_tool_class(
-                    register_name=read_resource_tool_name,
-                    register_client_id=client_id,
-                    tool_name='read_resource',
-                    tool_desc=tool_desc,
-                    tool_parameters=read_resource_params
-                )
+                read_resource_agent_tool = self.create_tool_class(register_name=read_resource_tool_name,
+                                                                  register_client_id=client_id,
+                                                                  tool_name='read_resource',
+                                                                  tool_desc=tool_desc,
+                                                                  tool_parameters=read_resource_params)
                 tools.append(read_resource_agent_tool)
-        
+
         return tools
 
     def create_tool_class(self, register_name, register_client_id, tool_name, tool_desc, tool_parameters):
@@ -286,21 +288,23 @@ class MCPManager:
     def shutdown(self):
         futures = []
         for client_id in list(self.clients.keys()):
-            client :MCPClient = self.clients[client_id]
+            client: MCPClient = self.clients[client_id]
             future = asyncio.run_coroutine_threadsafe(client.cleanup(), self.loop)
             futures.append(future)
             del self.clients[client_id]
-        time.sleep(1) # Wait for the graceful cleanups, otherwise fall back
-        
+        time.sleep(1)  # Wait for the graceful cleanups, otherwise fall back
+
         # fallback
         if asyncio.all_tasks(self.loop):
-            logger.info('There are still tasks in `MCPManager().loop`, force terminating the MCP tool processes. There may be some exceptions.')
+            logger.info(
+                'There are still tasks in `MCPManager().loop`, force terminating the MCP tool processes. There may be some exceptions.'
+            )
             for process in self.processes:
                 try:
                     process.terminate()
                 except ProcessLookupError:
-                    pass # it's ok, the process may exit earlier
-        
+                    pass  # it's ok, the process may exit earlier
+
         self.loop.call_soon_threadsafe(self.loop.stop)
         self.loop_thread.join()
 
@@ -312,27 +316,27 @@ class MCPClient:
         self.session: Optional[ClientSession] = None
         self.tools: list = None
         self.exit_stack = AsyncExitStack()
-        self.resources: bool= False
+        self.resources: bool = False
         self._last_mcp_server_name = None
         self._last_mcp_server = None
         self.client_id = None  # For replacing in MCPManager.clients
 
     async def connection_server(self, mcp_server_name, mcp_server):
         from mcp import ClientSession, StdioServerParameters
-        from mcp.client.stdio import stdio_client
         from mcp.client.sse import sse_client
+        from mcp.client.stdio import stdio_client
         from mcp.client.streamable_http import streamablehttp_client
         """Connect to an MCP server and retrieve the available tools."""
         # Save parameters
         self._last_mcp_server_name = mcp_server_name
         self._last_mcp_server = mcp_server
-        
+
         try:
             if 'url' in mcp_server:
                 url = mcp_server.get('url')
                 sse_read_timeout = mcp_server.get('sse_read_timeout', 300)
-                print(f"sse_read_timeout: {sse_read_timeout}")
-                if mcp_server.get('type', 'sse')=='streamable-http':
+                logger.info(f'{mcp_server_name} sse_read_timeout: {sse_read_timeout}s')
+                if mcp_server.get('type', 'sse') == 'streamable-http':
                     # streamable-http mode
                     """streamable-http mode mcp example:
                     {"mcpServers": {
@@ -343,53 +347,58 @@ class MCPClient:
                         }
                     }
                     """
-                    self._streams_context = streamablehttp_client(url=url, sse_read_timeout=datetime.timedelta(seconds=sse_read_timeout))
-                    read_stream, write_stream, get_session_id = await self.exit_stack.enter_async_context(self._streams_context)
+                    self._streams_context = streamablehttp_client(
+                        url=url, sse_read_timeout=datetime.timedelta(seconds=sse_read_timeout))
+                    read_stream, write_stream, get_session_id = await self.exit_stack.enter_async_context(
+                        self._streams_context)
                     self._session_context = ClientSession(read_stream, write_stream)
                     self.session = await self.exit_stack.enter_async_context(self._session_context)
                 else:
                     # sse mode
-                    headers = mcp_server.get('headers', {"Accept": "text/event-stream"})
+                    headers = mcp_server.get('headers', {'Accept': 'text/event-stream'})
                     self._streams_context = sse_client(url, headers, sse_read_timeout=sse_read_timeout)
                     streams = await self.exit_stack.enter_async_context(self._streams_context)
                     self._session_context = ClientSession(*streams)
                     self.session = await self.exit_stack.enter_async_context(self._session_context)
             else:
-                server_params = StdioServerParameters(
-                    command = mcp_server["command"],
-                    args = mcp_server["args"],
-                    env = mcp_server.get("env", None)
-                )
+                server_params = StdioServerParameters(command=mcp_server['command'],
+                                                      args=mcp_server['args'],
+                                                      env=mcp_server.get('env', None))
                 stdio_transport = await self.exit_stack.enter_async_context(stdio_client(server_params))
                 self.stdio, self.write = stdio_transport
                 self.session = await self.exit_stack.enter_async_context(ClientSession(self.stdio, self.write))
-                logger.info(f'Initializing a MCP stdio_client, if this takes forever, please check the config of this mcp server: {mcp_server_name}')
+                logger.info(
+                    f'Initializing a MCP stdio_client, if this takes forever, please check the config of this mcp server: {mcp_server_name}'
+                )
 
             await self.session.initialize()
             list_tools = await self.session.list_tools()
             self.tools = list_tools.tools
-            try:    
-                list_resources = await self.session.list_resources() # Check if the server has resources
+            try:
+                list_resources = await self.session.list_resources()  # Check if the server has resources
                 if list_resources.resources:
                     self.resources = True
-            except Exception as e:
-                logger.info(f"No list resources: {e}")
-                
+            except Exception:
+                # logger.info(f"No list resources: {e}")
+                pass
         except Exception as e:
-            logger.info(f"Failed in connecting to MCP server: {e}")
+            logger.warning(f'Failed in connecting to MCP server: {e}')
             raise e
 
     async def reconnect(self):
         # Create a new MCPClient and connect
         if self.client_id is None:
-            raise RuntimeError("Cannot reconnect: client_id is None. This usually means the client was not properly registered in MCPManager.")
+            raise RuntimeError(
+                'Cannot reconnect: client_id is None. This usually means the client was not properly registered in MCPManager.'
+            )
         new_client = MCPClient()
         new_client.client_id = self.client_id
         await new_client.connection_server(self._last_mcp_server_name, self._last_mcp_server)
         return new_client
 
     async def execute_function(self, tool_name, tool_args: dict):
-        from mcp.types import TextResourceContents,BlobResourceContents
+        from mcp.types import TextResourceContents
+
         # Check if session is alive
         try:
             await self.session.send_ping()
@@ -403,11 +412,11 @@ class MCPClient:
                     manager.clients[self.client_id] = await self.reconnect()
                     return await manager.clients[self.client_id].execute_function(tool_name, tool_args)
                 else:
-                    logger.info("Reconnect failed: client_id is None")
-                    return "Session reconnect (client creation) exception: client_id is None"
+                    logger.info('Reconnect failed: client_id is None')
+                    return 'Session reconnect (client creation) exception: client_id is None'
             except Exception as e3:
-                logger.info(f"Reconnect (client creation) exception type: {type(e3)}, value: {repr(e3)}")
-                return f"Session reconnect (client creation) exception: {e3}"
+                logger.info(f'Reconnect (client creation) exception type: {type(e3)}, value: {repr(e3)}')
+                return f'Session reconnect (client creation) exception: {e3}'
         if tool_name == 'list_resources':
             try:
                 list_resources = await self.session.list_resources()
@@ -417,16 +426,16 @@ class MCPClient:
                     resources_str = 'No resources found'
                 return resources_str
             except Exception as e:
-                logger.info(f"No list resources: {e}")
-                return f"Error: {e}"
+                logger.info(f'No list resources: {e}')
+                return f'Error: {e}'
         elif tool_name == 'read_resource':
             try:
                 uri = tool_args.get('uri')
                 if not uri:
-                    raise ValueError("URI is required for read_resource")
+                    raise ValueError('URI is required for read_resource')
                 read_resource = await self.session.read_resource(uri)
                 texts = []
-                for resource in read_resource.contents: 
+                for resource in read_resource.contents:
                     if isinstance(resource, TextResourceContents):
                         texts.append(resource.text)
                     # if isinstance(resource, BlobResourceContents):
@@ -434,10 +443,10 @@ class MCPClient:
                 if texts:
                     return '\n\n'.join(texts)
                 else:
-                    return 'Failed to read resource'    
+                    return 'Failed to read resource'
             except Exception as e:
-                logger.info(f"Failed to read resource: {e}")
-                return f"Error: {e}"
+                logger.info(f'Failed to read resource: {e}')
+                return f'Error: {e}'
         else:
             response = await self.session.call_tool(tool_name, tool_args)
             texts = []

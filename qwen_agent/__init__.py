@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__version__ = '0.0.25'
+__version__ = '0.0.26'
 from .agent import Agent
 from .multi_agent_hub import MultiAgentHub
 

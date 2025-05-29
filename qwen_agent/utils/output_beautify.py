@@ -1,11 +1,11 @@
 # Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #    http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,6 +21,7 @@ TOOL_CALL_E = ''
 TOOL_RESULT_S = '[TOOL_RESPONSE]'
 TOOL_RESULT_E = ''
 THOUGHT_S = '[THINK]'
+ANSWER_S = '[ANSWER]'
 
 
 def typewriter_print(messages: List[dict], text: str) -> str:
@@ -33,7 +34,7 @@ def typewriter_print(messages: List[dict], text: str) -> str:
                 content.append(f'{THOUGHT_S}\n{msg["reasoning_content"]}')
             if msg.get('content'):
                 assert isinstance(msg['content'], str), 'Now only supports text messages'
-                content.append(msg['content'])
+                content.append(f'{ANSWER_S}\n{msg["content"]}')
             if msg.get('function_call'):
                 content.append(f'{TOOL_CALL_S} {msg["function_call"]["name"]}\n{msg["function_call"]["arguments"]}')
         elif msg['role'] == FUNCTION:
