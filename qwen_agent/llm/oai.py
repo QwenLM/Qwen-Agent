@@ -117,13 +117,27 @@ class TextChatAtOAI(BaseFnCallModel):
             else:
                 full_response = ''
                 full_reasoning_content = ''
+                in_thinking = False
                 for chunk in response:
                     if chunk.choices:
                         if hasattr(chunk.choices[0].delta,
                                    'reasoning_content') and chunk.choices[0].delta.reasoning_content:
                             full_reasoning_content += chunk.choices[0].delta.reasoning_content
                         if hasattr(chunk.choices[0].delta, 'content') and chunk.choices[0].delta.content:
-                            full_response += chunk.choices[0].delta.content
+                            #full_response += chunk.choices[0].delta.content
+                            content = chunk.choices[0].delta.content
+                            # ollama adaptation
+                            if "<think>" in content:
+                                in_thinking = True
+                                full_reasoning_content = content.replace("<think>", "")
+                            elif "</think>" in content:
+                                in_thinking = False
+                                full_reasoning_content += content.replace("</think>", "")
+                            elif in_thinking:
+                                full_reasoning_content += content
+                            else:
+                                # normal content
+                                full_response += content
                         yield [Message(role=ASSISTANT, content=full_response, reasoning_content=full_reasoning_content)]
         except OpenAIError as ex:
             raise ModelServiceError(exception=ex)
@@ -143,7 +157,21 @@ class TextChatAtOAI(BaseFnCallModel):
                             reasoning_content=response.choices[0].message.reasoning_content)
                 ]
             else:
-                return [Message(role=ASSISTANT, content=response.choices[0].message.content)]
+                #return [Message(role=ASSISTANT, content=response.choices[0].message.content)]
+                import re
+                content = response.choices[0].message.content
+                # ollama adaptation
+                # extract think content
+                think_pattern = r'<think>(.*?)</think>'
+                matches = re.findall(think_pattern, content, re.DOTALL)
+                if matches:
+                    # extract all think content
+                    think_reasoning = '\n'.join(matches).strip()
+                    # remove all think tags and content from content
+                    cleaned_content = re.sub(think_pattern, '', content, flags=re.DOTALL).strip()
+                    return [Message(role=ASSISTANT, content=cleaned_content, reasoning_content=think_reasoning)]
+                else:
+                    return [Message(role=ASSISTANT, content=content)]
         except OpenAIError as ex:
             raise ModelServiceError(exception=ex)
 
