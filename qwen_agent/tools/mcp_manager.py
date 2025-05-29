@@ -21,6 +21,8 @@ import time
 from contextlib import AsyncExitStack
 from typing import Dict, Optional, Union
 from dotenv import load_dotenv
+import contextlib
+import datetime
 
 from qwen_agent.log import logger
 from qwen_agent.tools.base import BaseTool
@@ -69,6 +71,23 @@ class MCPManager:
 
     def start_loop(self):
         asyncio.set_event_loop(self.loop)
+        
+        # Set a global exception handler to silently handle cross-task exceptions from MCP SSE connections
+        def exception_handler(loop, context):
+            exception = context.get('exception')
+            if exception:
+                # Silently handle cross-task exceptions from MCP SSE connections
+                if (isinstance(exception, RuntimeError) and 
+                    'Attempted to exit cancel scope in a different task' in str(exception)):
+                    return  # Silently ignore this type of exception
+                if (isinstance(exception, BaseExceptionGroup) and 
+                    'Attempted to exit cancel scope in a different task' in str(exception)):
+                    return  # Silently ignore this type of exception
+            
+            # Other exceptions are handled normally
+            loop.default_exception_handler(context)
+        
+        self.loop.set_exception_handler(exception_handler)
         self.loop.run_forever()
 
     def is_valid_mcp_servers(self, config: dict):
@@ -138,6 +157,7 @@ class MCPManager:
             await client.connection_server(mcp_server_name=server_name, mcp_server=server)  # Attempt to connect to the server
 
             client_id = server_name + '_' + str(uuid.uuid4()) # To allow the same server name be used across different running agents
+            client.client_id = client_id  # Ensure client_id is set on the client instance
             self.clients[client_id] = client  # Add to clients dict after successful connection
             for tool in client.tools:
                 """MCP tool example:
@@ -251,7 +271,7 @@ class MCPManager:
                 tool_args = json.loads(params)
                 # Submit coroutine to the event loop and wait for the result
                 manager = MCPManager()
-                client = manager.clients[register_client_id]
+                client = manager.clients[self.client_id]
                 future = asyncio.run_coroutine_threadsafe(client.execute_function(tool_name, tool_args), manager.loop)
                 try:
                     result = future.result()
@@ -289,21 +309,29 @@ class MCPClient:
 
     def __init__(self):
         from mcp import ClientSession
-
-        # Initialize session and client objects
         self.session: Optional[ClientSession] = None
         self.tools: list = None
         self.exit_stack = AsyncExitStack()
         self.resources: bool= False
+        self._last_mcp_server_name = None
+        self._last_mcp_server = None
+        self.client_id = None  # For replacing in MCPManager.clients
+
     async def connection_server(self, mcp_server_name, mcp_server):
         from mcp import ClientSession, StdioServerParameters
         from mcp.client.stdio import stdio_client
         from mcp.client.sse import sse_client
         from mcp.client.streamable_http import streamablehttp_client
         """Connect to an MCP server and retrieve the available tools."""
+        # Save parameters
+        self._last_mcp_server_name = mcp_server_name
+        self._last_mcp_server = mcp_server
+        
         try:
             if 'url' in mcp_server:
                 url = mcp_server.get('url')
+                sse_read_timeout = mcp_server.get('sse_read_timeout', 300)
+                print(f"sse_read_timeout: {sse_read_timeout}")
                 if mcp_server.get('type', 'sse')=='streamable-http':
                     # streamable-http mode
                     """streamable-http mode mcp example:
@@ -315,19 +343,17 @@ class MCPClient:
                         }
                     }
                     """
-                    self._streams_context = streamablehttp_client(url=url)
+                    self._streams_context = streamablehttp_client(url=url, sse_read_timeout=datetime.timedelta(seconds=sse_read_timeout))
                     read_stream, write_stream, get_session_id = await self.exit_stack.enter_async_context(self._streams_context)
                     self._session_context = ClientSession(read_stream, write_stream)
                     self.session = await self.exit_stack.enter_async_context(self._session_context)
                 else:
                     # sse mode
                     headers = mcp_server.get('headers', {"Accept": "text/event-stream"})
-                    self._streams_context = sse_client(url, headers)
+                    self._streams_context = sse_client(url, headers, sse_read_timeout=sse_read_timeout)
                     streams = await self.exit_stack.enter_async_context(self._streams_context)
                     self._session_context = ClientSession(*streams)
                     self.session = await self.exit_stack.enter_async_context(self._session_context)
-                
-                
             else:
                 server_params = StdioServerParameters(
                     command = mcp_server["command"],
@@ -348,12 +374,40 @@ class MCPClient:
                     self.resources = True
             except Exception as e:
                 logger.info(f"No list resources: {e}")
+                
         except Exception as e:
             logger.info(f"Failed in connecting to MCP server: {e}")
             raise e
 
+    async def reconnect(self):
+        # Create a new MCPClient and connect
+        if self.client_id is None:
+            raise RuntimeError("Cannot reconnect: client_id is None. This usually means the client was not properly registered in MCPManager.")
+        new_client = MCPClient()
+        new_client.client_id = self.client_id
+        await new_client.connection_server(self._last_mcp_server_name, self._last_mcp_server)
+        return new_client
+
     async def execute_function(self, tool_name, tool_args: dict):
         from mcp.types import TextResourceContents,BlobResourceContents
+        # Check if session is alive
+        try:
+            await self.session.send_ping()
+        except Exception as e:
+            logger.info(f"Session is not alive, please increase 'sse_read_timeout' in the config, try reconnect: {e}")
+            # Auto reconnect
+            try:
+                from qwen_agent.tools.mcp_manager import MCPManager
+                manager = MCPManager()
+                if self.client_id is not None:
+                    manager.clients[self.client_id] = await self.reconnect()
+                    return await manager.clients[self.client_id].execute_function(tool_name, tool_args)
+                else:
+                    logger.info("Reconnect failed: client_id is None")
+                    return "Session reconnect (client creation) exception: client_id is None"
+            except Exception as e3:
+                logger.info(f"Reconnect (client creation) exception type: {type(e3)}, value: {repr(e3)}")
+                return f"Session reconnect (client creation) exception: {e3}"
         if tool_name == 'list_resources':
             try:
                 list_resources = await self.session.list_resources()
