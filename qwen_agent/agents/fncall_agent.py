@@ -22,6 +22,7 @@ from qwen_agent.memory import Memory
 from qwen_agent.settings import MAX_LLM_CALL_PER_RUN
 from qwen_agent.tools import BaseTool
 from qwen_agent.utils.utils import extract_files_from_messages
+import types
 
 
 class FnCallAgent(Agent):
@@ -95,14 +96,26 @@ class FnCallAgent(Agent):
                     use_tool, tool_name, tool_args, _ = self._detect_tool(out)
                     if use_tool:
                         tool_result = self._call_tool(tool_name, tool_args, messages=messages, **kwargs)
-                        fn_msg = Message(
-                            role=FUNCTION,
-                            name=tool_name,
-                            content=tool_result,
-                        )
-                        messages.append(fn_msg)
-                        response.append(fn_msg)
-                        yield response
+                        if not isinstance(tool_result, types.GeneratorType):
+                            fn_msg = Message(
+                                role=FUNCTION,
+                                name=tool_name,
+                                content=tool_result,
+                            )
+                            messages.append(fn_msg)
+                            response.append(fn_msg)
+                            yield response
+                        else:
+                            for content in tool_result:
+                                fn_msg = Message(
+                                    role=FUNCTION,
+                                    name=tool_name,
+                                    content=str(content),
+                                )
+                                yield response + [fn_msg]
+                            messages.append(fn_msg)
+                            response.append(fn_msg)
+                            yield response
                         used_any_tool = True
                 if not used_any_tool:
                     break
