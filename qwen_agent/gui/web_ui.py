@@ -78,6 +78,22 @@ class WebUI:
 
     Args:
         messages: The chat history.
+        share: Whether to create a publicly shareable link for the Gradio interface.
+        server_name: The server name to use for the Gradio interface.
+        server_port: The server port to use for the Gradio interface.
+        concurrency_limit: The maximum number of concurrent Gradio requests.
+        enable_mention: Whether to enable agent mentioning in the chat.
+        custom_app_setup_fn: An optional callable that will be invoked with the
+            underlying FastAPI application instance (`demo.app`) before the Gradio
+            app is launched. This allows for custom FastAPI routes or middleware
+            to be added.
+            Example:
+                def my_setup(app: FastAPI):
+                    @app.get("/custom")
+                    async def read_custom():
+                        return {"message": "Custom route"}
+                WebUI(...).run(custom_app_setup_fn=my_setup)
+        **kwargs: Additional keyword arguments to pass to the agent's `run` method.
     """
 
     def run(self,
@@ -87,6 +103,7 @@ class WebUI:
             server_port: int = None,
             concurrency_limit: int = 10,
             enable_mention: bool = False,
+            custom_app_setup_fn=None,
             **kwargs):
         self.run_kwargs = kwargs
 
@@ -206,6 +223,9 @@ class WebUI:
                     input_promise.then(self.flushed, None, [input])
 
             demo.load(None)
+
+        if custom_app_setup_fn and hasattr(demo, 'app'):
+            custom_app_setup_fn(demo.app)
 
         demo.queue(default_concurrency_limit=concurrency_limit).launch(share=share,
                                                                        server_name=server_name,
