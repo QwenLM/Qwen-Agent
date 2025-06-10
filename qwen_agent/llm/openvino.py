@@ -1,3 +1,17 @@
+# Copyright 2024 Intel Corporation. All rights reserved.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#    http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import copy
 from pprint import pformat
 from threading import Thread
@@ -26,8 +40,7 @@ class OpenVINO(BaseFnCallModel):
             'model_type': 'openvino',
             'device': 'cpu'
             }
-        system_instruction = '''You are a helpful assistant.
-        After receiving the user's request, you should:
+        system_instruction = '''After receiving the user's request, you should:
         - first draw an image and obtain the image url,
         - then run code `request.get(image_url)` to download the image,
         - and finally select an image operation from the given document to process the image.
@@ -100,9 +113,8 @@ class OpenVINO(BaseFnCallModel):
     ) -> Iterator[List[Message]]:
         from transformers import TextIteratorStreamer
         generate_cfg = copy.deepcopy(generate_cfg)
-        prompt = build_text_completion_prompt(messages)
-        logger.debug(f'LLM Input:\n{pformat(prompt, indent=2)}')
-        input_token = self.tokenizer(prompt, return_tensors='pt').input_ids
+        messages_plain = [message.model_dump() for message in messages]
+        input_token = self.tokenizer.apply_chat_template(messages_plain, add_generation_prompt=True, return_tensors='pt').to(self.ov_model.device)
         streamer = TextIteratorStreamer(self.tokenizer, timeout=60.0, skip_prompt=True, skip_special_tokens=True)
         generate_cfg.update(
             dict(
@@ -133,9 +145,8 @@ class OpenVINO(BaseFnCallModel):
         generate_cfg: dict,
     ) -> List[Message]:
         generate_cfg = copy.deepcopy(generate_cfg)
-        prompt = build_text_completion_prompt(messages)
-        logger.debug(f'LLM Input:\n{pformat(prompt, indent=2)}')
-        input_token = self.tokenizer(prompt, return_tensors='pt').input_ids
+        messages_plain = [message.model_dump() for message in messages]
+        input_token = self.tokenizer.apply_chat_template(messages_plain, add_generation_prompt=True, return_tensors='pt').to(self.ov_model.device)
         generate_cfg.update(
             dict(
                 input_ids=input_token,

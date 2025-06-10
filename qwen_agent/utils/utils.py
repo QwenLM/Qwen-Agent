@@ -1,3 +1,17 @@
+# Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#    http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import base64
 import copy
 import hashlib
@@ -314,13 +328,13 @@ def format_as_multimodal_message(
     msg: Message,
     add_upload_info: bool,
     add_multimodel_upload_info: bool,
+    add_audio_upload_info: bool,
     lang: Literal['auto', 'en', 'zh'] = 'auto',
 ) -> Message:
     assert msg.role in (USER, ASSISTANT, SYSTEM, FUNCTION)
     content: List[ContentItem] = []
     if isinstance(msg.content, str):  # if text content
-        if msg.content:
-            content = [ContentItem(text=msg.content)]
+        content = [ContentItem(text=msg.content)]
     elif isinstance(msg.content, list):  # if multimodal content
         files = []
         for item in msg.content:
@@ -329,23 +343,46 @@ def format_as_multimodal_message(
                 content.append(item)
             if k == 'file':
                 # Move 'file' out of 'content' since it's not natively supported by models
-                files.append(v)
-            if add_multimodel_upload_info and k == 'image':
+                files.append((v, k))
+            if add_multimodel_upload_info and k in ('image', 'video'):
                 # Indicate the image name
-                # Not considering audio and video for now
-                files.append(v)
+                if isinstance(v, str):
+                    files.append((v, k))
+                elif isinstance(v, list):
+                    for _v in v:
+                        files.append((_v, k))
+                else:
+                    raise TypeError
+
+            if add_audio_upload_info and k == 'audio':
+                if isinstance(v, str):
+                    files.append((v, k))
+                elif isinstance(v, dict):
+                    files.append((v['data'], k))
+                else:
+                    raise TypeError
         if add_upload_info and files and (msg.role in (SYSTEM, USER)):
             if lang == 'auto':
                 has_zh = has_chinese_chars(msg)
             else:
                 has_zh = (lang == 'zh')
             upload = []
-            for f in [get_basename_from_url(f) for f in files]:
-                if is_image(f):
+            for f, k in [(get_basename_from_url(f), k) for f, k in files]:
+                if k == 'image':
                     if has_zh:
                         upload.append(f'![图片]({f})')
                     else:
                         upload.append(f'![image]({f})')
+                elif k == 'video':
+                    if has_zh:
+                        upload.append(f'![视频]({f})')
+                    else:
+                        upload.append(f'![video]({f})')
+                elif k == 'audio':
+                    if has_zh:
+                        upload.append(f'![音频]({f})')
+                    else:
+                        upload.append(f'![audio]({f})')
                 else:
                     if has_zh:
                         upload.append(f'[文件]({f})')
@@ -369,6 +406,7 @@ def format_as_multimodal_message(
         raise TypeError
     msg = Message(role=msg.role,
                   content=content,
+                  reasoning_content=msg.reasoning_content,
                   name=msg.name if msg.role == FUNCTION else None,
                   function_call=msg.function_call,
                   extra=msg.extra)
@@ -383,6 +421,7 @@ def format_as_text_message(
     msg = format_as_multimodal_message(msg,
                                        add_upload_info=add_upload_info,
                                        add_multimodel_upload_info=add_upload_info,
+                                       add_audio_upload_info=add_upload_info,
                                        lang=lang)
     text = ''
     for item in msg.content:
@@ -436,16 +475,23 @@ def build_text_completion_prompt(
     allow_special: bool = False,
     default_system: str = DEFAULT_SYSTEM_MESSAGE,
 ) -> str:
+    logger.warning(
+        'Support for `build_text_completion_prompt` is deprecated. '
+        'Please use `tokenizer.apply_chat_template(...)` instead to construct the prompt from messages.'
+    )
+
     im_start = '<|im_start|>'
     im_end = '<|im_end|>'
 
-    if messages[0].role == SYSTEM:
+    if messages and messages[0].role == SYSTEM:
         sys = messages[0].content
         assert isinstance(sys, str)
         prompt = f'{im_start}{SYSTEM}\n{sys}{im_end}'
         messages = messages[1:]
-    else:
+    elif default_system:
         prompt = f'{im_start}{SYSTEM}\n{default_system}{im_end}'
+    else:
+        prompt = ''
 
     # Make sure we are completing the chat in the tone of the assistant
     if messages[-1].role != ASSISTANT:
@@ -470,7 +516,9 @@ def build_text_completion_prompt(
         else:
             assert msg.role in (USER, ASSISTANT)
             assert msg.function_call is None
-        prompt += f'\n{im_start}{msg.role}\n{content}{im_end}'
+        if prompt:
+            prompt += '\n'
+        prompt += f'{im_start}{msg.role}\n{content}{im_end}'
 
     assert prompt.endswith(im_end)
     prompt = prompt[:-len(im_end)]
@@ -490,6 +538,16 @@ def encode_image_as_base64(path: str, max_short_side_length: int = -1) -> str:
     buffered = BytesIO()
     image.save(buffered, format='JPEG')
     return 'data:image/jpeg;base64,' + base64.b64encode(buffered.getvalue()).decode('utf-8')
+
+
+def encode_audio_as_base64(path: str) -> str:
+    with open(path, 'rb') as audio_file:
+        return 'data:;base64,' + base64.b64encode(audio_file.read()).decode('utf-8')
+
+
+def encode_video_as_base64(path: str) -> str:
+    with open(path, 'rb') as video_file:
+        return 'data:;base64,' + base64.b64encode(video_file.read()).decode('utf-8')
 
 
 def load_image_from_base64(image_base64: Union[bytes, str]):
@@ -523,3 +581,21 @@ def get_last_usr_msg_idx(messages: List[Union[dict, Message]]) -> int:
     assert i >= 0, messages
     assert messages[i]['role'] == 'user'
     return i
+
+
+def rm_default_system(messages: List[Message]) -> List[Message]:
+    if len(messages) > 1 and messages[0].role == SYSTEM:
+        if isinstance(messages[0].content, str):
+            if messages[0].content.strip() == DEFAULT_SYSTEM_MESSAGE:
+                return messages[1:]
+            else:
+                return messages
+        elif isinstance(messages[0].content, list):
+            if len(messages[0].content) == 1 and messages[0].content[0].text.strip() == DEFAULT_SYSTEM_MESSAGE:
+                return messages[1:]
+            else:
+                return messages
+        else:
+            raise TypeError
+    else:
+        return messages

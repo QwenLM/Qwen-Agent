@@ -1,3 +1,17 @@
+# Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#    http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import os
 import pprint
 import re
@@ -7,7 +21,7 @@ from qwen_agent import Agent, MultiAgentHub
 from qwen_agent.agents.user_agent import PENDING_USER_INPUT
 from qwen_agent.gui.gradio_utils import format_cover_html
 from qwen_agent.gui.utils import convert_fncall_to_text, convert_history_to_chatbot, get_avatar_image
-from qwen_agent.llm.schema import AUDIO, CONTENT, FILE, IMAGE, NAME, ROLE, USER, Message
+from qwen_agent.llm.schema import AUDIO, CONTENT, FILE, IMAGE, NAME, ROLE, USER, VIDEO, Message
 from qwen_agent.log import logger
 from qwen_agent.utils.utils import print_traceback
 
@@ -96,7 +110,7 @@ class WebUI:
                                                   self.user_config,
                                                   self.agent_config_list,
                                               ],
-                                              height=900,
+                                              height=850,
                                               avatar_image_width=80,
                                               flushing=False,
                                               show_copy_button=True,
@@ -131,6 +145,10 @@ class WebUI:
                                               }])
 
                         input = mgr.MultimodalInput(placeholder=self.input_placeholder,)
+                        audio_input = gr.Audio(
+                            sources=["microphone"],
+                            type="filepath"
+                        )
 
                     with gr.Column(scale=1):
                         if len(self.agent_list) > 1:
@@ -163,8 +181,8 @@ class WebUI:
 
                     input_promise = input.submit(
                         fn=self.add_text,
-                        inputs=[input, chatbot, history],
-                        outputs=[input, chatbot, history],
+                        inputs=[input, audio_input, chatbot, history],
+                        outputs=[input, audio_input, chatbot, history],
                         queue=False,
                     )
 
@@ -197,7 +215,7 @@ class WebUI:
         yield agent_selector, self._create_agent_info_block(agent_selector), self._create_agent_plugins_block(
             agent_selector)
 
-    def add_text(self, _input, _chatbot, _history):
+    def add_text(self, _input, _audio_input, _chatbot, _history):
         _history.append({
             ROLE: USER,
             CONTENT: [{
@@ -207,6 +225,12 @@ class WebUI:
 
         if self.user_config[NAME]:
             _history[-1][NAME] = self.user_config[NAME]
+        
+        # if got audio from microphone, append it to the multimodal inputs
+        if _audio_input:
+            from qwen_agent.gui.gradio_dep import gr, mgr, ms
+            audio_input_file = gr.data_classes.FileData(path=_audio_input, mime_type="audio/wav")
+            _input.files.append(audio_input_file)
 
         if _input.files:
             for file in _input.files:
@@ -214,6 +238,8 @@ class WebUI:
                     _history[-1][CONTENT].append({IMAGE: 'file://' + file.path})
                 elif file.mime_type.startswith('audio/'):
                     _history[-1][CONTENT].append({AUDIO: 'file://' + file.path})
+                elif file.mime_type.startswith('video/'):
+                    _history[-1][CONTENT].append({VIDEO: 'file://' + file.path})
                 else:
                     _history[-1][CONTENT].append({FILE: file.path})
 
@@ -221,7 +247,7 @@ class WebUI:
 
         from qwen_agent.gui.gradio_dep import gr
 
-        yield gr.update(interactive=False, value=None), _chatbot, _history
+        yield gr.update(interactive=False, value=None), None, _chatbot, _history
 
     def add_mention(self, _chatbot, _agent_selector):
         if len(self.agent_list) == 1:

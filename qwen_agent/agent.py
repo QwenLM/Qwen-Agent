@@ -1,3 +1,17 @@
+# Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#    http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import copy
 import json
 import traceback
@@ -8,7 +22,7 @@ from qwen_agent.llm import get_chat_model
 from qwen_agent.llm.base import BaseChatModel
 from qwen_agent.llm.schema import CONTENT, DEFAULT_SYSTEM_MESSAGE, ROLE, SYSTEM, ContentItem, Message
 from qwen_agent.log import logger
-from qwen_agent.tools import TOOL_REGISTRY, BaseTool
+from qwen_agent.tools import TOOL_REGISTRY, BaseTool, MCPManager
 from qwen_agent.tools.base import ToolServiceError
 from qwen_agent.tools.simple_doc_parser import DocParserError
 from qwen_agent.utils.utils import has_chinese_messages, merge_generate_cfgs
@@ -94,22 +108,18 @@ class Agent(ABC):
                 kwargs['lang'] = 'en'
 
         if self.system_message:
-            if new_messages[0][ROLE] != SYSTEM:
-                # Add the system instruction to the agent, default to `DEFAULT_SYSTEM_MESSAGE`
+            if not new_messages or new_messages[0][ROLE] != SYSTEM:
+                # Add the system instruction to the agent
                 new_messages.insert(0, Message(role=SYSTEM, content=self.system_message))
             else:
-                # When the messages contain system message
-                if self.system_message != DEFAULT_SYSTEM_MESSAGE:
-                    # If the user has set a special system that does not exist in messages, add
-                    if isinstance(new_messages[0][CONTENT], str):
-                        if not new_messages[0][CONTENT].startswith(self.system_message):
-                            new_messages[0][CONTENT] = self.system_message + '\n\n' + new_messages[0][CONTENT]
-                    else:
-                        assert isinstance(new_messages[0][CONTENT], list)
-                        assert new_messages[0][CONTENT][0].text
-                        if not new_messages[0][CONTENT][0].text.startswith(self.system_message):
-                            new_messages[0][CONTENT] = [ContentItem(text=self.system_message + '\n\n')
-                                                       ] + new_messages[0][CONTENT]  # noqa
+                # Already got system message in new_messages
+                if isinstance(new_messages[0][CONTENT], str):
+                    new_messages[0][CONTENT] = self.system_message + '\n\n' + new_messages[0][CONTENT]
+                else:
+                    assert isinstance(new_messages[0][CONTENT], list)
+                    assert new_messages[0][CONTENT][0].text
+                    new_messages[0][CONTENT] = [ContentItem(text=self.system_message + '\n\n')
+                                               ] + new_messages[0][CONTENT]  # noqa
 
         for rsp in self._run(messages=new_messages, **kwargs):
             for i in range(len(rsp)):
@@ -205,6 +215,13 @@ class Agent(ABC):
             if tool_name in self.function_map:
                 logger.warning(f'Repeatedly adding tool {tool_name}, will use the newest tool in function list')
             self.function_map[tool_name] = tool
+        elif isinstance(tool, dict) and 'mcpServers' in tool:
+            tools = MCPManager().initConfig(tool)
+            for tool in tools:
+                tool_name = tool.name
+                if tool_name in self.function_map:
+                    logger.warning(f'Repeatedly adding tool {tool_name}, will use the newest tool in function list')
+                self.function_map[tool_name] = tool
         else:
             if isinstance(tool, dict):
                 tool_name = tool['name']

@@ -1,8 +1,23 @@
+# Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#    http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import copy
 from typing import Dict, Iterator, List, Optional, Union
 
 from qwen_agent import Agent
 from qwen_agent.llm import BaseChatModel
-from qwen_agent.llm.schema import Message
+from qwen_agent.llm.schema import Message, SYSTEM
 from qwen_agent.tools import BaseTool
 from qwen_agent.utils.utils import has_chinese_chars
 
@@ -55,9 +70,10 @@ Only return the role name from [{agent_names}] or '[STOP]'. Do not reply any oth
                          **kwargs)
 
     def _run(self, messages: List[Message], lang: str = 'en', **kwargs) -> Iterator[List[Message]]:
-
-        dialogue = []
+        dialogue = [] # convert existing messages into a prompt
         for msg in messages:
+            if msg.role == SYSTEM:
+                continue
             if msg.role == 'function' or not msg.content:
                 continue
             if isinstance(msg.content, list):
@@ -74,6 +90,6 @@ Only return the role name from [{agent_names}] or '[STOP]'. Do not reply any oth
 
         if not dialogue:
             dialogue.append('对话刚开始，请任意选择一个发言人，别选真实用户')
-        new_messages = [Message('user', '\n'.join(dialogue))]
-
+        assert messages[0].role == SYSTEM
+        new_messages = [copy.deepcopy(messages[0]), Message('user', '\n'.join(dialogue))]
         return self._call_llm(messages=new_messages)

@@ -1,3 +1,17 @@
+# Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#    http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import os
 from http import HTTPStatus
 from pprint import pformat
@@ -9,7 +23,6 @@ from qwen_agent.llm.base import ModelServiceError, register_llm
 from qwen_agent.llm.function_calling import BaseFnCallModel
 from qwen_agent.llm.schema import ASSISTANT, Message
 from qwen_agent.log import logger
-from qwen_agent.utils.utils import build_text_completion_prompt
 
 
 @register_llm('qwen_dashscope')
@@ -27,6 +40,8 @@ class QwenChatAtDS(BaseFnCallModel):
         generate_cfg: dict,
     ) -> Iterator[List[Message]]:
         messages = [msg.model_dump() for msg in messages]
+        if messages[-1]['role'] == ASSISTANT:
+            messages[-1]['partial'] = True
         logger.debug(f'LLM Input:\n{pformat(messages, indent=2)}')
         response = dashscope.Generation.call(
             self.model,
@@ -45,6 +60,8 @@ class QwenChatAtDS(BaseFnCallModel):
         generate_cfg: dict,
     ) -> List[Message]:
         messages = [msg.model_dump() for msg in messages]
+        if messages[-1]['role'] == ASSISTANT:
+            messages[-1]['partial'] = True
         logger.debug(f'LLM Input:\n{pformat(messages, indent=2)}')
         response = dashscope.Generation.call(
             self.model,
@@ -56,6 +73,7 @@ class QwenChatAtDS(BaseFnCallModel):
             return [
                 Message(role=ASSISTANT,
                         content=response.output.choices[0].message.content,
+                        reasoning_content=response.output.choices[0].message.get('reasoning_content', ''),
                         extra={'model_service_info': response})
             ]
         else:
@@ -69,52 +87,37 @@ class QwenChatAtDS(BaseFnCallModel):
         generate_cfg: dict,
         stream: bool,
     ) -> Iterator[List[Message]]:
-        prompt = build_text_completion_prompt(messages)
-        logger.debug(f'LLM Input:\n{pformat(prompt, indent=2)}')
-        response = dashscope.Generation.call(
-            self.model,
-            prompt=prompt,  # noqa
-            result_format='message',
-            stream=True,
-            use_raw_prompt=True,
-            **generate_cfg)
-        it = self._full_stream_output(response)
-        if stream:
-            return it  # streaming the response
-        else:
-            *_, final_response = it  # return the final response without streaming
-            return final_response
+        return self._chat(messages, stream=stream, delta_stream=False, generate_cfg=generate_cfg)
 
     @staticmethod
     def _delta_stream_output(response) -> Iterator[List[Message]]:
-        # The model_service_info is for reference only
-        last_len = 0
-        delay_len = 5
-        in_delay = False
-        text = ''
-        chunk = None
         for chunk in response:
             if chunk.status_code == HTTPStatus.OK:
-                text = chunk.output.choices[0].message.content
-                if (len(text) - last_len) <= delay_len:
-                    in_delay = True
-                    continue
-                else:
-                    in_delay = False
-                    real_text = text[:-delay_len]
-                    now_rsp = real_text[last_len:]
-                    yield [Message(ASSISTANT, now_rsp, extra={'model_service_info': chunk})]
-                    last_len = len(real_text)
+                yield [
+                    Message(role=ASSISTANT,
+                            content=chunk.output.choices[0].message.content,
+                            reasoning_content=chunk.output.choices[0].message.reasoning_content,
+                            extra={'model_service_info': chunk})
+                ]
             else:
                 raise ModelServiceError(code=chunk.code, message=chunk.message, extra={'model_service_info': chunk})
-        if text and (in_delay or (last_len != len(text))):
-            yield [Message(ASSISTANT, text[last_len:], extra={'model_service_info': chunk})]
 
     @staticmethod
     def _full_stream_output(response) -> Iterator[List[Message]]:
+        full_content = ''
+        full_reasoning_content = ''
         for chunk in response:
             if chunk.status_code == HTTPStatus.OK:
-                yield [Message(ASSISTANT, chunk.output.choices[0].message.content, extra={'model_service_info': chunk})]
+                if chunk.output.choices[0].message.get('reasoning_content', ''):
+                    full_reasoning_content += chunk.output.choices[0].message.reasoning_content
+                if chunk.output.choices[0].message.content:
+                    full_content += chunk.output.choices[0].message.content
+                yield [
+                    Message(role=ASSISTANT,
+                            content=full_content,
+                            reasoning_content=full_reasoning_content,
+                            extra={'model_service_info': chunk})
+                ]
             else:
                 raise ModelServiceError(code=chunk.code, message=chunk.message, extra={'model_service_info': chunk})
 
@@ -134,7 +137,17 @@ def initialize_dashscope(cfg: Optional[Dict] = None) -> None:
         base_websocket_api_url = os.getenv('DASHSCOPE_WEBSOCKET_URL', None)
 
     api_key = api_key.strip()
-    dashscope.api_key = api_key
+    if api_key in ('', 'EMPTY'):
+        if dashscope.api_key is None or dashscope.api_key in ('', 'EMPTY'):
+            logger.warning('No valid dashscope api_key found in cfg, environment variable `DASHSCOPE_API_KEY` or dashscope.api_key, the model call may raise errors.')
+        else:
+            logger.info('No dashscope api_key found in cfg, using the dashscope.api_key that has already been set.')
+    else: # valid api_key
+        if api_key != dashscope.api_key:
+            logger.info('Setting the dashscope api_key.')
+            dashscope.api_key = api_key
+        # or do nothing since both keys are the same
+  
     if base_http_api_url is not None:
         dashscope.base_http_api_url = base_http_api_url.strip()
     if base_websocket_api_url is not None:

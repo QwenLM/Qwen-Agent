@@ -1,10 +1,24 @@
+# Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#    http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import copy
 from typing import Dict, Iterator, List, Optional, Union
 
 from qwen_agent import Agent, MultiAgentHub
 from qwen_agent.agents.assistant import Assistant
 from qwen_agent.llm import BaseChatModel
-from qwen_agent.llm.schema import ASSISTANT, ROLE, Message
+from qwen_agent.llm.schema import ASSISTANT, ROLE, SYSTEM, Message
 from qwen_agent.log import logger
 from qwen_agent.tools import BaseTool
 from qwen_agent.utils.utils import merge_generate_cfgs
@@ -63,7 +77,12 @@ class Router(Assistant, MultiAgentHub):
                 # If the model generates a non-existent agent, the first agent will be used by default.
                 selected_agent_name = self.agent_names[0]
             selected_agent = self.agents[self.agent_names.index(selected_agent_name)]
-            for response in selected_agent.run(messages=messages, lang=lang, **kwargs):
+
+            new_messages = copy.deepcopy(messages)
+            if new_messages and new_messages[0][ROLE] == SYSTEM:
+                new_messages.pop(0)
+
+            for response in selected_agent.run(messages=new_messages, lang=lang, **kwargs):
                 for i in range(len(response)):
                     if response[i].role == ASSISTANT:
                         response[i].name = selected_agent_name

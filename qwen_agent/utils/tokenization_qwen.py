@@ -1,3 +1,17 @@
+# Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#    http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """Tokenization classes for QWen."""
 
 import base64
@@ -204,9 +218,24 @@ class QWenTokenizer:
     def count_tokens(self, text: str) -> int:
         return len(self.tokenize(text))
 
-    def truncate(self, text: str, max_token: int, start_token: int = 0) -> str:
-        token_list = self.tokenize(text)
-        token_list = token_list[start_token:min(len(token_list), start_token + max_token)]
+    def truncate(self, text: str, max_token: int, start_token: int = 0, keep_both_sides: bool = False) -> str:
+        token_list = self.tokenize(text)[start_token:]
+        if len(token_list) <= max_token:
+            return self.convert_tokens_to_string(token_list)
+
+        if keep_both_sides:
+            ellipsis_tokens = self.tokenize("...")
+            ellipsis_len = len(ellipsis_tokens)
+            available = max_token - ellipsis_len
+            if available <= 0: # Degenerate case: not enough space even for "..."
+                return self.convert_tokens_to_string(token_list[:max_token])
+
+            left_len = available // 2
+            right_len = available - left_len
+            token_list = token_list[:left_len] + ellipsis_tokens + token_list[-right_len:]
+        else:
+            token_list = token_list[:max_token]
+
         return self.convert_tokens_to_string(token_list)
 
 

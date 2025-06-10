@@ -1,3 +1,17 @@
+# Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#    http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from typing import List, Literal, Union
 
 from qwen_agent.llm.schema import FUNCTION, Message
@@ -7,13 +21,12 @@ from qwen_agent.utils.utils import format_as_multimodal_message, format_as_text_
 class BaseFnCallPrompt(object):
 
     @staticmethod
-    def preprocess_fncall_messages(
-        messages: List[Message],
-        functions: List[dict],
-        lang: Literal['en', 'zh'],
-        parallel_function_calls: bool = True,
-        function_choice: Union[Literal['auto'], str] = 'auto',
-    ) -> List[Message]:
+    def preprocess_fncall_messages(messages: List[Message],
+                                   functions: List[dict],
+                                   lang: Literal['en', 'zh'],
+                                   parallel_function_calls: bool = True,
+                                   function_choice: Union[Literal['auto'], str] = 'auto',
+                                   **kwargs) -> List[Message]:
         """
         Preprocesss the messages and add the function calling prompt,
         assuming the input and output messages are in the multimodal format.
@@ -22,11 +35,10 @@ class BaseFnCallPrompt(object):
         raise NotImplementedError
 
     @staticmethod
-    def postprocess_fncall_messages(
-        messages: List[Message],
-        parallel_function_calls: bool = True,
-        function_choice: Union[Literal['auto'], str] = 'auto',
-    ) -> List[Message]:
+    def postprocess_fncall_messages(messages: List[Message],
+                                    parallel_function_calls: bool = True,
+                                    function_choice: Union[Literal['auto'], str] = 'auto',
+                                    **kwargs) -> List[Message]:
         """
         Transform the plaintext model output into structured function call messages,
         return in the multimodal format for consistency.
@@ -53,8 +65,11 @@ class BaseFnCallPrompt(object):
                     raise ValueError('This sample requires parallel_function_calls=True.')
 
         messages = [
-            format_as_multimodal_message(msg, add_upload_info=True, add_multimodel_upload_info=True, lang=lang)
-            for msg in messages
+            format_as_multimodal_message(msg,
+                                         add_upload_info=True,
+                                         add_multimodel_upload_info=True,
+                                         add_audio_upload_info=True,
+                                         lang=lang) for msg in messages
         ]
         for m in messages:
             for item in m.content:

@@ -1,3 +1,17 @@
+# Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#    http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 # Reference: https://platform.openai.com/docs/guides/function-calling
 import json
 import os
@@ -22,7 +36,7 @@ def get_current_weather(location, unit='fahrenheit'):
 def test(fncall_prompt_type: str = 'qwen'):
     llm = get_chat_model({
         # Use the model service provided by DashScope:
-        'model': 'qwen2.5-72b-instruct',
+        'model': 'qwen-plus-latest',
         'model_server': 'dashscope',
         'api_key': os.getenv('DASHSCOPE_API_KEY'),
         'generate_cfg': {
@@ -126,7 +140,7 @@ def test(fncall_prompt_type: str = 'qwen'):
 
 if __name__ == '__main__':
     # Run example of function calling with QwenFnCallPrompt
-    test()
+    # test(fncall_prompt_type='qwen')
 
     # Run example of function calling with NousFnCallPrompt
-    # test(fncall_prompt_type='nous')
+    test(fncall_prompt_type='nous')

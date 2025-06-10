@@ -1,3 +1,17 @@
+# Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#    http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import copy
 import json
 from typing import Dict, List, Literal, Union
@@ -10,13 +24,12 @@ from qwen_agent.utils.utils import extract_text_from_message
 class QwenFnCallPrompt(BaseFnCallPrompt):
 
     @staticmethod
-    def preprocess_fncall_messages(
-        messages: List[Message],
-        functions: List[dict],
-        lang: Literal['en', 'zh'],
-        parallel_function_calls: bool = True,
-        function_choice: Union[Literal['auto'], str] = 'auto',
-    ) -> List[Message]:
+    def preprocess_fncall_messages(messages: List[Message],
+                                   functions: List[dict],
+                                   lang: Literal['en', 'zh'],
+                                   parallel_function_calls: bool = True,
+                                   function_choice: Union[Literal['auto'], str] = 'auto',
+                                   **kwargs) -> List[Message]:
         ori_messages = messages
 
         # Change function_call responses to plaintext responses:
@@ -63,7 +76,7 @@ class QwenFnCallPrompt(BaseFnCallPrompt):
         tool_descs = '\n\n'.join(get_function_description(function, lang=lang) for function in functions)
         tool_names = ','.join(function.get('name_for_model', function.get('name', '')) for function in functions)
         tool_system = tool_desc_template.format(tool_descs=tool_descs, tool_names=tool_names)
-        if messages[0].role == SYSTEM:
+        if messages and messages[0].role == SYSTEM:
             messages[0].content.append(ContentItem(text='\n\n' + tool_system))
         else:
             messages = [Message(role=SYSTEM, content=[ContentItem(text=tool_system)])] + messages
@@ -97,20 +110,20 @@ class QwenFnCallPrompt(BaseFnCallPrompt):
         return messages
 
     @staticmethod
-    def postprocess_fncall_messages(
-        messages: List[Message],
-        parallel_function_calls: bool = True,
-        function_choice: Union[Literal['auto'], str] = 'auto',
-    ) -> List[Message]:
+    def postprocess_fncall_messages(messages: List[Message],
+                                    parallel_function_calls: bool = True,
+                                    function_choice: Union[Literal['auto'], str] = 'auto',
+                                    **kwargs) -> List[Message]:
         messages = copy.deepcopy(messages)
 
         # Prepend a prefix for function_choice:
         if function_choice not in ('auto', 'none'):
-            output = messages[0].content[0].text
-            if output.lstrip().startswith(FN_ARGS):
-                # Prepend this prefix only if the model correctly completes it
-                output = f'{FN_NAME}: {function_choice}\n' + output
-            messages[0].content[0].text = output
+            if messages and messages[0].content:
+                output = messages[0].content[0].text
+                if output.lstrip().startswith(FN_ARGS):
+                    # Prepend this prefix only if the model correctly completes it
+                    output = f'{FN_NAME}: {function_choice}\n' + output
+                messages[0].content[0].text = output
 
         # Remove ': ' brought by continued generation of function calling
         last_msg = messages[-1].content

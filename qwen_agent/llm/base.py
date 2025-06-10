@@ -1,3 +1,17 @@
+# Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#    http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import copy
 import json
 import os
@@ -7,7 +21,7 @@ from abc import ABC, abstractmethod
 from pprint import pformat
 from typing import Any, Dict, Iterator, List, Literal, Optional, Tuple, Union
 
-from qwen_agent.llm.schema import ASSISTANT, DEFAULT_SYSTEM_MESSAGE, SYSTEM, USER, Message
+from qwen_agent.llm.schema import ASSISTANT, DEFAULT_SYSTEM_MESSAGE, SYSTEM, USER, FUNCTION, Message
 from qwen_agent.log import logger
 from qwen_agent.settings import DEFAULT_MAX_INPUT_TOKENS
 from qwen_agent.utils.tokenization_qwen import tokenizer
@@ -56,6 +70,10 @@ class BaseChatModel(ABC):
         # Does the model generate multimodal outputs beyond texts? It affects how we post-process the output.
         return False
 
+    @property
+    def support_audio_input(self) -> bool:
+        return False
+
     def __init__(self, cfg: Optional[Dict] = None):
         cfg = cfg or {}
         self.model = cfg.get('model', '').strip()
@@ -63,6 +81,9 @@ class BaseChatModel(ABC):
         cache_dir = cfg.get('cache_dir', generate_cfg.pop('cache_dir', None))
         self.max_retries = generate_cfg.pop('max_retries', 0)
         self.generate_cfg = generate_cfg
+        self.model_type = cfg.get('model_type', '')
+        if 'dashscope' in self.model_type:
+            self.generate_cfg['incremental_output'] = True
 
         if cache_dir:
             try:
@@ -101,7 +122,7 @@ class BaseChatModel(ABC):
             delta_stream: Whether to stream the response incrementally.
               (1) When False (recommended): Stream the full response every iteration.
               (2) When True: Stream the chunked response, i.e, delta responses.
-            extra_generate_cfg: Extra LLM generation hyper-paramters.
+            extra_generate_cfg: Extra LLM generation hyper-parameters.
 
         Returns:
             the generated message list response by llm.
@@ -118,6 +139,9 @@ class BaseChatModel(ABC):
                 new_messages.append(msg)
                 _return_message_type = 'message'
         messages = new_messages
+
+        if not messages:
+            raise ValueError("Messages can not be empty.")
 
         # Cache lookup:
         if self.cache is not None:
@@ -146,8 +170,10 @@ class BaseChatModel(ABC):
             lang: Literal['en', 'zh'] = generate_cfg.pop('lang')
         else:
             lang: Literal['en', 'zh'] = 'zh' if has_chinese_messages(messages) else 'en'
+        if not stream and 'incremental_output' in generate_cfg:
+            generate_cfg.pop('incremental_output')
 
-        if messages[0].role != SYSTEM:
+        if DEFAULT_SYSTEM_MESSAGE and messages[0].role != SYSTEM:
             messages = [Message(role=SYSTEM, content=DEFAULT_SYSTEM_MESSAGE)] + messages
 
         # Not precise. It's hard to estimate tokens related with function calling and multimodal items.
@@ -178,7 +204,7 @@ class BaseChatModel(ABC):
             messages = [format_as_text_message(msg, add_upload_info=False) for msg in messages]
 
         if not fncall_mode:
-            for k in ['parallel_function_calls', 'function_choice']:
+            for k in ['parallel_function_calls', 'function_choice', 'thought_in_content']:
                 if k in generate_cfg:
                     del generate_cfg[k]
 
@@ -301,12 +327,16 @@ class BaseChatModel(ABC):
         functions: Optional[List[Dict]] = None,
     ) -> List[Message]:
         add_multimodel_upload_info = False
-        if functions:
+        if functions or (not self.support_multimodal_input):
             add_multimodel_upload_info = True
+        add_audio_upload_info = False
+        if functions or (not self.support_audio_input):
+            add_audio_upload_info = True
         messages = [
             format_as_multimodal_message(msg,
                                          add_upload_info=True,
                                          add_multimodel_upload_info=add_multimodel_upload_info,
+                                         add_audio_upload_info=add_audio_upload_info,
                                          lang=lang) for msg in messages
         ]
         return messages
@@ -318,8 +348,10 @@ class BaseChatModel(ABC):
         generate_cfg: dict,
     ) -> List[Message]:
         messages = [
-            format_as_multimodal_message(msg, add_upload_info=False, add_multimodel_upload_info=False)
-            for msg in messages
+            format_as_multimodal_message(msg,
+                                         add_upload_info=False,
+                                         add_multimodel_upload_info=False,
+                                         add_audio_upload_info=False) for msg in messages
         ]
         if not generate_cfg.get('skip_stopword_postproc', False):
             stop = generate_cfg.get('stop', [])
@@ -351,6 +383,82 @@ class BaseChatModel(ABC):
             target_type: str) -> Union[Iterator[List[Message]], Iterator[List[Dict]]]:
         for messages in messages_iter:
             yield self._convert_messages_to_target_type(messages, target_type)
+
+    def quick_chat_oai(self, messages: List[dict], tools: Optional[list] = None) -> dict:
+        """
+        This is a temporary OpenAI-compatible interface that is encapsulated and may change at any time.
+        It is mainly used for temporary interfaces and should not be overly dependent.
+        - Only supports full streaming
+        - The message is in dict format
+        - Only supports text LLM
+        """
+
+        def _convert_to_qwen_agent_messages(messages):
+            new_messages = []
+            for msg in messages:
+                if msg['role'] in ['system', 'user']:
+                    new_messages.append(msg)
+                elif msg['role'] == 'tool':
+                    msg['role'] = 'function'
+                    new_messages.append(msg)
+                elif msg['role'] == 'assistant':
+                    if msg['content']:
+                        new_messages.append({'role': 'assistant', 'content': msg['content']})
+                    if msg.get('tool_calls'):
+                        for tool in msg.get('tool_calls'):
+                            new_messages.append({
+                                'role': 'assistant',
+                                'content': '',
+                                'function_call': {
+                                    'name': tool['function']['name'],
+                                    'arguments': tool['function']['arguments']
+                                }
+                            })
+            return new_messages
+
+        def _convert_to_oai_message(data):
+            message = {'role': 'assistant', 'content': '', 'reasoning_content': '', 'tool_calls': []}
+
+            for item in data:
+                if item.get('reasoning_content'):
+                    message['reasoning_content'] += item['reasoning_content']
+
+                if item.get('content'):
+                    message['content'] += item['content']
+
+                if 'function_call' in item:
+                    tool_call = {
+                        'id': f"{len(message['tool_calls']) + 1}",
+                        'type': 'function',
+                        'function': {
+                            'name': item['function_call']['name'],
+                            'arguments': item['function_call']['arguments']
+                        }
+                    }
+                    message['tool_calls'].append(tool_call)
+            # Fake token usage
+            response = {
+                'choices': [{
+                    'message': message
+                }],
+                'usage': {
+                    'prompt_tokens': 0,
+                    'completion_tokens': 0,
+                    'total_tokens': 0
+                }
+            }
+            return response
+
+        if tools:
+            functions = [tool['function'] for tool in tools]
+        else:
+            functions = None
+        for rsp in self.chat(
+                messages=_convert_to_qwen_agent_messages(messages),
+                functions=functions,
+                stream=True,
+        ):
+            yield _convert_to_oai_message(rsp)
 
 
 def _format_as_text_messages(messages: List[Message]) -> List[Message]:
@@ -417,8 +525,6 @@ def _truncate_at_stop_word(text: str, stop: List[str]):
 
 
 def _truncate_input_messages_roughly(messages: List[Message], max_tokens: int) -> List[Message]:
-    sys_msg = messages[0]
-    assert sys_msg.role == SYSTEM  # The default system is prepended if none exists
     if len([m for m in messages if m.role == SYSTEM]) >= 2:
         raise ModelServiceError(
             code='400',
@@ -427,8 +533,10 @@ def _truncate_input_messages_roughly(messages: List[Message], max_tokens: int) -
         )
 
     turns = []
-    for m in messages[1:]:
-        if m.role == USER:
+    for m in messages:
+        if m.role == SYSTEM:
+            continue
+        elif m.role == USER:
             turns.append([m])
         else:
             if turns:
@@ -442,38 +550,63 @@ def _truncate_input_messages_roughly(messages: List[Message], max_tokens: int) -
     def _count_tokens(msg: Message) -> int:
         return tokenizer.count_tokens(extract_text_from_message(msg, add_upload_info=True))
 
-    token_cnt = _count_tokens(sys_msg)
-    truncated = []
-    for i, turn in enumerate(reversed(turns)):
-        cur_turn_msgs = []
-        cur_token_cnt = 0
-        for m in reversed(turn):
-            cur_turn_msgs.append(m)
-            cur_token_cnt += _count_tokens(m)
-        # Check "i == 0" so that at least one user message is included
-        if (i == 0) or (token_cnt + cur_token_cnt <= max_tokens):
-            truncated.extend(cur_turn_msgs)
-            token_cnt += cur_token_cnt
+    def _truncate_message(msg: Message, max_tokens: int, keep_both_sides: bool = False):
+        if isinstance(msg.content, str):
+            content = tokenizer.truncate(msg.content, max_token=max_tokens, keep_both_sides=keep_both_sides)
         else:
-            break
-    # Always include the system message
-    truncated.append(sys_msg)
-    truncated.reverse()
+            text = []
+            for item in msg.content:
+                if not item.text:
+                    return None
+                text.append(item.text)
+            text = '\n'.join(text)
+            content = tokenizer.truncate(text, max_token=max_tokens, keep_both_sides=keep_both_sides)
+        return Message(role=msg.role, content=content)
+    
+    if messages and messages[0].role == SYSTEM:
+        sys_msg = messages[0]
+        available_token = max_tokens - _count_tokens(sys_msg)
+    else:
+        sys_msg = None
+        available_token = max_tokens
+    
+    token_cnt = 0
+    new_messages = []
+    for i in range(len(messages) - 1, -1, -1):
+        if messages[i].role == SYSTEM:
+            continue
+        cur_token_cnt = _count_tokens(messages[i])
+        if cur_token_cnt <= available_token:
+            new_messages = [messages[i]] + new_messages
+            available_token -= cur_token_cnt
+        else:
+            if (messages[i].role == USER) and (i != len(messages) - 1):
+                _msg = _truncate_message(messages[i], max_tokens=available_token)
+                if _msg:
+                    new_messages = [_msg] + new_messages
+                break
+            elif messages[i].role == FUNCTION:
+                _msg = _truncate_message(messages[i], max_tokens=available_token, keep_both_sides=True)
+                if _msg:
+                    new_messages = [_msg] + new_messages
+                else:
+                    break
+            else:
+                token_cnt = (max_tokens - available_token) + cur_token_cnt
+                break
+    
+    if sys_msg is not None:
+        new_messages = [sys_msg] + new_messages
 
-    if len(truncated) < 2:  # one system message + one or more user messages
-        raise ModelServiceError(
-            code='400',
-            message='At least one user message should be provided.',
-        )
-    if token_cnt > max_tokens:
+    if (sys_msg is not None and len(new_messages) < 2) or (sys_msg is None and len(new_messages) < 1):
         raise ModelServiceError(
             code='400',
             message=f'The input messages exceed the maximum context length ({max_tokens} tokens) after '
-            f'keeping only the system message and the latest one user message (around {token_cnt} tokens). '
+            f'keeping only the system message (if exists) and the latest one user message (around {token_cnt} tokens). '
             'To configure the context limit, please specifiy "max_input_tokens" in the model generate_cfg. '
             f'Example: generate_cfg = {{..., "max_input_tokens": {(token_cnt // 100 + 1) * 100}}}',
         )
-    return truncated
+    return new_messages
 
 
 def retry_model_service(
@@ -545,3 +678,9 @@ def _raise_or_delay(
     delay = min(delay * exponential_base, max_delay) * jitter
     time.sleep(delay)
     return num_retries, delay
+
+
+def _rm_think(text: str) -> str:
+    if '</think>' in text:
+        return text.split('</think>')[-1].lstrip('\n')
+    return text

@@ -1,11 +1,33 @@
+# Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#    http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import os
 from typing import Dict, List
 
-from qwen_agent.llm.schema import ASSISTANT, CONTENT, FUNCTION, NAME, ROLE, SYSTEM, USER
+from qwen_agent.llm.schema import ASSISTANT, CONTENT, FUNCTION, NAME, REASONING_CONTENT, ROLE, SYSTEM, USER
+
+THINK = '''
+<details open>
+  <summary>Thinking ...</summary>
+
+<div style="color: gray;">{thought}</div>
+</details>
+'''
 
 TOOL_CALL = '''
 <details>
-  <summary>Start calling tool "{tool_name}"...</summary>
+  <summary>Start calling tool "{tool_name}" ...</summary>
 
 {tool_input}
 </details>
@@ -17,6 +39,7 @@ TOOL_OUTPUT = '''
 
 {tool_output}
 </details>
+
 '''
 
 
@@ -48,8 +71,9 @@ def convert_fncall_to_text(messages: List[Dict]) -> List[Dict]:
     new_messages = []
 
     for msg in messages:
-        role, content, name = msg[ROLE], msg[CONTENT], msg.get(NAME, None)
-        content = (content or '').lstrip('\n').rstrip()
+        role, content, reasoning_content, name = msg[ROLE], msg[CONTENT], msg.get(REASONING_CONTENT,
+                                                                                  ''), msg.get(NAME, None)
+        content = (content or '').lstrip('\n').rstrip().replace('```', '')
 
         # if role is system or user, just append the message
         if role in (SYSTEM, USER):
@@ -57,6 +81,24 @@ def convert_fncall_to_text(messages: List[Dict]) -> List[Dict]:
 
         # if role is assistant, append the message and add function call details
         elif role == ASSISTANT:
+            if reasoning_content:
+                thought = reasoning_content
+                content = THINK.format(thought=thought) + content
+
+            if '<think>' in content:
+                ti = content.find('<think>')
+                te = content.find('</think>')
+                if te == -1:
+                    te = len(content)
+                thought = content[ti + len('<think>'):te]
+                if thought.strip():
+                    _content = content[:ti] + THINK.format(thought=thought)
+                else:
+                    _content = content[:ti]
+                if te < len(content):
+                    _content += content[te:]
+                content = _content.strip('\n')
+
             fn_call = msg.get(f'{FUNCTION}_call', {})
             if fn_call:
                 f_name = fn_call['name']

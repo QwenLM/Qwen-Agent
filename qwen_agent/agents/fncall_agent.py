@@ -1,3 +1,17 @@
+# Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#    http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import copy
 from typing import Dict, Iterator, List, Literal, Optional, Union
 
@@ -41,7 +55,20 @@ class FnCallAgent(Agent):
 
         if not hasattr(self, 'mem'):
             # Default to use Memory to manage files
-            self.mem = Memory(llm=self.llm, files=files, **kwargs)
+            if 'qwq' in self.llm.model.lower() or 'qvq' in self.llm.model.lower() or 'qwen3' in self.llm.model.lower():
+                if 'dashscope' in self.llm.model_type:
+                    mem_llm = {
+                        'model': 'qwen-turbo',
+                        'model_type': 'qwen_dashscope',
+                        'generate_cfg': {
+                            'max_input_tokens': 30000
+                        }
+                    }
+                else:
+                    mem_llm = None
+            else:
+                mem_llm = self.llm
+            self.mem = Memory(llm=mem_llm, files=files, **kwargs)
 
     def _run(self, messages: List[Message], lang: Literal['en', 'zh'] = 'en', **kwargs) -> Iterator[List[Message]]:
         messages = copy.deepcopy(messages)
