@@ -105,6 +105,8 @@ class FnCallAgent(Agent):
                         yield response
                         used_any_tool = True
                 if not used_any_tool:
+                    if hasattr(self.llm, 'chat_mode'):
+                        self.llm.pipe.finish_chat()
                     break
         yield response
 
