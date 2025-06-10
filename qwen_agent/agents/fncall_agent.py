@@ -74,6 +74,7 @@ class FnCallAgent(Agent):
         if hasattr(self.llm, 'chat_mode'):
             if self.llm.chat_mode:
                 self.llm.pipe.start_chat()
+                self.llm.full_prompt = True
         messages = copy.deepcopy(messages)
         num_llm_calls_available = MAX_LLM_CALL_PER_RUN
         response = []
