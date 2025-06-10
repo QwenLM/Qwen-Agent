@@ -364,8 +364,6 @@ class OpenVINOGenAI(BaseFnCallModel):
                 return super().put(token_id)
 
         self.streamer = ChunkStreamer(self.tokenizer)
-        if self.chat_mode:
-            self.pipe.start_chat()
         self.full_prompt = True
 
     def _chat_stream(
