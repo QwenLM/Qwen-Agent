@@ -357,7 +357,7 @@ class OpenVINOGenAI(BaseFnCallModel):
         if self.use_genai_tokenizer:
             inputs_ov = self.tokenizer.apply_chat_template(
                 messages_plain, add_generation_prompt=True
-            )
+            ) 
         else:
             chat_prompt = self.tokenizer.apply_chat_template(
                 messages_plain, tokenize=False, add_generation_prompt=True
@@ -425,6 +425,9 @@ class OpenVINOGenAI(BaseFnCallModel):
             inputs_ov = self.tokenizer.apply_chat_template(
                 messages_plain, add_generation_prompt=True
             )
+            answer_ov = self.pipe.generate(
+                inputs_ov, generation_config=ov_generation_config
+            )
         else:
             chat_prompt = self.tokenizer.apply_chat_template(
                 messages_plain, tokenize=False, add_generation_prompt=True
@@ -438,13 +441,10 @@ class OpenVINOGenAI(BaseFnCallModel):
             inputs_ov = openvino_genai.TokenizedInputs(
                 ov.Tensor(input_ids), ov.Tensor(attention_mask)
             )
-
-        result_ov = self.pipe.generate(
-            inputs_ov, generation_config=ov_generation_config
-        ).tokens[0]
-
-        self.prev_chat_len = len(tokenized["input_ids"][0])
-        answer_ov = self.tokenizer.decode(result_ov, skip_special_tokens=True)
+            result_ov = self.pipe.generate(
+                inputs_ov, generation_config=ov_generation_config
+            ).tokens[0]
+            answer_ov = self.tokenizer.decode(result_ov, skip_special_tokens=True)
         if self.chat_mode:
             self.full_prompt = False
         return [Message(ASSISTANT, answer_ov)]
