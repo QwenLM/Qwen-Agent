@@ -178,9 +178,13 @@ class OpenVINOGenAI(BaseFnCallModel):
         self.full_prompt = True
         if self.chat_mode:
             self.pipe.start_chat()
-            
+
         if self.use_genai_tokenizer:
             self.tokenizer = self.pipe.get_tokenizer()
+            if "genai_chat_template" in cfg:
+                self.tokenizer.set_chat_template(
+                    cfg["genai_chat_template"],
+                )
         else:
             try:
                 from transformers import AutoTokenizer
@@ -336,7 +340,6 @@ class OpenVINOGenAI(BaseFnCallModel):
                     self.tokens_cache.append(token_id)
                     return False
                 return super().put(token_id)
-
 
     def _chat_stream(
         self,
