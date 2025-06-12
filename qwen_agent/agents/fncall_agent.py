@@ -71,10 +71,6 @@ class FnCallAgent(Agent):
             self.mem = Memory(llm=mem_llm, files=files, **kwargs)
 
     def _run(self, messages: List[Message], lang: Literal['en', 'zh'] = 'en', **kwargs) -> Iterator[List[Message]]:
-        if hasattr(self.llm, 'chat_mode'):
-            if self.llm.chat_mode:
-                self.llm.pipe.start_chat()
-                self.llm.full_prompt = True
         messages = copy.deepcopy(messages)
         num_llm_calls_available = MAX_LLM_CALL_PER_RUN
         response = []
@@ -109,8 +105,6 @@ class FnCallAgent(Agent):
                         yield response
                         used_any_tool = True
                 if not used_any_tool:
-                    if hasattr(self.llm, 'chat_mode'):
-                        self.llm.pipe.finish_chat()
                     break
         yield response
 

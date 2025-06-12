@@ -174,6 +174,11 @@ class OpenVINOGenAI(BaseFnCallModel):
         self.config = openvino_genai.GenerationConfig()
         self.use_genai_tokenizer = cfg.get("use_genai_tokenizer", True)
         self.chat_mode = cfg.get("chat_mode", False)
+        self.streamer = ChunkStreamer(self.tokenizer)
+        self.full_prompt = True
+        if self.chat_mode:
+            self.pipe.start_chat()
+            
         if self.use_genai_tokenizer:
             self.tokenizer = self.pipe.get_tokenizer()
         else:
@@ -332,8 +337,6 @@ class OpenVINOGenAI(BaseFnCallModel):
                     return False
                 return super().put(token_id)
 
-        self.streamer = ChunkStreamer(self.tokenizer)
-        self.full_prompt = True
 
     def _chat_stream(
         self,
@@ -343,11 +346,11 @@ class OpenVINOGenAI(BaseFnCallModel):
     ) -> Iterator[List[Message]]:
         generate_cfg = copy.deepcopy(generate_cfg)
 
-        self.config.max_new_tokens = generate_cfg.get("max_new_tokens", 2048)
-        self.config.do_sample = generate_cfg.get("do_sample", False)
-        self.config.top_p = generate_cfg.get("top_p", 0.9)
-        self.config.top_k = generate_cfg.get("top_k", 30)
-        ov_generation_config = openvino_genai.GenerationConfig(**generate_cfg)
+        self.config.max_new_tokens = generate_cfg.get("max_new_tokens", self.config.max_new_tokens)
+        self.config.do_sample = generate_cfg.get("do_sample", self.config.do_sample)
+        self.config.top_p = generate_cfg.get("top_p", self.config.top_p)
+        self.config.top_k = generate_cfg.get("top_k", self.config.top_k)
+        self.config.temperature = generate_cfg.get("temperature", self.config.temperature)
 
         if self.full_prompt:
             messages_plain = [message.model_dump() for message in messages]
@@ -382,7 +385,7 @@ class OpenVINOGenAI(BaseFnCallModel):
             self.pipe.generate(
                 inputs_ov,
                 streamer=self.streamer,
-                generation_config=ov_generation_config,
+                generation_config=self.config,
             )
             stream_complete.set()
             self.streamer.end()
@@ -413,12 +416,11 @@ class OpenVINOGenAI(BaseFnCallModel):
         else:
             messages_plain = [messages[-1].model_dump()]
 
-        self.config.max_new_tokens = generate_cfg.get("max_new_tokens", 2048)
-        self.config.do_sample = generate_cfg.get("do_sample", False)
-        self.config.top_p = generate_cfg.get("top_p", 0.9)
-        self.config.top_k = generate_cfg.get("top_k", 30)
-
-        ov_generation_config = openvino_genai.GenerationConfig(**generate_cfg)
+        self.config.max_new_tokens = generate_cfg.get("max_new_tokens", self.config.max_new_tokens)
+        self.config.do_sample = generate_cfg.get("do_sample", self.config.do_sample)
+        self.config.top_p = generate_cfg.get("top_p", self.config.top_p)
+        self.config.top_k = generate_cfg.get("top_k", self.config.top_k)
+        self.config.temperature = generate_cfg.get("temperature", self.config.temperature)
 
         messages_plain = [message.model_dump() for message in messages]
         if self.use_genai_tokenizer:
@@ -426,7 +428,7 @@ class OpenVINOGenAI(BaseFnCallModel):
                 messages_plain, add_generation_prompt=True
             )
             answer_ov = self.pipe.generate(
-                inputs_ov, generation_config=ov_generation_config
+                inputs_ov, generation_config=self.config,
             )
         else:
             chat_prompt = self.tokenizer.apply_chat_template(
@@ -442,7 +444,7 @@ class OpenVINOGenAI(BaseFnCallModel):
                 ov.Tensor(input_ids), ov.Tensor(attention_mask)
             )
             result_ov = self.pipe.generate(
-                inputs_ov, generation_config=ov_generation_config
+                inputs_ov, generation_config=self.config,
             ).tokens[0]
             answer_ov = self.tokenizer.decode(result_ov, skip_special_tokens=True)
         if self.chat_mode:
