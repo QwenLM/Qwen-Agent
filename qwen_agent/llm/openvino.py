@@ -96,7 +96,8 @@ class OpenVINO(BaseFnCallModel):
                 streamer=streamer,
                 max_new_tokens=generate_cfg.get('max_new_tokens', 2048),
             ))
-        del generate_cfg['seed']
+        if 'seed' in generate_cfg:
+            del generate_cfg['seed']
 
         def generate_and_signal_complete():
             self.ov_model.generate(**generate_cfg)
@@ -124,7 +125,8 @@ class OpenVINO(BaseFnCallModel):
                 input_ids=input_token,
                 max_new_tokens=generate_cfg.get('max_new_tokens', 2048),
             ))
-        del generate_cfg['seed']
+        if 'seed' in generate_cfg:
+            del generate_cfg['seed']
 
         response = self.ov_model.generate(**generate_cfg)
         response = response[:, len(input_token[0]):]
@@ -145,7 +147,7 @@ class OpenVINOGenAI(BaseFnCallModel):
     Example passing pipeline in directly:
         llm_cfg = {
             'ov_model_dir': 'Qwen3-8B-ov',
-            'model_type': 'openvino-genaiu',
+            'model_type': 'openvino-genai',
             'device': 'CPU'
             }
         system_instruction = '''After receiving the user's request, you should:
@@ -174,10 +176,8 @@ class OpenVINOGenAI(BaseFnCallModel):
         self.config = openvino_genai.GenerationConfig()
         self.use_genai_tokenizer = cfg.get("use_genai_tokenizer", True)
         self.chat_mode = cfg.get("chat_mode", False)
-        self.streamer = ChunkStreamer(self.tokenizer)
         self.full_prompt = True
-        if self.chat_mode:
-            self.pipe.start_chat()
+
 
         if self.use_genai_tokenizer:
             self.tokenizer = self.pipe.get_tokenizer()
@@ -340,7 +340,11 @@ class OpenVINOGenAI(BaseFnCallModel):
                     self.tokens_cache.append(token_id)
                     return False
                 return super().put(token_id)
-
+            
+        self.streamer = ChunkStreamer(self.tokenizer)
+        if self.chat_mode:
+            self.pipe.start_chat()
+        
     def _chat_stream(
         self,
         messages: List[Message],
