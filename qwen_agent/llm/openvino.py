@@ -176,6 +176,7 @@ class OpenVINOGenAI(BaseFnCallModel):
         self.config = openvino_genai.GenerationConfig()
         self.use_genai_tokenizer = cfg.get("use_genai_tokenizer", True)
         self.chat_mode = cfg.get("chat_mode", False)
+        self.disable_thinking = cfg.get("disable_thinking", False)
         self.full_prompt = True
 
 
@@ -363,6 +364,9 @@ class OpenVINOGenAI(BaseFnCallModel):
             messages_plain = [message.model_dump() for message in messages]
         else:
             messages_plain = [messages[-1].model_dump()]
+            
+        if self.disable_thinking:
+            messages_plain[-1]['content'] = messages_plain[-1]['content'] + "/no_think"
 
         if self.use_genai_tokenizer:
             inputs_ov = self.tokenizer.apply_chat_template(
@@ -422,6 +426,9 @@ class OpenVINOGenAI(BaseFnCallModel):
             messages_plain = [message.model_dump() for message in messages]
         else:
             messages_plain = [messages[-1].model_dump()]
+            
+        if self.disable_thinking:
+            messages_plain[-1]['content'] = messages_plain[-1]['content'] + "/no_think"
 
         self.config.max_new_tokens = generate_cfg.get("max_new_tokens", self.config.max_new_tokens)
         self.config.do_sample = generate_cfg.get("do_sample", self.config.do_sample)
