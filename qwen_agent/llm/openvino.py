@@ -179,7 +179,6 @@ class OpenVINOGenAI(BaseFnCallModel):
         self.disable_thinking = cfg.get("disable_thinking", False)
         self.full_prompt = True
 
-
         if self.use_genai_tokenizer:
             self.tokenizer = self.pipe.get_tokenizer()
             if "genai_chat_template" in cfg:
@@ -341,11 +340,11 @@ class OpenVINOGenAI(BaseFnCallModel):
                     self.tokens_cache.append(token_id)
                     return False
                 return super().put(token_id)
-            
+
         self.streamer = ChunkStreamer(self.tokenizer)
         if self.chat_mode:
             self.pipe.start_chat()
-        
+
     def _chat_stream(
         self,
         messages: List[Message],
@@ -364,17 +363,19 @@ class OpenVINOGenAI(BaseFnCallModel):
             messages_plain = [message.model_dump() for message in messages]
         else:
             messages_plain = [messages[-1].model_dump()]
-            
-        if self.disable_thinking:
-            messages_plain[-1]['content'] = messages_plain[-1]['content'] + "/no_think"
 
         if self.use_genai_tokenizer:
+            if self.disable_thinking:
+                messages_plain[-1]['content'] = messages_plain[-1]['content'] + "/no_think"
             inputs_ov = self.tokenizer.apply_chat_template(
                 messages_plain, add_generation_prompt=True
             ) 
         else:
             chat_prompt = self.tokenizer.apply_chat_template(
-                messages_plain, tokenize=False, add_generation_prompt=True
+                messages_plain,
+                tokenize=False,
+                add_generation_prompt=True,
+                enable_thinking=False if self.disable_thinking else True,
             )
             tokenized = self.tokenizer(
                 chat_prompt, return_tensors="pt", add_special_tokens=False
@@ -422,31 +423,29 @@ class OpenVINOGenAI(BaseFnCallModel):
 
         generate_cfg = copy.deepcopy(generate_cfg)
 
-        if self.full_prompt:
-            messages_plain = [message.model_dump() for message in messages]
-        else:
-            messages_plain = [messages[-1].model_dump()]
-            
-        if self.disable_thinking:
-            messages_plain[-1]['content'] = messages_plain[-1]['content'] + "/no_think"
-
         self.config.max_new_tokens = generate_cfg.get("max_new_tokens", self.config.max_new_tokens)
         self.config.do_sample = generate_cfg.get("do_sample", self.config.do_sample)
         self.config.top_p = generate_cfg.get("top_p", self.config.top_p)
         self.config.top_k = generate_cfg.get("top_k", self.config.top_k)
         self.config.temperature = generate_cfg.get("temperature", self.config.temperature)
 
-        messages_plain = [message.model_dump() for message in messages]
+        if self.full_prompt:
+            messages_plain = [message.model_dump() for message in messages]
+        else:
+            messages_plain = [messages[-1].model_dump()]
+
         if self.use_genai_tokenizer:
+            if self.disable_thinking:
+                messages_plain[-1]['content'] = messages_plain[-1]['content'] + "/no_think"
             inputs_ov = self.tokenizer.apply_chat_template(
                 messages_plain, add_generation_prompt=True
-            )
-            answer_ov = self.pipe.generate(
-                inputs_ov, generation_config=self.config,
-            )
+            ) 
         else:
             chat_prompt = self.tokenizer.apply_chat_template(
-                messages_plain, tokenize=False, add_generation_prompt=True
+                messages_plain,
+                tokenize=False,
+                add_generation_prompt=True,
+                enable_thinking=False if self.disable_thinking else True,
             )
             tokenized = self.tokenizer(
                 chat_prompt, return_tensors="pt", add_special_tokens=False
