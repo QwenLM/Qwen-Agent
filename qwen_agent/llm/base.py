@@ -1,11 +1,11 @@
 # Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #    http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,7 +21,7 @@ from abc import ABC, abstractmethod
 from pprint import pformat
 from typing import Any, Dict, Iterator, List, Literal, Optional, Tuple, Union
 
-from qwen_agent.llm.schema import ASSISTANT, DEFAULT_SYSTEM_MESSAGE, SYSTEM, USER, FUNCTION, Message
+from qwen_agent.llm.schema import ASSISTANT, DEFAULT_SYSTEM_MESSAGE, FUNCTION, SYSTEM, USER, Message
 from qwen_agent.log import logger
 from qwen_agent.settings import DEFAULT_MAX_INPUT_TOKENS
 from qwen_agent.utils.tokenization_qwen import tokenizer
@@ -141,7 +141,7 @@ class BaseChatModel(ABC):
         messages = new_messages
 
         if not messages:
-            raise ValueError("Messages can not be empty.")
+            raise ValueError('Messages can not be empty.')
 
         # Cache lookup:
         if self.cache is not None:
@@ -399,11 +399,18 @@ class BaseChatModel(ABC):
                 if msg['role'] in ['system', 'user']:
                     new_messages.append(msg)
                 elif msg['role'] == 'tool':
-                    msg['role'] = 'function'
-                    new_messages.append(msg)
+                    new_msg = copy.deepcopy(msg)
+                    new_msg['role'] = 'function'
+                    new_messages.append(new_msg)
                 elif msg['role'] == 'assistant':
                     if msg['content']:
                         new_messages.append({'role': 'assistant', 'content': msg['content']})
+                    if msg.get('reasoning_content', ''):
+                        new_messages.append({
+                            'role': 'assistant',
+                            'content': '',
+                            'reasoning_content': msg['reasoning_content']
+                        })
                     if msg.get('tool_calls'):
                         for tool in msg.get('tool_calls'):
                             new_messages.append({
@@ -562,14 +569,14 @@ def _truncate_input_messages_roughly(messages: List[Message], max_tokens: int) -
             text = '\n'.join(text)
             content = tokenizer.truncate(text, max_token=max_tokens, keep_both_sides=keep_both_sides)
         return Message(role=msg.role, content=content)
-    
+
     if messages and messages[0].role == SYSTEM:
         sys_msg = messages[0]
         available_token = max_tokens - _count_tokens(sys_msg)
     else:
         sys_msg = None
         available_token = max_tokens
-    
+
     token_cnt = 0
     new_messages = []
     for i in range(len(messages) - 1, -1, -1):
@@ -594,7 +601,7 @@ def _truncate_input_messages_roughly(messages: List[Message], max_tokens: int) -
             else:
                 token_cnt = (max_tokens - available_token) + cur_token_cnt
                 break
-    
+
     if sys_msg is not None:
         new_messages = [sys_msg] + new_messages
 
