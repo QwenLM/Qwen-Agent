@@ -1,11 +1,11 @@
 # Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #    http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import copy
+import json
 import logging
 import os
 from pprint import pformat
@@ -27,7 +28,7 @@ else:
 
 from qwen_agent.llm.base import ModelServiceError, register_llm
 from qwen_agent.llm.function_calling import BaseFnCallModel
-from qwen_agent.llm.schema import ASSISTANT, Message
+from qwen_agent.llm.schema import ASSISTANT, FunctionCall, Message
 from qwen_agent.log import logger
 
 
@@ -100,6 +101,7 @@ class TextChatAtOAI(BaseFnCallModel):
         generate_cfg: dict,
     ) -> Iterator[List[Message]]:
         messages = self.convert_messages_to_dicts(messages)
+        logger.debug(f'LLM Input generate_cfg: \n{generate_cfg}')
         try:
             response = self._chat_complete_create(model=self.model, messages=messages, stream=True, **generate_cfg)
             if delta_stream:
@@ -117,6 +119,7 @@ class TextChatAtOAI(BaseFnCallModel):
             else:
                 full_response = ''
                 full_reasoning_content = ''
+                full_tool_calls = []
                 for chunk in response:
                     if chunk.choices:
                         if hasattr(chunk.choices[0].delta,
@@ -124,7 +127,32 @@ class TextChatAtOAI(BaseFnCallModel):
                             full_reasoning_content += chunk.choices[0].delta.reasoning_content
                         if hasattr(chunk.choices[0].delta, 'content') and chunk.choices[0].delta.content:
                             full_response += chunk.choices[0].delta.content
-                        yield [Message(role=ASSISTANT, content=full_response, reasoning_content=full_reasoning_content)]
+                        if hasattr(chunk.choices[0].delta, 'tool_calls') and chunk.choices[0].delta.tool_calls:
+                            for tc in chunk.choices[0].delta.tool_calls:
+                                if full_tool_calls and tc.id == full_tool_calls[-1]['extra']['function_id']:
+                                    if tc.function.name:
+                                        full_tool_calls[-1]['name'] += tc.function.name
+                                    if tc.function.arguments:
+                                        full_tool_calls[-1]['arguments'] += tc.function.arguments
+                                else:
+                                    full_tool_calls.append(
+                                        Message(role=ASSISTANT,
+                                                content='',
+                                                function_call=FunctionCall(name=tc.function.name,
+                                                                           arguments=tc.function.arguments),
+                                                extra={'function_id': tc.id}))
+
+                        res = []
+                        if full_reasoning_content:
+                            res.append(Message(role=ASSISTANT, content='', reasoning_content=full_reasoning_content))
+                        if full_response:
+                            res.append(Message(
+                                role=ASSISTANT,
+                                content=full_response,
+                            ))
+                        if full_tool_calls:
+                            res += full_tool_calls
+                        yield res
         except OpenAIError as ex:
             raise ModelServiceError(exception=ex)
 
@@ -147,12 +175,12 @@ class TextChatAtOAI(BaseFnCallModel):
         except OpenAIError as ex:
             raise ModelServiceError(exception=ex)
 
-    @staticmethod
-    def convert_messages_to_dicts(messages: List[Message]) -> List[dict]:
+    def convert_messages_to_dicts(self, messages: List[Message]) -> List[dict]:
         # TODO: Change when the VLLM deployed model needs to pass reasoning_complete.
         #  At this time, in order to be compatible with lower versions of vLLM,
         #  and reasoning content is currently not useful
         messages = [msg.model_dump() for msg in messages]
+        messages = self._conv_qwen_agent_messages_to_oai(messages)
 
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(f'LLM Input:\n{pformat(messages, indent=2)}')

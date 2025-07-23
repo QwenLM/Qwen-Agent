@@ -1,11 +1,11 @@
 # Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #    http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,12 +23,16 @@ from qwen_agent.tools.base import BaseTool, register_tool
 @register_tool('amap_weather')
 class AmapWeather(BaseTool):
     description = '获取对应城市的天气数据'
-    parameters = [{
-        'name': 'location',
-        'type': 'string',
-        'description': '城市/区具体名称，如`北京市海淀区`请描述为`海淀区`',
-        'required': True
-    }]
+    parameters = {
+        'type': 'object',
+        'properties': {
+            'location': {
+                'description': '城市/区具体名称，如`北京市海淀区`请描述为`海淀区`',
+                'type': 'string',
+            }
+        },
+        'required': ['location'],
+    }
 
     def __init__(self, cfg: Optional[Dict] = None):
         super().__init__(cfg)
@@ -47,7 +51,7 @@ class AmapWeather(BaseTool):
     def get_city_adcode(self, city_name):
         filtered_df = self.city_df[self.city_df['中文名'] == city_name]
         if len(filtered_df['adcode'].values) == 0:
-            raise ValueError(f'location {city_name} not found, availables are {self.city_df["中文名"]}')
+            raise ValueError(f'location {city_name} not found, availables are {self.city_df['中文名']}')
         else:
             return filtered_df['adcode'].values[0]
 

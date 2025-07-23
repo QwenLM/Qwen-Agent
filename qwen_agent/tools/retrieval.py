@@ -1,11 +1,11 @@
 # Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #    http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -40,21 +40,28 @@ def _check_deps_for_rag():
 
 @register_tool('retrieval')
 class Retrieval(BaseTool):
-    description = f'从给定文件列表中检索出和问题相关的内容，支持文件类型包括：{"/".join(PARSER_SUPPORTED_FILE_TYPES)}'
-    parameters = [{
-        'name': 'query',
-        'type': 'string',
-        'description': '在这里列出关键词，用逗号分隔，目的是方便在文档中匹配到相关的内容，由于文档可能多语言，关键词最好中英文都有。',
-        'required': True
-    }, {
-        'name': 'files',
-        'type': 'array',
-        'items': {
-            'type': 'string'
+    description = f'从给定文件列表中检索出和问题相关的内容，支持文件类型包括：{' / '.join(PARSER_SUPPORTED_FILE_TYPES)}'
+    parameters = {
+        'type': 'object',
+        'properties': {
+            'query': {
+                'description': '在这里列出关键词，用逗号分隔，目的是方便在文档中匹配到相关的内容，由于文档可能多语言，关键词最好中英文都有。',
+                'type': 'string',
+            },
+            'files': {
+                'description': '待解析的文件路径列表，支持本地文件路径或可下载的http(s)链接。',
+                'type': 'array',
+                'items': {
+                    'type': 'string'
+                }
+            },
+            'value': {
+                'description': '数据的内容，仅存数据时需要',
+                'type': 'string',
+            },
         },
-        'description': '待解析的文件路径列表，支持本地文件路径或可下载的http(s)链接。',
-        'required': True
-    }]
+        'required': ['query', 'files'],
+    }
 
     def __init__(self, cfg: Optional[Dict] = None):
         super().__init__(cfg)

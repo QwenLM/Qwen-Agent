@@ -32,6 +32,7 @@ Qwen-Agent是一个开发框架。开发者可基于本框架开发Agent应用�
 现在，Qwen-Agent 作为 [Qwen Chat](https://chat.qwen.ai/) 的后端运行。
 
 # 更新
+* 🔥🔥🔥Jul 23, 2025: 新增 [Qwen3-Coder Tool-call Demo](./examples/assistant_qwen3_coder.py)；新增原生API工具调用接口支持，例如可使用vLLM自带的工具调用解析。
 * 🔥🔥🔥May 1, 2025: 新增 [Qwen3 Tool-call Demo](./examples/assistant_qwen3.py)；新增 [MCP cookbooks](./examples/)。
 * Mar 18, 2025: 支持`reasoning_content`字段；调整默认的[Function Call模版](./qwen_agent/llm/fncall_prompts/nous_fncall_prompt.py)（适用于Qwen2.5系列通用模型、QwQ-32B）。如果需要使用旧版模版：请参考[样例](./examples/function_calling.py)传递参数。
 * Mar 7, 2025: 新增[QwQ-32B Tool-call Demo](./examples/assistant_qwq.py)，支持并行、多步、多轮工具调用。
@@ -70,7 +71,9 @@ Qwen-Agent支持接入阿里云[DashScope](https://help.aliyun.com/zh/dashscope/
 
 - 或者，如果您希望部署并使用您自己的模型服务，请按照Qwen2的README中提供的指导进行操作，以部署一个兼容OpenAI接口协议的API服务。
 具体来说，请参阅[vLLM](https://github.com/QwenLM/Qwen2?tab=readme-ov-file#vllm)一节了解高并发的GPU部署方式，或者查看[Ollama](https://github.com/QwenLM/Qwen2?tab=readme-ov-file#ollama)一节了解本地CPU（+GPU）部署。
-注意对于QwQ和Qwen3模型，建议启动服务时加`--enable-reasoning`和`--reasoning-parser deepseek_r1`两个参数，**不加**`--enable-auto-tool-choice`和`--tool-call-parser hermes`两个参数，因为Qwen-Agent会自行解析vLLM的工具输出。
+
+注意对于QwQ和Qwen3模型，建议启动服务时**不加**`--enable-auto-tool-choice`和`--tool-call-parser hermes`两个参数，因为Qwen-Agent会自行解析vLLM的工具输出。
+对于Qwen3-Coder，则建议开启以上两个参数，使用vLLM自带的工具解析，并搭配`use_raw_api`参数[使用](#如何传递llm参数给agent)。
 
 ## 快速开发
 
@@ -251,6 +254,9 @@ llm_cfg = {
 
         # 将直接输入模型API的参数，例如top_p, enable_thinking等，根据API规范传入：
         # 'top_p': 0.8
+
+        # Using the API's native tool call interface
+        # 'use_raw_api': True,
     }
 }
 ```

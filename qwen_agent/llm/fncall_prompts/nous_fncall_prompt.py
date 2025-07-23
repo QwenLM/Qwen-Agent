@@ -1,11 +1,11 @@
 # Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #    http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -113,6 +113,7 @@ class NousFnCallPrompt(BaseFnCallPrompt):
             raise NotImplementedError
         # Convert plaintext responses to function_call responses:
         new_messages = []
+        tool_id = 1
         for msg in messages:
             role, content, reasoning_content, extra = msg.role, msg.content, msg.reasoning_content, msg.extra
             assert isinstance(content, list)
@@ -171,6 +172,8 @@ class NousFnCallPrompt(BaseFnCallPrompt):
                                 ))  # split thought and function call
                                 new_content = []
                             # TODO: process incomplete tool-call messages
+                            _extra = copy.deepcopy(extra)
+                            _extra['function_id'] = str(tool_id)
                             new_messages.append(
                                 Message(
                                     role=ASSISTANT,
@@ -179,7 +182,7 @@ class NousFnCallPrompt(BaseFnCallPrompt):
                                         name=fn_name,
                                         arguments=fn_args,
                                     ),
-                                    extra=extra,
+                                    extra=_extra,
                                 ))
                         continue
 
@@ -209,6 +212,8 @@ class NousFnCallPrompt(BaseFnCallPrompt):
                         except Exception:
                             logger.warning('Invalid json tool-calling arguments')
                             fn_name, fn_args = extract_fn(one_tool_call_txt[0].strip())
+                            _extra = copy.deepcopy(extra)
+                            _extra['function_id'] = str(tool_id)
                             new_messages.append(
                                 Message(
                                     role=ASSISTANT,
@@ -217,9 +222,11 @@ class NousFnCallPrompt(BaseFnCallPrompt):
                                         name=fn_name,
                                         arguments=fn_args,
                                     ),
-                                    extra=extra,
+                                    extra=_extra,
                                 ))
                     if fn:
+                        _extra = copy.deepcopy(extra)
+                        _extra['function_id'] = str(tool_id)
                         new_messages.append(
                             Message(
                                 role=ASSISTANT,
@@ -228,7 +235,7 @@ class NousFnCallPrompt(BaseFnCallPrompt):
                                     name=fn['name'],
                                     arguments=json.dumps(fn['arguments'], ensure_ascii=False),
                                 ),
-                                extra=extra,
+                                extra=_extra,
                             ))
                     # Expected not to output extra tails
                     # if one_tool_call_txt[1].strip():

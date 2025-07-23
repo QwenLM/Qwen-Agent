@@ -1,11 +1,11 @@
 # Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #    http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -56,12 +56,16 @@ class Record(BaseModel):
 @register_tool('doc_parser')
 class DocParser(BaseTool):
     description = '对一个文件进行内容提取和分块、返回分块后的文件内容'
-    parameters = [{
-        'name': 'url',
-        'type': 'string',
-        'description': '待解析的文件的路径，可以是一个本地路径或可下载的http(s)链接',
-        'required': True
-    }]
+    parameters = {
+        'type': 'object',
+        'properties': {
+            'url': {
+                'description': '待解析的文件的路径，可以是一个本地路径或可下载的http(s)链接',
+                'type': 'string',
+            }
+        },
+        'required': ['url'],
+    }
 
     def __init__(self, cfg: Optional[Dict] = None):
         super().__init__(cfg)

@@ -198,6 +198,11 @@ class BaseChatModel(ABC):
             if fn_choice == 'none':
                 fncall_mode = False
 
+        use_raw_api = generate_cfg.pop('use_raw_api', False)
+        if use_raw_api:
+            assert stream and (not delta_stream), '`use_raw_api` only support full stream!!!'
+            return self.raw_chat(messages=messages, functions=functions, stream=stream, generate_cfg=generate_cfg)
+
         # Note: the preprocessor's behavior could change if it receives function_choice="none"
         messages = self._preprocess_messages(messages, lang=lang, generate_cfg=generate_cfg, functions=functions)
         if not self.support_multimodal_input:
@@ -241,7 +246,7 @@ class BaseChatModel(ABC):
 
         if isinstance(output, list):
             assert not stream
-            logger.debug(f'LLM Output:\n{pformat([_.model_dump() for _ in output], indent=2)}')
+            logger.debug(f'LLM Output: \n{pformat([_.model_dump() for _ in output], indent=2)}')
             output = self._postprocess_messages(output, fncall_mode=fncall_mode, generate_cfg=generate_cfg)
             if not self.support_multimodal_output:
                 output = _format_as_text_messages(messages=output)
@@ -367,7 +372,7 @@ class BaseChatModel(ABC):
         pre_msg = []
         for pre_msg in messages:
             yield self._postprocess_messages(pre_msg, fncall_mode=fncall_mode, generate_cfg=generate_cfg)
-        logger.debug(f'LLM Output:\n{pformat([_.model_dump() for _ in pre_msg], indent=2)}')
+        logger.debug(f'LLM Output: \n{pformat([_.model_dump() for _ in pre_msg], indent=2)}')
 
     def _convert_messages_to_target_type(self, messages: List[Message],
                                          target_type: str) -> Union[List[Message], List[Dict]]:
@@ -383,6 +388,51 @@ class BaseChatModel(ABC):
             target_type: str) -> Union[Iterator[List[Message]], Iterator[List[Dict]]]:
         for messages in messages_iter:
             yield self._convert_messages_to_target_type(messages, target_type)
+
+    def raw_chat(
+        self,
+        messages: List[Union[Message, Dict]],
+        functions: Optional[List[Dict]] = None,
+        stream: bool = True,
+        generate_cfg: Optional[Dict] = None,
+    ) -> Union[List[Message], List[Dict], Iterator[List[Message]], Iterator[List[Dict]]]:
+        if functions and functions[0].get('type') != 'function':
+            functions = [{'type': 'function', 'function': f} for f in functions]
+        if functions:
+            generate_cfg['tools'] = functions
+        if stream:
+            return self._chat_stream(messages=messages, delta_stream=False, generate_cfg=generate_cfg)
+
+    @staticmethod
+    def _conv_qwen_agent_messages_to_oai(messages: List[Union[Message, Dict]]):
+        new_messages = []
+        for msg in messages:
+            if msg['role'] == ASSISTANT:
+                if new_messages[-1]['role'] != ASSISTANT:
+                    new_messages.append({'role': ASSISTANT})
+                if msg.get('content'):
+                    new_messages[-1]['content'] = msg['content']
+                if msg.get('reasoning_content'):
+                    new_messages[-1]['reasoning_content'] = msg['reasoning_content']
+                if msg.get('function_call'):
+                    if not new_messages[-1].get('tool_calls'):
+                        new_messages[-1]['tool_calls'] = []
+                    new_messages[-1]['tool_calls'].append({
+                        'id': msg.get('extra', {}).get('function_id', '1'),
+                        'type': 'function',
+                        'function': {
+                            'name': msg['function_call']['name'],
+                            'arguments': msg['function_call']['arguments']
+                        }
+                    })
+            elif msg['role'] == FUNCTION:
+                new_msg = copy.deepcopy(msg)
+                new_msg['role'] = 'tool'
+                new_msg['id'] = msg.get('extra', {}).get('function_id', '1')
+                new_messages.append(new_msg)
+            else:
+                new_messages.append(msg)
+        return new_messages
 
     def quick_chat_oai(self, messages: List[dict], tools: Optional[list] = None) -> dict:
         """

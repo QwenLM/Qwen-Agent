@@ -1,11 +1,11 @@
 # Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #    http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -30,21 +30,25 @@ class Storage(BaseTool):
     This is a special tool for data storage
     """
     description = '存储和读取数据的工具'
-    parameters = [{
-        'name': 'operate',
-        'type': 'string',
-        'description': '数据操作类型，可选项为["put", "get", "delete", "scan"]之一，分别为存数据、取数据、删除数据、遍历数据',
-        'required': True
-    }, {
-        'name': 'key',
-        'type': 'string',
-        'description': '数据的路径，类似于文件路径，是一份数据的唯一标识，不能为空，默认根目录为`/`。存数据时，应该合理的设计路径，保证路径含义清晰且唯一。',
-        'default': '/'
-    }, {
-        'name': 'value',
-        'type': 'string',
-        'description': '数据的内容，仅存数据时需要'
-    }]
+    parameters = {
+        'type': 'object',
+        'properties': {
+            'operate': {
+                'description': '数据操作类型，可选项为["put", "get", "delete", "scan"]之一，分别为存数据、取数据、删除数据、遍历数据',
+                'type': 'string',
+            },
+            'key': {
+                'description': '数据的路径，类似于文件路径，是一份数据的唯一标识，不能为空，默认根目录为`/`。存数据时，应该合理的设计路径，保证路径含义清晰且唯一。',
+                'type': 'string',
+                'default': '/'
+            },
+            'value': {
+                'description': '数据的内容，仅存数据时需要',
+                'type': 'string',
+            },
+        },
+        'required': ['operate'],
+    }
 
     def __init__(self, cfg: Optional[Dict] = None):
         super().__init__(cfg)

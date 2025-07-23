@@ -1,11 +1,11 @@
 # Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #    http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -314,7 +314,7 @@ def postprocess_page_content(page_content: list) -> list:
                 p.get('font-size', 12) -
                 new_page_content[-1].get('font-size', 12)) < 2 and p['obj'].height < p.get('font-size', 12) + 1:
             # Merge those lines belonging to a paragraph
-            new_page_content[-1]['text'] += f' {p["text"]}'
+            new_page_content[-1]['text'] += f' {p['text']}'
             # new_page_content[-1]['font-name'] = p.get('font-name', '')
             new_page_content[-1]['font-size'] = p.get('font-size', 12)
         else:
@@ -379,13 +379,17 @@ def get_plain_doc(doc: list):
 
 @register_tool('simple_doc_parser')
 class SimpleDocParser(BaseTool):
-    description = f'提取出一个文档的内容，支持类型包括：{"/".join(PARSER_SUPPORTED_FILE_TYPES)}'
-    parameters = [{
-        'name': 'url',
-        'type': 'string',
-        'description': '待提取的文件的路径，可以是一个本地路径或可下载的http(s)链接',
-        'required': True
-    }]
+    description = f'提取出一个文档的内容，支持类型包括：{'/'.join(PARSER_SUPPORTED_FILE_TYPES)}'
+    parameters = {
+        'type': 'object',
+        'properties': {
+            'url': {
+                'description': '待提取的文件的路径，可以是一个本地路径或可下载的http(s)链接',
+                'type': 'string',
+            }
+        },
+        'required': ['url'],
+    }
 
     def __init__(self, cfg: Optional[Dict] = None):
         super().__init__(cfg)
@@ -460,7 +464,7 @@ class SimpleDocParser(BaseTool):
                     parsed_file = parse_excel(path, self.extract_image)
                 else:
                     raise ValueError(
-                        f'Failed: The current parser does not support this file type! Supported types: {"/".join(PARSER_SUPPORTED_FILE_TYPES)}'
+                        f'Failed: The current parser does not support this file type! Supported types: {'/'.join(PARSER_SUPPORTED_FILE_TYPES)}'
                     )
             except Exception as ex:
                 exception_type = type(ex).__name__

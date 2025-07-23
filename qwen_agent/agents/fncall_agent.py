@@ -1,11 +1,11 @@
 # Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #    http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -95,11 +95,10 @@ class FnCallAgent(Agent):
                     use_tool, tool_name, tool_args, _ = self._detect_tool(out)
                     if use_tool:
                         tool_result = self._call_tool(tool_name, tool_args, messages=messages, **kwargs)
-                        fn_msg = Message(
-                            role=FUNCTION,
-                            name=tool_name,
-                            content=tool_result,
-                        )
+                        fn_msg = Message(role=FUNCTION,
+                                         name=tool_name,
+                                         content=tool_result,
+                                         extra={'function_id': out.extra.get('function_id', '1')})
                         messages.append(fn_msg)
                         response.append(fn_msg)
                         yield response
