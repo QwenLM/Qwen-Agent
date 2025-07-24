@@ -35,7 +35,6 @@ def init_agent_service():
     #     'model': 'qwen3-coder-480b-a35b-instruct',
     #     'model_server': 'https://dashscope.aliyuncs.com/compatible-mode/v1',
     #     'api_key': os.getenv('DASHSCOPE_API_KEY'),
-
     #     'generate_cfg': {
     #         # Using the API's native tool call interface
     #         'use_raw_api': True,

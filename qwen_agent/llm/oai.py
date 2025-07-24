@@ -13,13 +13,14 @@
 # limitations under the License.
 
 import copy
-import json
 import logging
 import os
 from pprint import pformat
 from typing import Dict, Iterator, List, Optional
 
 import openai
+
+from qwen_agent.utils.utils import format_as_text_message
 
 if openai.__version__.startswith('0.'):
     from openai.error import OpenAIError  # noqa
@@ -129,11 +130,12 @@ class TextChatAtOAI(BaseFnCallModel):
                             full_response += chunk.choices[0].delta.content
                         if hasattr(chunk.choices[0].delta, 'tool_calls') and chunk.choices[0].delta.tool_calls:
                             for tc in chunk.choices[0].delta.tool_calls:
-                                if full_tool_calls and tc.id == full_tool_calls[-1]['extra']['function_id']:
+                                if full_tool_calls and (not tc.id or
+                                                        tc.id == full_tool_calls[-1]['extra']['function_id']):
                                     if tc.function.name:
-                                        full_tool_calls[-1]['name'] += tc.function.name
+                                        full_tool_calls[-1].function_call['name'] += tc.function.name
                                     if tc.function.arguments:
-                                        full_tool_calls[-1]['arguments'] += tc.function.arguments
+                                        full_tool_calls[-1].function_call['arguments'] += tc.function.arguments
                                 else:
                                     full_tool_calls.append(
                                         Message(role=ASSISTANT,
@@ -179,9 +181,10 @@ class TextChatAtOAI(BaseFnCallModel):
         # TODO: Change when the VLLM deployed model needs to pass reasoning_complete.
         #  At this time, in order to be compatible with lower versions of vLLM,
         #  and reasoning content is currently not useful
+        messages = [format_as_text_message(msg, add_upload_info=False) for msg in messages]
         messages = [msg.model_dump() for msg in messages]
         messages = self._conv_qwen_agent_messages_to_oai(messages)
 
         if logger.isEnabledFor(logging.DEBUG):
-            logger.debug(f'LLM Input:\n{pformat(messages, indent=2)}')
+            logger.debug(f'LLM Input: \n{pformat(messages, indent=2)}')
         return messages

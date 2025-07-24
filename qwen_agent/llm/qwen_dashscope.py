@@ -16,7 +16,7 @@ import json
 import os
 from http import HTTPStatus
 from pprint import pformat
-from typing import Dict, Iterator, List, Optional, Union
+from typing import Dict, Iterator, List, Optional
 
 import dashscope
 
@@ -44,7 +44,7 @@ class QwenChatAtDS(BaseFnCallModel):
         if messages[-1]['role'] == ASSISTANT:
             messages[-1]['partial'] = True
         messages = self._conv_qwen_agent_messages_to_oai(messages)
-        logger.debug(f'LLM Input:\n{pformat(messages, indent=2)}')
+        logger.debug(f'LLM Input: \n{pformat(messages, indent=2)}')
         logger.debug(f'LLM Input generate_cfg: \n{generate_cfg}')
         response = dashscope.Generation.call(
             self.model,
@@ -66,7 +66,7 @@ class QwenChatAtDS(BaseFnCallModel):
         if messages[-1]['role'] == ASSISTANT:
             messages[-1]['partial'] = True
         messages = self._conv_qwen_agent_messages_to_oai(messages)
-        logger.debug(f'LLM Input:\n{pformat(messages, indent=2)}')
+        logger.debug(f'LLM Input: \n{pformat(messages, indent=2)}')
         response = dashscope.Generation.call(
             self.model,
             messages=messages,  # noqa
@@ -120,17 +120,18 @@ class QwenChatAtDS(BaseFnCallModel):
                 tool_calls = chunk.output.choices[0].message.get('tool_calls', None)
                 if tool_calls:
                     for tc in tool_calls:
-                        if full_tool_calls and tc['id'] == full_tool_calls[-1]['extra']['function_id']:
-                            if tc['function']['name']:
-                                full_tool_calls[-1]['name'] += tc['function']['name']
-                            if tc['function']['arguments']:
-                                full_tool_calls[-1]['arguments'] += tc['function']['arguments']
+                        if full_tool_calls and (not tc['id'] or
+                                                tc['id'] == full_tool_calls[-1]['extra']['function_id']):
+                            if tc['function'].get('name', ''):
+                                full_tool_calls[-1].function_call['name'] += tc['function']['name']
+                            if tc['function'].get('arguments', ''):
+                                full_tool_calls[-1].function_call['arguments'] += tc['function']['arguments']
                         else:
                             full_tool_calls.append(
                                 Message(role=ASSISTANT,
                                         content='',
-                                        function_call=FunctionCall(name=tc['function']['name'],
-                                                                   arguments=tc['function']['arguments']),
+                                        function_call=FunctionCall(name=tc['function'].get('name', ''),
+                                                                   arguments=tc['function'].get('arguments', '')),
                                         extra={
                                             'model_service_info': json.loads(str(chunk)),
                                             'function_id': tc['id']
