@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from .amap_weather import AmapWeather
-from .base import TOOL_REGISTRY, BaseTool
+from .base import TOOL_REGISTRY, BaseTool, ToolServiceError
 from .code_interpreter import CodeInterpreter
 from .doc_parser import DocParser
 from .extract_doc_vocabulary import ExtractDocVocabulary
@@ -28,6 +28,7 @@ from .mcp_manager import MCPManager
 from .web_search import WebSearch
 
 __all__ = [
+    'ToolServiceError',
     'BaseTool',
     'CodeInterpreter',
     'ImageGen',
