@@ -26,8 +26,8 @@ from qwen_agent.log import logger
 
 class NousFnCallPrompt(BaseFnCallPrompt):
 
-    def preprocess_fncall_messages(self,
-                                   messages: List[Message],
+    @staticmethod
+    def preprocess_fncall_messages(messages: List[Message],
                                    functions: List[dict],
                                    lang: Literal['en', 'zh'],
                                    parallel_function_calls: bool = True,
@@ -102,8 +102,8 @@ class NousFnCallPrompt(BaseFnCallPrompt):
             messages = [Message(role=SYSTEM, content=[ContentItem(text=tool_system)])] + messages
         return messages
 
+    @staticmethod
     def postprocess_fncall_messages(
-        self,
         messages: List[Message],
         parallel_function_calls: bool = True,
         function_choice: Union[Literal['auto'], str] = 'auto',
