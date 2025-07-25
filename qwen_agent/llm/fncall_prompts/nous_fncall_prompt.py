@@ -135,6 +135,8 @@ class NousFnCallPrompt(BaseFnCallPrompt):
                     new_content.append(item)
                     continue
                 if thought_in_content:
+                    if '<think>' not in item_text:
+                        item_text = '<think>\n' + item_text
                     if '</think>' not in item_text:
                         new_content.append(ContentItem(text=item_text))
                         continue

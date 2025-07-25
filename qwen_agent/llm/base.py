@@ -531,6 +531,8 @@ def _format_as_text_messages(messages: List[Message]) -> List[Message]:
 
 def _postprocess_stop_words(messages: List[Message], stop: List[str]) -> List[Message]:
     messages = copy.deepcopy(messages)
+    if not messages:
+        return messages
 
     # Make sure it stops before stop words.
     trunc_messages = []

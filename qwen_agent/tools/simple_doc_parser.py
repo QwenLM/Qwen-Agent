@@ -314,7 +314,8 @@ def postprocess_page_content(page_content: list) -> list:
                 p.get('font-size', 12) -
                 new_page_content[-1].get('font-size', 12)) < 2 and p['obj'].height < p.get('font-size', 12) + 1:
             # Merge those lines belonging to a paragraph
-            new_page_content[-1]['text'] += f' {p['text']}'
+            _p = p['text']
+            new_page_content[-1]['text'] += f' {_p}'
             # new_page_content[-1]['font-name'] = p.get('font-name', '')
             new_page_content[-1]['font-size'] = p.get('font-size', 12)
         else:
@@ -379,7 +380,7 @@ def get_plain_doc(doc: list):
 
 @register_tool('simple_doc_parser')
 class SimpleDocParser(BaseTool):
-    description = f'提取出一个文档的内容，支持类型包括：{'/'.join(PARSER_SUPPORTED_FILE_TYPES)}'
+    description = f"提取出一个文档的内容，支持类型包括：{' / '.join(PARSER_SUPPORTED_FILE_TYPES)}"
     parameters = {
         'type': 'object',
         'properties': {
@@ -463,9 +464,9 @@ class SimpleDocParser(BaseTool):
                 elif f_type in ['xlsx', 'xls']:
                     parsed_file = parse_excel(path, self.extract_image)
                 else:
+                    _t = '/'.join(PARSER_SUPPORTED_FILE_TYPES)
                     raise ValueError(
-                        f'Failed: The current parser does not support this file type! Supported types: {'/'.join(PARSER_SUPPORTED_FILE_TYPES)}'
-                    )
+                        f'Failed: The current parser does not support this file type! Supported types: {_t}')
             except Exception as ex:
                 exception_type = type(ex).__name__
                 exception_message = str(ex)

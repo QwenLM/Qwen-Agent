@@ -51,7 +51,8 @@ class AmapWeather(BaseTool):
     def get_city_adcode(self, city_name):
         filtered_df = self.city_df[self.city_df['中文名'] == city_name]
         if len(filtered_df['adcode'].values) == 0:
-            raise ValueError(f'location {city_name} not found, availables are {self.city_df['中文名']}')
+            _c = self.city_df['中文名']
+            raise ValueError(f'location {city_name} not found, availables are {_c}')
         else:
             return filtered_df['adcode'].values[0]
 

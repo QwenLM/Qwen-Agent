@@ -40,7 +40,7 @@ def _check_deps_for_rag():
 
 @register_tool('retrieval')
 class Retrieval(BaseTool):
-    description = f'从给定文件列表中检索出和问题相关的内容，支持文件类型包括：{' / '.join(PARSER_SUPPORTED_FILE_TYPES)}'
+    description = f"从给定文件列表中检索出和问题相关的内容，支持文件类型包括：{' / '.join(PARSER_SUPPORTED_FILE_TYPES)}"
     parameters = {
         'type': 'object',
         'properties': {
