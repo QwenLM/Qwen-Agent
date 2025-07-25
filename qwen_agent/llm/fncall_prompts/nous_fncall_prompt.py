@@ -115,7 +115,7 @@ class NousFnCallPrompt(BaseFnCallPrompt):
         new_messages = []
         tool_id = 1
         for msg in messages:
-            role, content, reasoning_content, extra = msg.role, msg.content, msg.reasoning_content, msg.extra
+            role, content, reasoning_content, extra = msg.role, msg.content, msg.reasoning_content, msg.get('extra', {})
             assert isinstance(content, list)
 
             if role in (SYSTEM, USER):
