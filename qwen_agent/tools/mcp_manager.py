@@ -449,14 +449,10 @@ class MCPClient:
                 return f'Error: {e}'
         else:
             response = await self.session.call_tool(tool_name, tool_args)
-            texts = []
-            for content in response.content:
-                if content.type == 'text':
-                    texts.append(content.text)
-            if texts:
-                return '\n\n'.join(texts)
-            else:
+            if not response or response.isError:
                 return 'execute error'
+            texts = [c.text for c in response.content if c.type == 'text']
+            return '\n\n'.join(texts)
 
     async def cleanup(self):
         await self.exit_stack.aclose()
