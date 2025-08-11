@@ -22,6 +22,7 @@ import json5
 from qwen_agent.llm.fncall_prompts.base_fncall_prompt import BaseFnCallPrompt
 from qwen_agent.llm.schema import ASSISTANT, FUNCTION, SYSTEM, USER, ContentItem, FunctionCall, Message
 from qwen_agent.log import logger
+import re
 
 
 class NousFnCallPrompt(BaseFnCallPrompt):
@@ -134,6 +135,8 @@ class NousFnCallPrompt(BaseFnCallPrompt):
                 if item_type != 'text':  # multimodal
                     new_content.append(item)
                     continue
+                # <<< 新增：将 DeepSeek 标签块转为 Nous 块 >>>
+                item_text = convert_deepseek_tool_blocks_to_nous(item_text)
                 if thought_in_content:
                     if '<think>' not in item_text:
                         item_text = '<think>\n' + item_text
@@ -284,6 +287,58 @@ For code parameters, use placeholders first, and then put the code within <code>
 Here is the code.
 </code>
 </tool_call>"""
+
+# 补丁：
+def _normalize_deepseek_tags(text: str) -> str:
+    """将全角竖线/下划线等替换为标准 ASCII，便于正则匹配。"""
+    if not text:
+        return text
+    return text.replace('｜', '|').replace('▁', '_')
+
+
+def convert_deepseek_tool_blocks_to_nous(text: str) -> str:
+    """
+    将 DeepSeek 的原生工具标签块：
+      <|tool_calls_begin|> ... <|tool_call_begin|>function<|tool_sep|>NAME ... JSON ... <|tool_call_end|> ... <|tool_calls_end|>
+    转换为 Nous 解析器可识别的块：
+      <tool_call>\n{"name": "NAME", "arguments": {...}}\n</tool_call>
+    支持 ```json 包裹，可处理多个 tool_call。
+    """
+    if not text or ('tool_calls' not in text and 'tool▁calls' not in text and 'tool_calls' not in text.replace('｜','|').replace('▁','_')):
+        return text
+
+    t = _normalize_deepseek_tags(text)
+
+    # 仅处理 tool_calls 区域，避免误伤其他文本
+    def _replace_region(m: re.Match) -> str:
+        region = m.group(1)  # 内部内容
+        out_blocks = []
+
+        # 逐个提取 <|tool_call_begin|> ... <|tool_call_end|>
+        for m_call in re.finditer(
+            r"<\|tool_call_begin\|>\s*function\s*<\|tool_sep\|>\s*([^\s<]+)\s*(.*?)<\|tool_call_end\|>",
+            region, flags=re.S
+        ):
+            name = m_call.group(1).strip()
+            body = m_call.group(2)
+
+            # 从 body 中抓 JSON，兼容 ```json ... ```
+            m_json = re.search(r"(?:```(?:json)?\s*)?(\{.*?\})(?:\s*```)?", body, flags=re.S)
+            if not m_json:
+                # 没抓到 JSON 就跳过这个 call
+                continue
+            args = m_json.group(1).strip()
+
+            # 生成 Nous 风格块
+            out_blocks.append(f'<tool_call>\n{{"name": "{name}", "arguments": {args}}}\n</tool_call>')
+
+        # 把多个 call 串起来返回
+        return "\n".join(out_blocks) if out_blocks else m.group(0)
+
+    # 用回调替换 <|tool_calls_begin|>...<|tool_calls_end|> 整段
+    t2 = re.sub(r"<\|tool_calls_begin\|>(.*?)<\|tool_calls_end\|>", _replace_region, t, flags=re.S)
+
+    return t2
 
 
 # Mainly for removing incomplete special tokens when streaming the output
