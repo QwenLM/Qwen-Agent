@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import copy
+import json
 import logging
 import os
 from pprint import pformat
@@ -91,9 +92,25 @@ class TextChatAtOAI(BaseFnCallModel):
 
                 client = openai.OpenAI(**api_kwargs)
                 return client.completions.create(*args, **kwargs)
+            
+            def _response_create(*args, **kwargs):
+                # OpenAI API v1 does not allow the following args, must pass by extra_body
+                extra_params = ['top_k', 'repetition_penalty']
+                if any((k in kwargs) for k in extra_params):
+                    kwargs['extra_body'] = copy.deepcopy(kwargs.get('extra_body', {}))
+                    for k in extra_params:
+                        if k in kwargs:
+                            kwargs['extra_body'][k] = kwargs.pop(k)
+                if 'request_timeout' in kwargs:
+                    kwargs['timeout'] = kwargs.pop('request_timeout')
+
+                client = openai.OpenAI(**api_kwargs)
+                return client.responses.create(tools=[], *args, **kwargs)
+                
 
             self._complete_create = _complete_create
             self._chat_complete_create = _chat_complete_create
+            self._response_create = _response_create
 
     def _chat_stream(
         self,
@@ -165,15 +182,36 @@ class TextChatAtOAI(BaseFnCallModel):
     ) -> List[Message]:
         messages = self.convert_messages_to_dicts(messages)
         try:
-            response = self._chat_complete_create(model=self.model, messages=messages, stream=False, **generate_cfg)
-            if hasattr(response.choices[0].message, 'reasoning_content'):
-                return [
-                    Message(role=ASSISTANT,
-                            content=response.choices[0].message.content,
-                            reasoning_content=response.choices[0].message.reasoning_content)
-                ]
+            if generate_cfg.get('oai_response_api', False):
+
+                logger.debug(f"未处理之前的{messages}")
+                # Convert to Response API input format
+                response_api_input = self._convert_to_response_api_input(messages)
+                logger.debug(f"Response API input: {response_api_input}")
+                
+                # Use OpenAI Response API for thinking-with-tools LLM outputs
+                response_cfg = generate_cfg.copy()
+                del response_cfg['oai_response_api']
+                response_cfg.pop('seed', None)
+                
+                response = self._response_create(model=self.model, input=response_api_input, **response_cfg)
+                logger.debug(f"response.output: {response.output}")
+                
+                # Convert Response API output to Qwen-Agent Messages
+                output = self._convert_from_response_api_output(response.output)
+                logger.debug(f"Converted output: {[msg.model_dump() for msg in output]}")
+                return output
+                                
             else:
-                return [Message(role=ASSISTANT, content=response.choices[0].message.content)]
+                response = self._chat_complete_create(model=self.model, messages=messages, stream=False, **generate_cfg)
+                if hasattr(response.choices[0].message, 'reasoning_content'):
+                    return [
+                        Message(role=ASSISTANT,
+                                content=response.choices[0].message.content,
+                                reasoning_content=response.choices[0].message.reasoning_content)
+                    ]
+                else:
+                    return [Message(role=ASSISTANT, content=response.choices[0].message.content)]
         except OpenAIError as ex:
             raise ModelServiceError(exception=ex)
 
@@ -187,4 +225,97 @@ class TextChatAtOAI(BaseFnCallModel):
 
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(f'LLM Input: \n{pformat(messages, indent=2)}')
+        return messages
+    
+    def _convert_to_response_api_input(self, messages: List[dict]) -> List[dict]:
+        """
+        Convert Qwen-Agent message format to OpenAI Response API input format.
+        Handles special message types like function_call_output.
+        """
+        response_api_messages = []
+        
+        for msg in messages:
+            # Handle function call output (tool results)
+            if msg.get('role') == 'tool' and msg.get('id'):
+                response_api_messages.append({
+                    'type': 'function_call_output',
+                    'call_id': msg['id'],
+                    'output': msg.get('content', '')
+                })
+            elif msg.get('reasoning_content'):
+                # Extract tool_calls fields that belong to Response API format
+                response_msg = msg.copy()
+                response_api_messages.append({
+                    'type': 'reasoning' if response_msg.get('reasoning_content') else 'message',
+                    'content': [
+                        {
+                            'text': response_msg.get('reasoning_content', ''),
+                            'type': 'reasoning_text'
+                         }
+                    ],
+                    'status': None
+                })
+                if 'tool_calls' in response_msg:
+                    tool_calls = response_msg.pop('tool_calls')
+                    for tool_call in tool_calls:
+                        # Merge relevant tool_calls fields
+                        if isinstance(tool_call, dict):
+                            tool_call.update(tool_call['function'])
+                            del tool_call['function']
+                            response_api_messages.append({
+                                'type': 'function_call',
+                                'name': tool_call.get('name', ''),
+                                'arguments': tool_call.get('arguments', ''),
+                                'call_id': tool_call.get('id', ''),
+                                'status': None
+                            })
+            else:
+                # Handle regular messages
+                response_api_messages.append(msg)
+
+        return response_api_messages
+    
+    def _convert_from_response_api_output(self, output_items) -> List[Message]:
+        """
+        Convert OpenAI Response API output to Qwen-Agent Message format.
+        """
+        messages = []
+        
+        for item in output_items:
+            if item.type == 'reasoning':
+                messages.append(Message(
+                    role=ASSISTANT,
+                    reasoning_content=item.content[0].text,
+                    content='',
+                    extra={
+                        'status': item.status
+                    }
+                ))
+            elif item.type == 'function_call':
+                messages.append(Message(
+                    role=ASSISTANT,
+                    content='',
+                    function_call=FunctionCall(
+                        name=item.name,
+                        arguments=item.arguments
+                    ),
+                    extra={
+                        'call_id': item.call_id,
+                        'type': item.type,
+                        'function_id': item.call_id,  # for backward compatibility
+                        'status': item.status
+                    }
+                ))
+            elif item.type == 'message':
+                messages.append(Message(
+                    role=ASSISTANT,
+                    content=item.content[0].text
+                ))
+            else:
+                # Handle unknown types gracefully
+                logger.warning(f"Unknown Response API output type: {item.type}")
+                if hasattr(item, 'content') and item.content:
+                    content = item.content[0].text if isinstance(item.content, list) else str(item.content)
+                    messages.append(Message(role=ASSISTANT, content=content))
+        
         return messages
