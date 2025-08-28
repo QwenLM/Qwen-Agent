@@ -13,11 +13,13 @@
 # limitations under the License.
 
 import copy
+from datetime import datetime
 from typing import Dict, Iterator, List, Literal, Optional, Union
 
 from qwen_agent import Agent
 from qwen_agent.llm import BaseChatModel
 from qwen_agent.llm.schema import DEFAULT_SYSTEM_MESSAGE, FUNCTION, Message
+from qwen_agent.log import logger
 from qwen_agent.memory import Memory
 from qwen_agent.settings import MAX_LLM_CALL_PER_RUN
 from qwen_agent.tools import BaseTool
@@ -94,7 +96,11 @@ class FnCallAgent(Agent):
                 for out in output:
                     use_tool, tool_name, tool_args, _ = self._detect_tool(out)
                     if use_tool:
+                        logger.debug(f'Calling tool `{tool_name}` with arguments: {tool_args}')
+                        call_time = datetime.now()
                         tool_result = self._call_tool(tool_name, tool_args, messages=messages, **kwargs)
+                        elapsed_time = (datetime.now() - call_time).total_seconds()
+                        logger.debug(f'Tool `{tool_name}` returned in {elapsed_time}s. Result: {tool_result}')
                         fn_msg = Message(role=FUNCTION,
                                          name=tool_name,
                                          content=tool_result,
