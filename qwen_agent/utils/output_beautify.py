@@ -24,7 +24,7 @@ THOUGHT_S = '[THINK]'
 ANSWER_S = '[ANSWER]'
 
 
-def typewriter_print(messages: List[dict], text: str) -> str:
+def typewriter_print(messages: List[dict], text: str, **kwargs) -> str:
     full_text = ''
     content = []
     for msg in messages:
@@ -43,6 +43,6 @@ def typewriter_print(messages: List[dict], text: str) -> str:
             raise TypeError
     if content:
         full_text = '\n'.join(content)
-        print(full_text[len(text):], end='', flush=True)
+        print(full_text[len(text):], end='', flush=True, **kwargs)
 
     return full_text
