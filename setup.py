@@ -84,7 +84,7 @@ setup(
         ],
 
         # Extra dependencies for MCP:
-        'mcp': ['mcp'],
+        'mcp': ['mcp', 'openai-agents>=0.2.8'],
 
         # Extra dependencies for Python Executor, which is primarily for solving math problems:
         'python_executor': [
