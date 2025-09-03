@@ -80,9 +80,12 @@ class FnCallAgent(Agent):
             extra_generate_cfg = {'lang': lang}
             if kwargs.get('seed') is not None:
                 extra_generate_cfg['seed'] = kwargs['seed']
-            output_stream = self._call_llm(messages=messages,
-                                           functions=[func.function for func in self.function_map.values()],
-                                           extra_generate_cfg=extra_generate_cfg)
+            functions = kwargs.pop("functions", self.function_map.keys())
+            output_stream = self._call_llm(
+                messages=messages,
+                functions=[self.function_map[func].function for func in functions if func in self.function_map],
+                extra_generate_cfg=extra_generate_cfg
+            )
             output: List[Message] = []
             for output in output_stream:
                 if output:
