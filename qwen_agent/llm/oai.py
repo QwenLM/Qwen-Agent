@@ -133,16 +133,17 @@ class TextChatAtOAI(BaseFnCallModel):
                                 if full_tool_calls and (not tc.id or
                                                         tc.id == full_tool_calls[-1]['extra']['function_id']):
                                     if tc.function.name:
-                                        full_tool_calls[-1].function_call['name'] += tc.function.name
+                                        full_tool_calls[-1]['function_call']['name'] += tc.function.name
                                     if tc.function.arguments:
-                                        full_tool_calls[-1].function_call['arguments'] += tc.function.arguments
+                                        full_tool_calls[-1]['function_call']['arguments'] += tc.function.arguments
                                 else:
-                                    full_tool_calls.append(
-                                        Message(role=ASSISTANT,
-                                                content='',
-                                                function_call=FunctionCall(name=tc.function.name,
-                                                                           arguments=tc.function.arguments),
-                                                extra={'function_id': tc.id}))
+                                    full_tool_calls.append({
+                                        'function_call': {
+                                            "name": tc.function.name,
+                                            "arguments": tc.function.arguments or ''
+                                        },
+                                        'extra': {'function_id': tc.id}
+                                    })
 
                         res = []
                         if full_reasoning_content:
@@ -152,9 +153,16 @@ class TextChatAtOAI(BaseFnCallModel):
                                 role=ASSISTANT,
                                 content=full_response,
                             ))
-                        if full_tool_calls:
-                            res += full_tool_calls
                         yield res
+                if full_tool_calls:
+                    for full_tool_call in full_tool_calls:
+                        res.append(Message(
+                            role=ASSISTANT,
+                            content='',
+                            function_call=FunctionCall(**full_tool_call['function_call']),
+                            extra=full_tool_call['extra']
+                        ))
+                    yield res
         except OpenAIError as ex:
             raise ModelServiceError(exception=ex)
 
