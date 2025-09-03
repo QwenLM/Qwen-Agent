@@ -153,8 +153,6 @@ class TextChatAtOAI(BaseFnCallModel):
                                 role=ASSISTANT,
                                 content=full_response,
                             ))
-                        if full_tool_calls:
-                            res += full_tool_calls
                         yield res
                 if full_tool_calls:
                     for full_tool_call in full_tool_calls:
