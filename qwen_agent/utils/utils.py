@@ -1,11 +1,11 @@
 # Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #    http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -361,6 +361,7 @@ def format_as_multimodal_message(
                     files.append((v['data'], k))
                 else:
                     raise TypeError
+
         if add_upload_info and files and (msg.role in (SYSTEM, USER)):
             if lang == 'auto':
                 has_zh = has_chinese_chars(msg)
@@ -388,20 +389,28 @@ def format_as_multimodal_message(
                         upload.append(f'[文件]({f})')
                     else:
                         upload.append(f'[file]({f})')
-            upload = ' '.join(upload)
-            if has_zh:
-                upload = f'（上传了 {upload}）\n\n'
-            else:
-                upload = f'(Uploaded {upload})\n\n'
-
-            # Check and avoid adding duplicate upload info
-            upload_info_already_added = False
-            for item in content:
-                if item.text and (upload in item.text):
-                    upload_info_already_added = True
-
-            if not upload_info_already_added:
-                content = [ContentItem(text=upload)] + content
+            if upload:
+                upload = ' '.join(upload)
+                if msg.role in (SYSTEM, USER):
+                    if has_zh:
+                        upload = f'（上传了 {upload}）'
+                    else:
+                        upload = f'(Uploaded {upload}) '
+                elif msg.role in (ASSISTANT, FUNCTION):
+                    if has_zh:
+                        upload = f'{upload}'
+                    else:
+                        upload = f'{upload}'
+                # Check and avoid adding duplicate upload info
+                upload_info_already_added = False
+                for item in content:
+                    if item.text and (upload in item.text):
+                        upload_info_already_added = True
+                if not upload_info_already_added:
+                    if msg.role == ASSISTANT or msg.role == FUNCTION:
+                        content = [ContentItem(text=upload)]
+                    else:
+                        content = [ContentItem(text=upload)] + content
     else:
         raise TypeError
     msg = Message(role=msg.role,
@@ -457,6 +466,16 @@ def extract_files_from_messages(messages: List[Message], include_images: bool) -
     return files
 
 
+def extract_images_from_messages(messages: List[Message]) -> List[str]:
+    files = []
+    for msg in messages:
+        if isinstance(msg.content, list):
+            for item in msg.content:
+                if item.image and item.image not in files:
+                    files.append(item.image)
+    return files
+
+
 def merge_generate_cfgs(base_generate_cfg: Optional[dict], new_generate_cfg: Optional[dict]) -> dict:
     generate_cfg: dict = copy.deepcopy(base_generate_cfg or {})
     if new_generate_cfg:
@@ -475,10 +494,8 @@ def build_text_completion_prompt(
     allow_special: bool = False,
     default_system: str = DEFAULT_SYSTEM_MESSAGE,
 ) -> str:
-    logger.warning(
-        'Support for `build_text_completion_prompt` is deprecated. '
-        'Please use `tokenizer.apply_chat_template(...)` instead to construct the prompt from messages.'
-    )
+    logger.warning('Support for `build_text_completion_prompt` is deprecated. '
+                   'Please use `tokenizer.apply_chat_template(...)` instead to construct the prompt from messages.')
 
     im_start = '<|im_start|>'
     im_end = '<|im_end|>'

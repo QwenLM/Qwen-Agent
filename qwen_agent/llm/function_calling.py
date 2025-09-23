@@ -1,11 +1,11 @@
 # Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #    http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -44,8 +44,11 @@ class BaseFnCallModel(BaseChatModel, ABC):
         lang: Literal['en', 'zh'],
         generate_cfg: dict,
         functions: Optional[List[Dict]] = None,
+        use_raw_api: bool = False,
     ) -> List[Message]:
         messages = super()._preprocess_messages(messages, lang=lang, generate_cfg=generate_cfg, functions=functions)
+        if use_raw_api:
+            return messages
         if (not functions) or (generate_cfg.get('function_choice', 'auto') == 'none'):
             messages = self._remove_fncall_messages(messages, lang=lang)
         else:
@@ -92,7 +95,7 @@ class BaseFnCallModel(BaseChatModel, ABC):
                     if lang == 'zh':
                         tool_text = f'\n\n工具"{tool_name}"被调用时使用了以下参数：\n{tool_args}'
                     else:
-                        tool_text = f'\n\nThe tool "{tool_name}" was called with these arguments:\n{tool_args}'
+                        tool_text = f'\n\nThe tool "{tool_name}" was called with these arguments: \n{tool_args}'
                 else:
                     assert msg.role == FUNCTION
                     if msg.content:
@@ -105,7 +108,7 @@ class BaseFnCallModel(BaseChatModel, ABC):
                     if lang == 'zh':
                         tool_text = f'\n\n该工具返回了以下结果：\n{tool_result}'
                     else:
-                        tool_text = f'\n\nThe tool has returned the following result:\n{tool_result}'
+                        tool_text = f'\n\nThe tool has returned the following result: \n{tool_result}'
                 new_messages[-1].content.append(ContentItem(text=tool_text))
             else:
                 if (msg.role == USER) and new_messages and (new_messages[-1].role == USER):

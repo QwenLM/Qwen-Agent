@@ -18,6 +18,7 @@ import os
 import random
 import time
 from abc import ABC, abstractmethod
+from collections import defaultdict
 from pprint import pformat
 from typing import Any, Dict, Iterator, List, Literal, Optional, Tuple, Union
 
@@ -84,6 +85,15 @@ class BaseChatModel(ABC):
         self.model_type = cfg.get('model_type', '')
         if 'dashscope' in self.model_type:
             self.generate_cfg['incremental_output'] = True
+
+        self.use_raw_api = os.getenv('QWEN_AGENT_USE_RAW_API', 'false').lower() == 'true'
+        if 'use_raw_api' in generate_cfg:
+            self.use_raw_api = generate_cfg.pop('use_raw_api')
+        elif self.model_type == 'qwen_dashscope':
+            # set qwen3-max to `use_raw_api`
+            if self.model == 'qwen3-max' and (not self.use_raw_api):
+                logger.info('Setting `use_raw_api` to True when using `Qwen3-Max`')
+                self.use_raw_api = True
 
         if cache_dir:
             try:
@@ -198,15 +208,19 @@ class BaseChatModel(ABC):
             if fn_choice == 'none':
                 fncall_mode = False
 
-        use_raw_api = generate_cfg.pop('use_raw_api', False)
-        if use_raw_api:
-            assert stream and (not delta_stream), '`use_raw_api` only support full stream!!!'
-            return self.raw_chat(messages=messages, functions=functions, stream=stream, generate_cfg=generate_cfg)
-
         # Note: the preprocessor's behavior could change if it receives function_choice="none"
-        messages = self._preprocess_messages(messages, lang=lang, generate_cfg=generate_cfg, functions=functions)
+        messages = self._preprocess_messages(messages,
+                                             lang=lang,
+                                             generate_cfg=generate_cfg,
+                                             functions=functions,
+                                             use_raw_api=self.use_raw_api)
         if not self.support_multimodal_input:
             messages = [format_as_text_message(msg, add_upload_info=False) for msg in messages]
+
+        if self.use_raw_api:
+            logger.debug('`use_raw_api` takes effect.')
+            assert stream and (not delta_stream), '`use_raw_api` only support full stream!!!'
+            return self.raw_chat(messages=messages, functions=functions, stream=stream, generate_cfg=generate_cfg)
 
         if not fncall_mode:
             for k in ['parallel_function_calls', 'function_choice', 'thought_in_content']:
@@ -330,6 +344,7 @@ class BaseChatModel(ABC):
         lang: Literal['en', 'zh'],
         generate_cfg: dict,
         functions: Optional[List[Dict]] = None,
+        use_raw_api: bool = False,
     ) -> List[Message]:
         add_multimodel_upload_info = False
         if functions or (not self.support_multimodal_input):
@@ -483,7 +498,7 @@ class BaseChatModel(ABC):
                 if item.get('content'):
                     message['content'] += item['content']
 
-                if 'function_call' in item:
+                if item.get('function_call'):
                     tool_call = {
                         'id': f"{len(message['tool_calls']) + 1}",
                         'type': 'function',
@@ -561,14 +576,15 @@ def _postprocess_stop_words(messages: List[Message], stop: List[str]) -> List[Me
             s = tokenizer.convert_tokens_to_string(s)
             partial_stop.append(s)
     partial_stop = sorted(set(partial_stop))
-    last_msg = messages[-1].content
-    for i in range(len(last_msg) - 1, -1, -1):
-        item_type, item_text = last_msg[i].get_type_and_value()
-        if item_type == 'text':
-            for s in partial_stop:
-                if item_text.endswith(s):
-                    last_msg[i].text = item_text[:-len(s)]
-            break
+    if messages:
+        last_msg = messages[-1].content
+        for i in range(len(last_msg) - 1, -1, -1):
+            item_type, item_text = last_msg[i].get_type_and_value()
+            if item_type == 'text':
+                for s in partial_stop:
+                    if item_text.endswith(s):
+                        last_msg[i].text = item_text[:-len(s)]
+                break
 
     return messages
 
@@ -590,6 +606,8 @@ def _truncate_input_messages_roughly(messages: List[Message], max_tokens: int) -
             message='The input messages must contain no more than one system message. '
             ' And the system message, if exists, must be the first message.',
         )
+    if not messages:
+        return messages
 
     turns = []
     for m in messages:
@@ -607,6 +625,8 @@ def _truncate_input_messages_roughly(messages: List[Message], max_tokens: int) -
                 )
 
     def _count_tokens(msg: Message) -> int:
+        if msg.role == ASSISTANT and msg.function_call:
+            return tokenizer.count_tokens(f'{msg.function_call}')
         return tokenizer.count_tokens(extract_text_from_message(msg, add_upload_info=True))
 
     def _truncate_message(msg: Message, max_tokens: int, keep_both_sides: bool = False):
@@ -622,49 +642,165 @@ def _truncate_input_messages_roughly(messages: List[Message], max_tokens: int) -
             content = tokenizer.truncate(text, max_token=max_tokens, keep_both_sides=keep_both_sides)
         return Message(role=msg.role, content=content)
 
-    if messages and messages[0].role == SYSTEM:
-        sys_msg = messages[0]
-        available_token = max_tokens - _count_tokens(sys_msg)
-    else:
-        sys_msg = None
-        available_token = max_tokens
+    def _truncate_turn(indexed_messages1: list, message_tokens1: dict, exceedance: int, is_last_turn: bool):
+        # ******* rm this turn *******
+        all_tokens = 0
+        for msg_idx, msg in indexed_messages1:
+            all_tokens += message_tokens1[msg_idx]
+        logger.debug(f'exceedance start: {exceedance}, all tokens of this turn {all_tokens}')
+        if all_tokens <= exceedance:
+            # remove all turn
+            return [], (exceedance - all_tokens)
 
-    token_cnt = 0
-    new_messages = []
-    for i in range(len(messages) - 1, -1, -1):
-        if messages[i].role == SYSTEM:
-            continue
-        cur_token_cnt = _count_tokens(messages[i])
-        if cur_token_cnt <= available_token:
-            new_messages = [messages[i]] + new_messages
-            available_token -= cur_token_cnt
-        else:
-            if (messages[i].role == USER) and (i != len(messages) - 1):
-                _msg = _truncate_message(messages[i], max_tokens=available_token)
-                if _msg:
-                    new_messages = [_msg] + new_messages
-                break
-            elif messages[i].role == FUNCTION:
-                _msg = _truncate_message(messages[i], max_tokens=available_token, keep_both_sides=True)
-                if _msg:
-                    new_messages = [_msg] + new_messages
+        # ******* trunk this turn *******
+        if len(indexed_messages1) == 1:
+            assert is_last_turn
+            # very long user
+            idx, msg = indexed_messages1[0]
+            msg = _truncate_message(msg=msg, max_tokens=message_tokens1[idx] - exceedance, keep_both_sides=True)
+            return [msg], 0
+
+        indexed_messages1 = copy.deepcopy(indexed_messages1)
+        message_tokens1 = copy.deepcopy(message_tokens1)
+
+        # split this turn by step
+        messages_per_step = []  # [ [ (idx, msg), (idx, msg) ], [], ... ]
+        for msg_idx, msg in indexed_messages1:
+            if msg.role == USER:
+                if messages_per_step and messages_per_step[-1][-1][1].role == USER:
+                    messages_per_step[-1].append([msg_idx, msg])
                 else:
-                    break
-            else:
-                token_cnt = (max_tokens - available_token) + cur_token_cnt
+                    messages_per_step.append([[msg_idx, msg]])
+            elif msg.role == ASSISTANT:
+                if messages_per_step and messages_per_step[-1][-1][1].role == ASSISTANT:
+                    messages_per_step[-1].append([msg_idx, msg])
+                else:
+                    messages_per_step.append([[msg_idx, msg]])
+            elif msg.role == FUNCTION:
+                messages_per_step[-1].append([msg_idx, msg])
+
+        last_step_idx = messages_per_step[-1][0][0]
+
+        # step1: minimized function result
+        logger.debug(f'exceedance step1 **minimized function result**: {exceedance}')
+        for i, (msg_idx, msg) in enumerate(indexed_messages1):
+            if exceedance <= 0 or msg.role != FUNCTION or (is_last_turn and msg_idx >= last_step_idx):
+                continue
+
+            fn_msg_tokens = message_tokens1[msg_idx]
+
+            if fn_msg_tokens > exceedance:  # enough save room, can be truncated
+                msg = _truncate_message(msg=msg, max_tokens=fn_msg_tokens - exceedance, keep_both_sides=True)
+                indexed_messages1[i][1] = msg
+                message_tokens1[msg_idx] = fn_msg_tokens - exceedance
+                exceedance = 0  # force to set to 0 to avoid _truncate_message corner cases since we know there is no exceedance
                 break
+            else:
+                msg.content = 'omit'
+                message_tokens1[msg_idx] = 0
+                exceedance -= fn_msg_tokens
+        if exceedance <= 0:
+            return [x[1] for x in indexed_messages1], 0
 
-    if sys_msg is not None:
-        new_messages = [sys_msg] + new_messages
+        # step2: rm middle step
+        logger.debug(f'exceedance step2 **rm middle step**: {exceedance}')
+        # keep_messages =
+        keep_idx = 0
+        for i, step in enumerate(messages_per_step):
+            if i == 0 or i == (len(messages_per_step) - 1):
+                continue
+            step_tokens = sum([message_tokens1[x[0]] for x in step])
+            if step_tokens >= exceedance:
+                exceedance = 0
+                keep_idx = messages_per_step[i + 1][0][0]
+                break
+            else:
+                exceedance -= step_tokens
+                keep_idx = messages_per_step[i + 1][0][0]
 
-    if (sys_msg is not None and len(new_messages) < 2) or (sys_msg is None and len(new_messages) < 1):
+        if exceedance <= 0:
+            res = [x[1] for x in messages_per_step[0]] + [x[1] for x in indexed_messages1 if x[0] >= keep_idx]
+            return res, 0
+
+        # step3: trunk FUNCTION of last step
+        logger.debug(f'exceedance step3 **trunk FUNCTION of last step**: {exceedance}')
+        messages_to_keep = []
+        for msg_idx, msg in messages_per_step[-1]:
+            if msg.role != FUNCTION:
+                messages_to_keep.append([msg_idx, msg])
+                continue
+
+            fn_msg_tokens = message_tokens1[msg_idx]
+
+            if fn_msg_tokens > exceedance:  # enough save room, can be truncated
+                msg = _truncate_message(msg=msg, max_tokens=fn_msg_tokens - exceedance, keep_both_sides=True)
+                exceedance = 0  # force to set to 0 to avoid _truncate_message corner cases since we know there is no exceedance
+            else:
+                msg.content = 'omit'
+                message_tokens1[msg_idx] = 0
+                exceedance -= fn_msg_tokens
+            messages_to_keep.append([msg_idx, msg])
+
+        messages_to_keep = messages_per_step[0] + messages_to_keep
+        if exceedance <= 0:
+            return [x[1] for x in messages_to_keep], 0
+
+        # step4: trunk content of user/assistant
+        logger.debug(f'exceedance step4 **trunk content of user/assistant**: {exceedance}')
+        for i, (msg_idx, msg) in enumerate(messages_to_keep):
+            fn_msg_tokens = message_tokens1[msg_idx]
+
+            if fn_msg_tokens > exceedance:  # enough save room, can be truncated
+                msg = _truncate_message(msg=msg, max_tokens=fn_msg_tokens - exceedance, keep_both_sides=True)
+                messages_to_keep[i][1] = msg
+                exceedance = 0  # force to set to 0 to avoid _truncate_message corner cases since we know there is no exceedance
+                break
+            else:
+                msg.content = 'omit'
+                exceedance -= fn_msg_tokens
+
+        return [x[1] for x in messages_to_keep], 0
+
+    available_token = max_tokens
+    message_tokens = defaultdict(int)
+    last_user_idx = None
+    indexed_messages_per_user = defaultdict(list)  # user_msg_idx -> [(msg_idx, msg)...]
+    new_messages = []
+    for msg_idx, msg in enumerate(messages):
+        if msg.role == SYSTEM:
+            new_messages.append(msg)
+            available_token = max_tokens - _count_tokens(msg=msg)
+            continue
+        message_tokens[msg_idx] = _count_tokens(msg=msg)
+        if msg.role == USER:
+            last_user_idx = msg_idx
+        indexed_messages_per_user[last_user_idx].append([msg_idx, msg])
+
+    all_tokens = sum([x for x in message_tokens.values()])
+    logger.info(f'ALL tokens: {all_tokens}, Available tokens: {available_token}')
+    if all_tokens <= available_token:
+        return messages
+    if available_token <= 0:
         raise ModelServiceError(
             code='400',
-            message=f'The input messages exceed the maximum context length ({max_tokens} tokens) after '
-            f'keeping only the system message (if exists) and the latest one user message (around {token_cnt} tokens). '
-            'To configure the context limit, please specifiy "max_input_tokens" in the model generate_cfg. '
-            f'Example: generate_cfg = {{..., "max_input_tokens": {(token_cnt // 100 + 1) * 100}}}',
+            message=f'The input system has exceed the maximum input context length ({max_tokens} tokens)',
         )
+
+    exceedance = all_tokens - available_token  # make exceedance <= 0 -> ok
+    for it, (user_msg_idx, indexed_messages) in enumerate(indexed_messages_per_user.items()):
+        logger.debug(f'user_msg_idx: {user_msg_idx}, exceedance: {exceedance}')
+        if exceedance <= 0:
+            new_messages += [x[1] for x in indexed_messages]
+            continue
+        else:
+            is_last_turn = (it == len(indexed_messages_per_user) - 1)
+            new_turn, exceedance = _truncate_turn(indexed_messages1=indexed_messages,
+                                                  message_tokens1=message_tokens,
+                                                  exceedance=exceedance,
+                                                  is_last_turn=is_last_turn)
+            if new_turn:
+                new_messages += new_turn
+
     return new_messages
 
 

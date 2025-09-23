@@ -78,9 +78,7 @@ class NousFnCallPrompt(BaseFnCallPrompt):
                     messages.append(Message(role=role, content=content, reasoning_content=reasoning_content))
             elif role == FUNCTION:
                 assert isinstance(content, list)
-                assert len(content) == 1
-                fc = f'<tool_response>\n{content[0].text}\n</tool_response>'
-                content = [ContentItem(text=fc)]
+                content = [ContentItem(text='<tool_response>\n')] + content + [ContentItem(text='\n</tool_response>')]
                 if messages[-1].role == USER:
                     messages[-1].content.append(ContentItem(text='\n'))
                     messages[-1].content.extend(content)
@@ -101,7 +99,7 @@ class NousFnCallPrompt(BaseFnCallPrompt):
         else:
             messages = [Message(role=SYSTEM, content=[ContentItem(text=tool_system)])] + messages
         return messages
-
+    
     def postprocess_fncall_messages(
         self,
         messages: List[Message],
@@ -115,7 +113,8 @@ class NousFnCallPrompt(BaseFnCallPrompt):
         new_messages = []
         tool_id = 1
         for msg in messages:
-            role, content, reasoning_content, extra = msg.role, msg.content, msg.reasoning_content, msg.get('extra', {})
+            role, content, reasoning_content, extra = msg.role, msg.content, msg.reasoning_content, msg.extra
+            extra = extra or {}
             assert isinstance(content, list)
 
             if role in (SYSTEM, USER):
@@ -134,9 +133,10 @@ class NousFnCallPrompt(BaseFnCallPrompt):
                 if item_type != 'text':  # multimodal
                     new_content.append(item)
                     continue
+                # Do not parse <tool_call> in thought!!!
+                if '<think>' in item_text:
+                    thought_in_content = True
                 if thought_in_content:
-                    if '<think>' not in item_text:
-                        item_text = '<think>\n' + item_text
                     if '</think>' not in item_text:
                         new_content.append(ContentItem(text=item_text))
                         continue
@@ -174,8 +174,9 @@ class NousFnCallPrompt(BaseFnCallPrompt):
                                 ))  # split thought and function call
                                 new_content = []
                             # TODO: process incomplete tool-call messages
-                            _extra = copy.deepcopy(extra)
+                            _extra = copy.deepcopy(extra) if extra else {'function_id': ''}
                             _extra['function_id'] = str(tool_id)
+                            tool_id += 1
                             new_messages.append(
                                 Message(
                                     role=ASSISTANT,
@@ -214,8 +215,9 @@ class NousFnCallPrompt(BaseFnCallPrompt):
                         except Exception:
                             logger.warning('Invalid json tool-calling arguments')
                             fn_name, fn_args = extract_fn(one_tool_call_txt[0].strip())
-                            _extra = copy.deepcopy(extra)
+                            _extra = copy.deepcopy(extra) if extra else {'function_id': ''}
                             _extra['function_id'] = str(tool_id)
+                            tool_id += 1
                             new_messages.append(
                                 Message(
                                     role=ASSISTANT,
@@ -226,9 +228,10 @@ class NousFnCallPrompt(BaseFnCallPrompt):
                                     ),
                                     extra=_extra,
                                 ))
-                    if fn:
-                        _extra = copy.deepcopy(extra)
+                    if fn and 'name' in fn and 'arguments' in fn:
+                        _extra = copy.deepcopy(extra) if extra else {}
                         _extra['function_id'] = str(tool_id)
+                        tool_id += 1
                         new_messages.append(
                             Message(
                                 role=ASSISTANT,

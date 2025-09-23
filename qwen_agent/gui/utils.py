@@ -18,17 +18,15 @@ from typing import Dict, List
 from qwen_agent.llm.schema import ASSISTANT, CONTENT, FUNCTION, NAME, REASONING_CONTENT, ROLE, SYSTEM, USER
 
 THINK = '''
-<details open>
+<details>
   <summary>Thinking ...</summary>
-
-<div style="color: gray;">{thought}</div>
+{thought}
 </details>
 '''
 
 TOOL_CALL = '''
 <details>
   <summary>Start calling tool "{tool_name}" ...</summary>
-
 {tool_input}
 </details>
 '''
@@ -36,10 +34,8 @@ TOOL_CALL = '''
 TOOL_OUTPUT = '''
 <details>
   <summary>Finished tool calling.</summary>
-
 {tool_output}
 </details>
-
 '''
 
 
@@ -73,7 +69,33 @@ def convert_fncall_to_text(messages: List[Dict]) -> List[Dict]:
     for msg in messages:
         role, content, reasoning_content, name = msg[ROLE], msg[CONTENT], msg.get(REASONING_CONTENT,
                                                                                   ''), msg.get(NAME, None)
-        content = (content or '').lstrip('\n').rstrip().replace('```', '')
+
+        # Handle content as list or string
+        if isinstance(content, list):
+            # Extract text content from list of content items
+            text_parts = []
+            for item in content:
+                if isinstance(item, dict):
+                    if 'text' in item:
+                        text_parts.append(item['text'])
+                    elif 'image' in item:
+                        b64 = item.get('image', '')
+                        # if b64 and not b64.startswith('data:image/'):
+                        #     # 默认按png处理
+                        #     data_url = f'data:image/png;base64,{b64}'
+                        # else:
+                        data_url = b64
+                        text_parts.append(f'<img src="{data_url}" style="max-width:100%;height:auto;" />')
+                    elif 'audio' in item:
+                        text_parts.append(f"[Audio: {item.get('audio', '')}]")
+                elif isinstance(item, str):
+                    text_parts.append(item)
+            # print(len(text_parts))
+            content = ' '.join(text_parts)
+        else:
+            content = content or ''
+
+        content = content.lstrip('\n').rstrip().replace('```', '')
 
         # if role is system or user, just append the message
         if role in (SYSTEM, USER):
