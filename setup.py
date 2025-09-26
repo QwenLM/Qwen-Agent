@@ -66,6 +66,8 @@ setup(
         'pydantic>=2.3.0',
         'requests',
         'tiktoken',
+        'pillow',
+        'dotenv',
     ],
     extras_require={
         # Extra dependencies for RAG:
