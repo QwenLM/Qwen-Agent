@@ -187,7 +187,7 @@ class BaseChatModel(ABC):
             messages = [Message(role=SYSTEM, content=DEFAULT_SYSTEM_MESSAGE)] + messages
 
         # Not precise. It's hard to estimate tokens related with function calling and multimodal items.
-        max_input_tokens = generate_cfg.pop('max_input_tokens', DEFAULT_MAX_INPUT_TOKENS)
+        max_input_tokens = generate_cfg.get('max_input_tokens', DEFAULT_MAX_INPUT_TOKENS)
         if max_input_tokens > 0:
             messages = _truncate_input_messages_roughly(
                 messages=messages,
