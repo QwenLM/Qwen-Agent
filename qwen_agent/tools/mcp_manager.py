@@ -154,8 +154,10 @@ class MCPManager:
         for server_name in mcp_servers:
             client = MCPClient()
             server = mcp_servers[server_name]
+            server_timeout = server.get('timeout')
             await client.connection_server(mcp_server_name=server_name,
                                            mcp_server=server)  # Attempt to connect to the server
+            logger.info(f'Connected to MCP server: {server_name}')
 
             client_id = server_name + '_' + str(
                 uuid.uuid4())  # To allow the same server name be used across different running agents
@@ -199,7 +201,8 @@ class MCPManager:
                                                     register_client_id=client_id,
                                                     tool_name=tool.name,
                                                     tool_desc=tool.description,
-                                                    tool_parameters=cleaned_parameters)
+                                                    tool_parameters=cleaned_parameters,
+                                                    tool_timeout=server_timeout)
                 tools.append(agent_tool)
 
             if client.resources:
@@ -221,7 +224,8 @@ class MCPManager:
                     tool_desc='Servers expose a list of concrete resources through this tool. '
                     'By invoking it, you can discover the available resources and obtain resource templates, which help clients understand how to construct valid URIs. '
                     'These URI formats will be used as input parameters for the read_resource function. ',
-                    tool_parameters=list_resources_params)
+                    tool_parameters=list_resources_params,
+                    tool_timeout=server_timeout)
                 tools.append(list_resources_agent_tool)
 
                 # Read resource
@@ -256,12 +260,13 @@ class MCPManager:
                                                                   register_client_id=client_id,
                                                                   tool_name='read_resource',
                                                                   tool_desc=tool_desc,
-                                                                  tool_parameters=read_resource_params)
+                                                                  tool_parameters=read_resource_params,
+                                                                  tool_timeout=server_timeout)
                 tools.append(read_resource_agent_tool)
 
         return tools
 
-    def create_tool_class(self, register_name, register_client_id, tool_name, tool_desc, tool_parameters):
+    def create_tool_class(self, register_name, register_client_id, tool_name, tool_desc, tool_parameters, tool_timeout=None):
 
         class ToolClass(BaseTool):
             name = register_name
@@ -270,13 +275,17 @@ class MCPManager:
             client_id = register_client_id
 
             def call(self, params: Union[str, dict], **kwargs) -> str:
-                tool_args = json.loads(params)
+                try:
+                    tool_args = json.loads(params)
+                except json.JSONDecodeError as e:
+                    logger.error(f'Failed to decode params: {params}, error: {e}')
+                    raise e
                 # Submit coroutine to the event loop and wait for the result
                 manager = MCPManager()
                 client = manager.clients[self.client_id]
                 future = asyncio.run_coroutine_threadsafe(client.execute_function(tool_name, tool_args), manager.loop)
                 try:
-                    result = future.result()
+                    result = future.result(tool_timeout)
                     return result
                 except Exception as e:
                     logger.info(f'Failed in executing MCP tool: {e}')
