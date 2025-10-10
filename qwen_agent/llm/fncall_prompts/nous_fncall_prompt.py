@@ -90,6 +90,7 @@ class NousFnCallPrompt(BaseFnCallPrompt):
         tool_descs = [{'type': 'function', 'function': f} for f in functions]
         tool_names = [function.get('name_for_model', function.get('name', '')) for function in functions]
         tool_descs = '\n'.join([json.dumps(f, ensure_ascii=False) for f in tool_descs])
+        tool_descs = tool_descs.encode('utf-8').decode('unicode_escape')
         if SPECIAL_CODE_MODE and any([CODE_TOOL_PATTERN in x for x in tool_names]):
             tool_system = FN_CALL_TEMPLATE_WITH_CI.format(tool_descs=tool_descs)
         else:
