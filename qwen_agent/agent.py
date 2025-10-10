@@ -1,11 +1,11 @@
 # Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #    http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,7 +25,7 @@ from qwen_agent.log import logger
 from qwen_agent.tools import TOOL_REGISTRY, BaseTool, MCPManager
 from qwen_agent.tools.base import ToolServiceError
 from qwen_agent.tools.simple_doc_parser import DocParserError
-from qwen_agent.utils.utils import has_chinese_messages, merge_generate_cfgs
+from qwen_agent.utils.utils import extract_text_from_message, has_chinese_messages, merge_generate_cfgs
 
 
 class Agent(ABC):
@@ -41,6 +41,7 @@ class Agent(ABC):
                  system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
                  name: Optional[str] = None,
                  description: Optional[str] = None,
+                 memory_cfg: Optional[Dict] = None,
                  **kwargs):
         """Initialization the agent.
 
@@ -52,6 +53,8 @@ class Agent(ABC):
             system_message: The specified system message for LLM chat.
             name: The name of this agent.
             description: The description of this agent, which will be used for multi_agent.
+            memory_cfg: Configuration for persistent conversation memory.
+              Set as {'persist_dir': './chroma_db', 'collection_name': 'conversations'}.
         """
         if isinstance(llm, dict):
             self.llm = get_chat_model(llm)
@@ -67,6 +70,15 @@ class Agent(ABC):
         self.system_message = system_message
         self.name = name
         self.description = description
+        if memory_cfg:
+            try:
+                from qwen_agent.memory import ConversationMemory
+                self.conversation_memory = ConversationMemory(**memory_cfg)
+            except ImportError:
+                logger.warning('ConversationMemory requires chromadb. Install with: pip install chromadb')
+                self.conversation_memory = None
+        else:
+            self.conversation_memory = None
 
     def run_nonstream(self, messages: List[Union[Dict, Message]], **kwargs) -> Union[List[Message], List[Dict]]:
         """Same as self.run, but with stream=False,
@@ -121,14 +133,34 @@ class Agent(ABC):
                     new_messages[0][CONTENT] = [ContentItem(text=self.system_message + '\n\n')
                                                ] + new_messages[0][CONTENT]  # noqa
 
+        # Retrieve relevant past conversations if memory is enabled
+        if self.conversation_memory and new_messages:
+            last_user_msg = None
+            for msg in reversed(new_messages):
+                if msg.role == 'user':
+                    last_user_msg = extract_text_from_message(msg)
+                    break
+            if last_user_msg:
+                relevant_memories = self.conversation_memory.retrieve_relevant(last_user_msg, top_k=3)
+                if relevant_memories:
+                    memory_content = '\n'.join(relevant_memories)
+                    memory_msg = Message(role=SYSTEM, content=f"Relevant past conversations:\n{memory_content}")
+                    new_messages.insert(0, memory_msg)
+
+        all_responses = []
         for rsp in self._run(messages=new_messages, **kwargs):
             for i in range(len(rsp)):
                 if not rsp[i].name and self.name:
                     rsp[i].name = self.name
+            all_responses.extend(rsp)
             if _return_message_type == 'message':
                 yield [Message(**x) if isinstance(x, dict) else x for x in rsp]
             else:
                 yield [x.model_dump() if not isinstance(x, dict) else x for x in rsp]
+
+        # Add new conversation to memory
+        if self.conversation_memory and all_responses:
+            self.conversation_memory.add_conversation(all_responses)
 
     @abstractmethod
     def _run(self, messages: List[Message], lang: str = 'en', **kwargs) -> Iterator[List[Message]]:
@@ -196,7 +228,7 @@ class Agent(ABC):
             exception_type = type(ex).__name__
             exception_message = str(ex)
             traceback_info = ''.join(traceback.format_tb(ex.__traceback__))
-            error_message = f'An error occurred when calling tool `{tool_name}`:\n' \
+            error_message = f'An error occurred when calling tool {repr(tool_name)}:\n' \
                             f'{exception_type}: {exception_message}\n' \
                             f'Traceback:\n{traceback_info}'
             logger.warning(error_message)

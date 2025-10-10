@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from .conversation_memory import ConversationMemory
 from .memory import Memory
 
 __all__ = [
+    'ConversationMemory',
     'Memory',
 ]
