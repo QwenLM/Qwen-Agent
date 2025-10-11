@@ -107,6 +107,29 @@ class ReActChat(FnCallAgent):
             text_messages[-1].content += thought + f'\nAction: {action}\nAction Input: {action_input}' + observation
 
     def _prepend_react_prompt(self, messages: List[Message], lang: Literal['en', 'zh']) -> List[Message]:
+        # Retrieve knowledge from files if available
+        knowledge = ''
+        if hasattr(self, 'mem') and self.mem:
+            try:
+                *_, last = self.mem.run(messages=messages, lang=lang)
+                knowledge = last[-1].content if last else ''
+            except Exception:
+                knowledge = ''
+
+        # Format knowledge if present
+        knowledge_prompt = ''
+        if knowledge:
+            try:
+                from qwen_agent.agents.assistant import format_knowledge_to_source_and_content, KNOWLEDGE_TEMPLATE, KNOWLEDGE_SNIPPET
+                knowledge_list = format_knowledge_to_source_and_content(knowledge)
+                snippets = []
+                for k in knowledge_list:
+                    snippets.append(KNOWLEDGE_SNIPPET[lang].format(source=k['source'], content=k['content']))
+                if snippets:
+                    knowledge_prompt = KNOWLEDGE_TEMPLATE[lang].format(knowledge='\n\n'.join(snippets)) + '\n\n'
+            except Exception:
+                knowledge_prompt = f'# Knowledge Base\n\n{knowledge}\n\n'
+
         tool_descs = []
         for f in self.function_map.values():
             function = f.function
@@ -124,7 +147,7 @@ class ReActChat(FnCallAgent):
         tool_descs = '\n\n'.join(tool_descs)
         tool_names = ','.join(tool.name for tool in self.function_map.values())
         text_messages = [format_as_text_message(m, add_upload_info=True, lang=lang) for m in messages]
-        text_messages[-1].content = PROMPT_REACT.format(
+        text_messages[-1].content = knowledge_prompt + PROMPT_REACT.format(
             tool_descs=tool_descs,
             tool_names=tool_names,
             query=text_messages[-1].content,
