@@ -15,6 +15,7 @@
 import copy
 import logging
 import os
+import urllib.parse
 from pprint import pformat
 from typing import Dict, Iterator, List, Optional
 
@@ -45,6 +46,11 @@ class TextChatAtOAI(BaseFnCallModel):
         api_base = api_base or cfg.get('base_url')
         api_base = api_base or cfg.get('model_server')
         api_base = (api_base or '').strip()
+
+        if api_base:
+            parsed = urllib.parse.urlparse(api_base)
+            if not parsed.scheme or not parsed.netloc:
+                raise ValueError(f"Invalid model_server URL: {api_base}. Please provide a valid URL like 'http://localhost:8000/v1'")
 
         api_key = cfg.get('api_key')
         api_key = api_key or os.getenv('OPENAI_API_KEY')

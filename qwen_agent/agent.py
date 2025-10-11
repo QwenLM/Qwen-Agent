@@ -256,6 +256,8 @@ class Agent(ABC):
                 self.function_map[tool_name] = tool
         else:
             if isinstance(tool, dict):
+                if 'name' not in tool:
+                    raise ValueError(f"Tool configuration dict must contain 'name' key: {tool}")
                 tool_name = tool['name']
                 tool_cfg = tool
             else:
