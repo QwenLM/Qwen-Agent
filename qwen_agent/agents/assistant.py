@@ -1,11 +1,11 @@
 # Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #    http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -88,14 +88,16 @@ class Assistant(FnCallAgent):
                  name: Optional[str] = None,
                  description: Optional[str] = None,
                  files: Optional[List[str]] = None,
-                 rag_cfg: Optional[Dict] = None):
+                 rag_cfg: Optional[Dict] = None,
+                 memory_cfg: Optional[Dict] = None):
         super().__init__(function_list=function_list,
                          llm=llm,
                          system_message=system_message,
                          name=name,
                          description=description,
                          files=files,
-                         rag_cfg=rag_cfg)
+                         rag_cfg=rag_cfg,
+                         memory_cfg=memory_cfg)
 
     def _run(self,
              messages: List[Message],
@@ -124,10 +126,10 @@ class Assistant(FnCallAgent):
             *_, last = self.mem.run(messages=messages, lang=lang, **kwargs)
             knowledge = last[-1][CONTENT]
 
-        logger.debug(f'Retrieved knowledge of type `{type(knowledge).__name__}`:\n{knowledge}')
+        logger.debug(f'Retrieved knowledge of type {repr(type(knowledge).__name__)}:\n{knowledge}')
         if knowledge:
             knowledge = format_knowledge_to_source_and_content(knowledge)
-            logger.debug(f'Formatted knowledge into type `{type(knowledge).__name__}`:\n{knowledge}')
+            logger.debug(f'Formatted knowledge into type {repr(type(knowledge).__name__)}:\n{knowledge}')
         else:
             knowledge = []
         snippets = []
