@@ -43,3 +43,4 @@ test/*
 tests/env.sh
 examples/data/*
 test.db
+.env
