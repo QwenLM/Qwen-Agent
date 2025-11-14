@@ -1,0 +1,22 @@
+Product FAQ - SmartWatch Pro
+
+Q: What is the battery life?
+A: Up to 7 days with normal use, 3 days with GPS active.
+
+Q: Is it waterproof?
+A: Yes, rated IP68. Safe for swimming and showering.
+
+Q: What phones does it work with?
+A: Compatible with iPhone (iOS 13+) and Android (8.0+).
+
+Q: How do I charge it?
+A: Use included magnetic charging cable. Full charge takes 2 hours.
+
+Q: Can I make calls?
+A: Yes, with built-in speaker and microphone via Bluetooth.
+
+Q: What's the return policy?
+A: 30-day money-back guarantee. Free returns.
+
+Q: What sensors does it have?
+A: Heart rate, SpO2, accelerometer, gyroscope, GPS, altimeter.
