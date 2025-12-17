@@ -28,24 +28,25 @@ You can ask questions like:
     - "Give me financial information about Microsoft"
     - "Compare the PE ratios of GOOGL and META"
     - "What's Alibaba's market cap? (use 9988.HK or BABA)"
+    - "What's Toyota's market info? (use 7203.T)"
 """
 
 from qwen_agent.agents import Assistant
 from qwen_agent.utils.output_beautify import typewriter_print
-
+from qwen_agent.gui import WebUI
 
 def main():
     # Step 1: Configure the LLM
     llm_cfg = {
         # Use DashScope model service:
-        'model': 'qwen-max-latest',
-        'model_type': 'qwen_dashscope',
+        #'model': 'qwen-max-latest',
+        #'model_type': 'qwen_dashscope',
         # 'api_key': 'YOUR_DASHSCOPE_API_KEY',  # Uses DASHSCOPE_API_KEY env var if not set
 
         # Or use OpenAI-compatible API (e.g., vLLM, Ollama):
-        # 'model': 'Qwen2.5-7B-Instruct',
-        # 'model_server': 'http://localhost:8000/v1',
-        # 'api_key': 'EMPTY',
+        'model': 'Qwen3-Next-80B-A3B',
+        'model_server': 'http://localhost:8080/', # local llama server
+        'api_key': 'EMPTY',
 
         'generate_cfg': {
             'top_p': 0.8,
@@ -65,6 +66,7 @@ For stock symbols:
 - US stocks: Use standard tickers (AAPL, GOOGL, MSFT, TSLA, etc.)
 - Hong Kong stocks: Add .HK suffix (9988.HK for Alibaba HK)
 - Chinese A-shares: Use .SS for Shanghai (600519.SS) or .SZ for Shenzhen (000001.SZ)
+- Tokyo stocks: Add .T suffix (7203.T for Toyota Motor Japan)
 
 Available actions for the finance tool:
 - "price": Get current stock price and trading info
@@ -112,6 +114,45 @@ Always be helpful and explain financial terms when needed.'''
         messages.extend(response)
         print()
 
+def app_gui():
+    llm_cfg = {
+        # Use DashScope model service:
+        #'model': 'qwen-max-latest',
+        #'model_type': 'qwen_dashscope',
+        # 'api_key': 'YOUR_DASHSCOPE_API_KEY',  # Uses DASHSCOPE_API_KEY env var if not set
 
+        # Or use OpenAI-compatible API (e.g., vLLM, Ollama):
+        'model': 'Qwen3-Next-80B-A3B',
+        'model_server': 'http://localhost:8080/', # local llama server
+        'api_key': 'EMPTY',
+
+        'generate_cfg': {
+            'top_p': 0.8,
+        }
+    }
+    # Define the agent
+    tools = ['finance']
+    bot = Assistant(
+        llm=llm_cfg,
+    #    system_message=system_message,
+        function_list=tools,
+        name='Qwen3 finance Demo',
+        description="I'm a demo using the Qwen3 tool finance",
+    )
+
+    chatbot_config = {
+        'prompt.suggestions': [
+            'What is Apple\'s current stock price?',
+            'Show me TSLA history for the past month',
+            'Tell me about Microsoft\'s financials',
+            'トヨタ自動車の配当について教えてください。'
+        ]
+    }
+    WebUI(
+        bot,
+        chatbot_config=chatbot_config,
+    ).run()
+    
 if __name__ == '__main__':
-    main()
+    #main()
+    app_gui()

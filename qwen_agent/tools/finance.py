@@ -54,6 +54,7 @@ class Finance(BaseTool):
                     'The stock ticker symbol (e.g., "AAPL" for Apple, "GOOGL" for Google, '
                     '"MSFT" for Microsoft, "BABA" for Alibaba, "9988.HK" for Alibaba HK). '
                     'For Chinese A-shares, use format like "600519.SS" (Shanghai) or "000001.SZ" (Shenzhen).'
+                    'For Tokyo market, use format like "7203.T" such as Toyota Motor '
                 ),
                 'type': 'string',
             },
@@ -104,7 +105,7 @@ class Finance(BaseTool):
                 return self._get_info(ticker, symbol)
             elif action == 'financials':
                 return self._get_financials(ticker, symbol)
-            else:
+            else:            
                 return f'Unknown action: {action}. Please use one of: price, history, info, financials.'
 
         except Exception as e:
@@ -227,7 +228,7 @@ class Finance(BaseTool):
 
             # Format dividend yield as percentage
             if result['dividend_yield'] != 'N/A' and result['dividend_yield'] is not None:
-                result['dividend_yield'] = f'{result["dividend_yield"] * 100:.2f}%'
+                result['dividend_yield'] = f'{result["dividend_yield"] :.2f}%'
 
             return json.dumps(result, ensure_ascii=False, indent=2)
 
