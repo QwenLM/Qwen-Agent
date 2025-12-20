@@ -164,6 +164,12 @@ class WebUI:
 
                         agent_plugins_block = self._create_agent_plugins_block()
 
+                        disable_all_plugins_btn = gr.Button(
+                            value="关闭所有插件",
+                            variant="secondary",
+                            size="sm"
+                        )
+
                         if self.prompt_suggestions:
                             gr.Examples(
                                 label='推荐对话',
@@ -178,6 +184,19 @@ class WebUI:
                             outputs=[agent_selector, agent_info_block, agent_plugins_block],
                             queue=False,
                         )
+                    # event binding for plugin selection change
+                    agent_plugins_block.change(
+                        fn=self.on_plugins_change,
+                        inputs=[agent_plugins_block, agent_selector] if len(self.agent_list) > 1 else [agent_plugins_block],
+                        queue=False,
+                    )
+
+                    # event binding for disable all plugins
+                    disable_all_plugins_btn.click(
+                        fn=lambda: [],
+                        outputs=agent_plugins_block,
+                        queue=False
+                    )
 
                     input_promise = input.submit(
                         fn=self.add_text,
@@ -364,13 +383,30 @@ class WebUI:
                 label='插件',
                 value=capabilities,
                 choices=capabilities,
-                interactive=False,
+                interactive=True,
             )
-
         else:
             return gr.CheckboxGroup(
                 label='插件',
                 value=[],
                 choices=[],
-                interactive=False,
+                interactive=True,
             )
+
+    def on_plugins_change(self, selected_plugins, agent_selector=0):
+        """event binding for plugin selection change"""
+
+        agent_index = agent_selector
+        agent = self.agent_list[agent_index]
+
+        #  backup the original function map
+        if not hasattr(agent, 'all_function_map'):
+            agent.all_function_map = agent.function_map.copy()
+
+        # update the function map based on the selected plugins
+        if selected_plugins:
+            agent.function_map = {plugin_name:agent.all_function_map[plugin_name] for plugin_name in selected_plugins}
+        else:
+            agent.function_map = {}
+
+        logger.debug(f'Update agent {agent.name} with {len(agent.function_map)} plugins: {selected_plugins}')
