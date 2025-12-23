@@ -72,6 +72,7 @@ llm_cfg = {
         # Use your own model service compatible with OpenAI API by vLLM/SGLang:
         'model': 'Qwen/Qwen3-30B-A3B-Instruct-2507',
         'model_server': 'http://localhost:8000/v1',  # api_base
+        'model_type': 'oai_async', # you can also comment here
         'api_key': 'EMPTY',
 }
 
