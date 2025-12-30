@@ -212,13 +212,13 @@ class WebUI:
                             [chatbot, agent_selector],
                         ).then(
                             self.agent_run,
-                            [chatbot, history, agent_selector],
+                            [chatbot, history, agent_plugins_block, agent_selector],
                             [chatbot, history, agent_selector],
                         )
                     else:
                         input_promise = input_promise.then(
                             self.agent_run,
-                            [chatbot, history],
+                            [chatbot, history, agent_plugins_block],
                             [chatbot, history],
                         )
 
@@ -284,7 +284,7 @@ class WebUI:
 
         yield _chatbot, _agent_selector
 
-    def agent_run(self, _chatbot, _history, _agent_selector=None):
+    def agent_run(self, _chatbot, _history, _plugins, _agent_selector=None):
         if self.verbose:
             logger.info('agent_run input:\n' + pprint.pformat(_history, indent=2))
 
@@ -296,7 +296,7 @@ class WebUI:
         if self.agent_hub:
             agent_runner = self.agent_hub
         responses = []
-        for responses in agent_runner.run(_history, **self.run_kwargs):
+        for responses in agent_runner.run(_history, active_plugins=_plugins, **self.run_kwargs):
             if not responses:
                 continue
             if responses[-1][CONTENT] == PENDING_USER_INPUT:
@@ -392,21 +392,3 @@ class WebUI:
                 choices=[],
                 interactive=True,
             )
-
-    def on_plugins_change(self, selected_plugins, agent_selector=0):
-        """event binding for plugin selection change"""
-
-        agent_index = agent_selector
-        agent = self.agent_list[agent_index]
-
-        #  backup the original function map
-        if not hasattr(agent, 'all_function_map'):
-            agent.all_function_map = agent.function_map.copy()
-
-        # update the function map based on the selected plugins
-        if selected_plugins:
-            agent.function_map = {plugin_name:agent.all_function_map[plugin_name] for plugin_name in selected_plugins}
-        else:
-            agent.function_map = {}
-
-        logger.debug(f'Update agent {agent.name} with {len(agent.function_map)} plugins: {selected_plugins}')
