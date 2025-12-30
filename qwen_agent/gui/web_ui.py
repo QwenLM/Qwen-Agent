@@ -184,12 +184,6 @@ class WebUI:
                             outputs=[agent_selector, agent_info_block, agent_plugins_block],
                             queue=False,
                         )
-                    # event binding for plugin selection change
-                    agent_plugins_block.change(
-                        fn=self.on_plugins_change,
-                        inputs=[agent_plugins_block, agent_selector] if len(self.agent_list) > 1 else [agent_plugins_block],
-                        queue=False,
-                    )
 
                     # event binding for disable all plugins
                     disable_all_plugins_btn.click(
