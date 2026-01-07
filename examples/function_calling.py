@@ -94,17 +94,20 @@ def test(fncall_prompt_type: str = 'qwen'):
             #     function_choice='get_current_weather',
             # ),
     ):
-        print(responses)
+        pass
 
     # If you do not need streaming output, you can either use the following trick:
     #   *_, responses = llm.chat(messages=messages, functions=functions, stream=True)
     # or use stream=False:
     #   responses = llm.chat(messages=messages, functions=functions, stream=False)
 
-    messages.extend(responses)  # extend conversation with assistant's reply
+    last_response = responses[-1]
+    last_response.pop("extra", None)
+    print(last_response)
+    print()
+    messages.append(last_response)  # extend conversation with assistant's reply
 
     # Step 2: check if the model wanted to call a function
-    last_response = messages[-1]
     if last_response.get('function_call', None):
 
         # Step 3: call the function
@@ -121,6 +124,7 @@ def test(fncall_prompt_type: str = 'qwen'):
         )
         print('# Function Response:')
         print(function_response)
+        print()
 
         # Step 4: send the info for each function call and function response to the model
         messages.append({
@@ -135,8 +139,11 @@ def test(fncall_prompt_type: str = 'qwen'):
                 functions=functions,
                 stream=True,
         ):  # get a new response from the model where it can see the function response
-            print(responses)
+            pass
 
+        last_response = responses[-1]
+        last_response.pop("extra", None)
+        print(last_response)
 
 if __name__ == '__main__':
     # Run example of function calling with QwenFnCallPrompt
