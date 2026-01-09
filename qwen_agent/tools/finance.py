@@ -227,7 +227,14 @@ class Finance(BaseTool):
 
             # Format dividend yield as percentage
             if result['dividend_yield'] != 'N/A' and result['dividend_yield'] is not None:
-                result['dividend_yield'] = f'{result["dividend_yield"] * 100:.2f}%'
+                # Handle potential 100x errors from Yahoo Finance data
+                # If yield is > 1 (100%), it's likely already a percentage or an error
+                # Typical yields are 0.01 to 0.10 (1% to 10%)
+                val = float(result['dividend_yield'])
+                if val > 1:
+                    result['dividend_yield'] = f'{val:.2f}%'
+                else:
+                    result['dividend_yield'] = f'{val * 100:.2f}%'
 
             return json.dumps(result, ensure_ascii=False, indent=2)
 
