@@ -139,7 +139,7 @@ system_instruction = '''在收到用户的请求后，你应该：
 - 最后从给定的文档中选择一个图像操作进行图像处理。
 用 `plt.show()` 展示图像。
 你总是用中文回复用户。'''
-tools = ['my_image_gen', 'code_interpreter']  # `code_interpreter` 是框架自带的工具，用于执行代码。
+tools = ['my_image_gen', 'code_interpreter']  # `code_interpreter` 是框架自带的工具，用于执行代码，请参考FAQ进行配置。
 files = ['./examples/resource/doc.pdf']  # 给智能体一个 PDF 文件阅读。
 bot = Assistant(llm=llm_cfg,
                 system_message=system_instruction,
@@ -176,8 +176,12 @@ WebUI(bot).run()  # bot is the agent defined in the above code, we do not repeat
 现在您可以在Web UI中和Agent对话了。更多使用示例，请参阅[examples](./examples)目录。
 
 # FAQ
+## 如何使用代码解释器工具？
+我们提供了一种基于本地 Docker 容器的代码解释器实现。您可以为智能体启用内置的 `code interpreter` 工具，使其能够根据具体场景自主编写代码，在隔离的沙箱环境中安全执行，并返回执行结果。  
+⚠️ **注意**：在使用该工具前，请确保已在本地操作系统上安装并启动 Docker 服务。首次构建容器镜像所需时间取决于您的网络状况。Docker 的安装与配置请参考 [官方文档](https://docs.docker.com/desktop/)。
+
 ## 如何使用MCP？
-可以在开源的[MCP Sever网站](https://github.com/modelcontextprotocol/servers)上选择需要的工具，并配置相关环境。
+可以在开源的[MCP Server网站](https://github.com/modelcontextprotocol/servers)上选择需要的工具，并配置相关环境。
 
 Qwen-Agent中MCP调用格式：
 ```
@@ -276,4 +280,4 @@ BrowserQwen 是一款基于 Qwen-Agent 构建的浏览器助手。如需了解�
 
 # 免责声明
 
-代码解释器未进行沙盒隔离，会在部署环境中执行代码。请避免向Qwen发出危险指令，切勿将该代码解释器直接用于生产目的。
+基于 Docker 容器的代码解释器仅挂载指定的工作目录，并已实施基础的沙盒隔离，但在生产环境中仍需谨慎使用。

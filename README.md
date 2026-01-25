@@ -144,7 +144,7 @@ system_instruction = '''After receiving the user's request, you should:
 - then run code `request.get(image_url)` to download the image,
 - and finally select an image operation from the given document to process the image.
 Please show the image using `plt.show()`.'''
-tools = ['my_image_gen', 'code_interpreter']  # `code_interpreter` is a built-in tool for executing code.
+tools = ['my_image_gen', 'code_interpreter']  # `code_interpreter` is a built-in tool for executing code. For configuration details, please refer to the FAQ.
 files = ['./examples/resource/doc.pdf']  # Give the bot a PDF file to read.
 bot = Assistant(llm=llm_cfg,
                 system_message=system_instruction,
@@ -180,6 +180,12 @@ WebUI(bot).run()  # bot is the agent defined in the above code, we do not repeat
 Now you can chat with the Agent in the web UI. Please refer to the [examples](https://github.com/QwenLM/Qwen-Agent/blob/main/examples) directory for more usage examples.
 
 # FAQ
+## How to Use the Code Interpreter Tool?
+
+We implement a code interpreter tool based on local Docker containers. You can enable the built-in `code interpreter` tool for your agent, allowing it to autonomously write code according to specific scenarios, execute it securely within an isolated sandbox environment, and return the execution results.
+
+⚠️ **Note**: Before using this tool, please ensure that Docker is installed and running on your local operating system. The time required to build the container image for the first time depends on your network conditions. For Docker installation and setup instructions, please refer to the [official documentation](https://docs.docker.com/desktop/).
+
 
 ## How to Use MCP?
 
@@ -281,4 +287,4 @@ BrowserQwen is a browser assistant built upon Qwen-Agent. Please refer to its [d
 
 # Disclaimer
 
-The code interpreter is not sandboxed, and it executes code in your own environment. Please do not ask Qwen to perform dangerous tasks, and do not directly use the code interpreter for production purposes.
+The Docker container-based code interpreter mounts only the specified working directory and implements basic sandbox isolation, but it should still be used with caution in production environments.

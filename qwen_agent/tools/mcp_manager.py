@@ -347,8 +347,9 @@ class MCPClient:
                         }
                     }
                     """
+                    headers = mcp_server.get('headers', {})
                     self._streams_context = streamablehttp_client(
-                        url=url, sse_read_timeout=datetime.timedelta(seconds=sse_read_timeout))
+                        url=url, headers=headers, sse_read_timeout=datetime.timedelta(seconds=sse_read_timeout))
                     read_stream, write_stream, get_session_id = await self.exit_stack.enter_async_context(
                         self._streams_context)
                     self._session_context = ClientSession(read_stream, write_stream)
