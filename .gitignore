@@ -55,7 +55,7 @@ benchmark/deepplanning/travelplanning/MODEL_CONFIG.md
 
 # Website (Next.js/Node.js)
 qwen-agent-docs/website/node_modules/
-qwen-agent-docs/website/package-lock.json
+#qwen-agent-docs/website/package-lock.json
 qwen-agent-docs/website/.next/
 qwen-agent-docs/website/out/
 qwen-agent-docs/website/.env*
