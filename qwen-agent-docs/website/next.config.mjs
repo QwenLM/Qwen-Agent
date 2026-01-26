@@ -24,6 +24,10 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // 暴露 basePath 给客户端组件
+  env: {
+    NEXT_PUBLIC_BASE_PATH: basePath,
+  },
   // App Router 不使用 next.config 的 i18n，通过文件夹结构和路由来处理
 };
 

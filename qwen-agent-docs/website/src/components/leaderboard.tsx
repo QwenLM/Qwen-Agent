@@ -79,14 +79,19 @@ function RankBadge({ rank }: { rank: number }) {
   );
 }
 
+// 获取 basePath（生产环境为 /Qwen-Agent，开发环境为空）
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
 // Icon component that handles both image paths and emoji
 function ModelIcon({ icon }: { icon: string }) {
   // Check if icon is an image path
   if (icon.startsWith('./') || icon.startsWith('/')) {
+    // 为图片路径添加 basePath 前缀
+    const fullPath = icon.startsWith('/') ? `${basePath}${icon}` : icon;
     return (
-      <img 
-        src={icon} 
-        alt="Model icon" 
+      <img
+        src={fullPath}
+        alt="Model icon"
         className="w-5 h-5 object-contain"
       />
     );
@@ -137,7 +142,7 @@ export function Leaderboard() {
       <h2 className="text-center text-2xl font-bold mb-2">
         🏆 Leaderboard 🏆
       </h2>
-      
+
       {/* Subtitle */}
       <p className="text-center text-sm text-gray-500 dark:text-gray-400 mb-6">
         Comprehensive evaluation results on DeepPlanning. Results are averaged over four runs. <strong>Bold</strong> indicates the best result.
