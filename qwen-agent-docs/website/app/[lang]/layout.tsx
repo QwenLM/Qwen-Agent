@@ -22,13 +22,21 @@ export async function generateStaticParams() {
 
 const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
   const { lang } = await params;
-  
+
   // 验证语言参数是否有效
   if (!SUPPORTED_LOCALES.includes(lang)) {
     notFound();
   }
 
-  const sourcePageMap = await getPageMap(`/${lang}`);
+  // 获取根 pageMap，然后找到对应语言文件夹的内容
+  const fullPageMap = await getPageMap();
+  // 找到 en 文件夹节点，使用其 children 作为当前语言的 pageMap
+  const langFolder = fullPageMap.find((item: any) =>
+    item.name === lang || item.route === `/${lang}`
+  );
+  const rootPageMap = langFolder && 'children' in langFolder
+    ? (langFolder as any).children
+    : fullPageMap;
 
   const navbar = (
     <Navbar
@@ -64,7 +72,7 @@ const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
       docsRepositoryBase='https://github.com/QwenLM/Qwen-Agent/blob/main/qwen-agent-docs/website/content'
       search={false}
       sidebar={{ defaultMenuCollapseLevel: 9999 }}
-      pageMap={sourcePageMap}
+      pageMap={rootPageMap}
       nextThemes={{ defaultTheme: "light" }}
     >
       {children}
