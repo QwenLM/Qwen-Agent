@@ -1,5 +1,7 @@
 import nextra from "nextra";
 
+const isProduction = process.env.NODE_ENV === "production";
+
 const withNextra = nextra({
   latex: true,
   search: {
@@ -7,11 +9,10 @@ const withNextra = nextra({
   },
   contentDirBasePath: "/",
   defaultShowCopyCode: true,
-  // 自动为侧边栏和导航链接添加语言前缀
-  unstable_shouldAddLocaleToLinks: true,
+  // 在开发环境自动为链接添加语言前缀，生产环境禁用（避免与静态导出冲突）
+  unstable_shouldAddLocaleToLinks: !isProduction,
 });
 
-const isProduction = process.env.NODE_ENV === "production";
 const repo = "Qwen-Agent";
 const basePath = isProduction ? `/${repo}` : "";
 
