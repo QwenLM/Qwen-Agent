@@ -1,0 +1,18 @@
+{
+  "name": "Qwen Agent Docs",
+  "short_name": "Qwen Agent",
+  "description": "Documentation for Qwen Agent: an open-source AI agent framework.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#0B1020",
+  "theme_color": "#7C3AED",
+  "icons": [
+    {
+      "src": "favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

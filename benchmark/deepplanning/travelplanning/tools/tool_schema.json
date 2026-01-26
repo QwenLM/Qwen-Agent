@@ -1,0 +1,217 @@
+[
+    {
+    "type": "function",
+    "function": {
+      "name": "query_train_info",
+      "description": "查询火车票信息，支持按出发地、目的地、日期等条件查询火车票数据。返回符合条件的火车车次信息，包括：车次号、出发/到达时间、车站信息、行程时长、座位等级、余票状态、价格等。支持直达和中转方案，直达方案显示仅显示第一段行程，中转方案会显示各段行程的详细信息。在旅行计划中，所有火车相关信息必须严格来源于本工具返回的结果，不得自行编造；车站及列车相关名称必须与查询结果完全一致。",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "origin": {
+            "type": "string",
+            "description": "出发地，支持传城市名"
+          },
+          "destination": {
+            "type": "string",
+            "description": "目的地，支持传城市名"
+          },
+          "depDate": {
+            "type": "string",
+            "description": "出发日期，格式: YYYY-MM-DD"
+          },
+          "seatClassName": {
+            "type": "string",
+            "description": "火车舱位等级：一等座,二等座,商务座"
+          }
+        },
+        "required": ["origin", "destination", "depDate"]
+      }
+    }
+},
+{
+    "type": "function",
+    "function": {
+      "name": "query_flight_info",
+      "description": "查询航班信息，支持按出发地、目的地、日期等条件查询航班数据。返回符合条件的航班信息，包括：航班号、出发/到达时间、机场信息、行程时长、座位等级、余票状态、价格、机型等。支持直达和中转方案，直达方案显示仅显示第一段行程，中转方案会显示各段行程的详细信息。在旅行计划中，所有航班相关信息必须严格来源于本工具返回的结果，不得自行编造；机场名称、航班号等必须与查询结果完全一致。",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "origin": {
+            "type": "string",
+            "description": "出发地：支持传城市名"
+          },
+          "destination": {
+            "type": "string",
+            "description": "目的地：支持传城市名"
+          },
+          "depDate": {
+            "type": "string",
+            "description": "出发日期，格式: YYYY-MM-DD"
+          },
+          "seatClassName": {
+            "type": "string",
+            "description": "飞机舱位等级：经济舱,超级经济舱,公务舱,头等舱"
+          }
+        },
+        "required": ["origin","destination","depDate"]
+      }
+    }
+},
+{
+    "type": "function",
+    "function": {
+      "name": "query_hotel_info",
+      "description": "查询酒店信息，根据目的地（行政区域）、入住日期、退房日期、酒店星级、酒店品牌这些条件搜索酒店。在旅行计划中，所有酒店相关信息必须严格来源于本工具返回的结果，不得自行编造；酒店名称必须与查询结果完全一致。",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "destination": {
+            "type": "string",
+            "description": "目的地(国家、省、市、区县名称)"
+          },
+          "checkinDate": {
+            "type": "string",
+            "description": "入住日期, 格式: yyyy-MM-dd"
+          },
+          "checkoutDate": {
+            "type": "string",
+            "description": "退房日期, 格式: yyyy-MM-dd"
+          },
+          "hotelStar": {
+            "type": "string",
+            "description": "酒店星级: 1~5; 单值"
+          },
+          "hotelBrands": {
+              "type": "string",
+              "description": "酒店品牌,只支持单值查询。可选品牌：全季, 亚朵, 万豪, 希尔顿, 如家, 锦江之星, 汉庭, 桔子"
+          }
+        },
+        "required": ["destination","checkinDate","checkoutDate"]
+      }
+    }
+},
+{
+  "type": "function",
+  "function": {
+    "name": "query_attraction_details",
+    "description": "查询景点详细信息。根据景点名称，返回景点的完整信息，包括：景点ID、名称、所属城市、经纬度坐标、景点简介、用户评分、开放时间、关闭时间、闭馆日期、建议游玩时长（最短/最长小时数）、门票价格、景点类型等。",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "attraction_name": {
+          "type": "string",
+          "description": "景点名称"
+        }
+      },
+      "required": ["attraction_name"]
+    }
+  }
+},
+{
+  "type": "function",
+  "function": {
+    "name": "recommend_attractions",
+    "description": "根据城市关键词搜索并返回该城市的热门景点信息（景点名称、简介、类型等）。在旅行计划生成过程中，所有景点信息必须严格来源于本工具的返回结果，不得自行虚构或使用其他来源的景点数据。使用的景点名称必须与此查询结果完全一致，不可缩写或改名。",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "city": {
+          "type": "string",
+          "description": "城市名称或关键词"
+        },
+        "attraction_type": {
+          "type": "string",
+          "description": "景点类型筛选，如：'历史文化', '自然风光', '艺术展览', '城市地标', '主题乐园', '休闲体验'"
+        }
+      },
+      "required": ["city"]
+    }
+  }
+},
+{
+    "type": "function",
+    "function": {
+        "name": "search_location",
+        "description": "根据地点名称查询对应的经纬度坐标。例如，输入“北京南站”，返回该地点的经纬度，数值保留到小数点后 6 位。在旅行计划中，涉及的地点名称必须严格来源于其他工具查询的返回结果，并保持完全一致",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "place_name": {
+                    "type": "string",
+                    "description": "要查询的地点名称，例如：'老舍茶馆'"
+                }
+            },
+            "required": [
+                "place_name"
+            ]
+        }
+    }
+},
+{
+    "type": "function",
+    "function": {
+        "name": "query_road_route_info",
+        "description": "计算并返回两个地点间的公路路线详情，包括距离（米）、预计耗时（分钟）和估算费用（元）。该功能会基于总距离自动选择交通方式：2公里及以内为步行(花费0元)，超过2公里则按驾车（出租车）模式计算,估算费用为一辆车的费用，默认可以坐4人。",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "origin": {
+                    "type": "string",
+                    "description": "出发地经纬度坐标（格式：纬度,经度），精度保留6位小数"
+                },
+                "destination": {
+                    "type": "string",
+                    "description": "目的地经纬度坐标（格式：纬度,经度），精度保留6位小数"
+                }
+            },
+            "required": [
+                "origin",
+                "destination"
+            ]
+        }
+    }
+},
+{
+    "type": "function",
+    "function": {
+        "name": "recommend_restaurants",
+        "description": "根据指定的经纬度坐标，推荐附近的餐厅信息。返回的列表包含餐厅名称、经纬度坐标、人均价格、评分、营业时间等详细信息。",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "latitude": {
+                    "type": "string",
+                    "description": "纬度坐标,精度保留6位小数"
+                },
+                "longitude": {
+                    "type": "string",
+                    "description": "经度坐标,精度保留6位小数"
+                }
+            },
+            "required": [
+                "latitude",
+                "longitude"
+            ]
+        }
+    }
+},
+{
+  "type": "function",
+  "function": {
+      "name": "query_restaurant_details",
+      "description": "查询餐厅的详细信息。根据餐厅名称，返回餐厅的完整信息，包括：餐厅名称、经纬度坐标、人均价格、营业开始时间、营业结束时间、评分等详细信息。",
+      "parameters": {
+          "type": "object",
+          "properties": {
+              "restaurant_name": {
+                  "type": "string",
+                  "description": "餐厅名称"
+              }
+          },
+          "required": [
+              "restaurant_name"
+          ]
+      }
+  }
+}
+]

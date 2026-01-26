@@ -43,3 +43,24 @@ test/*
 tests/env.sh
 examples/data/*
 test.db
+
+benchmark/deepplanning/travelplanning/database/database_en/
+benchmark/deepplanning/travelplanning/database/database_zh/
+benchmark/deepplanning/travelplanning/.env
+__pycache__/
+benchmark/deepplanning/travelplanning/CUSTOM_AGENT.md
+benchmark/deepplanning/travelplanning/MODEL_CONFIG.md
+
+
+
+# Website (Next.js/Node.js)
+qwen-agent-docs/website/node_modules/
+qwen-agent-docs/website/package-lock.json
+qwen-agent-docs/website/.next/
+qwen-agent-docs/website/out/
+qwen-agent-docs/website/.env*
+qwen-agent-docs/website/.temp-source-repo/
+qwen-agent-docs/website/.source-docs/
+qwen-agent-docs/website/last-sync.json
+qwen-agent-docs/website/_pagefind/
+qwen-agent-docs/website/*.tsbuildinfo

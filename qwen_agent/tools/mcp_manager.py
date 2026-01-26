@@ -59,6 +59,7 @@ class MCPManager:
             import mcp.client.stdio
             target = mcp.client.stdio._create_platform_compatible_process
         except (ModuleNotFoundError, AttributeError) as e:
+            print(e)
             raise ImportError('Qwen-Agent needs to monkey patch MCP for process cleanup. '
                               'Please upgrade MCP to a higher version with `pip install -U mcp`.') from e
 
@@ -138,7 +139,7 @@ class MCPManager:
     def initConfig(self, config: Dict):
         if not self.is_valid_mcp_servers(config):
             raise ValueError('Config of mcpservers is not valid')
-        logger.info(f'Initializing MCP tools from mcp servers: {list(config["mcpServers"].keys())}')
+        logger.info(f'Initializing MCP tools from mcp servers: {list(config['mcpServers'].keys())}')
         # Submit coroutine to the event loop and wait for the result
         future = asyncio.run_coroutine_threadsafe(self.init_config_async(config), self.loop)
         try:

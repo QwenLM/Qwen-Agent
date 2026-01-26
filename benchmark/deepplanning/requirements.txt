@@ -1,0 +1,39 @@
+# ========================================
+# Unified Benchmark Requirements
+# For both Shopping Planning and Travel Planning domains
+# ========================================
+
+# Core agent package (Travel domain)
+qwen-agent>=0.0.10
+
+# LLM API clients
+openai>=1.0.0                    # OpenAI SDK (supports OpenAI, DashScope, and compatible APIs)
+dashscope>=1.11.0                # Alibaba DashScope API client
+
+# Data processing
+pandas>=1.5.0                    # CSV database loading and querying
+numpy>=1.24.0                    # Numerical operations
+
+# Search algorithm (Shopping domain)
+rank-bm25>=0.2.2                 # BM25 algorithm for product search
+
+# HTTP requests
+requests>=2.28.0                 # HTTP client for API calls
+
+# Configuration and environment
+python-dotenv>=1.0.0             # Load environment variables from .env file
+
+# JSON handling
+json5>=0.9.0                     # JSON5 support (Travel domain)
+jsonlines>=3.0.0                 # JSON Lines format support
+jsonschema>=4.0.0                # JSON schema validation (Travel domain)
+
+# Text processing
+pydantic>=2.3.0                  # Data validation and settings management
+tiktoken>=0.5.0                  # Token counting for OpenAI models
+
+# Utilities
+eval-type-backport               # Type evaluation backport (Travel domain)
+pillow>=9.0.0                    # Image processing (if needed)
+tabulate>=0.9.0                  # Pretty-print tabular data
+

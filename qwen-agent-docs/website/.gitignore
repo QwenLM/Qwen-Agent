@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+
+# Next.js build output
+.next/
+out/
+
+# Production build
+build/
+dist/
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Translation tool generated files
+.temp-source-repo/
+.source-docs/
+last-sync.json
+
+# Pagefind search index
+_pagefind/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Misc
+.vercel
+.turbo
