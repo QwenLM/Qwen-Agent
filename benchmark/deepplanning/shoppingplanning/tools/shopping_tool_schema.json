@@ -1,0 +1,406 @@
+[
+    {
+        "type": "function",
+        "function": {
+            "name": "search_products",
+            "description": "Handles broad, open-ended natural language queries. It performs a semantic search on key product information (name, brand, category, tags) to quickly retrieve an initial set of relevant products. This is the first step in user exploration.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "User's natural language query. e.g., 'Uniqlo T-shirt', 'Nike running shoes'."
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "description": "Optional. Limits the number of product_ids returned. Defaults to 20 to prevent excessively large results."
+                    }
+                },
+                "required": [
+                    "query"
+                ]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "filter_by_brand",
+            "description": "Filters a given list of product IDs by one or more brand names. If multiple brand names are provided, it returns products matching any of the brands (OR logic).",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "product_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "An optional list of product_ids to filter. If not provided, filters from the entire product catalog."
+                    },
+                    "brand_names": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "A list of brand names to match. e.g., [\"UNIQLO\"] or [\"Nike\", \"ZARA\"]"
+                    }
+                },
+                "required": [
+                    "brand_names"
+                ]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "filter_by_color",
+            "description": "Filters a given list of product IDs by one or more colors. If multiple colors are provided, it returns products matching any of the colors (OR logic). Color matching checks the product's 'color' field. If product_ids is not provided, filters from the entire product catalog.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "product_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "An optional list of product_ids to filter. If not provided, filters from the entire product catalog."
+                    },
+                    "colors": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "A list of color names to match. e.g., [\"White\"] or [\"Black\", \"Blue\"]"
+                    }
+                },
+                "required": [
+                    "colors"
+                ]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "filter_by_size",
+            "description": "Filters a given list of product IDs by one or more sizes. If multiple sizes are provided, it returns products matching any of the sizes (OR logic). Size matching checks the product's 'size' field (e.g., 'M', 'L', '42', '140cm'). If product_ids is not provided, filters from the entire product catalog.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "product_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "An optional list of product_ids to filter. If not provided, filters from the entire product catalog."
+                    },
+                    "sizes": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "A list of sizes to match. e.g., [\"M\"] or [\"S\", \"M\", \"L\"]"
+                    }
+                },
+                "required": [
+                    "sizes"
+                ]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "filter_by_applicable_coupons",
+            "description": "Filters a list of product IDs based on applicable coupons. This tool matches all products whose `applicable_coupons` contains the provided coupon names. e.g., using [\"Cross-store: ¥30 off every ¥300\", \"Same-brand: ¥25 off every ¥200\"] will match products that have both of these coupons in their applicable_coupons list.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "product_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "An optional list of product_ids to filter. If not provided, filters from the entire product catalog."
+                    },
+                    "coupon_names": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "A list of coupon names to match. e.g., [\"Cross-store: ¥30 off every ¥300\"] or [\"Same-brand: ¥25 off every ¥200\", \"VIP: ¥200 off every ¥1,000\"]"
+                    }
+                },
+                "required": [
+                    "coupon_names"
+                ]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "filter_by_range",
+            "description": "Filters a list of product IDs based on a numerical feature, a comparison operator, and a threshold value.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "product_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "An optional list of product_ids to filter. If not provided, filters from the entire product catalog."
+                    },
+                    "condition_key": {
+                        "type": "string",
+                        "description": "The numerical feature dimension to filter on.",
+                        "enum": [
+                            "price",
+                            "stock_quantity",
+                            "sales_volume.monthly",
+                            "sales_volume.total",
+                            "rating.average_score",
+                            "rating.total_reviews"
+                        ]
+                    },
+                    "operator": {
+                        "type": "string",
+                        "description": "The comparison operator.",
+                        "enum": [
+                            ">",
+                            ">=",
+                            "<",
+                            "<=",
+                            "=="
+                        ]
+                    },
+                    "value": {
+                        "type": "number",
+                        "description": "The numerical value to compare against."
+                    }
+                },
+                "required": [
+                    "condition_key",
+                    "operator",
+                    "value"
+                ]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "sort_products",
+            "description": "Sorts a given list of product IDs according to a specified dimension and order.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "product_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "An optional list of product_ids to sort. If not provided, sorts from the entire product catalog."
+                    },
+                    "sort_by": {
+                        "type": "string",
+                        "description": "The feature dimension to use as the sorting basis.",
+                        "enum": [
+                            "price",
+                            "sales_volume.monthly",
+                            "sales_volume.total",
+                            "rating.average_score",
+                            "stock_quantity",
+                            "name"
+                        ]
+                    },
+                    "order": {
+                        "type": "string",
+                        "description": "The sorting order. Defaults to 'desc' (descending).",
+                        "enum": [
+                            "asc",
+                            "desc"
+                        ],
+                        "default": "desc"
+                    }
+                },
+                "required": [
+                    "sort_by"
+                ]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_product_details",
+            "description": "Retrieves the complete, detailed information for a list of product IDs.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "product_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "A list of unique product identifiers to fetch details for."
+                    }
+                },
+                "required": [
+                    "product_ids"
+                ]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "calculate_transport_time",
+            "description": "Calculates the estimated delivery time in days for a product. It uses the product's shipping origin and the user's destination address. The final result is an integer number of days.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "product_id": {
+                        "type": "string",
+                        "description": "The unique identifier of the product to find its shipping origin."
+                    },
+                    "destination_address": {
+                        "type": "string",
+                        "description": "The user's destination address, which must be the province name written in pinyin, such as 'guangdong', 'beijing', 'shanghai', etc. Only pinyin is accepted for this input parameter."
+                    },
+                        "provider": {
+                        "type": "string",
+                        "description": "Optional. The shipping provider name to adjust delivery time. Supported providers include 'sf_express', 'jd_logistics', 'yto_express', 'zto_express', 'sto_express', 'yunda_express', 'cainiao', 'china_post', 'ems', 'deppon_express', 'default'. If not provided, uses the product's default provider."
+                    }
+                },
+                "required": [
+                    "product_id",
+                    "destination_address"
+                ]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_user_info",
+            "description": "Retrieves user information from the database, including the user's address, body measurements, and other profile details. If a user_id is provided, returns that user's specific information; if not, returns the default/current user's information.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "user_id": {
+                        "type": "string",
+                        "description": "Optional. The unique identifier of the user to retrieve. If not provided, returns the default user information."
+                    }
+                },
+                "required": []
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "add_product_to_cart",
+            "description": "Adds a product to the shopping cart. Validates that the product exists in the product catalog and checks stock availability. If the product is already in the cart, it increases the quantity. The tool automatically updates the cart summary (total items count and total price) after adding. Returns the updated cart with all items and summary information.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "product_id": {
+                        "type": "string",
+                        "description": "The unique identifier of the product to add to the cart. Must exist in the product catalog."
+                    },
+                    "quantity": {
+                        "type": "integer",
+                        "description": "Optional. The quantity to add. Must be a positive integer. Defaults to 1. The tool checks if adding this quantity would exceed the product's stock_quantity (including items already in cart)."
+                    }
+                },
+                "required": [
+                    "product_id"
+                ]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "delete_product_from_cart",
+            "description": "Removes a product from the shopping cart or reduces its quantity. Validates that the product exists in the product catalog and is currently in the cart. If the quantity to remove equals or exceeds the cart quantity, the item is completely removed. The tool automatically updates the cart summary and removes items with zero quantity. Returns the updated cart with all items and summary information.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "product_id": {
+                        "type": "string",
+                        "description": "The unique identifier of the product to remove from the cart. Must exist in the product catalog and be currently in the cart."
+                    },
+                    "quantity": {
+                        "type": "integer",
+                        "description": "Optional. The quantity to remove. Must be a positive integer. Defaults to 1. If the quantity equals or exceeds the cart quantity, the item is completely removed."
+                    }
+                },
+                "required": [
+                    "product_id"
+                ]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_cart_info",
+            "description": "Retrieves the current shopping cart information including all items and summary statistics. Returns a list of cart items (each with product_id, name, quantity, and price) and a summary object containing total_items_count (sum of all quantities) and total_price (sum of all item prices * quantities). No parameters required - returns the current state of the cart.",
+            "parameters": {
+                "type": "object",
+                "properties": {},
+                "required": []
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "add_coupon_to_cart",
+            "description": "Adds a coupon to the shopping cart. Validates that the coupon exists in the valid coupon list, checks user ownership of the coupon and ensures the cart total meets the coupon's threshold requirement. If the same coupon is already in the cart, it updates the quantity. The tool automatically updates the cart summary (total items count and total price after discount) after adding. Returns the updated cart with all items, used coupons, and summary information.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "coupon_name": {
+                        "type": "string",
+                        "description": "The name of the coupon to add to the cart. Must be one of the valid coupons from the coupon list. Examples: 'Cross-store: ¥30 off every ¥300', 'Same-brand: ¥25 off every ¥200', 'VIP: ¥200 off every ¥1,000'."
+                    },
+                    "quantity": {
+                        "type": "integer",
+                        "description": "Optional. The quantity of coupons to add. Must be a positive integer. Defaults to 1. The tool checks if the user owns enough coupons and if the cart total is sufficient for the requested quantity."
+                    }
+                },
+                "required": [
+                    "coupon_name"
+                ]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "delete_coupon_from_cart",
+            "description": "Removes a coupon from the shopping cart or reduces its quantity. Validates that the coupon exists in the valid coupon list and is currently in the cart. If the quantity to remove equals or exceeds the cart quantity, the coupon is completely removed. The tool automatically updates the cart summary (total items count and total price after discount) and removes coupons with zero quantity. Returns the updated cart with all items, used coupons, and summary information.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "coupon_name": {
+                        "type": "string",
+                        "description": "The name of the coupon to remove from the cart. Must be one of the valid coupons and currently in the cart."
+                    },
+                    "quantity": {
+                        "type": "integer",
+                        "description": "Optional. The quantity of coupons to remove. Must be a positive integer. Defaults to 1. If the quantity equals or exceeds the cart quantity, the coupon is completely removed."
+                    }
+                },
+                "required": [
+                    "coupon_name"
+                ]
+            }
+        }
+    }
+]

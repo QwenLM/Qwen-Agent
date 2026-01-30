@@ -1,0 +1,36 @@
+{
+  "models": {
+    "qwen-plus": {
+      "model_name": "qwen-plus",
+      "model_type": "openai",
+      "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "api_key_env": "DASHSCOPE_API_KEY",
+      "temperature": 0.0
+    },
+    "qwen3-max": {
+      "model_name": "qwen3-max",
+      "model_type": "openai",
+      "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "api_key_env": "DASHSCOPE_API_KEY",
+      "temperature": 0.0
+    },
+    "gpt-4o-2024-11-20": {
+      "model_name": "gpt-4o-2024-11-20",
+      "model_type": "openai",
+      "base_url": "https://api.openai.com/v1/models",
+      "api_key_env": "OPENAI_API_KEY",
+      "temperature": 0.0
+    },
+    "gpt-5-2025-08-07-high": {
+      "model_name": "gpt-5-2025-08-07",
+      "model_type": "openai",
+      "base_url": "https://api.openai.com/v1/models",
+      "api_key_env": "OPENAI_API_KEY",
+      "temperature": 0.0,
+      "extra_body": {
+        "reasoning_effort": "high"
+      }
+    }
+  }
+}
+

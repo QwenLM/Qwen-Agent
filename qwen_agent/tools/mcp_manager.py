@@ -59,6 +59,7 @@ class MCPManager:
             import mcp.client.stdio
             target = mcp.client.stdio._create_platform_compatible_process
         except (ModuleNotFoundError, AttributeError) as e:
+            print(e)
             raise ImportError('Qwen-Agent needs to monkey patch MCP for process cleanup. '
                               'Please upgrade MCP to a higher version with `pip install -U mcp`.') from e
 
@@ -138,7 +139,7 @@ class MCPManager:
     def initConfig(self, config: Dict):
         if not self.is_valid_mcp_servers(config):
             raise ValueError('Config of mcpservers is not valid')
-        logger.info(f'Initializing MCP tools from mcp servers: {list(config["mcpServers"].keys())}')
+        logger.info(f'Initializing MCP tools from mcp servers: {list(config['mcpServers'].keys())}')
         # Submit coroutine to the event loop and wait for the result
         future = asyncio.run_coroutine_threadsafe(self.init_config_async(config), self.loop)
         try:
@@ -347,8 +348,9 @@ class MCPClient:
                         }
                     }
                     """
+                    headers = mcp_server.get('headers', {})
                     self._streams_context = streamablehttp_client(
-                        url=url, sse_read_timeout=datetime.timedelta(seconds=sse_read_timeout))
+                        url=url, headers=headers, sse_read_timeout=datetime.timedelta(seconds=sse_read_timeout))
                     read_stream, write_stream, get_session_id = await self.exit_stack.enter_async_context(
                         self._streams_context)
                     self._session_context = ClientSession(read_stream, write_stream)

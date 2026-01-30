@@ -104,12 +104,6 @@ setup(
             'anyio>=3.7.1',
             'fastapi>=0.103.1',
             'jupyter>=1.0.0',
-            'matplotlib',
-            'numpy',
-            'pandas',
-            'pillow',
-            'seaborn',
-            'sympy',
             'uvicorn>=0.23.2',
         ],
 

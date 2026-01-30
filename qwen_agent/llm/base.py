@@ -91,7 +91,7 @@ class BaseChatModel(ABC):
             self.use_raw_api = generate_cfg.pop('use_raw_api')
         elif self.model_type == 'qwen_dashscope':
             # set qwen3-max to `use_raw_api`
-            if self.model == 'qwen3-max' and (not self.use_raw_api):
+            if not self.use_raw_api:
                 logger.info('Setting `use_raw_api` to True when using `Qwen3-Max`')
                 self.use_raw_api = True
 

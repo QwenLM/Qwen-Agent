@@ -1,0 +1,34 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "nextra-theme-docs/style.css";
+@source "../**/*.{ts,tsx}";
+
+.x\:lg\:-translate-y-1\/2,
+.x\:lg\:after\:content-\[\"–\"\],
+.x\:lg\:border-b,
+.x\:lg\:right-full,
+.x\:lg\:top-1\/2,
+.x\:max-md\:break-all,
+.x\:max-md\:h-full,
+.x\:max-md\:hidden,
+.x\:max-md\:me-auto,
+.x\:max-md\:overflow-hidden,
+.x\:max-md\:sticky,
+.x\:max-sm\:hidden,
+.x\:md\:-mx-8,
+.x\:md\:hidden,
+.x\:md\:justify-start,
+.x\:md\:max-h-\[min\(calc\(100vh-5rem\)\,400px\)\]\!,
+.x\:md\:min-h-28,
+.x\:md\:px-12,
+.x\:md\:text-lg,
+.x\:md\:text-sm,
+.x\:md\:w-64,
+.x\:md\:w-\[576px\] {
+  @media (width >= 64rem) {
+    &:after {
+      --tw-content: "";
+      content: var(--tw-content);
+    }
+  }
+}

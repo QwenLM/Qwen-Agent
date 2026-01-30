@@ -1,0 +1,217 @@
+[
+    {
+    "type": "function",
+    "function": {
+      "name": "query_train_info",
+      "description": "Query train ticket information, supports searching train ticket data by origin, destination, date and other conditions. Returns train information that meets the criteria, including: train number, departure/arrival time, station information, journey duration, seat class, remaining seats status, price, etc. Supports direct and transfer routes. Direct routes display only the first segment, while transfer routes display detailed information for each segment. In travel planning, all train-related information must strictly come from the results returned by this tool and must not be fabricated; station and train names must be exactly the same as the query results.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "origin": {
+            "type": "string",
+            "description": "Origin city, supports city name"
+          },
+          "destination": {
+            "type": "string",
+            "description": "Destination city, supports city name"
+          },
+          "depDate": {
+            "type": "string",
+            "description": "Departure date, format: YYYY-MM-DD"
+          },
+          "seatClassName": {
+            "type": "string",
+            "description": "Train seat class: First Class Seat, Second Class Seat,Business Seat"
+          }
+        },
+        "required": ["origin", "destination", "depDate"]
+      }
+    }
+},
+{
+    "type": "function",
+    "function": {
+      "name": "query_flight_info",
+      "description": "Query flight information, supports searching flight data by origin, destination, date and other conditions. Returns flight information that meets the criteria, including: flight number, departure/arrival time, airport information, journey duration, seat class, remaining seats status, price, aircraft type, etc. Supports direct and connecting flights. Direct flights display only the first segment, while connecting flights display detailed information for each segment. In travel planning, all flight-related information must strictly come from the results returned by this tool and must not be fabricated; airport names, flight numbers, etc. must be exactly the same as the query results.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "origin": {
+            "type": "string",
+            "description": "Origin city, supports city name"
+          },
+          "destination": {
+            "type": "string",
+            "description": "Destination city, supports city name"
+          },
+          "depDate": {
+            "type": "string",
+            "description": "Departure date, format: YYYY-MM-DD"
+          },
+          "seatClassName": {
+            "type": "string",
+            "description": "Flight seat class: Economy Class, Business Class, First Class"
+          }
+        },
+        "required": ["origin","destination","depDate"]
+      }
+    }
+},
+{
+    "type": "function",
+    "function": {
+      "name": "query_hotel_info",
+      "description": "Query hotel information, search hotels based on destination (administrative region), check-in date, check-out date, hotel star rating, and hotel brand. In travel planning, all hotel-related information must strictly come from the results returned by this tool and must not be fabricated; hotel names must be exactly the same as the query results.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "destination": {
+            "type": "string",
+            "description": "Destination (country, province, city, district/county name)"
+          },
+          "checkinDate": {
+            "type": "string",
+            "description": "Check-in date, format: yyyy-MM-dd"
+          },
+          "checkoutDate": {
+            "type": "string",
+            "description": "Check-out date, format: yyyy-MM-dd"
+          },
+          "hotelStar": {
+            "type": "string",
+            "description": "Hotel star rating: 1~5; single value"
+          },
+          "hotelBrands": {
+              "type": "string",
+              "description": "Hotel brand, only supports single value query. Optional brands: Ji Hotel, Atour Hotel, Marriott, Hilton, Home Inn, Jinjiang Inn, Hanting Hotel, Orange Hotel"
+          }
+        },
+        "required": ["destination","checkinDate","checkoutDate"]
+      }
+    }
+},
+{
+  "type": "function",
+  "function": {
+    "name": "query_attraction_details",
+    "description": "Query attraction detailed information. Based on the attraction name, returns complete information including: attraction ID, name, city, latitude and longitude coordinates, attraction description, user rating, opening time, closing time, closing dates, recommended visit duration (minimum/maximum hours), ticket price, attraction type, etc.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "attraction_name": {
+          "type": "string",
+          "description": "Attraction name"
+        }
+      },
+      "required": ["attraction_name"]
+    }
+  }
+},
+{
+  "type": "function",
+  "function": {
+    "name": "recommend_attractions",
+    "description": "Search and return popular attraction information for a city based on city keyword (attraction name, description, type, etc.). During travel plan generation, all attraction information must strictly come from the results returned by this tool, and must not be fabricated or use attraction data from other sources. The attraction names used must be exactly the same as the query results, and cannot be abbreviated or renamed.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "city": {
+          "type": "string",
+          "description": "City name or keyword"
+        },
+        "attraction_type": {
+          "type": "string",
+          "description": "Attraction type filter (enum), options: 'Historical and Cultural', 'Natural Scenery', 'Art Exhibition', 'City Landmark', 'Theme Park', 'Leisure Experience'."
+        }
+      },
+      "required": ["city"]
+    }
+  }
+},
+{
+    "type": "function",
+    "function": {
+        "name": "search_location",
+        "description": "Query the latitude and longitude coordinates corresponding to a place name. For example, inputting 'Beijing South Railway Station' returns its coordinates, with values retained to six decimal places. In travel plans, all involved place names must strictly come from the results returned by other tools and must be exactly the same.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "place_name": {
+                    "type": "string",
+                    "description": "The place name to query, for example: 'Lao She Teahouse'"
+                }
+            },
+            "required": [
+                "place_name"
+            ]
+        }
+    }
+},
+{
+    "type": "function",
+    "function": {
+        "name": "query_road_route_info",
+        "description": "Calculate and return road route details between two locations, including distance (meters), estimated duration (minutes) and estimated cost (currency). This function automatically selects the transportation mode based on total distance: walking for 2 kilometers or less (cost 0), and driving (taxi) mode for more than 2 kilometers. The estimated cost is for one vehicle, which can accommodate 4 people by default.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "origin": {
+                    "type": "string",
+                    "description": "Origin coordinates (format: latitude,longitude), precision retained to 6 decimal places"
+                },
+                "destination": {
+                    "type": "string",
+                    "description": "Destination coordinates (format: latitude,longitude), precision retained to 6 decimal places"
+                }
+            },
+            "required": [
+                "origin",
+                "destination"
+            ]
+        }
+    }
+},
+{
+    "type": "function",
+    "function": {
+        "name": "recommend_restaurants",
+        "description": "Recommend nearby restaurant information based on specified latitude and longitude coordinates. The returned list contains detailed information such as restaurant name, latitude and longitude coordinates, price per person, rating, business hours, etc.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "latitude": {
+                    "type": "string",
+                    "description": "Latitude coordinate, precision retained to 6 decimal places"
+                },
+                "longitude": {
+                    "type": "string",
+                    "description": "Longitude coordinate, precision retained to 6 decimal places"
+                }
+            },
+            "required": [
+                "latitude",
+                "longitude"
+            ]
+        }
+    }
+},
+{
+  "type": "function",
+  "function": {
+      "name": "query_restaurant_details",
+      "description": "Query detailed information about a restaurant. Based on the restaurant name, returns complete information including: restaurant name, latitude and longitude coordinates, price per person, opening time, closing time, rating and other detailed information.",
+      "parameters": {
+          "type": "object",
+          "properties": {
+              "restaurant_name": {
+                  "type": "string",
+                  "description": "Restaurant name"
+              }
+          },
+          "required": [
+              "restaurant_name"
+          ]
+      }
+  }
+}
+]

@@ -22,10 +22,10 @@ limitations under the License.
 <br>
 
 <p align="center">
-          💜 <a href="https://chat.qwen.ai/"><b>Qwen Chat</b></a>&nbsp&nbsp | &nbsp&nbsp🤗 <a href="https://huggingface.co/Qwen">Hugging Face</a>&nbsp&nbsp | &nbsp&nbsp🤖 <a href="https://modelscope.cn/organization/qwen">ModelScope</a>&nbsp&nbsp | &nbsp&nbsp 📑 <a href="https://qwenlm.github.io/">Blog</a> &nbsp&nbsp ｜ &nbsp&nbsp📖 <a href="https://qwen.readthedocs.io/">Documentation</a>
+          💜 <a href="https://chat.qwen.ai/"><b>Qwen Chat</b></a>&nbsp&nbsp | &nbsp&nbsp🤗 <a href="https://huggingface.co/Qwen">Hugging Face</a>&nbsp&nbsp | &nbsp&nbsp🤖 <a href="https://modelscope.cn/organization/qwen">ModelScope</a>&nbsp&nbsp | &nbsp&nbsp 📑 <a href="https://qwenlm.github.io/">Blog</a> &nbsp&nbsp ｜ &nbsp&nbsp📖 <a href="https://qwenlm.github.io/Qwen-Agent/en/">Documentation</a>
 
 <br>
-💬 <a href="https://github.com/QwenLM/Qwen/blob/main/assets/wechat.png">WeChat (微信)</a>&nbsp&nbsp | &nbsp&nbsp🫨 <a href="https://discord.gg/CV4E9rpNSD">Discord</a>&nbsp&nbsp
+📊 <a href="https://qwenlm.github.io/Qwen-Agent/en/benchmarks/deepplanning/">Benchmark</a>&nbsp&nbsp | &nbsp&nbsp💬 <a href="https://github.com/QwenLM/Qwen/blob/main/assets/wechat.png">WeChat (微信)</a>&nbsp&nbsp | &nbsp&nbsp🫨 <a href="https://discord.gg/CV4E9rpNSD">Discord</a>&nbsp&nbsp
 </p>
 
 
@@ -35,7 +35,8 @@ It also comes with example applications such as Browser Assistant, Code Interpre
 Now Qwen-Agent plays as the backend of [Qwen Chat](https://chat.qwen.ai/).
 
 # News
-* 🔥🔥🔥 Sep 23, 2025: Added [Qwen3-VL Tool-call Demo](./examples/cookbook_think_with_images.ipynb), supporting tools such as zoom in, image search, and web search.
+* 🔥🔥🔥Jan 27, 2026: Open-sourced agent evaluation benchmark [DeepPlanning](https://qwenlm.github.io/Qwen-Agent/en/benchmarks/deepplanning/) and added Qwen-Agent [documentation](https://qwenlm.github.io/Qwen-Agent/en/guide/).
+* Sep 23, 2025: Added [Qwen3-VL Tool-call Demo](./examples/cookbook_think_with_images.ipynb), supporting tools such as zoom in, image search, and web search.
 * Jul 23, 2025: Add [Qwen3-Coder Tool-call Demo](./examples/assistant_qwen3_coder.py); Added native API tool call interface support, such as using vLLM's built-in tool call parsing.
 * May 1, 2025: Add [Qwen3 Tool-call Demo](./examples/assistant_qwen3.py), and add [MCP Cookbooks](./examples/).
 * Mar 18, 2025: Support for the `reasoning_content` field; adjust the default [Function Call template](./qwen_agent/llm/fncall_prompts/nous_fncall_prompt.py), which is applicable to the Qwen2.5 series general models and QwQ-32B. If you need to use the old version of the template, please refer to the [example](./examples/function_calling.py) for passing parameters.
@@ -144,7 +145,7 @@ system_instruction = '''After receiving the user's request, you should:
 - then run code `request.get(image_url)` to download the image,
 - and finally select an image operation from the given document to process the image.
 Please show the image using `plt.show()`.'''
-tools = ['my_image_gen', 'code_interpreter']  # `code_interpreter` is a built-in tool for executing code.
+tools = ['my_image_gen', 'code_interpreter']  # `code_interpreter` is a built-in tool for executing code. For configuration details, please refer to the FAQ.
 files = ['./examples/resource/doc.pdf']  # Give the bot a PDF file to read.
 bot = Assistant(llm=llm_cfg,
                 system_message=system_instruction,
@@ -180,6 +181,12 @@ WebUI(bot).run()  # bot is the agent defined in the above code, we do not repeat
 Now you can chat with the Agent in the web UI. Please refer to the [examples](https://github.com/QwenLM/Qwen-Agent/blob/main/examples) directory for more usage examples.
 
 # FAQ
+## How to Use the Code Interpreter Tool?
+
+We implement a code interpreter tool based on local Docker containers. You can enable the built-in `code interpreter` tool for your agent, allowing it to autonomously write code according to specific scenarios, execute it securely within an isolated sandbox environment, and return the execution results.
+
+⚠️ **Note**: Before using this tool, please ensure that Docker is installed and running on your local operating system. The time required to build the container image for the first time depends on your network conditions. For Docker installation and setup instructions, please refer to the [official documentation](https://docs.docker.com/desktop/).
+
 
 ## How to Use MCP?
 
@@ -281,4 +288,4 @@ BrowserQwen is a browser assistant built upon Qwen-Agent. Please refer to its [d
 
 # Disclaimer
 
-The code interpreter is not sandboxed, and it executes code in your own environment. Please do not ask Qwen to perform dangerous tasks, and do not directly use the code interpreter for production purposes.
+The Docker container-based code interpreter mounts only the specified working directory and implements basic sandbox isolation, but it should still be used with caution in production environments.

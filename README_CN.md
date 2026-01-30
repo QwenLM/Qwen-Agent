@@ -22,17 +22,18 @@ limitations under the License.
 <br>
 
 <p align="center">
-          💜 <a href="https://chat.qwen.ai/"><b>Qwen Chat</b></a>&nbsp&nbsp | &nbsp&nbsp🤗 <a href="https://huggingface.co/Qwen">Hugging Face</a>&nbsp&nbsp | &nbsp&nbsp🤖 <a href="https://modelscope.cn/organization/qwen">ModelScope</a>&nbsp&nbsp | &nbsp&nbsp 📑 <a href="https://qwenlm.github.io/">Blog</a> &nbsp&nbsp ｜ &nbsp&nbsp📖 <a href="https://qwen.readthedocs.io/">Documentation</a>
+          💜 <a href="https://chat.qwen.ai/"><b>Qwen Chat</b></a>&nbsp&nbsp | &nbsp&nbsp🤗 <a href="https://huggingface.co/Qwen">Hugging Face</a>&nbsp&nbsp | &nbsp&nbsp🤖 <a href="https://modelscope.cn/organization/qwen">ModelScope</a>&nbsp&nbsp | &nbsp&nbsp 📑 <a href="https://qwenlm.github.io/">Blog</a> &nbsp&nbsp ｜ &nbsp&nbsp📖 <a href="https://qwenlm.github.io/Qwen-Agent/en/">Documentation</a>
 
 <br>
-💬 <a href="https://github.com/QwenLM/Qwen/blob/main/assets/wechat.png">WeChat (微信)</a>&nbsp&nbsp | &nbsp&nbsp🫨 <a href="https://discord.gg/CV4E9rpNSD">Discord</a>&nbsp&nbsp
+📊 <a href="https://qwenlm.github.io/Qwen-Agent/en/benchmarks/deepplanning/">Benchmark</a>&nbsp&nbsp | &nbsp&nbsp💬 <a href="https://github.com/QwenLM/Qwen/blob/main/assets/wechat.png">WeChat (微信)</a>&nbsp&nbsp | &nbsp&nbsp🫨 <a href="https://discord.gg/CV4E9rpNSD">Discord</a>&nbsp&nbsp
 </p>
 
 Qwen-Agent是一个开发框架。开发者可基于本框架开发Agent应用，充分利用基于通义千问模型（Qwen）的指令遵循、工具使用、规划、记忆能力。本项目也提供了浏览器助手、代码解释器、自定义助手等示例应用。
 现在，Qwen-Agent 作为 [Qwen Chat](https://chat.qwen.ai/) 的后端运行。
 
 # 更新
-* 🔥🔥🔥Sep 23, 2025: 新增 [Qwen3-VL Tool-call Demo](./examples/cookbook_think_with_images.ipynb)，支持使用抠图、图搜、文搜等工具。
+* 🔥🔥🔥Jan 27, 2026: 开源Agent评测基准[DeepPlanning](https://qwenlm.github.io/Qwen-Agent/en/benchmarks/deepplanning/)，增加Qwen-Agent[文档](https://qwenlm.github.io/Qwen-Agent/en/guide/)。
+* Sep 23, 2025: 新增 [Qwen3-VL Tool-call Demo](./examples/cookbook_think_with_images.ipynb)，支持使用抠图、图搜、文搜等工具。
 * Jul 23, 2025: 新增 [Qwen3-Coder Tool-call Demo](./examples/assistant_qwen3_coder.py)；新增原生API工具调用接口支持，例如可使用vLLM自带的工具调用解析。
 * May 1, 2025: 新增 [Qwen3 Tool-call Demo](./examples/assistant_qwen3.py)；新增 [MCP cookbooks](./examples/)。
 * Mar 18, 2025: 支持`reasoning_content`字段；调整默认的[Function Call模版](./qwen_agent/llm/fncall_prompts/nous_fncall_prompt.py)（适用于Qwen2.5系列通用模型、QwQ-32B）。如果需要使用旧版模版：请参考[样例](./examples/function_calling.py)传递参数。
@@ -139,7 +140,7 @@ system_instruction = '''在收到用户的请求后，你应该：
 - 最后从给定的文档中选择一个图像操作进行图像处理。
 用 `plt.show()` 展示图像。
 你总是用中文回复用户。'''
-tools = ['my_image_gen', 'code_interpreter']  # `code_interpreter` 是框架自带的工具，用于执行代码。
+tools = ['my_image_gen', 'code_interpreter']  # `code_interpreter` 是框架自带的工具，用于执行代码，请参考FAQ进行配置。
 files = ['./examples/resource/doc.pdf']  # 给智能体一个 PDF 文件阅读。
 bot = Assistant(llm=llm_cfg,
                 system_message=system_instruction,
@@ -176,8 +177,12 @@ WebUI(bot).run()  # bot is the agent defined in the above code, we do not repeat
 现在您可以在Web UI中和Agent对话了。更多使用示例，请参阅[examples](./examples)目录。
 
 # FAQ
+## 如何使用代码解释器工具？
+我们提供了一种基于本地 Docker 容器的代码解释器实现。您可以为智能体启用内置的 `code interpreter` 工具，使其能够根据具体场景自主编写代码，在隔离的沙箱环境中安全执行，并返回执行结果。
+⚠️ **注意**：在使用该工具前，请确保已在本地操作系统上安装并启动 Docker 服务。首次构建容器镜像所需时间取决于您的网络状况。Docker 的安装与配置请参考 [官方文档](https://docs.docker.com/desktop/)。
+
 ## 如何使用MCP？
-可以在开源的[MCP Sever网站](https://github.com/modelcontextprotocol/servers)上选择需要的工具，并配置相关环境。
+可以在开源的[MCP Server网站](https://github.com/modelcontextprotocol/servers)上选择需要的工具，并配置相关环境。
 
 Qwen-Agent中MCP调用格式：
 ```
@@ -276,4 +281,4 @@ BrowserQwen 是一款基于 Qwen-Agent 构建的浏览器助手。如需了解�
 
 # 免责声明
 
-代码解释器未进行沙盒隔离，会在部署环境中执行代码。请避免向Qwen发出危险指令，切勿将该代码解释器直接用于生产目的。
+基于 Docker 容器的代码解释器仅挂载指定的工作目录，并已实施基础的沙盒隔离，但在生产环境中仍需谨慎使用。
