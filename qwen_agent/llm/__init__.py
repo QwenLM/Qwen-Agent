@@ -25,7 +25,7 @@ from .qwenaudio_dashscope import QwenAudioChatAtDS
 from .qwenomni_oai import QwenOmniChatAtOAI
 from .qwenvl_dashscope import QwenVLChatAtDS
 from .qwenvl_oai import QwenVLChatAtOAI
-
+from .llama_cpp import LlamaCpp
 
 def get_chat_model(cfg: Union[dict, str] = 'qwen-plus') -> BaseChatModel:
     """The interface of instantiating LLM objects.
@@ -112,4 +112,5 @@ __all__ = [
     'Transformers',
     'get_chat_model',
     'ModelServiceError',
+    'LlamaCpp',
 ]
