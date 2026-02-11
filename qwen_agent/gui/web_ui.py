@@ -218,18 +218,46 @@ class WebUI:
 
     def add_text(self, _input, _audio_input, _chatbot, _history):
         # Check if the input is a command - more flexible matching
-        input_text = _input.text.strip()
-        if input_text.lower().startswith('/context'):
+        input_text = _input.text.strip().lower()
+        
+        if input_text.startswith('/context'):
             # Process the /context command
             context_info = self._generate_context_info(_history)
             
             # Add the context info to the chatbot
-            _chatbot.append([input_text, context_info])
+            _chatbot.append([_input.text, context_info])
             
             # Also add to history as a system message
             _history.append({
                 ROLE: 'system',
                 CONTENT: context_info,
+            })
+            
+            from qwen_agent.gui.gradio_dep import gr
+            yield gr.update(interactive=False, value=None), None, _chatbot, _history
+        elif input_text.startswith('/export'):
+            # Process the /export command
+            export_format = 'markdown'  # default format
+            if ' ' in _input.text.strip():
+                format_part = _input.text.strip().split(' ', 1)[1].lower()
+                if format_part in ['json', 'txt', 'html']:
+                    export_format = format_part
+                elif format_part.startswith('json'):
+                    export_format = 'json'
+                elif format_part.startswith('txt'):
+                    export_format = 'txt'
+                elif format_part.startswith('html'):
+                    export_format = 'html'
+            
+            export_content = self._generate_export_content(_history, export_format)
+            
+            # Add the export info to the chatbot
+            _chatbot.append([_input.text, export_content])
+            
+            # Also add to history as a system message
+            _history.append({
+                ROLE: 'system',
+                CONTENT: export_content,
             })
             
             from qwen_agent.gui.gradio_dep import gr
@@ -491,6 +519,120 @@ class WebUI:
   <div>  ⛷ ⛷ ⛷ ⛷ ⛷ ⛷ ⛷ ⛷ ⛷ ⛷   ⛷ Compact buffer: {max(0, total_tokens - (max_tokens * 0.8)):,} tokens</div>
 </div>"""
         return context_info.strip()
+
+    def _generate_export_content(self, history: List[Message], format_type: str = 'markdown') -> str:
+        """
+        Generate export content in the specified format.
+        """
+        if format_type == 'json':
+            import json
+            # Convert history to a more readable JSON format
+            formatted_history = []
+            for msg in history:
+                formatted_msg = {
+                    'role': msg.get(ROLE, ''),
+                    'content': msg.get(CONTENT, ''),
+                    'name': msg.get(NAME, '') if msg.get(NAME) else None
+                }
+                formatted_history.append(formatted_msg)
+            
+            json_content = json.dumps(formatted_history, ensure_ascii=False, indent=2)
+            return f"""<h3>Exported Conversation (JSON Format)</h3>
+<pre style="white-space: pre-wrap; word-break: break-word;">{json_content}</pre>
+<div><small>Copy the content above to save your conversation.</small></div>"""
+        
+        elif format_type == 'html':
+            # Create a nicely formatted HTML representation
+            html_content = "<!DOCTYPE html>\n<html>\n<head>\n<title>Qwen-Agent Conversation</title>\n</head>\n<body>\n<h1>Qwen-Agent Conversation</h1>\n"
+            for msg in history:
+                role = msg.get(ROLE, 'unknown')
+                content = msg.get(CONTENT, '')
+                
+                # Format content based on type
+                if isinstance(content, list):
+                    content_text = ""
+                    for item in content:
+                        if isinstance(item, dict) and 'text' in item:
+                            content_text += item['text'] + " "
+                        elif isinstance(item, str):
+                            content_text += item + " "
+                    content = content_text
+                elif not isinstance(content, str):
+                    content = str(content)
+                
+                # Escape HTML characters
+                content = content.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                
+                role_class = role.replace('_', '-')
+                html_content += f'<div class="message {role_class}">\n<h3>{role.title()}</h3>\n<p>{content}</p>\n</div>\n<hr>\n'
+            
+            html_content += "</body>\n</html>"
+            return f"""<h3>Exported Conversation (HTML Format)</h3>
+<details>
+  <summary>Click to view HTML content</summary>
+  <pre style="white-space: pre-wrap; word-break: break-word;">{html_content}</pre>
+</details>
+<div><small>HTML content is available in the expanded section above.</small></div>"""
+        
+        elif format_type == 'txt':
+            # Create plain text format
+            txt_content = "Qwen-Agent Conversation Export\n"
+            txt_content += "=" * 30 + "\n\n"
+            
+            for msg in history:
+                role = msg.get(ROLE, 'unknown').upper()
+                content = msg.get(CONTENT, '')
+                
+                # Format content based on type
+                if isinstance(content, list):
+                    content_text = ""
+                    for item in content:
+                        if isinstance(item, dict) and 'text' in item:
+                            content_text += item['text'] + " "
+                        elif isinstance(item, str):
+                            content_text += item + " "
+                    content = content_text
+                elif not isinstance(content, str):
+                    content = str(content)
+                
+                txt_content += f"{role}: {content}\n\n"
+            
+            return f"""<h3>Exported Conversation (Text Format)</h3>
+<pre style="white-space: pre-wrap; word-break: break-word;">{txt_content}</pre>
+<div><small>Copy the content above to save your conversation.</small></div>"""
+        
+        else:  # Default to markdown
+            # Create markdown format
+            md_content = "# Qwen-Agent Conversation\n\n"
+            
+            for msg in history:
+                role = msg.get(ROLE, 'unknown').upper()
+                content = msg.get(CONTENT, '')
+                
+                # Format content based on type
+                if isinstance(content, list):
+                    content_text = ""
+                    for item in content:
+                        if isinstance(item, dict) and 'text' in item:
+                            content_text += item['text'] + " "
+                        elif isinstance(item, str):
+                            content_text += item + " "
+                        elif isinstance(item, dict) and ('image' in item or 'audio' in item or 'video' in item or 'file' in item):
+                            # Handle media content
+                            for media_type in ['image', 'audio', 'video', 'file']:
+                                if media_type in item:
+                                    content_text += f"[{media_type.capitalize()}: {item[media_type]}] "
+                    content = content_text
+                elif not isinstance(content, str):
+                    content = str(content)
+                
+                md_content += f"## {role}\n{content}\n\n"
+            
+            return f"""<h3>Exported Conversation (Markdown Format)</h3>
+<div style="font-family: monospace; white-space: pre-wrap; word-break: break-word;">
+{md_content}
+</div>
+<div><small>Copy the content above to save your conversation.</small></div>"""
 
     def _create_agent_info_block(self, agent_index=0):
         from qwen_agent.gui.gradio_dep import gr
