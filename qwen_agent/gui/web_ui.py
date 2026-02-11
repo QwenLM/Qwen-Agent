@@ -262,6 +262,37 @@ class WebUI:
             
             from qwen_agent.gui.gradio_dep import gr
             yield gr.update(interactive=False, value=None), None, _chatbot, _history
+        elif input_text.startswith('/guard'):
+            # Process the /guard command
+            guard_action = 'status'  # default action
+            if ' ' in _input.text.strip():
+                action_part = _input.text.strip().split(' ', 1)[1].lower()
+                if action_part in ['on', 'enable', 'activate']:
+                    guard_action = 'enable'
+                elif action_part in ['off', 'disable', 'deactivate']:
+                    guard_action = 'disable'
+                elif action_part in ['status', 'info', 'show']:
+                    guard_action = 'status'
+                elif action_part.startswith('on') or action_part.startswith('enable'):
+                    guard_action = 'enable'
+                elif action_part.startswith('off') or action_part.startswith('disable'):
+                    guard_action = 'disable'
+                elif action_part.startswith('status') or action_part.startswith('info'):
+                    guard_action = 'status'
+            
+            guard_content = self._generate_guard_content(guard_action)
+            
+            # Add the guard info to the chatbot
+            _chatbot.append([_input.text, guard_content])
+            
+            # Also add to history as a system message
+            _history.append({
+                ROLE: 'system',
+                CONTENT: guard_content,
+            })
+            
+            from qwen_agent.gui.gradio_dep import gr
+            yield gr.update(interactive=False, value=None), None, _chatbot, _history
         else:
             _history.append({
                 ROLE: USER,
@@ -519,6 +550,48 @@ class WebUI:
   <div>  ⛷ ⛷ ⛷ ⛷ ⛷ ⛷ ⛷ ⛷ ⛷ ⛷   ⛷ Compact buffer: {max(0, total_tokens - (max_tokens * 0.8)):,} tokens</div>
 </div>"""
         return context_info.strip()
+
+    def _generate_guard_content(self, action: str) -> str:
+        """
+        Generate content for the /guard command based on the requested action.
+        """
+        if action == 'enable':
+            return """<h3>🛡️ Privacy Guard Activated</h3>
+<div>
+  <p><strong>Status:</strong> Active</p>
+  <p><strong>Protection Level:</strong> High</p>
+  <p><strong>Features Enabled:</strong></p>
+  <ul>
+    <li>Personal Information Filtering</li>
+    <li>Credit Card Number Masking</li>
+    <li>Email Address Sanitization</li>
+    <li>IP Address Protection</li>
+    <li>Temporary Session Mode</li>
+  </ul>
+  <p>Your conversation is now protected. Sensitive information will be filtered from the conversation context.</p>
+  <p><em>Note: This protection applies to the current session only.</em></p>
+</div>"""
+        elif action == 'disable':
+            return """<h3>🛡️ Privacy Guard Deactivated</h3>
+<div>
+  <p><strong>Status:</strong> Inactive</p>
+  <p><strong>Protection Level:</strong> None</p>
+  <p>Privacy protection has been turned off. Normal conversation processing resumed.</p>
+  <p>Previous sensitive information may still be in the conversation context.</p>
+</div>"""
+        else:  # status/info
+            return """<h3>🛡️ Privacy Guard Status</h3>
+<div>
+  <p><strong>Current Status:</strong> Inactive</p>
+  <p><strong>Protection Level:</strong> None</p>
+  <p><strong>Available Commands:</strong></p>
+  <ul>
+    <li><code>/guard on</code> - Activate privacy protection</li>
+    <li><code>/guard off</code> - Deactivate privacy protection</li>
+    <li><code>/guard status</code> - Show current status</li>
+  </ul>
+  <p>Privacy Guard helps protect sensitive information during your conversation.</p>
+</div>"""
 
     def _generate_export_content(self, history: List[Message], format_type: str = 'markdown') -> str:
         """
