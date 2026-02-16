@@ -61,7 +61,7 @@ def init_agent_service():
             },
             'filesystem': {
                 'command': 'npx',
-                'args': ['-y', '@modelcontextprotocol/server-filesystem', '/Users/tujianhong/Desktop']
+                'args': ['-y', '@modelcontextprotocol/server-filesystem', '/path/to/allowed/files']
             }
         }
     }]
