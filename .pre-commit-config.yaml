@@ -3,7 +3,7 @@ repos:
     rev: 5.0.4
     hooks:
       - id: flake8
-        args: ["--max-line-length=300"]  # TODO: Set to 120 and `pre-commit run --all-files`.
+        args: ["--max-line-length=300", "--extend-ignore=E231,E702,E251,W604"]  # TODO: Set to 120 and `pre-commit run --all-files`.
   - repo: https://github.com/PyCQA/isort.git
     rev: 5.11.5
     hooks:

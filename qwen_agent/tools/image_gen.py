@@ -13,21 +13,22 @@
 # limitations under the License.
 
 import json
-import urllib.parse
-from typing import Union
+from typing import Dict, List, Optional, Union
 
+from qwen_agent.llm import get_chat_model
+from qwen_agent.llm.schema import USER, ContentItem, Message
 from qwen_agent.tools.base import BaseTool, register_tool
 
 
-@register_tool('image_gen')
+@register_tool('image_gen', allow_overwrite=True)
 class ImageGen(BaseTool):
-    description = 'An image generation service that takes text descriptions as input and returns a URL of the image. (The generated image URL should be described in markdown format in the reply to display the image: ![](URL_of_the_image))'
+    description = 'An image generation service that takes text descriptions as input and returns a URL of the image.'  # noqa
     parameters = {
         'type': 'object',
         'properties': {
             'prompt': {
                 'description':
-                    'Detailed description of the desired content of the generated image, such as details of characters, environment, actions, etc., in English.',
+                    'Detailed description of the desired content of the generated image. Please keep the specific requirements such as text from the original request fully intact. Omission is prohibited.',
                 'type':
                     'string',
             }
@@ -35,9 +36,20 @@ class ImageGen(BaseTool):
         'required': ['prompt'],
     }
 
-    def call(self, params: Union[str, dict], **kwargs) -> str:
-        params = self._verify_json_format_args(params)
+    def __init__(self, cfg: Optional[Dict] = None):
+        super().__init__(cfg)
+        llm_cfg = self.cfg.get('llm_cfg', {})
+        if not llm_cfg:
+            raise ValueError('llm_cfg is required!')
+        self.llm = get_chat_model(llm_cfg)
+        self.size = self.cfg.get('size', '1024*1024')
 
-        prompt = params['prompt']
-        prompt = urllib.parse.quote(prompt)
-        return json.dumps({'image_url': f'https://image.pollinations.ai/prompt/{prompt}'}, ensure_ascii=False)
+    def call(self, params: Union[str, dict], **kwargs) -> List[ContentItem]:
+        if isinstance(params, str):
+            params = json.loads(params)
+
+        messages = [Message(role=USER, content=[ContentItem(text=params['prompt'])])]
+        kwargs.pop('messages')
+
+        *_, last = self.llm.chat(messages=messages)
+        return last[-1]['content']

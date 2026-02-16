@@ -29,7 +29,9 @@ from io import BytesIO
 from typing import Any, List, Literal, Optional, Tuple, Union
 
 import json5
+import numpy as np
 import requests
+import soundfile as sf
 from pydantic import BaseModel
 
 from qwen_agent.llm.schema import ASSISTANT, DEFAULT_SYSTEM_MESSAGE, FUNCTION, SYSTEM, USER, ContentItem, Message
@@ -438,6 +440,12 @@ def format_as_text_message(
             text += item.value
     msg.content = text
     return msg
+
+
+def save_audio_to_file(base_64: str, file_name: str):
+    wav_bytes = base64.b64decode(base_64)
+    audio_np = np.frombuffer(wav_bytes, dtype=np.int16)
+    sf.write(file_name, audio_np, samplerate=24000)
 
 
 def extract_text_from_message(

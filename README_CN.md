@@ -32,7 +32,8 @@ Qwen-Agent是一个开发框架。开发者可基于本框架开发Agent应用�
 现在，Qwen-Agent 作为 [Qwen Chat](https://chat.qwen.ai/) 的后端运行。
 
 # 更新
-* 🔥🔥🔥Jan 27, 2026: 开源Agent评测基准[DeepPlanning](https://qwenlm.github.io/Qwen-Agent/en/benchmarks/deepplanning/)，增加Qwen-Agent[文档](https://qwenlm.github.io/Qwen-Agent/en/guide/)。
+* 🔥🔥🔥Feb 16, 2026: 开源Qwen3.5，调用实例参考 [Qwen3.5 Agent Demo](./examples/assistant_qwen3.5.py)。
+* Jan 27, 2026: 开源Agent评测基准[DeepPlanning](https://qwenlm.github.io/Qwen-Agent/en/benchmarks/deepplanning/)，增加Qwen-Agent[文档](https://qwenlm.github.io/Qwen-Agent/en/guide/)。
 * Sep 23, 2025: 新增 [Qwen3-VL Tool-call Demo](./examples/cookbook_think_with_images.ipynb)，支持使用抠图、图搜、文搜等工具。
 * Jul 23, 2025: 新增 [Qwen3-Coder Tool-call Demo](./examples/assistant_qwen3_coder.py)；新增原生API工具调用接口支持，例如可使用vLLM自带的工具调用解析。
 * May 1, 2025: 新增 [Qwen3 Tool-call Demo](./examples/assistant_qwen3.py)；新增 [MCP cookbooks](./examples/)。

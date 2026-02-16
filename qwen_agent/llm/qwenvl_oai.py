@@ -1,11 +1,11 @@
 # Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #    http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,7 +23,7 @@ from qwen_agent.llm.base import register_llm
 from qwen_agent.llm.oai import TextChatAtOAI
 from qwen_agent.llm.schema import ContentItem, Message
 from qwen_agent.log import logger
-from qwen_agent.utils.utils import (encode_audio_as_base64, encode_image_as_base64, encode_video_as_base64)
+from qwen_agent.utils.utils import encode_audio_as_base64, encode_image_as_base64, encode_video_as_base64
 
 
 @register_llm('qwenvl_oai')
@@ -33,8 +33,7 @@ class QwenVLChatAtOAI(TextChatAtOAI):
     def support_multimodal_input(self) -> bool:
         return True
 
-    @staticmethod
-    def convert_messages_to_dicts(messages: List[Message]) -> List[dict]:
+    def convert_messages_to_dicts(self, messages: List[Message]) -> List[dict]:
         new_messages = []
 
         for msg in messages:
@@ -81,11 +80,14 @@ class QwenVLChatAtOAI(TextChatAtOAI):
             new_msg = msg.model_dump()
             new_msg['content'] = new_content
             new_messages.append(new_msg)
-
+        new_messages = self._conv_qwen_agent_messages_to_oai(new_messages)
         if logger.isEnabledFor(logging.DEBUG):
             lite_messages = copy.deepcopy(new_messages)
             for msg in lite_messages:
-                for item in msg['content']:
+                content = msg.get('content')
+                if content is None:
+                    continue
+                for item in content:
                     if item.get('image_url', {}).get('url', '').startswith('data:'):
                         item['image_url']['url'] = item['image_url']['url'][:64] + '...'
                     if item.get('video_url', {}).get('url', '').startswith('data:'):
@@ -93,7 +95,7 @@ class QwenVLChatAtOAI(TextChatAtOAI):
                     if item.get('input_audio', {}).get('data', '').startswith('data:'):
                         item['input_audio']['data'] = item['input_audio']['data'][:64] + '...'
 
-            logger.debug(f'LLM Input:\n{pformat(lite_messages, indent=2)}')
+            logger.debug(f'LLM Input: \n{pformat(lite_messages, indent=2)}')
 
         return new_messages
 

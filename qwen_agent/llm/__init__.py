@@ -1,11 +1,11 @@
 # Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #    http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,12 +19,13 @@ from .azure import TextChatAtAzure
 from .base import LLM_REGISTRY, BaseChatModel, ModelServiceError
 from .oai import TextChatAtOAI
 from .openvino import OpenVINO
-from .transformers_llm import Transformers
 from .qwen_dashscope import QwenChatAtDS
 from .qwenaudio_dashscope import QwenAudioChatAtDS
 from .qwenomni_oai import QwenOmniChatAtOAI
 from .qwenvl_dashscope import QwenVLChatAtDS
 from .qwenvl_oai import QwenVLChatAtOAI
+from .qwenvlo_dashscope import QwenVLoChatAtDS
+from .transformers_llm import Transformers
 
 
 def get_chat_model(cfg: Union[dict, str] = 'qwen-plus') -> BaseChatModel:
@@ -107,6 +108,7 @@ __all__ = [
     'QwenVLChatAtDS',
     'QwenVLChatAtOAI',
     'QwenAudioChatAtDS',
+    'QwenVLoChatAtDS',
     'QwenOmniChatAtOAI',
     'OpenVINO',
     'Transformers',
