@@ -115,6 +115,12 @@ class TextChatAtOAI(BaseFnCallModel):
                                         content='',
                                         reasoning_content=chunk.choices[0].delta.reasoning_content)
                             ]
+                        if hasattr(chunk.choices[0].delta, 'reasoning') and chunk.choices[0].delta.reasoning:
+                            yield [
+                                Message(role=ASSISTANT,
+                                        content='',
+                                        reasoning_content=chunk.choices[0].delta.reasoning)
+                            ]
                         if hasattr(chunk.choices[0].delta, 'content') and chunk.choices[0].delta.content:
                             yield [Message(role=ASSISTANT, content=chunk.choices[0].delta.content)]
             else:
@@ -126,6 +132,8 @@ class TextChatAtOAI(BaseFnCallModel):
                         if hasattr(chunk.choices[0].delta,
                                    'reasoning_content') and chunk.choices[0].delta.reasoning_content:
                             full_reasoning_content += chunk.choices[0].delta.reasoning_content
+                        if hasattr(chunk.choices[0].delta, 'reasoning') and chunk.choices[0].delta.reasoning:
+                            full_reasoning_content += chunk.choices[0].delta.reasoning
                         if hasattr(chunk.choices[0].delta, 'content') and chunk.choices[0].delta.content:
                             full_response += chunk.choices[0].delta.content
                         if hasattr(chunk.choices[0].delta, 'tool_calls') and chunk.choices[0].delta.tool_calls:
@@ -171,6 +179,12 @@ class TextChatAtOAI(BaseFnCallModel):
                     Message(role=ASSISTANT,
                             content=response.choices[0].message.content,
                             reasoning_content=response.choices[0].message.reasoning_content)
+                ]
+            elif hasattr(response.choices[0].message, 'reasoning'):
+                return [
+                    Message(role=ASSISTANT,
+                            content=response.choices[0].message.content,
+                            reasoning_content=response.choices[0].message.reasoning)
                 ]
             else:
                 return [Message(role=ASSISTANT, content=response.choices[0].message.content)]
