@@ -22,6 +22,7 @@ import uuid
 from contextlib import AsyncExitStack
 from typing import Dict, Optional, Union
 
+from agents.mcp.server import _MCPServerWithClientSession
 from dotenv import load_dotenv
 
 from qwen_agent.log import logger
@@ -376,6 +377,13 @@ class MCPClient:
             await self.session.initialize()
             list_tools = await self.session.list_tools()
             self.tools = list_tools.tools
+            static_filter = mcp_server.get('static_filter')
+            if static_filter:
+                pre_filter = set(tool.name for tool in self.tools)
+                self.tools = _MCPServerWithClientSession._apply_static_tool_filter(None, self.tools, static_filter)
+                removed_tools = pre_filter - set(tool.name for tool in self.tools)
+                if removed_tools:
+                    logger.info(f'Tools removed by static filtering: {list(removed_tools)}')
             try:
                 list_resources = await self.session.list_resources()  # Check if the server has resources
                 if list_resources.resources:
