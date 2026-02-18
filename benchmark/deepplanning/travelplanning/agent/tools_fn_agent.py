@@ -316,7 +316,21 @@ class ToolsFnAgent:
         # Preserve reasoning_content if present
         if hasattr(msg, 'reasoning_content') and msg.reasoning_content:
             msg_dict['reasoning_content'] = msg.reasoning_content
-        
+
+        thinking_blocks = getattr(msg, 'thinking_blocks', None)
+        if not thinking_blocks and hasattr(msg, 'model_extra'):
+            thinking_blocks = msg.model_extra.get('thinking_blocks')
+        if thinking_blocks:
+            thoughts = []
+            for block in thinking_blocks:
+                if isinstance(block, dict):
+                    thought_text = block.get('thinking', '')
+                else:
+                    thought_text = getattr(block, 'thinking', '')
+                if thought_text:
+                    thoughts.append(thought_text)
+            if thoughts:
+                msg_dict['thoughts'] = thoughts
         return msg_dict
 
     def _serialize_messages(self, messages: List[Any]) -> List[Dict[str, Any]]:
@@ -355,7 +369,8 @@ class ToolsFnAgent:
             
             msg = resp.choices[0].message
             calls = self._detect_tool_calls(msg)
-            messages.append(msg)
+            msg_dict = self._message_to_dict(msg)
+            messages.append(msg_dict)
             if calls:
                 # Execute tool calls
                 for call in calls:
