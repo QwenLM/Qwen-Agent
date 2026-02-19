@@ -187,7 +187,8 @@ class MCPManager:
                 required_fields = {'type', 'properties', 'required'}
                 missing_fields = required_fields - parameters.keys()
                 if missing_fields:
-                    raise ValueError(f'Missing required fields in schema: {missing_fields}')
+                    logger.warning(f'Tool "{tool.name}" has missing required fields in schema: {missing_fields}, skipping this tool')
+                    continue
 
                 # Keep only the necessary fields
                 cleaned_parameters = {
