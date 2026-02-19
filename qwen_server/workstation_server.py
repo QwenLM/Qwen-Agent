@@ -195,14 +195,20 @@ def choose_plugin(chosen_plugin):
         return gr.update(interactive=False), None
 
 
-def pure_bot(history):
+def pure_bot(history, thinking_enabled):
     if not history:
         yield history
     else:
         history[-1][1] = ''
+        # Create LLM config with thinking setting
+        llm_cfg = llm_config.copy() if llm_config else {}
+        if llm_cfg:
+            llm_cfg['generate_cfg'] = llm_cfg.get('generate_cfg', {})
+            llm_cfg['generate_cfg']['enable_thinking'] = thinking_enabled
+
         message = [{'role': 'user', 'content': history[-1][0].text, 'name': 'pure_chat_user'}]
         try:
-            llm = get_chat_model(llm_config)
+            llm = get_chat_model(llm_cfg)
             response = llm.chat(messages=app_global_para['pure_messages'] + message)
             rsp = []
             for rsp in response:
@@ -242,11 +248,17 @@ def keep_only_files_for_name(messages, name):
     return new_messages
 
 
-def bot(history, chosen_plug):
+def bot(history, chosen_plug, thinking_enabled):
     if not history:
         yield history
     else:
         history[-1][1] = ''
+        # Create LLM config with thinking setting
+        llm_cfg = llm_config.copy() if llm_config else {}
+        if llm_cfg:
+            llm_cfg['generate_cfg'] = llm_cfg.get('generate_cfg', {})
+            llm_cfg['generate_cfg']['enable_thinking'] = thinking_enabled
+
         if chosen_plug == CI_OPTION:  # use code interpreter
             if app_global_para['uploaded_ci_file'] and app_global_para['is_first_upload']:
                 app_global_para['is_first_upload'] = False  # only send file when first upload
@@ -262,7 +274,7 @@ def bot(history, chosen_plug):
             else:
                 message = [{'role': 'user', 'content': history[-1][0].text, 'name': 'ci'}]
             messages = keep_only_files_for_name(app_global_para['messages'], 'ci') + message
-            func_assistant = ReActChat(function_list=['code_interpreter'], llm=llm_config)
+            func_assistant = ReActChat(function_list=['code_interpreter'], llm=llm_cfg)
             try:
                 response = func_assistant.run(messages=messages)
                 rsp = []
@@ -286,7 +298,7 @@ def bot(history, chosen_plug):
                 # checked files
                 for record in read_meta_data_by_condition(meta_file, time_limit=app_global_para['time'], checked=True):
                     content.append({'file': record['url']})
-                qa_assistant = Assistant(llm=llm_config)
+                qa_assistant = Assistant(llm=llm_cfg)
                 message = [{'role': 'user', 'content': content}]
                 # rm all files of history
                 messages = keep_only_files_for_name(app_global_para['messages'], 'None') + message
@@ -320,7 +332,13 @@ def get_last_one_line_context(text):
     return res
 
 
-def generate(context):
+def generate(context, thinking_enabled):
+    # Create LLM config with thinking setting
+    llm_cfg = llm_config.copy() if llm_config else {}
+    if llm_cfg:
+        llm_cfg['generate_cfg'] = llm_cfg.get('generate_cfg', {})
+        llm_cfg['generate_cfg']['enable_thinking'] = thinking_enabled
+
     sp_query = get_last_one_line_context(context)
     if CODE_FLAG in sp_query:  # router to code interpreter
         sp_query = sp_query.split(CODE_FLAG)[-1]
@@ -329,7 +347,7 @@ def generate(context):
         else:
             sp_query += ' (Please use code_interpreter.)'
 
-        func_assistant = ReActChat(function_list=['code_interpreter'], llm=llm_config)
+        func_assistant = ReActChat(function_list=['code_interpreter'], llm=llm_cfg)
         try:
             response = func_assistant.run(messages=[{'role': 'user', 'content': sp_query}])
             for rsp in response:
@@ -342,7 +360,7 @@ def generate(context):
 
     elif PLUGIN_FLAG in sp_query:  # router to plugin
         sp_query = sp_query.split(PLUGIN_FLAG)[-1]
-        func_assistant = ReActChat(function_list=['code_interpreter', 'image_gen'], llm=llm_config)
+        func_assistant = ReActChat(function_list=['code_interpreter', 'image_gen'], llm=llm_cfg)
         try:
             response = func_assistant.run(messages=[{'role': 'user', 'content': sp_query}])
             for rsp in response:
@@ -362,7 +380,7 @@ def generate(context):
         if TITLE_FLAG in sp_query:  # /title
             full_article = True
         try:
-            writing_assistant = ArticleAgent(llm=llm_config)
+            writing_assistant = ArticleAgent(llm=llm_cfg)
 
             content = [{'text': sp_query_no_title}]
             # checked files
@@ -373,8 +391,8 @@ def generate(context):
                 'role': 'user',
                 'content': content
             }],
-                                             max_ref_token=server_config.server.max_ref_token,
-                                             full_article=full_article)
+                                              max_ref_token=server_config.server.max_ref_token,
+                                              full_article=full_article)
             for rsp in response:
                 if rsp:
                     yield '\n'.join([x['content'] for x in rsp])
@@ -455,6 +473,7 @@ with gr.Blocks(css=css, js=js, theme='soft') as demo:
                     #                       ])
 
                 with gr.Row():
+                    thinking_enabled = gr.Checkbox(label="Enable Thinking", value=True)
                     ctn_bt = gr.Button('Continue', variant='primary')
                     stop_bt = gr.Button('Stop')
                     clr_bt = gr.Button('Clear')
@@ -479,7 +498,7 @@ with gr.Blocks(css=css, js=js, theme='soft') as demo:
                         elem_classes=['textbox_default_output', 'add_scrollbar'],
                         show_copy_button=True,
                     )
-        clk_ctn_bt = ctn_bt.click(generate, edit_area, cmd_area)
+        clk_ctn_bt = ctn_bt.click(generate, [edit_area, thinking_enabled], cmd_area)
         clk_ctn_bt.then(format_generate, [edit_area, cmd_area], edit_area)
 
         edit_area_change = edit_area.change(layout_to_right, edit_area, [text_out_area, md_out_area])
@@ -546,16 +565,18 @@ with gr.Blocks(css=css, js=js, theme='soft') as demo:
                             info='',
                             value=DOC_OPTION,
                         )
-                    with gr.Column(scale=8, min_width=0):
+                    with gr.Column(scale=2, min_width=0):
+                        thinking_enabled = gr.Checkbox(label="Enable Thinking", value=True)
+                    with gr.Column(scale=6, min_width=0):
                         hidden_file_path = gr.Textbox(interactive=False, label='The uploaded file is displayed here')
 
                 txt_msg = chat_txt.submit(add_text, [chatbot, chat_txt], [chatbot, chat_txt],
-                                          queue=False).then(bot, [chatbot, plug_bt], chatbot)
+                                          queue=False).then(bot, [chatbot, plug_bt, thinking_enabled], chatbot)
                 txt_msg.then(lambda: gr.update(interactive=True), None, [chat_txt], queue=False)
 
                 re_txt_msg = (chat_re_bt.click(rm_text, [chatbot], [chatbot, chat_txt],
                                                queue=False).then(chat_clear_last, None,
-                                                                 None).then(bot, [chatbot, plug_bt], chatbot))
+                                                                 None).then(bot, [chatbot, plug_bt, thinking_enabled], chatbot))
                 re_txt_msg.then(lambda: gr.update(interactive=True), None, [chat_txt], queue=False)
 
                 file_msg = file_btn.upload(add_file, [file_btn, plug_bt], [hidden_file_path], queue=False)
@@ -579,12 +600,14 @@ with gr.Blocks(css=css, js=js, theme='soft') as demo:
                     flushing=False,
                 )
                 with gr.Row():
-                    with gr.Column(scale=13):
+                    with gr.Column(scale=11):
                         chat_txt = gr.Textbox(
                             show_label=False,
                             placeholder='Chat with Qwen...',
                             container=False,
                         )
+                    with gr.Column(scale=1, min_width=0):
+                        thinking_enabled = gr.Checkbox(label="Enable Thinking", value=True)
                     with gr.Column(scale=1, min_width=0):
                         chat_clr_bt = gr.Button('Clear')
                     with gr.Column(scale=1, min_width=0):
@@ -593,12 +616,12 @@ with gr.Blocks(css=css, js=js, theme='soft') as demo:
                         chat_re_bt = gr.Button('Again')
 
                 txt_msg = chat_txt.submit(pure_add_text, [pure_chatbot, chat_txt], [pure_chatbot, chat_txt],
-                                          queue=False).then(pure_bot, pure_chatbot, pure_chatbot)
+                                          queue=False).then(pure_bot, [pure_chatbot, thinking_enabled], pure_chatbot)
                 txt_msg.then(lambda: gr.update(interactive=True), None, [chat_txt], queue=False)
 
                 re_txt_msg = chat_re_bt.click(rm_text, [pure_chatbot], [pure_chatbot, chat_txt],
                                               queue=False).then(pure_chat_clear_last, None,
-                                                                None).then(pure_bot, pure_chatbot, pure_chatbot)
+                                                                None).then(pure_bot, [pure_chatbot, thinking_enabled], pure_chatbot)
                 re_txt_msg.then(lambda: gr.update(interactive=True), None, [chat_txt], queue=False)
 
                 chat_clr_bt.click(chat_clear_pure, None, pure_chatbot, queue=False)
