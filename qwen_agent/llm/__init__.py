@@ -18,6 +18,7 @@ from typing import Union
 from .azure import TextChatAtAzure
 from .base import LLM_REGISTRY, BaseChatModel, ModelServiceError
 from .oai import TextChatAtOAI
+from .oai_async import TextChatAtOAIAsync
 from .openvino import OpenVINO
 from .qwen_dashscope import QwenChatAtDS
 from .qwenaudio_dashscope import QwenAudioChatAtDS
@@ -103,7 +104,9 @@ def get_chat_model(cfg: Union[dict, str] = 'qwen-plus') -> BaseChatModel:
 __all__ = [
     'BaseChatModel',
     'QwenChatAtDS',
+    'QwenChatAtDSAsync',
     'TextChatAtOAI',
+    'TextChatAtOAIAsync',
     'TextChatAtAzure',
     'QwenVLChatAtDS',
     'QwenVLChatAtOAI',
