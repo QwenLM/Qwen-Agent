@@ -88,6 +88,9 @@ setup(
         # Extra dependencies for MCP:
         'mcp': ['mcp'],
 
+        # Extra dependencies for Finance tool (Yahoo Finance):
+        'finance': ['yfinance>=0.2.0'],
+
         # Extra dependencies for Python Executor, which is primarily for solving math problems:
         'python_executor': [
             'pebble',
