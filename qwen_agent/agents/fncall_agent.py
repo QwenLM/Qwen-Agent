@@ -74,6 +74,10 @@ class FnCallAgent(Agent):
         messages = copy.deepcopy(messages)
         num_llm_calls_available = MAX_LLM_CALL_PER_RUN
         response = []
+        if "active_plugins" in kwargs:
+            active_functions = [func.function for func_name, func in self.function_map.items() if func_name in kwargs["active_plugins"]]
+        else:
+            active_functions = [func.function for func in self.function_map.values()]
         while True and num_llm_calls_available > 0:
             num_llm_calls_available -= 1
 
@@ -81,7 +85,7 @@ class FnCallAgent(Agent):
             if kwargs.get('seed') is not None:
                 extra_generate_cfg['seed'] = kwargs['seed']
             output_stream = self._call_llm(messages=messages,
-                                           functions=[func.function for func in self.function_map.values()],
+                                           functions=active_functions,
                                            extra_generate_cfg=extra_generate_cfg)
             output: List[Message] = []
             for output in output_stream:
