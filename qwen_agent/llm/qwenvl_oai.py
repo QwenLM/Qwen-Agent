@@ -49,14 +49,14 @@ class QwenVLChatAtOAI(TextChatAtOAI):
                     new_content.append({'type': 'text', 'text': v})
                 if t in ['image', 'video', 'audio']:
                     if isinstance(v, str):
-                        v = conv_multimodel_value(t, v)
+                        v = conv_multimodal_value(t, v)
                     if isinstance(v, list):
                         new_v = []
                         for _v in v:
-                            new_v.append(conv_multimodel_value(t, _v))
+                            new_v.append(conv_multimodal_value(t, _v))
                         v = new_v
                     if isinstance(v, dict):
-                        v['data'] = conv_multimodel_value(t, v['data'])
+                        v['data'] = conv_multimodal_value(t, v['data'])
 
                     if t == 'image':
                         new_content.append({'type': 'image_url', 'image_url': {'url': v}})
@@ -100,7 +100,7 @@ class QwenVLChatAtOAI(TextChatAtOAI):
         return new_messages
 
 
-def conv_multimodel_value(t, v):
+def conv_multimodal_value(t, v):
     if v.startswith('file://'):
         v = v[len('file://'):]
     if not v.startswith(('http://', 'https://', 'data:')):

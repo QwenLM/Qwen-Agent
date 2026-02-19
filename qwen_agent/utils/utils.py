@@ -329,7 +329,7 @@ def json_dumps_compact(obj: dict, ensure_ascii=False, indent=None, **kwargs) -> 
 def format_as_multimodal_message(
     msg: Message,
     add_upload_info: bool,
-    add_multimodel_upload_info: bool,
+    add_multimodal_upload_info: bool,
     add_audio_upload_info: bool,
     lang: Literal['auto', 'en', 'zh'] = 'auto',
 ) -> Message:
@@ -346,7 +346,7 @@ def format_as_multimodal_message(
             if k == 'file':
                 # Move 'file' out of 'content' since it's not natively supported by models
                 files.append((v, k))
-            if add_multimodel_upload_info and k in ('image', 'video'):
+            if add_multimodal_upload_info and k in ('image', 'video'):
                 # Indicate the image name
                 if isinstance(v, str):
                     files.append((v, k))
@@ -431,7 +431,7 @@ def format_as_text_message(
 ) -> Message:
     msg = format_as_multimodal_message(msg,
                                        add_upload_info=add_upload_info,
-                                       add_multimodel_upload_info=add_upload_info,
+                                       add_multimodal_upload_info=add_upload_info,
                                        add_audio_upload_info=add_upload_info,
                                        lang=lang)
     text = ''

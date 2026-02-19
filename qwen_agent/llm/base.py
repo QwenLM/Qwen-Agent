@@ -346,16 +346,16 @@ class BaseChatModel(ABC):
         functions: Optional[List[Dict]] = None,
         use_raw_api: bool = False,
     ) -> List[Message]:
-        add_multimodel_upload_info = False
+        add_multimodal_upload_info = False
         if functions or (not self.support_multimodal_input):
-            add_multimodel_upload_info = True
+            add_multimodal_upload_info = True
         add_audio_upload_info = False
         if functions or (not self.support_audio_input):
             add_audio_upload_info = True
         messages = [
             format_as_multimodal_message(msg,
                                          add_upload_info=True,
-                                         add_multimodel_upload_info=add_multimodel_upload_info,
+                                         add_multimodal_upload_info=add_multimodal_upload_info,
                                          add_audio_upload_info=add_audio_upload_info,
                                          lang=lang) for msg in messages
         ]
@@ -370,7 +370,7 @@ class BaseChatModel(ABC):
         messages = [
             format_as_multimodal_message(msg,
                                          add_upload_info=False,
-                                         add_multimodel_upload_info=False,
+                                         add_multimodal_upload_info=False,
                                          add_audio_upload_info=False) for msg in messages
         ]
         if not generate_cfg.get('skip_stopword_postproc', False):
