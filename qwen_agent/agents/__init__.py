@@ -34,6 +34,7 @@ from .tir_agent import TIRMathAgent
 from .user_agent import UserAgent
 from .virtual_memory_agent import VirtualMemoryAgent
 from .write_from_scratch import WriteFromScratch
+from .plan_and_execute import PlanAndExecuteAgent
 
 __all__ = [
     'Agent',
@@ -56,4 +57,5 @@ __all__ = [
     'VirtualMemoryAgent',
     'DialogueRetrievalAgent',
     'TIRMathAgent',
+    'PlanAndExecuteAgent',
 ]
