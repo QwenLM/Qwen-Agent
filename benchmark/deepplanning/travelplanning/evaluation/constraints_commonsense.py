@@ -585,7 +585,7 @@ def check_meal_necessity(daily_plans: List[Dict[str, Any]], meta: Dict[str, Any]
         try:
             h, m = map(int, start_time.split(":"))
             return h * 60 + m
-        except:
+        except Exception:
             return None
 
     def _get_end_time_minutes(act: Dict[str, Any]) -> Optional[int]:
@@ -600,7 +600,7 @@ def check_meal_necessity(daily_plans: List[Dict[str, Any]], meta: Dict[str, Any]
         try:
             h, m = map(int, end_time.split(":"))
             return h * 60 + m
-        except:
+        except Exception:
             return None
 
     def _check_two_meal_gap(meal_times: List[Tuple[int, int]], day_idx: int) -> None:
@@ -727,7 +727,7 @@ def check_attraction_necessity(daily_plans: List[Dict[str, Any]], meta: Dict[str
         try:
             hour, minute = map(int, time_str.split(":"))
             return hour + minute / 60.0
-        except:
+        except Exception:
             return None
     
     def _calculate_duration_minutes(start_str: str, end_str: str) -> int:
@@ -1304,7 +1304,7 @@ def check_budget_accuracy(plan: Dict[str, Any], daily_plans: List[Dict[str, Any]
     
     try:
         plan_total = float(plan_total)
-    except:
+    except Exception:
         return False, f"Invalid total_estimated_budget: {plan_total}"
     
     # Get meta info
@@ -1330,7 +1330,7 @@ def check_budget_accuracy(plan: Dict[str, Any], daily_plans: List[Dict[str, Any]
                 try:
                     day_intercity_cost = float(cost)
                     found_first = True
-                except:
+                except Exception:
                     pass
         
         # Multiply by people number
@@ -1347,7 +1347,7 @@ def check_budget_accuracy(plan: Dict[str, Any], daily_plans: List[Dict[str, Any]
             if price:
                 try:
                     accommodation_cost += float(price) * room_number
-                except:
+                except Exception:
                     pass
     
     # 3. Calculate meals costs
@@ -1359,7 +1359,7 @@ def check_budget_accuracy(plan: Dict[str, Any], daily_plans: List[Dict[str, Any]
                 if cost:
                     try:
                         meals_cost += float(cost) * people_number
-                    except:
+                    except Exception:
                         pass
     
     # 4. Calculate attraction costs
@@ -1371,7 +1371,7 @@ def check_budget_accuracy(plan: Dict[str, Any], daily_plans: List[Dict[str, Any]
                 if cost:
                     try:
                         attractions_cost += float(cost) * people_number
-                    except:
+                    except Exception:
                         pass
     
     # 5. Calculate city transportation costs (taxis)
@@ -1385,7 +1385,7 @@ def check_budget_accuracy(plan: Dict[str, Any], daily_plans: List[Dict[str, Any]
                 if cost:
                     try:
                         transportation_cost += float(cost) * taxis_needed
-                    except:
+                    except Exception:
                         pass
     
     # Calculate total

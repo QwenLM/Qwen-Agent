@@ -507,7 +507,7 @@ def _eval_budget_constraint(constraint_data: Dict, plan: Dict, meta: Dict) -> Tu
                 try:
                     day_intercity_cost = float(cost)
                     found_first = True
-                except:
+                except Exception:
                     pass
         
         # Multiply by people number
@@ -522,7 +522,7 @@ def _eval_budget_constraint(constraint_data: Dict, plan: Dict, meta: Dict) -> Tu
             if price:
                 try:
                     accommodation_cost += float(price) * room_number
-                except:
+                except Exception:
                     pass
     
     # 3. Calculate meals costs
@@ -534,7 +534,7 @@ def _eval_budget_constraint(constraint_data: Dict, plan: Dict, meta: Dict) -> Tu
                 if cost:
                     try:
                         meals_cost += float(cost) * people_number
-                    except:
+                    except Exception:
                         pass
     
     # 4. Calculate attraction costs
@@ -546,7 +546,7 @@ def _eval_budget_constraint(constraint_data: Dict, plan: Dict, meta: Dict) -> Tu
                 if cost:
                     try:
                         attractions_cost += float(cost) * people_number
-                    except:
+                    except Exception:
                         pass
     
     # 5. Calculate city transportation costs (taxis)
@@ -559,7 +559,7 @@ def _eval_budget_constraint(constraint_data: Dict, plan: Dict, meta: Dict) -> Tu
                 if cost:
                     try:
                         transportation_cost += float(cost) * taxis_needed
-                    except:
+                    except Exception:
                         pass
     
     # Calculate total actual budget
