@@ -381,8 +381,14 @@ class MCPClient:
                 if list_resources.resources:
                     self.resources = True
             except Exception:
-                # logger.info(f"No list resources: {e}")
                 pass
+            if not self.resources:
+                try:
+                    list_resource_templates = await self.session.list_resource_templates()
+                    if list_resource_templates.resourceTemplates:
+                        self.resources = True
+                except Exception:
+                    pass
         except Exception as e:
             logger.warning(f'Failed in connecting to MCP server: {e}')
             raise e
@@ -421,12 +427,24 @@ class MCPClient:
                 return f'Session reconnect (client creation) exception: {e3}'
         if tool_name == 'list_resources':
             try:
-                list_resources = await self.session.list_resources()
-                if list_resources.resources:
-                    resources_str = '\n\n'.join(str(resource) for resource in list_resources.resources)
+                parts = []
+                try:
+                    list_resources = await self.session.list_resources()
+                    if list_resources.resources:
+                        parts.append('\n\n'.join(str(resource) for resource in list_resources.resources))
+                except Exception as e:
+                    logger.info(f'No list resources: {e}')
+                try:
+                    list_resource_templates = await self.session.list_resource_templates()
+                    if list_resource_templates.resourceTemplates:
+                        parts.append('\n\n'.join(
+                            str(template) for template in list_resource_templates.resourceTemplates))
+                except Exception as e:
+                    logger.info(f'No list resource templates: {e}')
+                if parts:
+                    return '\n\n'.join(parts)
                 else:
-                    resources_str = 'No resources found'
-                return resources_str
+                    return 'No resources found'
             except Exception as e:
                 logger.info(f'No list resources: {e}')
                 return f'Error: {e}'
