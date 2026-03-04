@@ -77,7 +77,7 @@ if threading.current_thread() is threading.main_thread():
     append_signal_handler(signal.SIGINT, _kill_kernels_and_containers)
 
 
-@register_tool('code_interpreter')
+@register_tool('codeInterpreter')
 class CodeInterpreter(BaseToolWithFileAccess):
     description = 'Python code sandbox, which can be used to execute Python code.'
     parameters = {
