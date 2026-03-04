@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List, Literal, Optional, Tuple, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
-from pydantic import BaseModel, field_validator, model_validator
+from pydantic import BaseModel, SerializationInfo, field_validator, model_serializer, model_validator
 
 DEFAULT_SYSTEM_MESSAGE = ''
 
@@ -41,6 +41,20 @@ class BaseModelCompatibleDict(BaseModel):
 
     def __setitem__(self, key, value):
         setattr(self, key, value)
+
+    @model_serializer(mode='wrap')
+    def _exclude_none_serializer(self, handler: Any, info: SerializationInfo) -> Dict[str, Any]:
+        """Ensure None values are excluded during serialization.
+
+        This handles the case where external frameworks (e.g. FastAPI) serialize
+        the model via ``TypeAdapter`` or ``jsonable_encoder``, bypassing the
+        custom ``model_dump`` override.  By filtering at the serializer level
+        the behaviour is consistent regardless of the call path.
+        """
+        result = handler(self)
+        if not info.exclude_none:
+            return {k: v for k, v in result.items() if v is not None}
+        return result
 
     def model_dump(self, **kwargs):
         if 'exclude_none' not in kwargs:
