@@ -125,6 +125,7 @@ class PythonExecutor(BaseTool):
         self.get_answer_from_stdout = get_answer_from_stdout
         self.pool = Pool(multiprocess.cpu_count())
         self.timeout_length = timeout_length
+        self.max_output_length: Optional[int] = self.cfg.get('max_output_length', 256)
 
     def call(self, params: Union[str, dict], **kwargs) -> list:
         try:
@@ -181,6 +182,8 @@ class PythonExecutor(BaseTool):
 
     @staticmethod
     def truncate(s, max_length=256):
+        if not max_length:
+            return s
         half = max_length // 2
         if len(s) > max_length:
             s = s[:half] + '...' + s[-half:]
@@ -232,7 +235,7 @@ class PythonExecutor(BaseTool):
         for code, (res, report) in zip(all_code_snippets, all_exec_results):
             # post processing
             res, report = str(res).strip(), str(report).strip()
-            res, report = self.truncate(res), self.truncate(report)
+            res, report = self.truncate(res, self.max_output_length), self.truncate(report, self.max_output_length)
             batch_results.append((res, report))
         return batch_results
 
