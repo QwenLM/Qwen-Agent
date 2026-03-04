@@ -107,6 +107,18 @@ class ReActChat(FnCallAgent):
             text_messages[-1].content += thought + f'\nAction: {action}\nAction Input: {action_input}' + observation
 
     def _prepend_react_prompt(self, messages: List[Message], lang: Literal['en', 'zh']) -> List[Message]:
+        # Include file contents in the prompt if available
+        if hasattr(self, 'mem') and self.mem.system_files:
+            try:
+                *_, last = self.mem.run(messages=messages, lang=lang)
+                if last and last[-1].content:
+                    knowledge_content = last[-1].content
+                    if isinstance(knowledge_content, str) and knowledge_content.strip():
+                        knowledge_msg = Message(role='system', content=knowledge_content)
+                        messages = [knowledge_msg] + messages
+            except Exception:
+                pass
+
         tool_descs = []
         for f in self.function_map.values():
             function = f.function
