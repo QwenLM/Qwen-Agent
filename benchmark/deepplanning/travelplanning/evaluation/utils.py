@@ -807,7 +807,7 @@ def get_intercity_arrival_time(day: Dict[str, Any]) -> Optional[float]:
                 try:
                     hour, minute = map(int, end_time.split(":"))
                     return hour + minute / 60.0
-                except:
+                except Exception:
                     pass
     return None
 
@@ -827,7 +827,7 @@ def get_intercity_departure_time(day: Dict[str, Any]) -> Optional[float]:
                 try:
                     hour, minute = map(int, start_time.split(":"))
                     return hour + minute / 60.0
-                except:
+                except Exception:
                     pass
     return None
 
