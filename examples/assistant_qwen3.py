@@ -69,6 +69,10 @@ def init_agent_service():
                     'args': ['mcp-server-time', '--local-timezone=Asia/Shanghai']
                 },
                 'fetch': {
+                    # Note: The inference of the Qwen/Qwen3-8B model will return "fetch",
+                    # leading to an error "Tool fetch does not exists". It is recommended
+                    # to use Qwen3-30B-A3B-Instruct-2507 or other models, so that the model
+                    # returns "fetch-fetch" to enable the agent to work properly
                     'command': 'uvx',
                     'args': ['mcp-server-fetch']
                 }
