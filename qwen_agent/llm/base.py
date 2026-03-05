@@ -227,6 +227,10 @@ class BaseChatModel(ABC):
                 if k in generate_cfg:
                     del generate_cfg[k]
 
+        # Remove response_format when function calling is enabled, as it may conflict with tool calls
+        if fncall_mode and 'response_format' in generate_cfg:
+            del generate_cfg['response_format']
+
         def _call_model_service():
             if fncall_mode:
                 return self._chat_with_functions(
@@ -446,7 +450,34 @@ class BaseChatModel(ABC):
                 new_msg['id'] = msg.get('extra', {}).get('function_id', '1')
                 new_messages.append(new_msg)
             else:
-                new_messages.append(msg)
+                # Convert content for multimodal messages
+                new_msg = copy.deepcopy(msg)
+                if isinstance(new_msg.get('content'), list):
+                    oai_content = []
+                    for item in new_msg['content']:
+                        if item.get('type') == 'text':
+                            oai_content.append({'type': 'text', 'text': item['text']})
+                        elif item.get('type') == 'image':
+                            # Convert image to OpenAI format
+                            image_url = item['image']
+                            if not image_url.startswith(('http://', 'https://', 'data:')):
+                                # Assume it's a local path, convert to data URL if possible
+                                import base64
+                                try:
+                                    with open(image_url, 'rb') as f:
+                                        image_data = f.read()
+                                    encoded = base64.b64encode(image_data).decode('utf-8')
+                                    mime_type = 'image/jpeg'  # default, could detect
+                                    image_url = f'data:{mime_type};base64,{encoded}'
+                                except Exception:
+                                    # If can't read, keep as is, VLLM might handle paths
+                                    pass
+                            oai_content.append({'type': 'image_url', 'image_url': {'url': image_url}})
+                        else:
+                            # For other types, keep as is or skip
+                            oai_content.append(item)
+                    new_msg['content'] = oai_content
+                new_messages.append(new_msg)
         return new_messages
 
     def quick_chat_oai(self, messages: List[dict], tools: Optional[list] = None) -> dict:
