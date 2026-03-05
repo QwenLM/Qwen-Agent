@@ -13,6 +13,7 @@ on:
 jobs:
   pearl-news:
     runs-on: self-hosted
+    timeout-minutes: 30
     env:
       WORDPRESS_SITE_URL: ${{ secrets.WORDPRESS_SITE_URL }}
       WORDPRESS_USERNAME: ${{ secrets.WORDPRESS_USERNAME }}
@@ -20,6 +21,8 @@ jobs:
       QWEN_BASE_URL: ${{ secrets.QWEN_BASE_URL }}
       QWEN_API_KEY: ${{ secrets.QWEN_API_KEY }}
       QWEN_MODEL: ${{ secrets.QWEN_MODEL }}
+      PEARL_NEWS_EXPAND: "true"
+      PEARL_NEWS_LIMIT: "3"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -56,11 +59,18 @@ jobs:
 
       - name: Run full pipeline (ingest → assemble → optional expand → QC)
         run: |
-          python3 -m pearl_news.pipeline.run_article_pipeline \
-            --feeds pearl_news/config/feeds.yaml \
-            --out-dir artifacts/pearl_news/drafts \
-            --limit 10 \
-            --expand
+          if [ "$PEARL_NEWS_EXPAND" = "true" ]; then
+            python3 -m pearl_news.pipeline.run_article_pipeline \
+              --feeds pearl_news/config/feeds.yaml \
+              --out-dir artifacts/pearl_news/drafts \
+              --limit "$PEARL_NEWS_LIMIT" \
+              --expand
+          else
+            python3 -m pearl_news.pipeline.run_article_pipeline \
+              --feeds pearl_news/config/feeds.yaml \
+              --out-dir artifacts/pearl_news/drafts \
+              --limit "$PEARL_NEWS_LIMIT"
+          fi
 
       - name: Upload draft artifacts
         uses: actions/upload-artifact@v4
