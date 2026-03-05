@@ -1,0 +1,33 @@
+# Pearl News — template diversity + anti-spam (production non-negotiable §3).
+# Signature tracking: headline_sig, lede_sig, teacher_sig, sdg_sig. Caps per week/month.
+# USLF balance: most articles = one teacher's insight + youth; group/forum style only 5%.
+
+schema_version: 1
+
+# Fraction of articles that use "group USLF" voice (multiple leaders / forum). Rest use single-teacher focus.
+uslf_group_article_ratio: 0.05
+
+signatures:
+  headline_sig:
+    description: "Stable hash of normalized headline (lowercase, strip punctuation)."
+    algorithm: "sha256"
+  lede_sig:
+    description: "Stable hash of first paragraph / lede (normalized)."
+    algorithm: "sha256"
+  teacher_sig:
+    description: "teacher_id + topic (or hash of teacher quote snippet)."
+    algorithm: "sha256"
+  sdg_sig:
+    description: "primary_sdg + sorted secondary_sdgs (or hash of sdg_ref snippet)."
+    algorithm: "sha256"
+
+caps:
+  per_week:
+    same_teacher_sig_and_template_max: 3   # Max 3 articles per week with same teacher+topic+template.
+    same_lede_sig_max: 1                   # No duplicate lede in same week.
+  per_month:
+    same_teacher_sig_and_template_max: 8
+    same_lede_sig_max: 2
+
+variation_rules:
+  on_cap_hit: "fail_or_vary"  # Fail build or force variation (e.g. pick different teacher / angle).

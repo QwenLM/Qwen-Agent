@@ -1,0 +1,27 @@
+# Pearl News — 5 article template IDs → file and slot semantics.
+# Used by template_selector and article_assembler.
+
+schema_version: 1
+
+templates:
+  hard_news_spiritual_response:
+    file: hard_news_spiritual_response.yaml
+    description: "Breaking/news event + youth impact + forum perspective + SDG"
+    lead_with: news_summary
+  youth_feature:
+    file: youth_feature.yaml
+    description: "Youth story/trend first, then data, teacher, solutions"
+    lead_with: youth_narrative
+  interfaith_dialogue_report:
+    file: interfaith_dialogue_report.yaml
+    description: "Forum/event recap, speakers, themes, SDG, next steps"
+    lead_with: event_summary
+  explainer_context:
+    file: explainer_context.yaml
+    description: "What happened, background, ethical dimension, youth, SDG"
+    lead_with: what_happened
+  commentary:
+    file: commentary.yaml
+    description: "Opinion; must be labeled Commentary. Thesis + event + teaching + civic rec."
+    lead_with: thesis
+    label_required: "Commentary"

@@ -1,0 +1,25 @@
+# Pearl News — Hard News + Spiritual Response (RNS-style)
+# Use for: breaking news, climate event, conflict, AI/regulation, economic shift.
+
+template_id: hard_news_spiritual_response
+name: "Hard News + Spiritual Response"
+
+section_slots:
+  - slot: headline
+    source: generate
+    notes: "Neutral; from news_event + topic. No devotional language."
+  - slot: news_summary
+    source: news_event
+    required: true
+  - slot: youth_impact
+    source: youth_impact
+    required: true
+  - slot: teacher_perspective
+    source: teacher_quotes_practices
+    required: true
+  - slot: sdg_un_tie
+    source: sdg_ref
+    required: true
+  - slot: forward_look
+    source: generate
+    notes: "Constructive forward-looking note; optional boilerplate."

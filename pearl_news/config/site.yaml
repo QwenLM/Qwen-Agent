@@ -1,0 +1,19 @@
+# Pearl News — site-level options (placeholder images, target length).
+# When an RSS article has no image, use one of the pics below by article type.
+
+schema_version: 1
+
+# One placeholder image per article template (paths relative to repo root).
+# Images live in pearl_news/del_intake_pics/
+placeholder_featured_image_by_template:
+  hard_news_spiritual_response: pearl_news/del_intake_pics/global_update.png
+  youth_feature: pearl_news/del_intake_pics/youth_impact.png
+  interfaith_dialogue_report: pearl_news/del_intake_pics/interfath_dialogue.png
+  explainer_context: pearl_news/del_intake_pics/sdg_brief.png
+  commentary: pearl_news/del_intake_pics/cultural_insight.png
+
+# Fallback if template not in map (optional)
+placeholder_featured_image_default: pearl_news/del_intake_pics/global_update.png
+
+# Target article length (words). LLM expansion can target this when --expand is used.
+target_word_count: 1000

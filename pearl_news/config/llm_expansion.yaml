@@ -1,0 +1,31 @@
+# Pearl News — LLM expansion to target word count (e.g. ~1000 words).
+# Uses OpenAI-compatible API: local Qwen (LM Studio / Ollama) or your GitHub/self-hosted Qwen endpoint.
+# Aligns with llm_safety.yaml: expansion is an allowed use without full-article evaluation.
+# Run pipeline with: --expand
+
+schema_version: 1
+
+# Set to true to run expansion when pipeline is invoked with --expand
+enabled: true
+
+# OpenAI-compatible API (works with LM Studio, Ollama OpenAI compat, or remote Qwen)
+base_url: "http://localhost:1234/v1"
+# Alternative: Ollama with OpenAI compat → "http://localhost:11434/v1"
+# GitHub / remote: set to your endpoint URL (e.g. https://your-runner.example.com/v1)
+
+model: "Qwen2.5-14B-Instruct"
+# Or: "qwen3:14b" if using Ollama; match the model name your server exposes
+
+api_key: "lm-studio"
+# LM Studio: any non-empty string. Ollama: often "ollama". Remote: your API key if required.
+
+# Timeout per article (seconds)
+timeout: 120
+
+# Target word count for expanded body (overrides site.yaml target_word_count when set)
+target_word_count: 1000
+
+# Max tokens the model can generate per call (allow ~1000 words ≈ 1300+ tokens)
+max_tokens: 2048
+
+temperature: 0.5

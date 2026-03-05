@@ -1,0 +1,13 @@
+# Pearl News — United Spiritual Leaders Forum: teacher_id → topics they speak to.
+# Used to pick which teacher quote/practice to use for a given news topic.
+# Populate with real forum teacher IDs and topics.
+
+schema_version: 1
+
+# teacher_id (from your forum) → list of topic keys (must match sdg_news_topic_mapping)
+teacher_topics:
+  # Example placeholders; replace with actual forum teacher IDs
+  # teacher_01:
+  #   topics: [climate, mental_health]
+  # teacher_02:
+  #   topics: [peace_conflict, education]

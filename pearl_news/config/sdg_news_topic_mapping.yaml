@@ -1,0 +1,56 @@
+# Pearl News — map news topics/keywords → SDG(s) and UN body.
+# Used by topic_sdg_classifier and article assembly (sdg_un_tie slot).
+
+schema_version: 1
+
+# Topic key (lowercase, no spaces) → primary_sdg, secondary_sdgs, un_body
+topic_to_sdg:
+  climate:
+    primary_sdg: "13"
+    sdg_labels:
+      "13": "Climate Action"
+    secondary_sdgs: ["15"]
+    un_body: "United Nations Environment Programme"
+  mental_health:
+    primary_sdg: "3"
+    sdg_labels:
+      "3": "Good Health and Well-Being"
+    un_body: "World Health Organization"
+  education:
+    primary_sdg: "4"
+    sdg_labels:
+      "4": "Quality Education"
+    un_body: "UNESCO"
+  peace_conflict:
+    primary_sdg: "16"
+    sdg_labels:
+      "16": "Peace, Justice and Strong Institutions"
+    un_body: "United Nations Alliance of Civilizations"
+  economy_work:
+    primary_sdg: "8"
+    sdg_labels:
+      "8": "Decent Work and Economic Growth"
+    un_body: "United Nations Development Programme"
+  inequality:
+    primary_sdg: "10"
+    sdg_labels:
+      "10": "Reduced Inequalities"
+    un_body: "United Nations Development Programme"
+  partnerships:
+    primary_sdg: "17"
+    sdg_labels:
+      "17": "Partnerships for the Goals"
+    un_body: "United Nations"
+
+# Keywords (from headline/summary) → topic hint for classifier
+keyword_to_topic:
+  - keywords: ["climate", "carbon", "emissions", "heat", "flood", "drought"]
+    topic: climate
+  - keywords: ["anxiety", "mental health", "wellbeing", "depression", "resilience"]
+    topic: mental_health
+  - keywords: ["school", "education", "student", "learning"]
+    topic: education
+  - keywords: ["peace", "conflict", "refugee", "war", "dialogue"]
+    topic: peace_conflict
+  - keywords: ["job", "employment", "economy", "youth unemployment"]
+    topic: economy_work

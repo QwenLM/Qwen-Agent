@@ -1,0 +1,85 @@
+# Pearl News: scheduled run on self-hosted runner (for LM Studio / local Qwen).
+# Use this when QWEN_BASE_URL is localhost — cloud runners cannot reach it.
+# Copy this to Qwen-Agent or Qwen repo as .github/workflows/pearl_news_scheduled.yml
+# See docs/PEARL_NEWS_OPTION_B_RUNBOOK.md.
+
+name: Pearl News scheduled
+
+on:
+  schedule:
+    - cron: '0 6,18 * * *'
+  workflow_dispatch:
+
+jobs:
+  pearl-news:
+    runs-on: self-hosted
+    env:
+      WORDPRESS_SITE_URL: ${{ secrets.WORDPRESS_SITE_URL }}
+      WORDPRESS_USERNAME: ${{ secrets.WORDPRESS_USERNAME }}
+      WORDPRESS_APP_PASSWORD: ${{ secrets.WORDPRESS_APP_PASSWORD }}
+      QWEN_BASE_URL: ${{ secrets.QWEN_BASE_URL }}
+      QWEN_API_KEY: ${{ secrets.QWEN_API_KEY }}
+      QWEN_MODEL: ${{ secrets.QWEN_MODEL }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Pearl News dependencies
+        run: |
+          pip install feedparser pyyaml requests pytest openai
+
+      - name: Validate WordPress env (if configured)
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import os
+          from pearl_news.publish.wordpress_client import _normalize_site_url
+          raw = os.environ.get("WORDPRESS_SITE_URL", "").strip()
+          if not raw:
+              print("WORDPRESS_SITE_URL not set; skipping WP env validation.")
+          else:
+              normalized = _normalize_site_url(raw)
+              print(f"WORDPRESS_SITE_URL normalized to: {normalized}")
+          PY
+
+      - name: Run Pearl News tests
+        run: |
+          PYTHONPATH=. python -m pytest \
+            tests/test_pearl_news_quality_gates_minimal.py \
+            tests/test_pearl_news_pipeline_e2e.py \
+            -v
+
+      - name: Run full pipeline (ingest → assemble → optional expand → QC)
+        run: |
+          python -m pearl_news.pipeline.run_article_pipeline \
+            --feeds pearl_news/config/feeds.yaml \
+            --out-dir artifacts/pearl_news/drafts \
+            --limit 10 \
+            --expand
+
+      - name: Upload draft artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pearl_news_drafts
+          path: artifacts/pearl_news/drafts/
+          retention-days: 7
+
+      - name: Test WordPress integration (dry-run or post)
+        run: |
+          shopt -s nullglob
+          first=$(ls -1 artifacts/pearl_news/drafts/article_*.json 2>/dev/null | head -1)
+          if [ -z "$first" ]; then
+            echo "No article_*.json found; skipping"
+            exit 0
+          fi
+          if [ -z "$WORDPRESS_APP_PASSWORD" ]; then
+            python scripts/pearl_news_post_to_wp.py --article "$first" --dry-run
+          else
+            python scripts/pearl_news_post_to_wp.py --article "$first" --status draft
+          fi
+        continue-on-error: true

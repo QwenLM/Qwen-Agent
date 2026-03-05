@@ -1,0 +1,30 @@
+# Pearl News — editorial firewall (production non-negotiable §2).
+# Separate news_report vs commentary; min 2 external sources; min 1 non-forum source.
+
+schema_version: 1
+
+label_rules:
+  news_report:
+    templates:
+      - hard_news_spiritual_response
+      - youth_feature
+      - interfaith_dialogue_report
+      - explainer_context
+    body_label: null  # No "Commentary" label in body.
+  commentary:
+    templates:
+      - commentary
+    body_label: "Commentary"  # Must appear in article (e.g. above headline or first paragraph).
+
+source_requirements:
+  min_external_sources: 2   # For news_report templates.
+  min_non_forum_sources: 1 # Per article (WHO, UNICEF, UN report, external expert, etc.).
+
+non_forum_source_examples:
+  - "World Health Organization"
+  - "UNICEF"
+  - "United Nations Environment Programme"
+  - "UNESCO"
+  - "United Nations Development Programme"
+  - "United Nations Alliance of Civilizations"
+  # External news orgs (Reuters, BBC, etc.) also count as non-forum.

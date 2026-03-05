@@ -1,0 +1,25 @@
+# Pearl News — Explainer / Context
+# Use for: depth, not breaking news; unpack complex issue.
+
+template_id: explainer_context
+name: "Explainer / Context"
+
+section_slots:
+  - slot: headline
+    source: generate
+  - slot: what_happened
+    source: news_event
+    required: true
+  - slot: historical_background
+    source: generate
+  - slot: ethical_spiritual_dimension
+    source: teacher_quotes_practices
+    required: true
+  - slot: youth_implications
+    source: youth_impact
+    required: true
+  - slot: sdg_policy_tie
+    source: sdg_ref
+    required: true
+  - slot: future_outlook
+    source: generate

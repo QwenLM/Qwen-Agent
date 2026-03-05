@@ -1,0 +1,28 @@
+# Pearl News — legal boundary (production non-negotiable §1).
+# Never imply UN affiliation. Blocklist enforced in pipeline and QC.
+# Disclaimer text lives on site About; not repeated in each article.
+
+schema_version: 1
+
+# For site About / footer only; not appended to articles
+disclaimer_site:
+  short: "Pearl News is an independent nonprofit civic media organization. We are not affiliated with, endorsed by, or officially connected to the United Nations unless explicitly stated in formal public documentation."
+  footer: "Pearl News and United Nations Spiritual Alliance For Youth are independent nonprofits. Neither is affiliated with, endorsed by, or officially connected to the United Nations unless explicitly stated."
+
+blocklist_phrases:
+  - "UN partner"
+  - "UN endorsed"
+  - "endorsed by the United Nations"
+  - "in partnership with the UN"
+  - "in partnership with the United Nations"
+  - "UN official"  # when referring to Pearl News / UNSA Youth
+  - "official UN"
+  - "affiliated with the United Nations"
+  - "affiliated with the UN"
+  # Add more as needed; any match fails unless allowlisted.
+
+allowlist:
+  # Only if formally documented. Example:
+  # - phrase: "in partnership with the United Nations"
+  #   document_ref: "https://...."
+  #   expiry: "2026-12-31"

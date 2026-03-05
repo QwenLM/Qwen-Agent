@@ -1,0 +1,25 @@
+# Pearl News — Interfaith Dialogue Report (UNAOC-style)
+# Use for: forum gathering, multi-leader event, joint declaration, youth peace forum.
+
+template_id: interfaith_dialogue_report
+name: "Interfaith Dialogue Report"
+
+section_slots:
+  - slot: headline
+    source: generate
+  - slot: event_summary
+    source: news_event
+    required: true
+  - slot: leaders_present
+    source: generate
+    notes: "Participating leaders; from event data."
+  - slot: themes_discussed
+    source: generate
+  - slot: youth_commitments
+    source: youth_impact
+    notes: "Youth-focused commitments or initiatives."
+  - slot: sdg_alignment
+    source: sdg_ref
+    required: true
+  - slot: next_steps
+    source: generate
