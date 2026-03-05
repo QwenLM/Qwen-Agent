@@ -1,0 +1,23 @@
+# Pearl News — structured quality gates, fail-hard (production non-negotiable §4).
+# All gates must PASS for article to be publishable.
+
+schema_version: 1
+
+gates:
+  fact_check_completeness:
+    description: "All factual claims in news_summary and youth_impact traceable to cited sources."
+    fail_condition: "Missing or unverifiable source for a factual claim."
+  youth_impact_specificity:
+    description: "Youth impact section is specific (age group, region, or data point), not generic."
+    fail_condition: "Vague or unspecific youth impact (e.g. 'young people feel' with no data or detail)."
+  sdg_un_accuracy:
+    description: "SDG numbers and UN entity names match authoritative list; no false partnership/endorsement."
+    fail_condition: "Wrong SDG/UN ref or blocklist phrase present (see legal_boundary.yaml)."
+  promotional_tone_detector:
+    description: "No devotional or promotional tone; civic, neutral language."
+    fail_condition: "Promotional or devotional language detected."
+  un_endorsement_detector:
+    description: "No implied UN affiliation or endorsement (blocklist + heuristic)."
+    fail_condition: "Blocklist hit or endorsement-like phrase."
+
+policy: "fail_hard"  # Any gate FAIL = do not publish.

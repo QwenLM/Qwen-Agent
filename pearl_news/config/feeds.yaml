@@ -1,0 +1,16 @@
+# Pearl News — feed sources for automated article pipeline.
+# Refresh intervals are advisory; run_article_pipeline can override.
+
+schema_version: 1
+
+feeds:
+  - id: un_news_all
+    url: https://news.un.org/feed/subscribe/en/news/all/rss.xml
+    type: rss
+    refresh_minutes: 60
+    description: "UN News — latest headlines across topics"
+  - id: un_news_sdgs
+    url: https://news.un.org/feed/subscribe/en/news/topic/sdgs/rss.xml
+    type: rss
+    refresh_minutes: 120
+    description: "UN News — Sustainable Development Goals focus"

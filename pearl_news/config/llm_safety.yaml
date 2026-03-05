@@ -1,0 +1,19 @@
+# Pearl News — LLM safety (production non-negotiable §7).
+# Local LLM only for summarization, headline, expansion. Full-article gated by evaluation pass rate.
+
+schema_version: 1
+
+allowed_uses_without_evaluation:
+  - summarization   # Feed item → news_summary slot.
+  - headline        # Generate neutral headline from event + topic.
+  - expansion       # Bullets → 1–2 paragraph prose for one section.
+
+full_article_generation:
+  allowed: false    # Set true only when evaluation harness pass rate meets threshold.
+  evaluation_pass_rate_threshold: 0.85  # e.g. 85% across factual, neutrality, youth, SDG, non-promotional.
+  required_metrics:
+    - factual_accuracy
+    - neutrality
+    - youth_relevance
+    - sdg_correctness
+    - non_promotional_tone

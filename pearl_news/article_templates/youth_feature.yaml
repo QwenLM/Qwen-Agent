@@ -1,0 +1,25 @@
+# Pearl News — Youth-Centered Feature (CSM-style)
+# Use for: youth anxiety, education shift, climate activism, digital overload.
+
+template_id: youth_feature
+name: "Youth Feature"
+
+section_slots:
+  - slot: headline
+    source: generate
+  - slot: youth_narrative
+    source: youth_impact
+    required: true
+    notes: "Lead with human story or trend."
+  - slot: data_research
+    source: news_event
+    notes: "Data and research; can merge with youth_impact."
+  - slot: teacher_reflection
+    source: teacher_quotes_practices
+    required: true
+  - slot: sdg_framework
+    source: sdg_ref
+    required: true
+  - slot: solutions
+    source: generate
+    notes: "Practical solutions; hopeful but grounded."

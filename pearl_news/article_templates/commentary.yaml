@@ -1,0 +1,27 @@
+# Pearl News — Commentary (must be labeled "Commentary" or "Opinion")
+# Use sparingly. Strong thesis + event ref + teaching interpretation + civic recommendation.
+
+template_id: commentary
+name: "Commentary"
+label_required: "Commentary"
+
+section_slots:
+  - slot: label
+    source: fixed
+    value: "Commentary"
+  - slot: headline
+    source: generate
+  - slot: thesis
+    source: generate
+    required: true
+  - slot: event_reference
+    source: news_event
+    required: true
+  - slot: teaching_interpretation
+    source: teacher_quotes_practices
+    required: true
+  - slot: civic_recommendation
+    source: generate
+  - slot: sdg_reference
+    source: sdg_ref
+    required: true

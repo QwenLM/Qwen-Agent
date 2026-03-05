@@ -1,0 +1,13 @@
+# Pearl News — WordPress author (byline) assignment.
+# Author is assigned per teacher and alternates across articles.
+# List WordPress user IDs; pipeline assigns round-robin so byline rotates.
+
+schema_version: 1
+
+# WordPress user IDs for article author (displayed as "By ..."). Rotate in order.
+author_ids: [1]
+
+# Optional: map teacher_id → WordPress user ID (overrides rotation when set per article)
+# teacher_author_map:
+#   teacher_01: 1
+#   teacher_02: 2
