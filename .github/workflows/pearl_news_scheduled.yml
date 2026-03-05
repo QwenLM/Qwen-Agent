@@ -1,13 +1,8 @@
-# Pearl News: scheduled run on self-hosted runner (for LM Studio / local Qwen).
-# Use this when QWEN_BASE_URL is localhost — cloud runners cannot reach it.
-# Copy this to Qwen-Agent or Qwen repo as .github/workflows/pearl_news_scheduled.yml
-# See docs/PEARL_NEWS_OPTION_B_RUNBOOK.md.
-
 name: Pearl News scheduled
 
 on:
   schedule:
-    - cron: '0 6,18 * * *'
+    - cron: "0 6,18 * * *"
   workflow_dispatch:
 
 jobs:
@@ -20,6 +15,7 @@ jobs:
       QWEN_BASE_URL: ${{ secrets.QWEN_BASE_URL }}
       QWEN_API_KEY: ${{ secrets.QWEN_API_KEY }}
       QWEN_MODEL: ${{ secrets.QWEN_MODEL }}
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -28,11 +24,20 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install Pearl News dependencies
         run: |
-          pip install feedparser pyyaml requests pytest openai
+          pip install "feedparser>=6.0" "pyyaml>=6.0" "requests>=2.31" "pytest>=8.0" "openai>=1.0"
+
+      - name: Validate Qwen endpoint
+        run: |
+          if [ -z "$QWEN_BASE_URL" ]; then
+            echo "QWEN_BASE_URL is empty"
+            exit 1
+          fi
+          curl -s "$QWEN_BASE_URL/models" | head -c 500
+          echo
 
       - name: Validate WordPress env (if configured)
         run: |
@@ -54,7 +59,7 @@ jobs:
             tests/test_pearl_news_pipeline_e2e.py \
             -v
 
-      - name: Run full pipeline (ingest → assemble → optional expand → QC)
+      - name: Run full pipeline (ingest → assemble → expand → QC)
         run: |
           python -m pearl_news.pipeline.run_article_pipeline \
             --feeds pearl_news/config/feeds.yaml \
@@ -79,7 +84,7 @@ jobs:
           fi
           if [ -z "$WORDPRESS_APP_PASSWORD" ]; then
             python scripts/pearl_news_post_to_wp.py --article "$first" --dry-run
-          else
+          else:
             python scripts/pearl_news_post_to_wp.py --article "$first" --status draft
           fi
         continue-on-error: true
