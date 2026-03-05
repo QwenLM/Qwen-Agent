@@ -13,7 +13,7 @@ on:
 jobs:
   pearl-news:
     runs-on: self-hosted
-    timeout-minutes: 30
+    timeout-minutes: 45
     env:
       WORDPRESS_SITE_URL: ${{ secrets.WORDPRESS_SITE_URL }}
       WORDPRESS_USERNAME: ${{ secrets.WORDPRESS_USERNAME }}
@@ -21,7 +21,7 @@ jobs:
       QWEN_BASE_URL: ${{ secrets.QWEN_BASE_URL }}
       QWEN_API_KEY: ${{ secrets.QWEN_API_KEY }}
       QWEN_MODEL: ${{ secrets.QWEN_MODEL }}
-      PEARL_NEWS_EXPAND: "true"
+      PEARL_NEWS_EXPAND: "false"
       PEARL_NEWS_LIMIT: "3"
     steps:
       - uses: actions/checkout@v4
