@@ -1,8 +1,13 @@
+# Pearl News: scheduled run on self-hosted runner (for LM Studio / local Qwen).
+# Use this when QWEN_BASE_URL is localhost — cloud runners cannot reach it.
+# Copy this to Qwen-Agent or Qwen repo as .github/workflows/pearl_news_scheduled.yml
+# See docs/PEARL_NEWS_OPTION_B_RUNBOOK.md.
+
 name: Pearl News scheduled
 
 on:
   schedule:
-    - cron: "0 6,18 * * *"
+    - cron: '0 6,18 * * *'
   workflow_dispatch:
 
 jobs:
@@ -15,33 +20,23 @@ jobs:
       QWEN_BASE_URL: ${{ secrets.QWEN_BASE_URL }}
       QWEN_API_KEY: ${{ secrets.QWEN_API_KEY }}
       QWEN_MODEL: ${{ secrets.QWEN_MODEL }}
-
     steps:
       - uses: actions/checkout@v4
         with:
           ref: main
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
+      - name: Check Python
+        run: |
+          python3 --version
+          python3 -m pip --version
 
       - name: Install Pearl News dependencies
         run: |
-          pip install "feedparser>=6.0" "pyyaml>=6.0" "requests>=2.31" "pytest>=8.0" "openai>=1.0"
-
-      - name: Validate Qwen endpoint
-        run: |
-          if [ -z "$QWEN_BASE_URL" ]; then
-            echo "QWEN_BASE_URL is empty"
-            exit 1
-          fi
-          curl -s "$QWEN_BASE_URL/models" | head -c 500
-          echo
+          python3 -m pip install feedparser pyyaml requests pytest openai
 
       - name: Validate WordPress env (if configured)
         run: |
-          PYTHONPATH=. python - <<'PY'
+          PYTHONPATH=. python3 - <<'PY'
           import os
           from pearl_news.publish.wordpress_client import _normalize_site_url
           raw = os.environ.get("WORDPRESS_SITE_URL", "").strip()
@@ -54,14 +49,14 @@ jobs:
 
       - name: Run Pearl News tests
         run: |
-          PYTHONPATH=. python -m pytest \
+          PYTHONPATH=. python3 -m pytest \
             tests/test_pearl_news_quality_gates_minimal.py \
             tests/test_pearl_news_pipeline_e2e.py \
             -v
 
-      - name: Run full pipeline (ingest → assemble → expand → QC)
+      - name: Run full pipeline (ingest → assemble → optional expand → QC)
         run: |
-          python -m pearl_news.pipeline.run_article_pipeline \
+          python3 -m pearl_news.pipeline.run_article_pipeline \
             --feeds pearl_news/config/feeds.yaml \
             --out-dir artifacts/pearl_news/drafts \
             --limit 10 \
@@ -83,8 +78,8 @@ jobs:
             exit 0
           fi
           if [ -z "$WORDPRESS_APP_PASSWORD" ]; then
-            python scripts/pearl_news_post_to_wp.py --article "$first" --dry-run
-          else:
-            python scripts/pearl_news_post_to_wp.py --article "$first" --status draft
+            python3 scripts/pearl_news_post_to_wp.py --article "$first" --dry-run
+          else
+            python3 scripts/pearl_news_post_to_wp.py --article "$first" --status draft
           fi
         continue-on-error: true
