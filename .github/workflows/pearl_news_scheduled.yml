@@ -21,8 +21,8 @@ jobs:
       QWEN_BASE_URL: ${{ secrets.QWEN_BASE_URL }}
       QWEN_API_KEY: ${{ secrets.QWEN_API_KEY }}
       QWEN_MODEL: ${{ secrets.QWEN_MODEL }}
-      PEARL_NEWS_EXPAND: "false"
-      PEARL_NEWS_LIMIT: "3"
+      PEARL_NEWS_EXPAND: "true"
+      PEARL_NEWS_LIMIT: "1"
     steps:
       - uses: actions/checkout@v4
         with:
