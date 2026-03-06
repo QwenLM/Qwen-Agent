@@ -20,14 +20,18 @@ model: "qwen3-14b"
 api_key: "lm-studio"
 # LM Studio: any non-empty string. Ollama: often "ollama". Remote: your API key if required.
 
-# Timeout per article (seconds); 240 for self-hosted LM Studio reliability
-timeout: 240
+# Timeout per article (seconds).
+# M4 with Qwen3-14B Q4_K_M: prompt eval ~33s (3156 tokens) + generation ~240s (1200 tokens at ~5 tok/s)
+# = ~273s total. Use 360s to give a safe margin without waiting forever.
+timeout: 360
 
 # Target word count for expanded body (overrides site.yaml target_word_count when set)
 target_word_count: 1000
 
-# Max tokens the model can generate per call (allow ~1000 words ≈ 1300+ tokens)
-max_tokens: 2048
+# Max tokens the model can generate per call.
+# 1200 tokens ≈ 900-1000 word article — faster than 2048 and enough for full article.
+# Reducing from 2048 saves ~4 min of unnecessary generation on M4.
+max_tokens: 1200
 
 temperature: 0.5
 
