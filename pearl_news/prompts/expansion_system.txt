@@ -61,10 +61,16 @@ REQUIRED SECTIONS — expand each in place, in order:
 - Use EXACTLY the named teacher from the TEACHER KNOWLEDGE BASE block in the user message.
 - Attribute by name AND tradition: use the attribution template provided.
 - Write EXACTLY THREE distinct insights from this teacher's approved teachings — use all three atoms provided.
-- CRITICAL FORMAT: Each of the three insights MUST be its own separate <p> paragraph. Do NOT merge them into one paragraph or a list. Output exactly three <p>...</p> blocks for this section.
+- CRITICAL FORMAT: Each of the three insights MUST be its own SEPARATE <p>...</p> paragraph. Do NOT merge them into one paragraph, a list, or a single block.
+- Each insight paragraph must be AT LEAST 25 words long. One idea per paragraph.
 - Each insight must connect specifically to the story, not deliver generic wisdom.
 - When replacing the generic placeholder: use only the teacher and atoms you were given. Do not invent a different teacher.
 - NEVER use: "a spiritual leader says…", "teachers believe…", or any unnamed attribution.
+
+REQUIRED OUTPUT FORMAT for this section (three separate <p> blocks — no exceptions):
+<p>[Teacher name], drawing from the [tradition name] tradition, teaches that [insight 1 connected to this story — at least 25 words].</p>
+<p>A second teaching from [teacher name]: [insight 2 connected to this story — at least 25 words].</p>
+<p>[Teacher name] also holds that [insight 3 connected to this story — at least 25 words].</p>
 
 5. SDG CONNECTION (1 paragraph)
 - Name the SDG by number and full title (e.g. SDG 16: Peace, Justice and Strong Institutions).

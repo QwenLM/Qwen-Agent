@@ -162,6 +162,21 @@ def run_expansion(
                 config=config,
             )
             if expanded:
+                # Post-process: re-attach source line if LLM stripped it.
+                # The source line is always <p><em>Source: <a href="...">...</a></em></p>
+                # and must be the final line of the article. If it's missing from the
+                # expanded output but was in the original draft, re-attach from draft.
+                import re as _re
+                _source_pattern = r'<p[^>]*>\s*<em>\s*[Ss]ource\s*:.*?</em>\s*</p>'
+                original_source_match = _re.search(_source_pattern, content, _re.IGNORECASE | _re.DOTALL)
+                expanded_has_source = bool(_re.search(r'[Ss]ource\s*:', expanded))
+                if original_source_match and not expanded_has_source:
+                    source_line = original_source_match.group(0).strip()
+                    expanded = expanded.rstrip() + "\n" + source_line
+                    logger.info(
+                        "Re-attached source line to article %s (LLM had stripped it)",
+                        item.get("id"),
+                    )
                 item["content"] = expanded
                 wc = len(expanded.split())
                 logger.info("Expanded article %s to ~%d words", item.get("id"), wc)

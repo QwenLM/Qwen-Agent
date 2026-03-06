@@ -91,17 +91,46 @@ def _count_paragraphs(content: str) -> int:
 
 
 def _teacher_section_text(content: str) -> str:
-    """Best-effort: extract text near teacher-related keywords."""
+    """
+    Best-effort: extract text in the teacher perspective section.
+
+    Strategy (in priority order):
+    1. Find <h2>/<h3> containing "teacher" or "perspective" or "wisdom" — most reliable.
+    2. Find "teaches that" (specific to teacher body text, rarely appears elsewhere).
+    3. Find LAST occurrence of "tradition" (teacher attribution is late in the article;
+       "tradition" near the top is usually in a different context).
+    4. Fallback: last 3000 chars of article (teacher section is near the end).
+
+    Avoids false positives from "United Spiritual Leaders Forum" / "spiritual" in the lede.
+    """
     lower = content.lower()
-    idx = -1
-    for keyword in ["teacher perspective", "tradition", "teaches that", "spiritual"]:
-        i = lower.find(keyword)
-        if i != -1:
-            idx = i
-            break
-    if idx == -1:
-        return ""
-    return content[max(0, idx - 200): idx + 2000]
+
+    # Priority 1: section header <h2>/<h3> mentioning teacher/perspective/wisdom
+    for header_pattern in [
+        r"<h[23][^>]*>[^<]*(?:teacher|perspective|wisdom|spiritual leader|tradition)[^<]*</h[23]>",
+    ]:
+        m = re.search(header_pattern, lower)
+        if m:
+            idx = m.start()
+            return content[idx: idx + 3000]
+
+    # Priority 2: "teaches that" — highly specific to teacher body text
+    i = lower.find("teaches that")
+    if i != -1:
+        return content[max(0, i - 300): i + 2500]
+
+    # Priority 3: LAST occurrence of "tradition" (teacher attribution is late in article)
+    i = lower.rfind("tradition")
+    if i != -1:
+        return content[max(0, i - 300): i + 2500]
+
+    # Priority 4: "teaches" (broader — last occurrence)
+    i = lower.rfind("teaches")
+    if i != -1:
+        return content[max(0, i - 300): i + 2500]
+
+    # Priority 5: Fallback — last 3500 chars (teacher section is near end)
+    return content[max(0, len(content) - 3500):]
 
 
 def _youth_section_text(content: str) -> str:
