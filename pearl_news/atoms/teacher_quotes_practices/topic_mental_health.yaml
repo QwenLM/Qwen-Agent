@@ -1,0 +1,76 @@
+# Pearl News — teacher atoms for topic: mental_health
+topic_key: mental_health
+topic_sdg: "3"
+
+teachers:
+  ahjan:
+    display_name: "Ajahn Ahjan"
+    tradition: "Theravada Buddhist"
+    attribution: "From within the Theravada Buddhist tradition, Ajahn Ahjan teaches that"
+    atoms:
+      - >
+        the teaching of "dukkha" is consistently mistranslated as suffering; more precisely it
+        describes the structural unsatisfactoriness of grasping. For Gen Z, who were told that
+        achievement and security would follow a predictable path and have found that path broken,
+        this teaching names an experience they have but no culturally legible language for.
+      - >
+        mindfulness in its original context was not a wellness product; it was a practice for
+        seeing how the mind generates and sustains its own distress, and for developing the
+        capacity to interrupt that process. Young people who feel they have "failed at mindfulness"
+        because it did not relieve their anxiety have been given the tool without the philosophy
+        that makes the tool work.
+      - >
+        the Buddhist teaching of "kalama"—investigate for yourself, do not accept from authority
+        alone—is a direct antidote to the crisis of institutional trust that characterises how
+        Gen Z relates to mental health systems. The tradition does not ask for compliance; it
+        asks for discernment. This matters when young people are navigating contradictory
+        clinical advice, social media diagnosis, and their own experience simultaneously.
+
+  junko:
+    display_name: "Junko"
+    tradition: "Zen Buddhist"
+    attribution: "From within the Zen Buddhist tradition, Junko teaches that"
+    atoms:
+      - >
+        "shoshin"—beginner's mind—is not humility as virtue; it is a specific cognitive practice
+        of approaching each situation without the overlay of how it was last time, or what it
+        should be. For young people whose anxiety is partly produced by comparing their present
+        to an imagined future or a past before things went wrong, shoshin is a practical interrupt,
+        not a spiritual aspiration.
+      - >
+        Zen practice has always known that sitting with discomfort is not the same as accepting
+        damage. The tradition distinguishes between "dukkha tolerated"—enduring what is harmful
+        because the alternative seems worse—and "dukkha seen clearly"—observing the structure
+        of one's suffering without being consumed by it. Youth mental health systems often teach
+        the first; the tradition insists on the second.
+      - >
+        the Japanese concept of "ma"—the meaningful pause, the productive empty space—is absent
+        from most digital youth culture, where silence is experienced as failure to engage.
+        Junko's teaching on ma is not about disconnecting from technology; it is about
+        developing the capacity to be present in the gap between stimulus and response,
+        which is where choice lives.
+
+  sai_ma:
+    display_name: "Sai Maa"
+    tradition: "Vedic Hindu"
+    attribution: "From within the Vedic tradition, Sai Maa teaches that"
+    atoms:
+      - >
+        Vedic understanding of "prana"—life force—teaches that mental health is not a state
+        to be achieved but a dynamic flow to be maintained. For young people experiencing burnout,
+        the tradition asks not "what is wrong with you" but "where is the flow obstructed, and
+        what is obstructing it." This reframe moves the locus of inquiry from personal failure
+        to systemic pressure.
+      - >
+        the practice of "svadhyaya"—self-study, the disciplined examination of one's own
+        patterns, reactions, and inherited scripts—is a Vedic antecedent to what clinical
+        psychology now calls metacognition. Young people who have been told to "be more
+        self-aware" without tools find in svadhyaya a structured practice rather than
+        a moral injunction.
+      - >
+        Vedic cosmology holds that the universe is made of sound—"nada Brahma"—and that
+        specific vibrational patterns either support or disrupt the coherence of the mind-body
+        system. This is not metaphysics disconnected from evidence; contemporary research
+        on sound therapy and the nervous system is asking a version of the same question
+        the tradition has always asked: what frequencies do we surround ourselves with,
+        and what do they do to us?

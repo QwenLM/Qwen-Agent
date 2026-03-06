@@ -1,0 +1,132 @@
+# Pearl News — image catalog: what each image is, which templates/topics it fits.
+# Used by run_article_pipeline.py to select the best featured image per article.
+# Rule-based selection: template_id match → topic match → default fallback.
+# Paths relative to pearl_news/del_intake_pics/ (or absolute if needed for WordPress).
+
+schema_version: 1
+
+policy:
+  # If feed provides an image URL with quality_score >= threshold, prefer it over catalog image.
+  prefer_feed_image_if_available: true
+  feed_image_quality_threshold: 0.6  # 0–1; set lower to accept more feed images
+
+images:
+  global_update:
+    path: "pearl_news/del_intake_pics/global_update.png"
+    label: "Globe and news headlines — general international news"
+    alt_default: "A globe surrounded by newspaper headlines representing global news coverage"
+    caption_default: "Global events covered through a youth and spiritual lens"
+    suggested_templates:
+      - hard_news_spiritual_response
+      - interfaith_dialogue_report
+    topic_tags:
+      - partnerships
+      - peace_conflict
+    quality_score: 0.7
+    language_text_risk: none  # no embedded text that risks being wrong language
+
+  youth_impact:
+    path: "pearl_news/del_intake_pics/youth_impact.png"
+    label: "Young people engaged in civic or community activity"
+    alt_default: "Young people working together on a community or civic project"
+    caption_default: "Youth voices at the center of global change"
+    suggested_templates:
+      - youth_feature
+      - hard_news_spiritual_response
+    topic_tags:
+      - inequality
+      - education
+      - mental_health
+      - economy_work
+    quality_score: 0.75
+    language_text_risk: none
+
+  climate_watch:
+    path: "pearl_news/del_intake_pics/climate_watch.png"
+    label: "Environmental imagery — climate, nature, or ecological context"
+    alt_default: "Environmental scene illustrating the intersection of nature and human activity"
+    caption_default: "Monitoring our environment: climate action in focus"
+    suggested_templates:
+      - hard_news_spiritual_response
+      - explainer_context
+    topic_tags:
+      - climate
+    quality_score: 0.8
+    language_text_risk: none
+
+  cultural_insight:
+    path: "pearl_news/del_intake_pics/cultural_insight.png"
+    label: "Cultural exchange or tradition — diverse community gathering"
+    alt_default: "Representatives of different cultural traditions in dialogue"
+    caption_default: "Cultural understanding as a bridge to shared goals"
+    suggested_templates:
+      - interfaith_dialogue_report
+      - commentary
+    topic_tags:
+      - partnerships
+      - peace_conflict
+      - inequality
+    quality_score: 0.7
+    language_text_risk: none
+
+  education_and_identity:
+    path: "pearl_news/del_intake_pics/education_and_identity.png"
+    label: "Students or learners in educational setting — identity and learning"
+    alt_default: "Students in a learning environment representing educational opportunity"
+    caption_default: "Education as a foundation for identity and global citizenship"
+    suggested_templates:
+      - youth_feature
+      - explainer_context
+    topic_tags:
+      - education
+      - inequality
+      - mental_health
+    quality_score: 0.75
+    language_text_risk: none
+
+  interfaith_dialogue:
+    path: "pearl_news/del_intake_pics/interfath_dialogue.png"
+    label: "Interfaith or multi-tradition spiritual gathering"
+    alt_default: "Leaders from different spiritual traditions in dialogue"
+    caption_default: "Interfaith perspectives on shared global challenges"
+    suggested_templates:
+      - interfaith_dialogue_report
+      - commentary
+    topic_tags:
+      - partnerships
+      - peace_conflict
+    quality_score: 0.7
+    language_text_risk: none
+
+  peace_and_governance:
+    path: "pearl_news/del_intake_pics/peace_and_governance.png"
+    label: "Governance or institutional setting — diplomacy, peace process, UN context"
+    alt_default: "A governance or diplomatic setting representing peace and international cooperation"
+    caption_default: "Peace and governance: institutions shaping our collective future"
+    suggested_templates:
+      - hard_news_spiritual_response
+      - interfaith_dialogue_report
+    topic_tags:
+      - peace_conflict
+      - partnerships
+    quality_score: 0.75
+    language_text_risk: none
+
+  sdg_brief:
+    path: "pearl_news/del_intake_pics/sdg_brief.png"
+    label: "SDG icons or sustainable development visual"
+    alt_default: "Sustainable Development Goals imagery representing global targets"
+    caption_default: "Tracking progress toward the Sustainable Development Goals"
+    suggested_templates:
+      - explainer_context
+    topic_tags:
+      - partnerships
+      - climate
+      - education
+      - economy_work
+      - inequality
+    quality_score: 0.65
+    language_text_risk: low  # SDG icons have text; may render correctly in all languages
+
+# Default when no match found
+default_image_id: global_update

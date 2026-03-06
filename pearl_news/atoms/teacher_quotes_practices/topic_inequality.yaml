@@ -1,0 +1,88 @@
+# Pearl News — teacher atoms for topic: inequality
+topic_key: inequality
+topic_sdg: "10"
+
+teachers:
+  ra:
+    display_name: "Ra"
+    tradition: "African spiritual"
+    attribution: "From within the African spiritual tradition, Ra teaches that"
+    atoms:
+      - >
+        the concept of "ubuntu" in African philosophy—I am because we are—treats inequality
+        not as an economic measurement but as a cosmological condition: when any member
+        of the community is structurally excluded, the community itself is diminished
+        in a way that cannot be compensated by aggregate growth. For Gen Z in highly
+        unequal societies, this framework refuses the trade-off between overall prosperity
+        and concentrated poverty that growth statistics typically offer.
+      - >
+        African traditions of "rotating credit associations"—"tontines," "susu," "chamas"—
+        are economic institutions that operate on the principle of communal trust rather
+        than individualised credit scoring. For young people excluded from formal financial
+        systems by lack of credit history or collateral, these traditions demonstrate
+        that the infrastructure for economic inclusion already exists in community knowledge,
+        waiting for institutional recognition.
+      - >
+        the tradition's understanding of "reciprocity" as a cosmological law—not a
+        social contract that can be opted out of but a structural feature of how communities
+        sustain themselves—holds that those who accumulate without reciprocating are not
+        simply making a moral choice but are destabilising the relational infrastructure
+        on which their own accumulation depends. For youth who ask why the wealthy do
+        not give back: the tradition's answer is not moral suasion but structural prediction.
+
+  maat:
+    display_name: "Ma'at"
+    tradition: "Ancient Egyptian (Ma'at principle)"
+    attribution: "From within the Ma'at tradition of cosmic justice and truth, Ma'at teaches that"
+    atoms:
+      - >
+        the ancient Egyptian concept of "ib"—the heart, the seat of moral consciousness—
+        was weighed against the feather of Ma'at to determine whether a life had been
+        lived in right relationship to others. The tradition held that inequality of outcome
+        was not itself a violation of Ma'at; inequality of opportunity and exploitation
+        of the powerless were. For young people navigating economies where starting
+        conditions determine outcomes more than effort, the tradition distinguishes between
+        the inequality that results from different choices and the inequality that is
+        structurally produced before any choice is made.
+      - >
+        Ma'at includes "merimaat"—the love of truth and right order—as an active principle
+        that citizens are obligated to defend, not merely to admire. Ancient Egyptian texts
+        on economic administration include explicit instructions about the treatment of
+        widows, orphans, and the poor—the most economically vulnerable—as a test of
+        whether the administration was maintaining Ma'at or violating it.
+        For youth advocates: the tradition provides a framework in which economic advocacy
+        is a spiritual obligation, not a political preference.
+      - >
+        the restoration of Ma'at after violation required both "reparation"—material
+        restoration of what was taken—and "declaration"—public acknowledgment of what
+        occurred. Systems that address inequality through redistribution alone, without
+        acknowledgment of how the imbalance was created, are performing half of what
+        Ma'at requires. Youth movements that combine economic demands with demands
+        for historical truth are, from this tradition's perspective, correctly identifying
+        what full restoration requires.
+
+  pamela_fellows:
+    display_name: "Pamela Fellows"
+    tradition: "Christian contemplative"
+    attribution: "From within the Christian contemplative tradition, Pamela Fellows teaches that"
+    atoms:
+      - >
+        the Christian contemplative tradition holds that "God is found in the poor"—not
+        as a sentimental claim but as an epistemological one: that proximity to those
+        who are suffering from unjust structures gives access to knowledge about those
+        structures that is unavailable from a position of comfort. For young researchers,
+        policy-makers, and advocates: the tradition asks who is advising you, and from
+        what position.
+      - >
+        the tradition of "liberation theology"—rooted in Latin American Catholic contemplative
+        practice—held that reading scripture from the perspective of the poor reveals
+        meaning that reading from a position of privilege obscures. Applied to economic
+        data: reading inequality statistics from the perspective of the person at the
+        bottom of the distribution reveals structural dynamics that reading from the
+        median does not.
+      - >
+        the contemplative practice of "examen"—daily examination of where one encountered
+        God and where one turned away—applied to economic life asks: today, in my choices
+        of what to buy, where to work, and how to use my time and money, did I reinforce
+        structures of inequality or did I find even a small way to act against them?
+        The tradition does not require heroic sacrifice; it requires daily attentiveness.

@@ -1,0 +1,76 @@
+# Pearl News — teacher atoms for topic: climate
+# Each teacher provides exactly 3 distinct insights applicable to a climate-related news article.
+# Format: name, tradition, attribution, three atoms.
+# Used by teacher_resolver.py; resolver picks one teacher deterministically per article.
+
+topic_key: climate
+topic_sdg: "13"
+
+teachers:
+  ahjan:
+    display_name: "Ajahn Ahjan"
+    tradition: "Theravada Buddhist"
+    attribution: "From within the Theravada Buddhist tradition, Ajahn Ahjan teaches that"
+    atoms:
+      - >
+        the concept of paticcasamuppada—dependent origination, the interdependence of all phenomena—is
+        not a metaphor for ecological thinking but the earliest systematic account of why individual
+        choices produce systemic consequences. A factory decision in Chengdu is not separate from
+        a flood in Jakarta; the teaching insists on tracing the chain.
+      - >
+        Buddhist monasteries across Southeast Asia have practiced "dana toward the forest" for
+        two millennia—active land stewardship as a moral duty to what shelters and sustains the
+        community. This model of environmental relationship predates modern conservation and offers
+        young practitioners a framework that is not borrowed from secular environmentalism.
+      - >
+        climate grief among young people is legitimate, and the tradition distinguishes between
+        "vicikiccha"—paralysing doubt and despair—and "samvega," the urgency that arises from
+        seeing clearly how serious things are. Samvega is a traditional term for the emotional
+        state that precedes awakening and action; it is not pathology, it is the beginning of response.
+
+  miki:
+    display_name: "Miki"
+    tradition: "Shinto"
+    attribution: "From within the Shinto tradition, Miki teaches that"
+    atoms:
+      - >
+        the Shinto concept of "satoyama"—the managed interface between human settlement and
+        mountain forest—encodes a principle that has no direct English translation: that the boundary
+        between human life and wild nature is a moral responsibility to maintain, not a line to push
+        back. Japanese youth inheriting declining rural communities are being asked to manage that
+        boundary with fewer resources than any previous generation.
+      - >
+        in Shinto practice, "harae"—ritual purification—has always included the purification of
+        actions that damage the web of relationships between people, land, and kami (spirit). The
+        tradition does not treat environmental damage as a technical problem with a technical fix;
+        it treats it as a relational rupture that requires relational repair.
+      - >
+        the principle of "kannagara no michi"—living in accordance with the natural order of the
+        universe—does not ask for heroic sacrifice. It asks for daily attentiveness: what you buy,
+        what you discard, how you move through a city. For Gen Z in Japan, where recycling norms
+        are strict and public shaming of waste is real, this is already a lived practice; the Shinto
+        tradition gives it spiritual weight.
+
+  maat:
+    display_name: "Ma'at"
+    tradition: "Ancient Egyptian (Ma'at principle)"
+    attribution: "From within the Ma'at tradition of cosmic justice and truth, Ma'at teaches that"
+    atoms:
+      - >
+        Ma'at—the cosmic principle of balance, truth, and right order—encompasses the balance
+        between human civilisation and the natural world. Ancient Egyptian cosmology regarded drought,
+        flood, and ecological disruption as evidence that Ma'at had been broken: not by weather,
+        but by the accumulated choices of those in power. The restoration of Ma'at required
+        accountability, not only adaptation.
+      - >
+        the "feather of Ma'at" against which hearts were weighed in the afterlife was not only
+        a moral test of individual character—it included a test of stewardship. How had the person
+        treated the land, the river, the animals under their care? For young people who will
+        inherit an ecologically damaged world, this framing shifts the question from "what can
+        I do" to "what did those before me fail to do, and what does that require of me now."
+      - >
+        the tradition's insistence on "speaking Ma'at"—telling the truth about what is
+        actually happening—applies directly to the gap between official climate reporting and
+        lived experience. Youth who distrust institutional climate data are not being cynical;
+        they are applying a standard the tradition would recognise: does what is said match
+        what is?

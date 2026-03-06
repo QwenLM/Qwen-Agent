@@ -1,0 +1,93 @@
+# Pearl News — teacher roster for news articles.
+# Maps each teacher to their tradition (for attribution) and Pearl News news topics.
+# Used by teacher_resolver.py to pick a named teacher per article.
+# Policy: One named teacher per article; attributed by name + tradition.
+# Spec ref: PEARL_NEWS_WRITER_SPEC.md §6 (commentary exception applies to all templates when teacher atoms present).
+
+schema_version: 1
+
+# Language/region fit per teacher (helps match language-specific articles)
+# Japan-fit teachers: Junko, Miki, Joshin (Japanese traditions)
+# China-fit teachers: Master Feung, Master Wu (Chinese traditions)
+# English-fit teachers: Ahjan, Sai Maa, Ra, Pamela Fellows, Maat (wide international reach)
+
+teachers:
+  ahjan:
+    display_name: "Ajahn Ahjan"
+    tradition: "Theravada Buddhist"
+    tradition_short: "Buddhist"
+    region_fit: [japan, english, global]
+    news_topics: [climate, mental_health, education, peace_conflict, partnerships, inequality]
+    attribution_template: "From within the Theravada Buddhist tradition, Ajahn Ahjan teaches that"
+
+  master_feung:
+    display_name: "Master Feung"
+    tradition: "Taoist"
+    tradition_short: "Taoist"
+    region_fit: [china, english, global]
+    news_topics: [climate, economy_work, partnerships, education, inequality]
+    attribution_template: "From within the Taoist tradition, Master Feung teaches that"
+
+  sai_ma:
+    display_name: "Sai Maa"
+    tradition: "Vedic Hindu"
+    tradition_short: "Vedic"
+    region_fit: [english, global]
+    news_topics: [mental_health, climate, education, peace_conflict, partnerships]
+    attribution_template: "From within the Vedic tradition, Sai Maa teaches that"
+
+  ra:
+    display_name: "Ra"
+    tradition: "African spiritual"
+    tradition_short: "African spiritual"
+    region_fit: [english, global]
+    news_topics: [peace_conflict, inequality, mental_health, partnerships]
+    attribution_template: "From within the African spiritual tradition, Ra teaches that"
+
+  junko:
+    display_name: "Junko"
+    tradition: "Zen Buddhist"
+    tradition_short: "Zen"
+    region_fit: [japan, english, global]
+    news_topics: [mental_health, education, economy_work, climate]
+    attribution_template: "From within the Zen Buddhist tradition, Junko teaches that"
+
+  miki:
+    display_name: "Miki"
+    tradition: "Shinto"
+    tradition_short: "Shinto"
+    region_fit: [japan, global]
+    news_topics: [climate, mental_health, education, partnerships]
+    attribution_template: "From within the Shinto tradition, Miki teaches that"
+
+  master_wu:
+    display_name: "Master Wu"
+    tradition: "Chan Buddhist"
+    tradition_short: "Chan Buddhist"
+    region_fit: [china, english, global]
+    news_topics: [mental_health, peace_conflict, education, economy_work, climate]
+    attribution_template: "From within the Chan Buddhist tradition, Master Wu teaches that"
+
+  pamela_fellows:
+    display_name: "Pamela Fellows"
+    tradition: "Christian contemplative"
+    tradition_short: "Christian contemplative"
+    region_fit: [english, global]
+    news_topics: [inequality, mental_health, peace_conflict, partnerships, education]
+    attribution_template: "From within the Christian contemplative tradition, Pamela Fellows teaches that"
+
+  joshin:
+    display_name: "Joshin"
+    tradition: "Rinzai Zen"
+    tradition_short: "Rinzai Zen"
+    region_fit: [japan, english, global]
+    news_topics: [mental_health, education, climate, economy_work]
+    attribution_template: "From within the Rinzai Zen tradition, Joshin teaches that"
+
+  maat:
+    display_name: "Ma'at"
+    tradition: "Ancient Egyptian (Ma'at principle)"
+    tradition_short: "Ma'at"
+    region_fit: [english, global]
+    news_topics: [inequality, peace_conflict, climate, partnerships, economy_work]
+    attribution_template: "From within the Ma'at tradition of cosmic justice and truth, Ma'at teaches that"

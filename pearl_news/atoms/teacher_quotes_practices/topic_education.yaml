@@ -1,0 +1,79 @@
+# Pearl News — teacher atoms for topic: education
+topic_key: education
+topic_sdg: "4"
+
+teachers:
+  junko:
+    display_name: "Junko"
+    tradition: "Zen Buddhist"
+    attribution: "From within the Zen Buddhist tradition, Junko teaches that"
+    atoms:
+      - >
+        Zen pedagogy has always distinguished between "learning" and "understanding through
+        direct experience"—the koan tradition exists precisely because some things cannot
+        be transmitted through information transfer alone. For Gen Z who are both the most
+        credentialled and the most uncertain generation in living memory, this distinction
+        matters: their anxiety is not a knowledge deficit but an experience deficit—of
+        difficulty, failure, and recovery from failure.
+      - >
+        the Japanese concept of "shokunin"—the master practitioner who has devoted a life
+        to one craft—is in direct tension with the credential-stacking logic that now governs
+        education in Japan and elsewhere. For young people who feel they must be excellent
+        at many things simultaneously, the tradition offers a counter-model: depth of practice
+        creates capacity that breadth of credential cannot.
+      - >
+        Zen training uses "dharma combat"—direct, unscripted questioning between teacher
+        and student—as a diagnostic tool for genuine understanding versus performance of
+        understanding. In a global education system that has standardised the performance
+        of understanding (examination), the question the tradition asks is: what would
+        learning look like if it could not be performed for an evaluator?
+
+  master_wu:
+    display_name: "Master Wu"
+    tradition: "Chan Buddhist"
+    attribution: "From within the Chan Buddhist tradition, Master Wu teaches that"
+    atoms:
+      - >
+        Chan teaching holds that the teacher's role is not to fill the student with
+        knowledge but to "point at the moon"—to direct attention toward what the student
+        must discover for themselves. In education systems where AI can now generate
+        the answer to most examination questions, this distinction between pointing and
+        filling has become urgent rather than philosophical.
+      - >
+        the concept of "hua tou"—the "head of a word," the essential question beneath
+        the question—is a Chan method for cutting through surface inquiry to the
+        generative question underneath. Applied to education: when a student asks
+        "how do I get a good job," the hua tou is "what would a good life require of
+        me, and is a good job part of that?" Systems that answer the surface question
+        while ignoring the hua tou produce educated people who are not oriented.
+      - >
+        Chan practice distinguishes between "book learning" and "mind learning"—the first
+        accumulates information, the second transforms how one sees. Master Wu's teaching
+        holds that a system that produces only book learning is not producing educated
+        people but credentialled people, and that the difference is visible in how they
+        respond to conditions that their credentials did not prepare them for.
+
+  sai_ma:
+    display_name: "Sai Maa"
+    tradition: "Vedic Hindu"
+    attribution: "From within the Vedic tradition, Sai Maa teaches that"
+    atoms:
+      - >
+        the Vedic "gurukul" model—in which the student lives in the teacher's household
+        and education is inseparable from lived relationship—encodes the insight that
+        knowledge cannot be fully transmitted outside of relational context. For young
+        people educated in atomised digital environments, the tradition identifies a
+        structural absence: the relational container in which real learning occurs.
+      - >
+        Vedic education organised itself around "dharma"—right action suited to one's
+        nature, capacity, and social role—rather than around competitive ranking of uniform
+        individuals. The tradition did not claim that all people should become proficient
+        at the same things; it claimed that each person has a learning path specific to
+        their nature, and that identifying that path is a prior and more important task
+        than filling it with content.
+      - >
+        the practice of "shruti"—that which is heard—encodes the Vedic understanding that
+        the most profound transmission is oral, relational, and cannot be reduced to text.
+        In education systems that have moved decisively toward text and screen, the tradition
+        asks what is lost when the human voice of a teacher ceases to be the primary medium,
+        and which young people are most harmed by that loss.

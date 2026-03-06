@@ -1,0 +1,82 @@
+# Pearl News — teacher atoms for topic: economy_work
+topic_key: economy_work
+topic_sdg: "8"
+
+teachers:
+  master_feung:
+    display_name: "Master Feung"
+    tradition: "Taoist"
+    attribution: "From within the Taoist tradition, Master Feung teaches that"
+    atoms:
+      - >
+        the Taoist concept of "wu wei"—effortless action aligned with natural conditions
+        rather than forcing against them—does not mean passivity in the face of economic
+        injustice. It means attending carefully to what conditions actually are, rather
+        than what ideology says they should be, before acting. For young workers navigating
+        a labour market transformed by automation, wu wei asks: what is actually available
+        to you in this moment, rather than what you were promised would be?
+      - >
+        Taoist philosophy holds that systems which concentrate too much energy in one
+        place eventually collapse—the principle of "yin and yang" is not about balance
+        as decoration but as structural necessity. Applied to economies with extreme
+        wealth concentration and youth unemployment: the tradition would identify this
+        not as a political problem but as a systems problem that will self-correct, usually
+        at cost to those who had least to begin with.
+      - >
+        the "Tao Te Ching"'s teaching on leadership holds that the leader who does not
+        seek to be seen is most effective. Applied to economic policy: interventions that
+        support conditions for young people to flourish, without requiring those young
+        people to perform gratitude or conformity to access them, are more durable than
+        those that attach strings of visibility and compliance.
+
+  maat:
+    display_name: "Ma'at"
+    tradition: "Ancient Egyptian (Ma'at principle)"
+    attribution: "From within the Ma'at tradition of cosmic justice and truth, Ma'at teaches that"
+    atoms:
+      - >
+        the concept of "medjat"—the record, the written account—in ancient Egyptian
+        administration held that economic transactions must be documented and witnessed
+        to be legitimate. For young workers in the gig economy, where contracts are replaced
+        by app terms and wages are algorithmically set, the tradition identifies a fundamental
+        break with Ma'at: the conditions of labour are not transparent, not witnessed,
+        and therefore cannot be adjudicated.
+      - >
+        Ma'at requires that those who benefit from a system bear proportional responsibility
+        for its costs. Ancient Egyptian taxation was assessed not on a fixed percentage
+        but on what the Nile had actually produced—a yield-proportional model. The tradition
+        would regard a tax system in which young gig workers pay higher effective rates
+        than platform corporations as a direct violation of cosmic balance, not merely
+        a policy choice.
+      - >
+        the Egyptian concept of "ir ma'at"—doing Ma'at, living in alignment with right
+        order—was an active, daily practice, not a philosophical aspiration. For young
+        people who feel that economic injustice is too large to address: the tradition
+        asks what Ma'at requires of you in your immediate sphere—your workplace, your
+        community, your purchasing—before scaling to the systemic level.
+
+  pamela_fellows:
+    display_name: "Pamela Fellows"
+    tradition: "Christian contemplative"
+    attribution: "From within the Christian contemplative tradition, Pamela Fellows teaches that"
+    atoms:
+      - >
+        the Christian contemplative tradition of "lectio divina"—slow, attentive reading
+        that allows text to reveal what is obscured by speed—applies to how young people
+        read economic conditions. The algorithm-driven news environment delivers economic
+        information at a speed that prevents the slow discernment that reveals structural
+        pattern versus individual incident. The tradition asks: what would you see if you
+        slowed down long enough to look?
+      - >
+        Dorothy Day's Catholic Worker movement—rooted in the same contemplative tradition—
+        held that the test of any economic arrangement is what it does to the most
+        vulnerable person at its edge. For youth unemployment: the tradition asks not
+        "what is the average outcome" but "what happens to the young person who has
+        no network, no credential, and no safety net."
+      - >
+        the concept of "kenosis"—self-emptying, the willingness to release privilege in
+        service of others—has economic implications that the tradition has consistently
+        applied in corporate and civic life. For young professionals in economies that
+        reward individual accumulation: the tradition asks what you would do differently
+        if your success were defined by what it enabled in others rather than what it
+        protected in yourself.

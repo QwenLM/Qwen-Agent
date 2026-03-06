@@ -1,0 +1,79 @@
+# Pearl News — teacher atoms for topic: peace_conflict
+topic_key: peace_conflict
+topic_sdg: "16"
+
+teachers:
+  ahjan:
+    display_name: "Ajahn Ahjan"
+    tradition: "Theravada Buddhist"
+    attribution: "From within the Theravada Buddhist tradition, Ajahn Ahjan teaches that"
+    atoms:
+      - >
+        the Buddha's teaching on "right speech" applies directly to how governments and media
+        frame armed conflict: words that arise from fear multiply fear across populations;
+        words that arise from clear seeing create space for the recognition of shared interest.
+        Young people who consume news about conflict are being shaped by the speech of those
+        who are afraid, and the tradition offers a standard for evaluation—not optimism,
+        but accuracy about what generates more violence and what doesn't.
+      - >
+        the concept of "upekkha"—equanimity—is consistently mistranslated as detachment or
+        indifference. In practice it means the capacity to hold suffering clearly in view
+        without being consumed by reactive despair or reactive rage. For Gen Z who are
+        watching atrocities in real time on their phones, upekkha is not a call to feel less;
+        it is a practice for remaining capable of response rather than being paralysed or radicalised.
+      - >
+        Buddhist analysis of the origins of conflict begins not with ideology but with "tanha"—
+        craving—and "dosa"—aversion: the structural conditions under which groups perceive
+        their survival as requiring the diminishment of another group. This analysis does not
+        excuse violence; it identifies the conditions that make it likely and therefore the
+        conditions that must be changed for it to become unlikely.
+
+  ra:
+    display_name: "Ra"
+    tradition: "African spiritual"
+    attribution: "From within the African spiritual tradition, Ra teaches that"
+    atoms:
+      - >
+        the African philosophical concept of "ubuntu"—I am because we are—does not function
+        as a slogan in peace work; it is an epistemological claim: that the boundaries of
+        the self are not fixed at the skin but extend into the community. Armed conflict is
+        therefore not only a destruction of others; it is a destruction of the self extended
+        into community. For youth navigating ethnic and national conflict, this teaching reframes
+        peace not as an altruistic project but as a form of self-preservation.
+      - >
+        the tradition of "palaver"—extended communal dialogue as a conflict-resolution
+        technology—treats disagreement not as a problem to be suppressed but as information
+        about unmet need. Many youth-facing conflicts, from school disputes to community
+        violence, escalate because the palaver process has no institutional home. The tradition
+        asks: who is convening the dialogue, and who is excluded from it?
+      - >
+        in the African spiritual tradition, ancestors function not as passive presences but
+        as moral witnesses: those who came before and whose sacrifices created the present
+        are in relationship with the choices made now. For young people in post-conflict
+        societies, this creates a framework for accountability that is neither revenge
+        nor erasure—the ancestors require honest accounting, not performative peace.
+
+  maat:
+    display_name: "Ma'at"
+    tradition: "Ancient Egyptian (Ma'at principle)"
+    attribution: "From within the Ma'at tradition of cosmic justice and truth, Ma'at teaches that"
+    atoms:
+      - >
+        the principle of Ma'at—right order, truth, balance—holds that peace is not the absence
+        of conflict but the presence of accurate accounting. Injustice that is named and addressed
+        restores Ma'at; injustice that is suppressed accumulates as cosmic debt. For youth
+        in post-conflict societies, this tradition insists that sustainable peace requires
+        truth before reconciliation—not as a Western legal framework, but as a cosmological
+        necessity.
+      - >
+        the role of "Thoth" in Egyptian cosmology—the scribe who records, the one who speaks
+        the exact truth of what happened—points to the function of documentation in conflict
+        resolution. Youth-led documentation of human rights violations follows this logic:
+        the record must exist for Ma'at to be restored. Silence and forgetting are enemies
+        of peace in this tradition, not pathways to it.
+      - >
+        Ma'at is sometimes depicted as a feather, the lightest possible measure—suggesting
+        that justice is delicate and requires precision, not force. For young people who
+        experience justice systems as blunt instruments that produce further harm, this
+        image of justice as precise, light, and calibrated offers an alternative standard
+        for what peace-building institutions should aspire to.

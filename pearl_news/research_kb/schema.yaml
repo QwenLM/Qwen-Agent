@@ -1,0 +1,103 @@
+# Pearl News / EI V2 — Gen Z / Gen Alpha Research Knowledge Base Schema
+# Entries stored as JSONL in artifacts/research/kb/entries.jsonl
+# Index stored as JSON in artifacts/research/kb/index.json
+# Append new entries: scripts/research/kb_append.py
+
+schema_version: "1.0"
+
+entry_fields:
+  id:
+    type: string
+    description: "Unique entry ID. Format: <layer>_<topic>_<cohort>_<YYYYMMDD>_<seq>"
+    required: true
+
+  date:
+    type: string
+    format: "YYYY-MM-DD"
+    description: "Date of research or publication"
+    required: true
+
+  source_file:
+    type: string
+    description: "Relative path to source file (e.g. docs/research/continue_gen_research3.md)"
+    required: true
+
+  source_type:
+    type: enum
+    values: [research_run, manual_doc, article_derived, feed_snapshot, kb_seed]
+    description: "How this entry was created"
+    required: true
+
+  layer:
+    type: enum
+    values: [psychology, pain_points, world_events, narrative, platform, seed]
+    description: "Which generational intelligence layer this belongs to"
+    required: true
+
+  topics:
+    type: list[string]
+    description: "Pearl News topic keys this entry applies to (from sdg_news_topic_mapping)"
+    examples: [climate, mental_health, peace_conflict, education, economy_work, inequality, partnerships]
+    required: true
+
+  cohorts:
+    type: list[string]
+    values: [gen_z, gen_alpha, both]
+    description: "Which generation(s) this applies to"
+    required: true
+
+  regions:
+    type: list[string]
+    values: [japan, china, english, global]
+    description: "Geographic scope of this finding"
+    required: true
+
+  claim:
+    type: string
+    description: "The core finding (1-2 sentences, factual, citable)"
+    required: true
+
+  evidence:
+    type: string
+    description: "Supporting data, stat, or qualitative finding"
+    required: false
+
+  source_citation:
+    type: string
+    description: "Citable reference (survey name, publication, date, sample size if known)"
+    required: false
+
+  invisible_script:
+    type: string
+    description: "The cultural belief / invisible assumption this finding reveals"
+    required: false
+
+  contradiction:
+    type: string
+    description: "How this finding contradicts stated values (Contradiction Audit output)"
+    required: false
+
+  confidence:
+    type: float
+    range: [0.0, 1.0]
+    description: "Confidence in this entry: 0.9+ = large study, 0.7 = solid source, 0.5 = qualitative"
+    required: true
+
+  tags:
+    type: list[string]
+    description: "Free tags for retrieval (e.g. anxiety, burnout, trust_deficit, tangping)"
+    required: false
+
+  provenance:
+    type: object
+    fields:
+      run_date: string
+      model: string
+      prompt_id: string
+    description: "For research-run entries: which model/prompt produced this"
+    required: false
+
+  used_in_articles:
+    type: list[string]
+    description: "Article IDs where this KB entry was injected (populated by pipeline)"
+    required: false

@@ -1,0 +1,113 @@
+{
+  "schema_version": "1.0",
+  "built_at": "2026-03-06",
+  "entry_count": 15,
+  "by_topic": {
+    "mental_health": [
+      "psychology_mental_health_genz_20260101_001",
+      "psychology_mental_health_genz_japan_20260101_001"
+    ],
+    "economy_work": [
+      "pain_points_economy_work_genz_20260101_001",
+      "pain_points_economy_work_genz_japan_20260101_001",
+      "pain_points_economy_work_genz_china_20260101_001"
+    ],
+    "climate": [
+      "world_events_climate_genz_20260101_001",
+      "world_events_climate_genz_japan_20260101_001",
+      "world_events_climate_genalpha_20260101_001"
+    ],
+    "peace_conflict": [
+      "world_events_peace_conflict_genz_20260101_001",
+      "world_events_peace_conflict_genz_japan_20260101_001"
+    ],
+    "education": [
+      "psychology_education_genz_20260101_001",
+      "psychology_education_genz_japan_20260101_001"
+    ],
+    "inequality": [
+      "pain_points_inequality_genz_20260101_001",
+      "pain_points_inequality_genz_japan_20260101_001"
+    ],
+    "partnerships": [
+      "psychology_partnerships_genz_20260101_001"
+    ]
+  },
+  "by_cohort": {
+    "gen_z": [
+      "psychology_mental_health_genz_20260101_001",
+      "psychology_mental_health_genz_japan_20260101_001",
+      "pain_points_economy_work_genz_20260101_001",
+      "pain_points_economy_work_genz_japan_20260101_001",
+      "pain_points_economy_work_genz_china_20260101_001",
+      "world_events_climate_genz_20260101_001",
+      "world_events_climate_genz_japan_20260101_001",
+      "world_events_peace_conflict_genz_20260101_001",
+      "world_events_peace_conflict_genz_japan_20260101_001",
+      "psychology_education_genz_20260101_001",
+      "psychology_education_genz_japan_20260101_001",
+      "pain_points_inequality_genz_20260101_001",
+      "pain_points_inequality_genz_japan_20260101_001",
+      "psychology_partnerships_genz_20260101_001"
+    ],
+    "gen_alpha": [
+      "pain_points_inequality_genz_japan_20260101_001",
+      "world_events_climate_genalpha_20260101_001"
+    ]
+  },
+  "by_region": {
+    "english": [
+      "psychology_mental_health_genz_20260101_001",
+      "pain_points_economy_work_genz_20260101_001",
+      "world_events_climate_genz_20260101_001",
+      "world_events_peace_conflict_genz_20260101_001",
+      "psychology_education_genz_20260101_001",
+      "pain_points_inequality_genz_20260101_001",
+      "psychology_partnerships_genz_20260101_001"
+    ],
+    "global": [
+      "psychology_mental_health_genz_20260101_001",
+      "pain_points_economy_work_genz_20260101_001",
+      "world_events_climate_genz_20260101_001",
+      "world_events_peace_conflict_genz_20260101_001",
+      "psychology_education_genz_20260101_001",
+      "pain_points_inequality_genz_20260101_001",
+      "psychology_partnerships_genz_20260101_001",
+      "world_events_climate_genalpha_20260101_001"
+    ],
+    "japan": [
+      "psychology_mental_health_genz_japan_20260101_001",
+      "pain_points_economy_work_genz_japan_20260101_001",
+      "world_events_climate_genz_japan_20260101_001",
+      "world_events_peace_conflict_genz_japan_20260101_001",
+      "psychology_education_genz_japan_20260101_001",
+      "pain_points_inequality_genz_japan_20260101_001"
+    ],
+    "china": [
+      "pain_points_economy_work_genz_china_20260101_001"
+    ]
+  },
+  "by_layer": {
+    "psychology": [
+      "psychology_mental_health_genz_20260101_001",
+      "psychology_mental_health_genz_japan_20260101_001",
+      "psychology_education_genz_20260101_001",
+      "psychology_education_genz_japan_20260101_001",
+      "psychology_partnerships_genz_20260101_001"
+    ],
+    "pain_points": [
+      "pain_points_economy_work_genz_20260101_001",
+      "pain_points_economy_work_genz_japan_20260101_001",
+      "pain_points_economy_work_genz_china_20260101_001",
+      "pain_points_inequality_genz_20260101_001",
+      "pain_points_inequality_genz_japan_20260101_001"
+    ],
+    "world_events": [
+      "world_events_climate_genz_20260101_001",
+      "world_events_climate_genz_japan_20260101_001",
+      "world_events_peace_conflict_genz_20260101_001",
+      "world_events_peace_conflict_genz_japan_20260101_001",
+      "world_events_climate_genalpha_20260101_001"
+    ]
+  }
+}
