@@ -1,13 +1,10 @@
-# Pearl News: scheduled run on self-hosted runner (for LM Studio / local Qwen).
-# Use this when QWEN_BASE_URL is localhost — cloud runners cannot reach it.
-# Copy this to Qwen-Agent or Qwen repo as .github/workflows/pearl_news_scheduled.yml
+# Pearl News: manual run with LLM expansion (self-hosted runner / LM Studio).
+# Use when you want expanded drafts; schedule uses pearl_news_scheduled.yml (no expand).
 # See docs/PEARL_NEWS_OPTION_B_RUNBOOK.md.
 
-name: Pearl News scheduled
+name: Pearl News manual (expand)
 
 on:
-  schedule:
-    - cron: '0 6,18 * * *'
   workflow_dispatch:
 
 jobs:
@@ -21,9 +18,8 @@ jobs:
       QWEN_BASE_URL: ${{ secrets.QWEN_BASE_URL }}
       QWEN_API_KEY: ${{ secrets.QWEN_API_KEY }}
       QWEN_MODEL: ${{ secrets.QWEN_MODEL }}
-      # Schedule = no expand (reliable drafts). For manual expand run: set PEARL_NEWS_EXPAND: "true", PEARL_NEWS_LIMIT: "1"
-      PEARL_NEWS_EXPAND: "false"
-      PEARL_NEWS_LIMIT: "3"
+      PEARL_NEWS_EXPAND: "true"
+      PEARL_NEWS_LIMIT: "1"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -58,7 +54,7 @@ jobs:
             tests/test_pearl_news_pipeline_e2e.py \
             -v
 
-      - name: Run full pipeline (ingest → assemble → optional expand → QC)
+      - name: Run full pipeline (ingest → assemble → expand → QC)
         run: |
           if [ "$PEARL_NEWS_EXPAND" = "true" ]; then
             python3 -m pearl_news.pipeline.run_article_pipeline \
