@@ -52,7 +52,10 @@ _BANNED_PHRASES = [
     r"landmark\b.{0,30}(agreement|summit|accord|resolution|decision)",
     r"pearl news.{0,40}(affiliated|affiliation|partner|partnership) with the united nations",
     r"in a world where",
-    r"as \w+ continues to",
+    # "as X continues to" is only banned as a LEDE/SENTENCE OPENER — not mid-sentence.
+    # Conflict journalism legitimately uses "as fighting continues to escalate" etc.
+    # Matches only after start-of-string or end-of-prior-sentence (". ").
+    r"(?:(?:^|(?<=\. ))as \w+ continues to)",
     r"\bwe\b",  # avoid "we" in articles
 ]
 
