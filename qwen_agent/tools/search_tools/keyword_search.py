@@ -177,7 +177,7 @@ def parse_keyword(text):
 
     # json format
     _wordlist = []
-    try:
+    if isinstance(res, dict) and 'text' in res:
         if 'keywords_zh' in res and isinstance(res['keywords_zh'], list):
             _wordlist.extend([kw.lower() for kw in res['keywords_zh']])
         if 'keywords_en' in res and isinstance(res['keywords_en'], list):
@@ -191,6 +191,5 @@ def parse_keyword(text):
         split_wordlist = split_text_into_keywords(res['text'])
         wordlist += split_wordlist
         return wordlist
-    except Exception:
-        # TODO: This catch is too broad.
-        return split_text_into_keywords(text)
+
+    return split_text_into_keywords(text)
