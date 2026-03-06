@@ -280,7 +280,7 @@ class CropResize(BaseToolWithFileAccess):
         cropped_image.save(output_path)
 
         return [
-            ContentItem(image=output_path),
+            # ContentItem(image=output_path),
             ContentItem(text=f'（ 这张放大的局部区域的图片的URL是 {output_path} ）'),
         ]
 
