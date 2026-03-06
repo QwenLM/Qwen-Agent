@@ -60,11 +60,15 @@ def expand_article_with_llm(
     Returns expanded content or None on failure (caller keeps original).
     """
     base_url = (config.get("base_url") or "").strip()
-    model = config.get("model") or "Qwen2.5-14B-Instruct"
+    model = config.get("model") or "qwen3-14b"
     api_key = (config.get("api_key") or "lm-studio").strip()
     timeout = float(config.get("timeout") or 120)
     max_tokens = int(config.get("max_tokens") or 2048)
     temperature = float(config.get("temperature") or 0.5)
+    # Qwen3 ships with thinking mode ON by default; disable it for article writing.
+    # Setting enable_thinking=False via extra_body removes the <think> block and
+    # saves ~1200-1800 tokens per call (roughly 3-4 minutes on M4 at Q4_K_M).
+    disable_thinking = config.get("disable_thinking", True)
 
     if not base_url:
         logger.warning("LLM expansion: base_url not set; skipping")
@@ -84,7 +88,22 @@ def expand_article_with_llm(
         f"Keep the same structure and the Source line at the end.\n\n{content}"
     )
 
-    client = OpenAI(base_url=base_url, api_key=api_key, timeout=timeout)
+    # Use httpx Timeout so connect/read/write all honour the full timeout value,
+    # not just the default 5-second httpx socket timeout that was causing
+    # "Client disconnected" at ~4 min even though timeout=360 was set.
+    try:
+        from httpx import Timeout as HttpxTimeout
+        http_timeout = HttpxTimeout(timeout)
+    except ImportError:
+        http_timeout = timeout  # fallback: scalar still better than nothing
+
+    client = OpenAI(base_url=base_url, api_key=api_key, timeout=http_timeout)
+
+    # Build extra_body: disable Qwen3 thinking mode if configured
+    extra_body = {}
+    if disable_thinking:
+        extra_body["enable_thinking"] = False
+
     resp = client.chat.completions.create(
         model=model,
         messages=[
@@ -93,6 +112,7 @@ def expand_article_with_llm(
         ],
         temperature=temperature,
         max_tokens=max_tokens,
+        **({"extra_body": extra_body} if extra_body else {}),
     )
     choice = resp.choices[0] if resp.choices else None
     if not choice or not getattr(choice, "message", None):

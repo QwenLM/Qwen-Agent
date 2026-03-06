@@ -13,8 +13,9 @@ base_url: "http://localhost:1234/v1"
 # Alternative: Ollama with OpenAI compat → "http://localhost:11434/v1"
 # GitHub / remote: set to your endpoint URL (e.g. https://your-runner.example.com/v1)
 
-model: "Qwen2.5-14B-Instruct"
-# Or: "qwen3:14b" if using Ollama; match the model name your server exposes
+model: "qwen3-14b"
+# Must match exactly what LM Studio reports in GET /v1/models → data[].id
+# Confirmed loaded model: Qwen3-14B-Q4_K_M.gguf → LM Studio exposes as "qwen3-14b"
 
 api_key: "lm-studio"
 # LM Studio: any non-empty string. Ollama: often "ollama". Remote: your API key if required.
@@ -29,3 +30,8 @@ target_word_count: 1000
 max_tokens: 2048
 
 temperature: 0.5
+
+# Disable Qwen3 thinking mode (saves ~1200-1800 tokens and ~3-4 min per article).
+# Qwen3 enables <think> blocks by default; for article writing we don't need it.
+# Set to false only if you want reasoning traces (not recommended for production).
+disable_thinking: true
