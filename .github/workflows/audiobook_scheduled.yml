@@ -7,11 +7,11 @@ on:
   workflow_dispatch:
     inputs:
       locale:
-        description: Locale for staging run (zh-TW, zh-HK, zh-SG, zh-CN)
+        description: Locale for staging run (en-US, zh-TW, zh-HK, zh-SG, zh-CN)
         required: false
         default: zh-TW
         type: choice
-        options: [zh-TW, zh-HK, zh-SG, zh-CN]
+        options: [en-US, zh-TW, zh-HK, zh-SG, zh-CN]
 
 jobs:
   audiobook:
