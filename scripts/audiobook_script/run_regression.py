@@ -205,6 +205,15 @@ async def _run_one_golden(
     expect_pass  = golden_cfg.get("expect_pass", True)
     min_score    = float(golden_cfg.get("min_aggregate_score", 0.75))
 
+    # Optional source truncation for regression runtime stability on local runners.
+    source_limit = int(
+        (cfg.get("regression", {}).get("runtime_overrides", {}) or {}).get("source_char_limit", 0) or 0
+    )
+    if source_limit > 0 and len(source_text) > source_limit:
+        source_text = source_text[:source_limit]
+        if verbose:
+            print(f"    (source truncated to {source_limit} chars for regression)")
+
     draft_prompt_id = _resolve_draft_prompt_id(cfg, content_type)
     judge_prompt_id = cfg.get("judge_model", {}).get("system_prompt_id", "judge_audiobook_v2")
     draft_prompt = _load_prompt(repo, draft_prompt_id)
@@ -428,9 +437,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-    # Optional truncation for regression runtime stability on local runners.
-    source_limit = int(
-        (cfg.get("regression", {}).get("runtime_overrides", {}) or {}).get("source_char_limit", 0) or 0
-    )
-    if source_limit > 0 and len(source_text) > source_limit:
-        source_text = source_text[:source_limit]

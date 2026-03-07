@@ -137,13 +137,15 @@ regression:
   min_hard_gate_pass_rate: 1.0
   min_scored_pass_rate: 0.90
   block_promotion_on_regression: true
-  # Faster/safer runtime profile for CI regression on self-hosted runners.
+  # Runtime profile for CI regression on self-hosted runners.
+  # Previous values (900 tokens / 180s) caused draft timeouts on Qwen3-14b
+  # with full-length audiobook prompts (3,400-3,700 bytes + source content).
   runtime_overrides:
     enabled: true
-    draft_max_output_tokens: 900
-    judge_max_output_tokens: 800
-    draft_timeout_seconds: 180
-    judge_timeout_seconds: 180
+    draft_max_output_tokens: 1500
+    judge_max_output_tokens: 1000
+    draft_timeout_seconds: 360
+    judge_timeout_seconds: 240
     source_char_limit: 3200
 
 observability:
