@@ -1,0 +1,130 @@
+schema_version: "2.0"
+description: >
+  Static polish rubric for audiobook script quality. Authored offline once (optionally with Claude
+  assistance) and locked into the comparator checklist as rubric_ref items. The judge scores
+  "polish" and "emotional/psychological impact" gates against these rules — no Claude API at
+  runtime. Rules apply across all locales unless locale_override is specified.
+  Authority: docs/GO_LIVE_FINAL_CHECKLIST.md, config/audiobook_script/comparison_checklist_v2.yaml.
+rubric_version: "2.0.0"
+last_updated: "2026-03-06"
+
+tts_cadence:
+  - rule_id: tts_c1
+    name: sentence_length_cap
+    description: No sentence exceeds 20 words. Split at natural clause boundaries.
+    check: "max words per sentence <= 20"
+    severity: hard
+  - rule_id: tts_c2
+    name: no_parenthetical_asides
+    description: No parenthetical asides or em-dash interruptions mid-sentence.
+    check: "no ( ) or em-dash inside sentence midpoints"
+    severity: hard
+  - rule_id: tts_c3
+    name: punctuation_breath_points
+    description: Emotional beats separated by commas/periods, not conjunctions only.
+    check: "emotional beats broken into short sentences or comma-separated clauses"
+    severity: hard
+  - rule_id: tts_c4
+    name: number_format
+    description: Write numbers as words in flowing prose. Keep numerals in lists only.
+    check: "prose numbers written as words"
+    severity: scored
+    weight: 0.5
+  - rule_id: tts_c5
+    name: no_abbreviations_in_prose
+    description: >
+      Abbreviations cause mispronunciation. Expand all in flowing prose:
+      "e.g." -> "for example", "etc." -> "and so on", "Dr." -> "Doctor".
+    check: "no unexpanded abbreviations in flowing prose"
+    severity: hard
+
+psychological_impact:
+  - rule_id: psy_p1
+    name: concrete_anchors_for_internal_states
+    description: >
+      Abstract internal states must have a concrete behavioral or sensory anchor.
+      Never: "She felt overwhelmed." Always: "She stopped mid-sentence and looked at her hands."
+    check: "every internal state has a concrete anchor within 1-2 sentences"
+    severity: scored
+    weight: 2.0
+  - rule_id: psy_p2
+    name: short_punchy_sentences_at_peak_moments
+    description: At emotional peaks switch to short declarative sentences of 3-7 words.
+    check: "peak emotional moments use sentences <= 7 words"
+    severity: scored
+    weight: 1.5
+  - rule_id: psy_p3
+    name: no_emotion_labels_as_explanation
+    description: Never explain what the listener should feel. Let the scene do the work.
+    check: "no direct emotion labels addressed to the reader"
+    severity: scored
+    weight: 2.0
+  - rule_id: psy_p4
+    name: warmth_in_closing
+    description: Chapter/section closes carry warmth and forward momentum. Not detached summary.
+    check: "closing sentences are warm and forward-facing"
+    severity: scored
+    weight: 1.0
+  - rule_id: psy_p5
+    name: silence_beat_before_reframe
+    description: Before any reframe allow one beat of stillness (1-2 sentences).
+    check: "reframes are preceded by a stillness/pause beat"
+    severity: scored
+    weight: 1.0
+
+narrative_flow:
+  - rule_id: flow_f1
+    name: no_summary_sentences_mid_chapter
+    description: No "In other words..." or "To summarize..." mid-section.
+    check: "no mid-section summary phrases"
+    severity: scored
+    weight: 1.0
+  - rule_id: flow_f2
+    name: scene_before_insight
+    description: Insights must be grounded in a scene or story before they are stated.
+    check: "abstract insight is preceded by a scene or concrete example"
+    severity: scored
+    weight: 1.5
+  - rule_id: flow_f3
+    name: paragraph_opening_variation
+    description: No three consecutive paragraphs open with the same grammatical structure.
+    check: "paragraph openings vary in grammatical structure"
+    severity: scored
+    weight: 0.5
+  - rule_id: flow_f4
+    name: transition_specificity
+    description: Transitions must be specific, not generic.
+    check: "transitions are specific and scene-grounded"
+    severity: scored
+    weight: 1.0
+
+regional_fit:
+  - rule_id: reg_r1
+    name: no_us_idiom_in_non_english
+    description: US idioms do not translate culturally. Replace with region-authentic equivalents.
+    check: "no calqued US idioms in translated prose"
+    severity: scored
+    weight: 1.5
+  - rule_id: reg_r2
+    name: register_consistency
+    description: Formal/informal register must be consistent throughout a section.
+    check: "register is consistent within section"
+    severity: scored
+    weight: 1.0
+
+compliance:
+  - rule_id: comp_c1
+    name: required_disclaimer_verbatim
+    description: Required disclaimers must appear verbatim or in approved locale-equivalent translation.
+    check: "required disclaimers are verbatim or approved locale-equivalent"
+    severity: hard
+  - rule_id: comp_c2
+    name: no_harm_framing_reversal
+    description: Non-harm framing of sensitive topics must not be reversed or softened.
+    check: "harm-adjacent topics maintain source framing direction"
+    severity: hard
+
+rubric_usage_note: >
+  Each gate in comparison_checklist_v2.yaml that carries a rubric_ref list uses the rules above
+  as sub-criteria for judge scoring. The judge scores the gate holistically informed by the
+  referenced rules and reports which specific rules caused any deduction.

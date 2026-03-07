@@ -1,0 +1,131 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "comparator_result_v2",
+  "title": "Comparator Result v2",
+  "description": "Schema for judge output in the Qwen-Only Audiobook Comparator Loop. Version-aligned with comparison_checklist_v2.yaml schema_version=2.0. checklist_schema_version on each result must match 2.0.x or the result is rejected and routes to manual_review.",
+  "version": "2.0",
+  "checklist_schema_binding": "config/audiobook_script/comparison_checklist_v2.yaml#schema_version=2.0",
+  "type": "array",
+  "minItems": 1,
+  "items": {
+    "$ref": "#/definitions/GateResult"
+  },
+  "definitions": {
+    "GateResult": {
+      "type": "object",
+      "required": [
+        "gate_id",
+        "pass",
+        "checklist_schema_version",
+        "loop_index",
+        "section_id",
+        "locale"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "gate_id": {
+          "type": "string",
+          "enum": [
+            "semantic_fidelity",
+            "claim_integrity",
+            "emotional_arc_alignment",
+            "psychological_safety",
+            "native_regional_language_fit",
+            "narrative_flow_cohesion",
+            "tts_readability_cadence",
+            "compliance_disclaimer_preservation",
+            "polish_emotional_impact"
+          ]
+        },
+        "checklist_schema_version": {
+          "type": "string",
+          "description": "Must match schema_version=2.0 of comparison_checklist_v2.yaml. Mismatch routes to manual_review.",
+          "pattern": "^2\\.0(\\.\\d+)?$"
+        },
+        "pass": {
+          "type": "boolean"
+        },
+        "gate_type": {
+          "type": "string",
+          "enum": [
+            "hard",
+            "scored"
+          ]
+        },
+        "score": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "weight": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0.0
+        },
+        "defect": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 1000
+        },
+        "prompt_patch": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 500
+        },
+        "rubric_rules_failed": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "loop_index": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        },
+        "section_id": {
+          "type": "string"
+        },
+        "locale": {
+          "type": "string",
+          "enum": [
+            "zh-TW",
+            "zh-HK",
+            "zh-SG",
+            "zh-CN",
+            "ja-JP",
+            "ko-KR",
+            "en-US"
+          ]
+        },
+        "judge_confidence": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "timestamp_utc": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}

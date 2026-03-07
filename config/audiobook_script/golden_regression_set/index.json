@@ -1,0 +1,36 @@
+{
+  "version": "1.0",
+  "description": "Golden regression set for Qwen-Only Audiobook Pipeline",
+  "required_locales": [
+    "zh-TW",
+    "zh-HK",
+    "zh-SG",
+    "zh-CN"
+  ],
+  "samples": [
+    {
+      "file": "zh-TW_pearl_prime_intro.yaml",
+      "locale": "zh-TW",
+      "content_type": "pearl_prime",
+      "section_id": "golden_zh_tw_001"
+    },
+    {
+      "file": "zh-HK_pearl_news_youth.yaml",
+      "locale": "zh-HK",
+      "content_type": "pearl_news",
+      "section_id": "golden_zh_hk_001"
+    },
+    {
+      "file": "zh-SG_teacher_mode_exercise.yaml",
+      "locale": "zh-SG",
+      "content_type": "teacher_mode",
+      "section_id": "golden_zh_sg_001"
+    },
+    {
+      "file": "zh-CN_phoenix_v4_spiral.yaml",
+      "locale": "zh-CN",
+      "content_type": "phoenix_v4",
+      "section_id": "golden_zh_cn_001"
+    }
+  ]
+}

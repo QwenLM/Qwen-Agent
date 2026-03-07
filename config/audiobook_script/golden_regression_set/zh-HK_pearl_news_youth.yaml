@@ -1,0 +1,36 @@
+# Golden regression sample — zh-HK Pearl News (youth impact + forward look)
+locale: zh-HK
+content_type: pearl_news
+section_id: golden_zh_hk_001
+description: >
+  Pearl News article segment: summary + youth impact section + forward look.
+  Tests factual precision, colloquial zh-HK register, and journalistic cadence.
+expect_pass: true
+min_aggregate_score: 0.76
+checklist_version: "2.0.0"
+
+source_text: |
+  [SUMMARY] A new UNESCO report released Monday shows that 244 million children
+  worldwide remain out of school, with girls in sub-Saharan Africa and South Asia
+  disproportionately affected. The report calls for a 40 percent increase in
+  education financing by 2030 to close the gap.
+
+  [YOUTH IMPACT] Among young people aged 15 to 24, the out-of-school rate
+  in low-income countries stands at 23 percent — nearly one in four.
+  In South Asia, 68 million girls between the ages of 6 and 17 have never
+  attended a single day of formal schooling. Economists at the World Bank
+  estimate that each additional year of quality education increases a young
+  woman's lifetime earnings by 8 to 10 percent.
+
+  [FORWARD LOOK] The UN General Assembly will take up education financing
+  at its high-level political forum in July. A binding resolution on
+  education investment targets is expected to be tabled by the G20 Education
+  Working Group at their April meeting in Johannesburg.
+
+expected_quality_notes: >
+  zh-HK adaptation should use news-anchor register — clear, measured, authoritative.
+  Statistics must be stated precisely: "二億四千四百萬" not approximated.
+  Youth Impact section must preserve every data point and attribution.
+  Forward Look: no sentiment added — concrete institutions and dates only.
+  Colloquial zh-HK Cantonese-influenced rhythm, not formal written Mandarin.
+  All sentences TTS-speakable without run-ons.

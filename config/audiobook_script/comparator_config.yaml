@@ -1,0 +1,145 @@
+schema_version: "2.0"
+description: >
+  Master runtime configuration for the Qwen-Only Audiobook Comparator Loop.
+  All parameters that would otherwise be hardcoded in run_comparator_loop.py live here.
+  No human is in the loop at runtime — all repair and routing is automated.
+  Authority: docs/AUDIOBOOK_PIPELINE_SPEC.md, docs/GO_LIVE_FINAL_CHECKLIST.md.
+config_version: "2.0.0"
+last_updated: "2026-03-06"
+
+loop_control:
+  max_loops: 3                    # config-driven; schema enforces range [1, 5]
+  hard_fail_routes_to: manual_review   # always; never auto_pass
+  loop_index_base: 1              # loops are 1-indexed in artifact trace
+
+parallel:
+  max_parallel_sections: 6        # per book; bounded by API rate limits
+  max_parallel_books: 2           # concurrent books in batch mode
+  section_timeout_seconds: 180    # per section across all loops
+  batch_timeout_seconds: 7200     # hard kill for full book batch
+  semaphore_strategy: sliding
+  retry_on_timeout: true
+  timeout_routes_to: manual_review
+
+token_budget:
+  max_tokens_per_section_per_loop: 6000
+  max_tokens_per_section_total: 20000
+  max_tokens_per_batch: 2000000
+  on_budget_exceeded: manual_review
+
+draft_model:
+  provider: lm_studio
+  base_url: "http://127.0.0.1:1234/v1"
+  api_key: "lm-studio"            # LM Studio accepts any non-empty string
+  model_id: local-model           # overridden at runtime by whatever model is loaded
+  temperature: 0.7
+  top_p: 0.9
+  seed_strategy: section_hash     # hash(section_id + locale)
+  max_output_tokens: 3000
+  # content_type routing — selects the right draft prompt per pipeline source
+  # Prompt files: prompts/audiobook/draft_{content_type}_v2.txt
+  prompt_routing:
+    pearl_prime:   draft_pearl_prime_v2
+    pearl_news:    draft_pearl_news_v2
+    phoenix_v4:    draft_phoenix_v4_v2
+    teacher_mode:  draft_teacher_mode_v2
+    default:       draft_pearl_prime_v2   # fallback
+  timeout_seconds: 120
+
+# COMMITTED judge model — not open. Independence via separate system prompt,
+# temperature=0.1, rotated seed per loop. Same LM Studio endpoint as draft.
+judge_model:
+  provider: lm_studio
+  base_url: "http://127.0.0.1:1234/v1"
+  api_key: "lm-studio"
+  model_id: local-model           # same loaded model; judge independence via prompt + temp
+  temperature: 0.1                # near-deterministic for reproducible verdicts
+  top_p: 0.95
+  seed_strategy: rotated          # hash(section_id + loop_index + "JUDGE_SALT_V2")
+  max_output_tokens: 1500
+  system_prompt_id: judge_audiobook_v2
+  timeout_seconds: 60
+  require_json_output: true
+  json_schema_id: comparator_result_v2
+  on_schema_fail: manual_review
+
+# Patch injection: fully automated. Hard gate patches first. Appended to system prompt.
+# No human reviews the patch before injection.
+patch_injection:
+  injection_strategy: append_to_system
+  revision_block_header: "## REVISION INSTRUCTIONS (Loop {loop_index})\n## Fix ALL issues below before producing the draft.\n"
+  hard_gate_prefix: "[HARD — must fix]"
+  scored_gate_prefix: "[IMPROVE]"
+  sort_order: [hard_gates_first, then_by_weight_descending]
+  include_defect_in_patch: true
+  max_patch_tokens: 600
+  on_patch_overflow: truncate_scored_keep_hard
+
+artifact_trace:
+  base_path: "artifacts/audiobook"
+  structure: "{batch_id}/{book_id}/{section_id}/loop_{loop_index}/"
+  required_fields_per_loop:
+    - input_draft_hash
+    - judge_result_json
+    - prompt_patch
+    - rerun_prompt_hash
+    - final_decision
+    - aggregate_score
+    - hard_gates_passed
+    - loop_index
+    - timestamp_utc
+  batch_summary_file: "artifacts/audiobook/{batch_id}/batch_summary.json"
+  manual_review_queue_file: "artifacts/audiobook/manual_review_queue.json"
+
+# Manual review packet: best-scoring draft + full defect history.
+# best_draft = highest aggregate_score across all loops.
+# If tied: prefer most hard gates passed; then latest loop.
+manual_review_packet:
+  files:
+    - filename: best_draft.txt
+      content: "Highest aggregate_score draft from all loops"
+    - filename: final_draft.txt
+      content: "Last loop draft"
+    - filename: defect_history.json
+      content: "All loop judge_result_json records ordered by loop_index"
+    - filename: review_summary.txt
+      content: "Human-readable loop-by-loop brief with recommended fix direction"
+    - filename: status.json
+      content: "requires_manual_review: true, reason, section_id, locale, batch_id, timestamp_utc"
+  manual_review_queue_entry:
+    fields: [section_id, locale, book_id, batch_id, hard_gate_failures, aggregate_score_best, timestamp_utc, packet_path]
+    severity_sort_key: hard_gate_failures   # sort descending in UI (most broken = top)
+
+scoring:
+  pass_requires_all_hard_gates: true
+  min_scored_pass_threshold: 0.75    # 75% of max weighted scored points
+  score_scale: [0.0, 1.0]
+  tie_break_on_loop_selection: [highest_hard_gates_passed, latest_loop]
+
+locale_threshold_overrides:
+  zh-TW:
+    min_scored_pass_threshold: 0.75
+  zh-HK:
+    min_scored_pass_threshold: 0.75
+  zh-SG:
+    min_scored_pass_threshold: 0.72   # slight relaxation; zh-SG corpus is smaller
+  zh-CN:
+    min_scored_pass_threshold: 0.75
+  ja-JP:
+    min_scored_pass_threshold: 0.78   # tighter; Japanese TTS readability is critical
+  ko-KR:
+    min_scored_pass_threshold: 0.75
+
+regression:
+  golden_set_path: "config/audiobook_script/golden_regression_set/"
+  required_locales: [zh-TW, zh-HK, zh-SG, zh-CN]
+  optional_locales: [ja-JP, ko-KR]
+  min_hard_gate_pass_rate: 1.0
+  min_scored_pass_rate: 0.90
+  block_promotion_on_regression: true
+
+observability:
+  jsonl_log_path: "artifacts/audiobook/loop_decisions.jsonl"
+  alert_on_manual_review_rate_above: 0.10
+  alert_on_hard_gate_fail_rate_above: 0.05
+  alert_channel: ops_webhook

@@ -1,0 +1,33 @@
+# Golden regression sample — zh-SG Teacher Mode (EXERCISE + REFLECTION)
+locale: zh-SG
+content_type: teacher_mode
+section_id: golden_zh_sg_001
+description: >
+  Teacher Mode guided practice: EXERCISE atom + REFLECTION atom.
+  Tests teacher voice preservation, exercise instruction clarity, locale fit.
+expect_pass: true
+min_aggregate_score: 0.77
+checklist_version: "2.0.0"
+
+source_text: |
+  [EXERCISE] This is a body-anchoring practice. It takes about three minutes.
+  Find a comfortable seat. You can close your eyes, or soften your gaze downward.
+  Begin by taking three slow breaths — inhale for four counts, exhale for six.
+  After the third breath, place one hand on your chest and one hand on your belly.
+  Notice which hand rises first. That's information. There's no right answer.
+  Stay here for sixty seconds. Just notice. Don't change anything.
+  When you're ready, gently open your eyes and return to the page.
+
+  [REFLECTION] What did you notice? Most people find that the chest rises before the belly.
+  This is what chronic stress does — it moves the breath upward, away from the body's center.
+  It's not a flaw. It's an adaptation. Your body learned to stay ready.
+  The practice you just did begins to teach it something different:
+  that safety exists right now, in this moment, in this room.
+
+expected_quality_notes: >
+  zh-SG adaptation should be clean, direct, warm.
+  EXERCISE must be step-by-step imperative instructions — no passive constructions.
+  Teacher voice: somatic/body-awareness teacher — grounded, present, non-dramatic.
+  REFLECTION uses second-person singular throughout.
+  No formal academic register — this is a teacher speaking to a student, not a textbook.
+  All exercise steps clearly demarcated and speakable.

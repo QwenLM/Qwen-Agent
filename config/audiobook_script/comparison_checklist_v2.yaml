@@ -1,0 +1,156 @@
+schema_version: "2.0"
+description: >
+  Comparison checklist for the Qwen-Only Audiobook Comparator Loop.
+  Pass condition: ALL hard gates pass=true AND scored_total/max_scored_total >= 0.75.
+  Authority: docs/AUDIOBOOK_PIPELINE_SPEC.md, config/audiobook_script/comparator_config.yaml.
+checklist_version: "2.0.0"
+last_updated: "2026-03-06"
+rubric_source: "config/audiobook_script/static_polish_rubric.yaml"
+result_schema: "schemas/comparator_result_v2.schema.json"
+
+scoring:
+  min_scored_pass_threshold: 0.75
+  score_scale: [0.0, 1.0]
+  hard_gate_failure_routing: manual_review
+
+gates:
+
+  - gate_id: semantic_fidelity
+    name: Semantic Fidelity
+    description: >
+      Meaning fully preserved vs English source. No ideas added, removed, or shifted.
+      Paraphrase is acceptable; omission and invention are not.
+    type: hard
+    judge_instruction: >
+      Compare the draft to the English source sentence by sentence. Score pass=true only
+      if meaning is fully preserved. Flag any added, removed, or shifted ideas.
+    defect_format: "List each gap: [added/removed/shifted] -> specific text"
+    prompt_patch_format: "Restore the following missing/altered meaning from the English source: {defect_list}"
+
+  - gate_id: claim_integrity
+    name: Claim / Number / Entity Integrity
+    description: Numbers, dates, names, statistics, key claims identical to source.
+    type: hard
+    judge_instruction: >
+      Extract all numbers, dates, names, and factual claims from the English source.
+      Verify each appears correctly in the draft. Report any discrepancy.
+    defect_format: "List: [source value] -> [draft value] for each mismatch"
+    prompt_patch_format: "Correct the following values to match the English source exactly: {defect_list}"
+
+  - gate_id: emotional_arc_alignment
+    name: Emotional Arc Alignment
+    description: Same emotional beats and emphasis as the source in the same sequence.
+    type: scored
+    weight: 2.0
+    rubric_ref: [psy_p1, psy_p2, psy_p3, psy_p4, psy_p5]
+    judge_instruction: >
+      Identify the 3-5 main emotional beats in the English source. Score 0.0-1.0 based on
+      how closely the draft matches these beats in sequence and intensity.
+    defect_format: "List missed or mismatched emotional beats with location in text"
+    prompt_patch_format: "Align the emotional arc at these points: {defect_list}. Reference rubric rules: psy_p1, psy_p2."
+
+  - gate_id: psychological_safety
+    name: Psychological Safety / Non-Harm
+    description: >
+      Non-harm framing preserved or strengthened. Draft must not reverse safety framing
+      or introduce harm-adjacent content not in the source.
+    type: hard
+    rubric_ref: [comp_c2]
+    judge_instruction: >
+      Evaluate any harm-adjacent content in both source and draft. Flag if the draft
+      softens, reverses, or reframes the source safety posture.
+    defect_format: "Quote the source text and draft text where framing diverges"
+    prompt_patch_format: "Restore the non-harm framing at: {defect_list}."
+
+  - gate_id: native_regional_language_fit
+    name: Native Regional Language Fit
+    description: >
+      Idiomatic, natural language for the target locale. Calqued US idioms, register mixing,
+      and non-regional expressions are failures. Highest-weight scored gate.
+    type: scored
+    weight: 2.5
+    rubric_ref: [reg_r1, reg_r2]
+    judge_instruction: >
+      Evaluate as a native speaker of the target locale. Score 0.0-1.0: 1.0 = completely
+      natural regional expression. Penalize calqued idioms, wrong register, non-regional vocabulary.
+    defect_format: "List: [draft text] -> [suggested regional alternative]"
+    prompt_patch_format: "Replace these non-regional expressions with locale-authentic alternatives: {defect_list}"
+
+  - gate_id: narrative_flow_cohesion
+    name: Narrative Flow / Cohesion
+    description: Reads as native-speaker prose, not as a translation.
+    type: scored
+    weight: 1.5
+    rubric_ref: [flow_f1, flow_f2, flow_f3, flow_f4]
+    judge_instruction: >
+      Read the draft as a native-speaker audiobook listener. Score 0.0-1.0: 1.0 = fully
+      cohesive natural flow. Penalize translation artifacts, generic transitions, English word-order carryover.
+    defect_format: "List specific flow failures with draft text location"
+    prompt_patch_format: "Improve the following flow issues using native {locale} narrative patterns: {defect_list}"
+
+  - gate_id: tts_readability_cadence
+    name: TTS Readability Cadence
+    description: >
+      HARD GATE. Every sentence must be TTS-safe: max 20 words, no mid-sentence asides,
+      no unexpanded abbreviations, emotional beats in short sentences, prose numbers as words.
+      Unshippable audiobook content is a hard fail regardless of semantic accuracy.
+    type: hard
+    rubric_ref: [tts_c1, tts_c2, tts_c3, tts_c4, tts_c5]
+    judge_instruction: >
+      Check every sentence: (1) <= 20 words, (2) no mid-sentence parenthetical asides,
+      (3) no unexpanded abbreviations, (4) emotional beats in short sentences, (5) prose numbers as words.
+      Return pass=true only if ALL rules satisfied for ALL sentences.
+    defect_format: "List each failing sentence with the specific rule violated (tts_c1-c5)"
+    prompt_patch_format: "Fix these TTS violations: {defect_list}. Apply: tts_c1 (<=20 words), tts_c2 (no asides), tts_c3 (breath points), tts_c5 (expand abbreviations)."
+
+  - gate_id: compliance_disclaimer_preservation
+    name: Compliance / Disclaimer Preservation
+    description: Required disclaimers verbatim or approved locale-equivalent. No paraphrase.
+    type: hard
+    rubric_ref: [comp_c1]
+    judge_instruction: >
+      Extract all disclaimer and compliance phrases from the English source. Verify each
+      appears in the draft verbatim or as an approved locale-equivalent.
+    defect_format: "Quote source disclaimer -> draft version with specific change highlighted"
+    prompt_patch_format: "Restore these compliance phrases verbatim (or approved locale-equivalent): {defect_list}"
+
+  - gate_id: polish_emotional_impact
+    name: Polish / Emotional-Psychological Impact
+    description: >
+      Meets static polish rubric: concrete anchors, short punchy sentences at peaks,
+      warmth in closings, silence beats before reframes, no emotion-label explanations.
+      Enforced by judge via rubric_ref — no Claude at runtime.
+    type: scored
+    weight: 2.0
+    rubric_ref: [psy_p1, psy_p2, psy_p3, psy_p4, psy_p5, flow_f2]
+    judge_instruction: >
+      Evaluate the draft against the static polish rubric rules (psy_p1-p5, flow_f2).
+      Score 0.0-1.0: 1.0 = fully meets polish and emotional impact standards.
+    defect_format: "List: [rule_id] violated at: [draft text excerpt]"
+    prompt_patch_format: "Improve polish and emotional impact at these points: {defect_list}. Apply rules: {failed_rule_ids}."
+
+locale_overrides:
+  zh-TW:
+    additional_checks:
+      - "Use Traditional Chinese characters throughout; no Simplified characters"
+      - "Formal written register appropriate for self-help audiobooks"
+  zh-HK:
+    additional_checks:
+      - "Use Traditional Chinese characters; Cantonese-influenced vocabulary where natural"
+      - "Avoid Mainland PRC cultural references; use HK-relevant analogies"
+  zh-SG:
+    additional_checks:
+      - "Simplified Chinese; Singapore formal written register"
+      - "Avoid PRC-specific cultural references; Singapore multicultural context"
+  zh-CN:
+    additional_checks:
+      - "Simplified Chinese only; Mainland PRC cultural references acceptable"
+  ja-JP:
+    additional_checks:
+      - "Appropriate keigo level for self-help genre (teineigo base)"
+      - "TTS: all numbers in prose as kanji numerals, not Arabic"
+  ko-KR:
+    additional_checks:
+      - "Formal speech level (hapshoche or haeyoche) consistent throughout section"
+
+judge_prompt_template: "prompts/judge_audiobook_v2.txt"

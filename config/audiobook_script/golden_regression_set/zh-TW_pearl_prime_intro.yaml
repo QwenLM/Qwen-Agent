@@ -1,0 +1,35 @@
+# Golden regression sample — zh-TW Pearl Prime (STORY + HOOK + TAKEAWAY)
+locale: zh-TW
+content_type: pearl_prime
+section_id: golden_zh_tw_001
+description: >
+  Pearl Prime chapter intro: HOOK atom opening + STORY atom + TAKEAWAY slot.
+  Tests emotional arc, TTS cadence, and locale-appropriate register.
+expect_pass: true
+min_aggregate_score: 0.78
+checklist_version: "2.0.0"
+
+source_text: |
+  [HOOK] You have already survived the hardest version of this.
+  That version of you — the one who kept going when nothing made sense — did not quit.
+  She adapted.
+
+  [STORY] Three years into her marriage, Lin noticed she had stopped finishing sentences.
+  Not because she didn't know what she wanted to say — she always knew —
+  but because she had learned, in small increments, that finishing her thoughts
+  created friction. So she stopped. And then, after a while, she stopped noticing
+  that she had stopped.
+  This is how self-erasure works. Not in a single dramatic moment.
+  In the accumulated weight of small silences.
+
+  [TAKEAWAY] The insight from Lin's story is this: disappearing rarely feels like disappearing
+  when it is happening. It feels like keeping the peace.
+  Remember that. Keeping the peace and erasing yourself are not always different things.
+
+expected_quality_notes: >
+  zh-TW adaptation should use softer, more literary Mandarin register.
+  HOOK should open with emotional punch on the very first line.
+  STORY should flow as natural narrative narration — not stiff or over-translated.
+  TAKEAWAY should be paced slowly — the core insight must land.
+  All sentences should be speakable without breath-strain.
+  No run-ons. No formal written Mandarin register.

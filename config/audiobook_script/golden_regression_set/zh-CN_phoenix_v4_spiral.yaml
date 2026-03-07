@@ -1,0 +1,42 @@
+# Golden regression sample — zh-CN Phoenix V4 SPIRAL engine (STORY + PIVOT + PERMISSION)
+locale: zh-CN
+content_type: phoenix_v4
+section_id: golden_zh_cn_001
+description: >
+  Phoenix V4 SPIRAL engine: STORY atom + PIVOT slot + PERMISSION slot.
+  Tests persona calibration (anxious-achiever), emotional arc, PERMISSION delivery.
+expect_pass: true
+min_aggregate_score: 0.78
+checklist_version: "2.0.0"
+
+source_text: |
+  [STORY] David had been tracking his sleep with an app for nine months
+  when he realized he was afraid to go to bed without it.
+  Not because the app helped him sleep better — his average had barely changed —
+  but because the data made the uncertainty feel manageable.
+  Something was measured. Something was known. And that was enough
+  to make the unknown feel slightly less threatening.
+  He was using certainty as a sedative.
+
+  [PIVOT] Here is where the story turns.
+  Because the certainty was never real.
+  Nine months of data did not change the fundamental fact
+  that David could not control whether he slept well any more than he could control
+  whether his heart kept beating.
+  What the app gave him was the feeling of agency.
+  Not agency itself.
+
+  [PERMISSION] You are allowed to put the tracker down.
+  You are allowed to not know.
+  The uncertainty was always there — you were just outsourcing the anxiety about it
+  to a number on a screen.
+  The number was never the point.
+  You were.
+
+expected_quality_notes: >
+  zh-CN: warm, accessible standard Mandarin. Not broadcast. Personal.
+  STORY: narrative past tense, clear David POV. No over-formalization.
+  PIVOT: slow the pace — short sentences, space between thoughts. The turn must land.
+  PERMISSION: second-person singular, unhurried, warm. Each sentence its own breath.
+  Persona: anxious-achiever — directness balanced with care. No clinical distance.
+  All sentences TTS-ready.

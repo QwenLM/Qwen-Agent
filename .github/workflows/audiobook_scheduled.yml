@@ -1,0 +1,76 @@
+name: Audiobook scheduled (Qwen-only)
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+    - cron: '0 14 * * *'
+  workflow_dispatch:
+    inputs:
+      locale:
+        description: Locale for staging run (zh-TW, zh-HK, zh-SG, zh-CN)
+        required: false
+        default: zh-TW
+        type: choice
+        options: [zh-TW, zh-HK, zh-SG, zh-CN]
+
+jobs:
+  audiobook:
+    runs-on: self-hosted
+    timeout-minutes: 90
+    env:
+      PYTHONUNBUFFERED: '1'
+      # LM Studio OpenAI-compatible local endpoint
+      QWEN_BASE_URL: http://127.0.0.1:1234/v1
+      QWEN_API_KEY: lm-studio
+      QWEN_MODEL: local-model
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Check Python
+        run: |
+          python3 --version
+          python3 -m pip --version
+
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install pyyaml jsonschema openai requests
+
+      - name: Dry-run setup validation
+        run: |
+          python3 scripts/audiobook_script/run_regression.py --dry-run --verbose
+
+      - name: Golden regression
+        run: |
+          python3 scripts/audiobook_script/run_regression.py --verbose
+
+      - name: Create scheduled source segment
+        run: |
+          mkdir -p artifacts/audiobook/source/scheduled
+          cat > artifacts/audiobook/source/scheduled/daily_source.txt <<'SRC'
+          [HOOK] You are not late to your own life.
+          [STORY] Mei stopped making eye contact in meetings because she believed every question would expose her. She called it efficiency. It was fear wearing a professional jacket.
+          [TAKEAWAY] The pattern is not your identity. It is a strategy your nervous system learned.
+          SRC
+
+      - name: Autonomous comparator loop run
+        run: |
+          LOCALE="${{ inputs.locale || 'zh-TW' }}"
+          BATCH_ID="scheduled_$(date -u +%Y%m%dT%H%M%SZ)"
+          python3 scripts/audiobook_script/run_comparator_loop.py \
+            --section-id "daily_${LOCALE//-/_}_001" \
+            --locale "$LOCALE" \
+            --english-source artifacts/audiobook/source/scheduled/daily_source.txt \
+            --book-id "scheduled" \
+            --batch-id "$BATCH_ID" \
+            --content-type pearl_prime
+
+      - name: Upload audiobook artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: audiobook_artifacts_scheduled
+          path: artifacts/audiobook/
+          retention-days: 14
