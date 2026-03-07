@@ -301,7 +301,8 @@ async def _run_regression(
             r = await _run_one_golden(repo, golden_dir, sample, cfg, checklist, result_schema, verbose)
             results.append(r)
         except Exception as e:
-            logger.error("Golden sample %s failed with exception: %s", sample["file"], e)
+            emsg = str(e).strip() or e.__class__.__name__
+            logger.error("Golden sample %s failed with exception: %s", sample["file"], emsg)
             results.append(RegressionResult(
                 section_id=sample.get("section_id", "?"),
                 locale=sample.get("locale", "?"),
@@ -314,7 +315,7 @@ async def _run_regression(
                 loops_attempted=0,
                 hard_gate_failures=9,
                 regression_pass=False,
-                failure_reason=f"Exception: {e}",
+                failure_reason=f"Exception: {emsg}",
             ))
 
     total_elapsed = time.time() - t_start

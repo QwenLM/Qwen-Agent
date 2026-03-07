@@ -22,7 +22,7 @@ jobs:
       # LM Studio OpenAI-compatible local endpoint
       QWEN_BASE_URL: http://127.0.0.1:1234/v1
       QWEN_API_KEY: lm-studio
-      QWEN_MODEL: local-model
+      QWEN_MODEL: qwen3-14b
 
     steps:
       - uses: actions/checkout@v4

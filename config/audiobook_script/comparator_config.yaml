@@ -31,7 +31,7 @@ draft_model:
   provider: lm_studio
   base_url: "http://127.0.0.1:1234/v1"
   api_key: "lm-studio"            # LM Studio accepts any non-empty string
-  model_id: local-model           # overridden at runtime by whatever model is loaded
+  model_id: qwen3-14b             # production default; can override via QWEN_MODEL env
   temperature: 0.7
   top_p: 0.9
   seed_strategy: section_hash     # hash(section_id + locale)
@@ -44,7 +44,7 @@ draft_model:
     phoenix_v4:    draft_phoenix_v4_v2
     teacher_mode:  draft_teacher_mode_v2
     default:       draft_pearl_prime_v2   # fallback
-  timeout_seconds: 120
+  timeout_seconds: 240
 
 # COMMITTED judge model — not open. Independence via separate system prompt,
 # temperature=0.1, rotated seed per loop. Same LM Studio endpoint as draft.
@@ -52,13 +52,13 @@ judge_model:
   provider: lm_studio
   base_url: "http://127.0.0.1:1234/v1"
   api_key: "lm-studio"
-  model_id: local-model           # same loaded model; judge independence via prompt + temp
+  model_id: qwen3-14b             # production default; can override via QWEN_MODEL env
   temperature: 0.1                # near-deterministic for reproducible verdicts
   top_p: 0.95
   seed_strategy: rotated          # hash(section_id + loop_index + "JUDGE_SALT_V2")
   max_output_tokens: 1500
   system_prompt_id: judge_audiobook_v2
-  timeout_seconds: 60
+  timeout_seconds: 180
   require_json_output: true
   json_schema_id: comparator_result_v2
   on_schema_fail: manual_review

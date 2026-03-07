@@ -50,6 +50,10 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     runs-on: self-hosted
     needs: [schema-and-config]
+    env:
+      QWEN_BASE_URL: http://127.0.0.1:1234/v1
+      QWEN_API_KEY: lm-studio
+      QWEN_MODEL: qwen3-14b
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies

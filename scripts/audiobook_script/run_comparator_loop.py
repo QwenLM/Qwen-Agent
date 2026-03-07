@@ -46,6 +46,7 @@ import asyncio
 import hashlib
 import json
 import logging
+import os
 import sys
 import time
 from dataclasses import asdict, dataclass, field
@@ -57,6 +58,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
 logger = logging.getLogger("comparator_loop")
+_MODEL_CACHE: dict[str, str] = {}
 
 
 # ─── CONFIG ───────────────────────────────────────────────────────────────────
@@ -158,6 +160,34 @@ def _lm_studio_client(model_cfg: dict):
     )
 
 
+async def _resolve_model_id(client: Any, model_cfg: dict) -> str:
+    """
+    Resolve model id in strict order:
+    1) QWEN_MODEL env var (if set)
+    2) configured model_id (if not placeholder)
+    3) auto-detect first non-embedding model from /models (cached)
+    """
+    env_model = os.environ.get("QWEN_MODEL", "").strip()
+    if env_model:
+        return env_model
+
+    configured = str(model_cfg.get("model_id", "local-model")).strip()
+    if configured and configured != "local-model":
+        return configured
+
+    base_url = model_cfg.get("base_url", "http://127.0.0.1:1234/v1")
+    cached = _MODEL_CACHE.get(base_url)
+    if cached:
+        return cached
+
+    models = await client.models.list()
+    ids = [m.id for m in getattr(models, "data", []) if getattr(m, "id", None)]
+    chat_ids = [mid for mid in ids if "embed" not in mid.lower()]
+    resolved = chat_ids[0] if chat_ids else (ids[0] if ids else "local-model")
+    _MODEL_CACHE[base_url] = resolved
+    return resolved
+
+
 async def _call_qwen_draft(section_text: str, locale: str, system_prompt: str, cfg: dict, seed: int) -> str:
     """
     Call local Qwen draft model via LM Studio (OpenAI-compatible API).
@@ -166,20 +196,7 @@ async def _call_qwen_draft(section_text: str, locale: str, system_prompt: str, c
     """
     draft_cfg = cfg.get("draft_model", {})
     client = _lm_studio_client(draft_cfg)
-    model_id = draft_cfg.get("model_id", "local-model")
-    if model_id == "local-model":
-        try:
-            models = await client.models.list()
-            ids = [m.id for m in getattr(models, "data", []) if getattr(m, "id", None)]
-            # Prefer non-embedding model ids for chat completions.
-            chat_ids = [mid for mid in ids if "embed" not in mid.lower()]
-            if chat_ids:
-                model_id = chat_ids[0]
-            elif ids:
-                model_id = ids[0]
-        except Exception:
-            # Keep fallback; downstream call will raise clear API error if invalid.
-            pass
+    model_id = await _resolve_model_id(client, draft_cfg)
     temperature = float(draft_cfg.get("temperature", 0.7))
     max_tokens = int(draft_cfg.get("max_output_tokens", 3000))
     timeout = float(draft_cfg.get("timeout_seconds", 120))
@@ -219,18 +236,7 @@ async def _call_qwen_judge(english_source: str, draft: str, locale: str,
     """
     judge_cfg = cfg.get("judge_model", {})
     client = _lm_studio_client(judge_cfg)
-    model_id = judge_cfg.get("model_id", "local-model")
-    if model_id == "local-model":
-        try:
-            models = await client.models.list()
-            ids = [m.id for m in getattr(models, "data", []) if getattr(m, "id", None)]
-            chat_ids = [mid for mid in ids if "embed" not in mid.lower()]
-            if chat_ids:
-                model_id = chat_ids[0]
-            elif ids:
-                model_id = ids[0]
-        except Exception:
-            pass
+    model_id = await _resolve_model_id(client, judge_cfg)
     temperature = float(judge_cfg.get("temperature", 0.1))
     max_tokens = int(judge_cfg.get("max_output_tokens", 1500))
     timeout = float(judge_cfg.get("timeout_seconds", 60))
@@ -557,7 +563,20 @@ async def run_section_loop(
                     _call_qwen_draft(english_source, locale, current_prompt, cfg, draft_seed),
                     timeout=cfg.get("draft_model", {}).get("timeout_seconds", 60),
                 )
-            except (asyncio.TimeoutError, NotImplementedError):
+            except asyncio.TimeoutError:
+                logger.error("Draft timeout: section=%s loop=%d -> manual_review", section_id, loop_index)
+                trace = LoopTrace(
+                    run_id=run_id, batch_id=batch_id, book_id=book_id,
+                    section_id=section_id, locale=locale, loop_index=loop_index,
+                    input_draft_hash="", prompt_patch="",
+                    rerun_prompt_hash="", aggregate_score=0.0,
+                    hard_gates_passed=False, final_decision="manual_review",
+                    timestamp_utc=ts, gate_results=[{"error": "draft_timeout"}],
+                )
+                loop_traces.append(trace)
+                _write_loop_trace(repo, cfg, trace)
+                break
+            except NotImplementedError:
                 raise
             except Exception as e:
                 logger.error("Draft failed: section=%s loop=%d err=%s", section_id, loop_index, e)
