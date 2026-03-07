@@ -108,12 +108,13 @@ class TextChatAtOAI(BaseFnCallModel):
             if delta_stream:
                 for chunk in response:
                     if chunk.choices:
-                        if hasattr(chunk.choices[0].delta,
-                                   'reasoning_content') and chunk.choices[0].delta.reasoning_content:
+                        reasoning = (getattr(chunk.choices[0].delta, 'reasoning_content', None) or
+                                     getattr(chunk.choices[0].delta, 'reasoning', None))
+                        if reasoning:
                             yield [
                                 Message(role=ASSISTANT,
                                         content='',
-                                        reasoning_content=chunk.choices[0].delta.reasoning_content)
+                                        reasoning_content=reasoning)
                             ]
                         if hasattr(chunk.choices[0].delta, 'content') and chunk.choices[0].delta.content:
                             yield [Message(role=ASSISTANT, content=chunk.choices[0].delta.content)]
@@ -123,9 +124,10 @@ class TextChatAtOAI(BaseFnCallModel):
                 full_tool_calls = []
                 for chunk in response:
                     if chunk.choices:
-                        if hasattr(chunk.choices[0].delta,
-                                   'reasoning_content') and chunk.choices[0].delta.reasoning_content:
-                            full_reasoning_content += chunk.choices[0].delta.reasoning_content
+                        reasoning = (getattr(chunk.choices[0].delta, 'reasoning_content', None) or
+                                     getattr(chunk.choices[0].delta, 'reasoning', None))
+                        if reasoning:
+                            full_reasoning_content += reasoning
                         if hasattr(chunk.choices[0].delta, 'content') and chunk.choices[0].delta.content:
                             full_response += chunk.choices[0].delta.content
                         if hasattr(chunk.choices[0].delta, 'tool_calls') and chunk.choices[0].delta.tool_calls:
@@ -166,11 +168,13 @@ class TextChatAtOAI(BaseFnCallModel):
         messages = self.convert_messages_to_dicts(messages)
         try:
             response = self._chat_complete_create(model=self.model, messages=messages, stream=False, **generate_cfg)
-            if hasattr(response.choices[0].message, 'reasoning_content'):
+            reasoning = (getattr(response.choices[0].message, 'reasoning_content', None) or
+                         getattr(response.choices[0].message, 'reasoning', None))
+            if reasoning:
                 return [
                     Message(role=ASSISTANT,
                             content=response.choices[0].message.content,
-                            reasoning_content=response.choices[0].message.reasoning_content)
+                            reasoning_content=reasoning)
                 ]
             else:
                 return [Message(role=ASSISTANT, content=response.choices[0].message.content)]
