@@ -109,7 +109,7 @@
 | zh-SG golden sample present (`zh-SG_teacher_mode_exercise.yaml`) | ✅ | done |
 | zh-CN golden sample present (`zh-CN_phoenix_v4_spiral.yaml`) | ✅ | done |
 | `scripts/audiobook_script/run_regression.py` present | ✅ | done |
-| Regression run passes all 4 locales | ☐ | needs first run |
+| Regression run passes all 4 locales (full_golden=true) | ☐ | pending full golden run |
 | Regression results committed to repo as evidence | ☐ | after first run |
 
 **Notes**: _______________________
@@ -139,10 +139,11 @@
 |----------|--------|----------|
 | GitHub Actions workflow for audiobook pipeline present | ✅ | .github/workflows/audiobook-regression.yml |
 | Regression gate blocks merge on failure | ✅ | path-filtered on audiobook files, blocks on schema-and-config job |
+| Smoke regression gate green on `main` | ✅ | Audiobook regression #11 (manual), commit `d28e293`, status: Success |
 | Schema validation in CI (not just runtime) | ✅ | job 1 validates config + checklist + schema + prompts + golden set |
 | DOCS_INDEX governance check passes | ☐ | run after next docs-ci push |
 
-**Notes**: CI workflow created 2026-03-06. Job 1 (schema-and-config) runs on ubuntu-latest, no LM Studio. Job 2 (golden-regression) self-hosted, manual dispatch only.
+**Notes**: CI workflow created 2026-03-06. Job 1 (schema-and-config) runs on ubuntu-latest, no LM Studio. Job 2 (golden-regression) self-hosted. As of run #11, smoke gate is green; full golden remains a manual deep check (`full_golden=true`).
 
 ---
 
