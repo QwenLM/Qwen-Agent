@@ -70,39 +70,24 @@ def _resolve_slot(
         )
 
     if source == "teacher_quotes_practices":
-        # Try atoms/teacher_quotes_practices/ (one teacher per topic when available)
-        teacher_dir = atoms_root / "teacher_quotes_practices"
+        # Teacher section: produce a clean HTML placeholder.
+        # The actual teacher content comes from _teacher_resolved (set after assembly)
+        # and is injected into the LLM expansion prompt — NOT embedded as raw YAML.
         root = Path(__file__).resolve().parent.parent
         config_root = config_root or (root / "config")
         use_group = _is_uslf_group_article(item, config_root)
 
-        if teacher_dir.exists():
-            # Prefer one teacher's content for this topic when not group
-            candidates = []
-            for f in teacher_dir.rglob("*"):
-                if f.suffix in (".md", ".txt", ".yaml"):
-                    try:
-                        text = f.read_text(encoding="utf-8")
-                        if topic in text.lower():
-                            candidates.append(text.strip())
-                    except Exception:
-                        continue
-            if candidates:
-                # Single-teacher: use one teacher's content. Group (5%): use group placeholder.
-                if not use_group:
-                    return candidates[0]
-                return "<p>Leaders from the United Spiritual Leaders Forum emphasize reflection and resilience in the face of uncertainty, in line with ethical frameworks that support youth well-being and global goals.</p>"
-
-        # No atoms: placeholders. 95% single-teacher (one teacher's insight + youth), 5% group USLF
         if use_group:
             return (
                 "<p>Leaders from the United Spiritual Leaders Forum emphasize reflection and resilience in the face of uncertainty, in line with ethical frameworks that support youth well-being and global goals.</p>\n\n"
                 "<p>Dialogue across traditions helps communities respond to crisis with clarity and compassion.</p>"
             )
+        # Single-teacher placeholder — LLM expansion will replace this with
+        # the named teacher's 3 approved teachings from the TEACHER KNOWLEDGE BASE.
         return (
-            "<p>A teacher from the United Spiritual Leaders Forum offers perspective on this topic and its relevance to youth: reflection and resilience in the face of uncertainty, in line with ethical frameworks that support youth well-being and global goals.</p>\n\n"
-            "<p>How spiritual and ethical traditions speak to young people in times of change—and how youth can draw on these insights for clarity and action—remains a focus of our coverage.</p>\n\n"
-            "<p>We aim to present one voice at a time, so readers can engage with a clear perspective before exploring further.</p>"
+            "<p>[TEACHER PERSPECTIVE — this section will be replaced during expansion "
+            "with the named teacher and three distinct insights from their tradition, "
+            "each connecting specifically to this news story.]</p>"
         )
 
     if source in ("sdg_ref", "sdg_framework", "sdg_un_tie", "sdg_alignment", "sdg_policy_tie", "sdg_reference"):

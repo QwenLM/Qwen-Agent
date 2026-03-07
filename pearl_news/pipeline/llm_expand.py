@@ -54,6 +54,8 @@ def expand_article_with_llm(
     primary_sdg: str,
     target_word_count: int,
     config: dict[str, Any],
+    teacher: dict[str, Any] | None = None,
+    language: str = "en",
 ) -> str | None:
     """
     Call OpenAI-compatible API to expand article HTML toward target_word_count.
@@ -82,11 +84,48 @@ def expand_article_with_llm(
 
     root = Path(__file__).resolve().parent.parent
     system_prompt = _load_system_prompt(root / "prompts")
-    user_prompt = (
-        f"Expand this article to approximately {target_word_count} words. "
-        f"Title: {title}. Topic: {topic}. SDG: {primary_sdg}. "
-        f"Keep the same structure and the Source line at the end.\n\n{content}"
+
+    # Build teacher knowledge base block (if resolved teacher available)
+    teacher_block = ""
+    if teacher and teacher.get("atoms"):
+        try:
+            from pearl_news.pipeline.teacher_resolver import format_teacher_atoms_for_prompt
+            teacher_block = format_teacher_atoms_for_prompt(teacher)
+        except ImportError:
+            pass
+
+    # Language → audience context
+    language_labels = {"en": "English", "ja": "Japanese", "zh-cn": "Simplified Chinese"}
+    lang_label = language_labels.get(language, "English")
+
+    # Framing question (editorial north star for the LLM)
+    teacher_name = teacher.get("display_name", "the teacher") if teacher else "the teacher"
+    framing = (
+        f"FRAMING QUESTION (use as editorial north star, do not quote directly):\n"
+        f"What does \"{title}\" mean for Gen Z and Gen Alpha in {lang_label}-speaking regions — "
+        f"and what does {teacher_name}'s tradition offer them in response?\n"
     )
+
+    # Assemble user prompt
+    parts = [
+        f"Expand and improve the following Pearl News draft article into a publication-ready "
+        f"{target_word_count}-word piece.",
+        f"\nARTICLE METADATA:\n- Title: {title}\n- Topic: {topic}\n- SDG: {primary_sdg}"
+        f"\n- Language: {lang_label}\n- Template: news article (NOT a teacher profile)",
+    ]
+    if teacher_block:
+        parts.append(f"\nTEACHER KNOWLEDGE BASE:\n{teacher_block}")
+    parts.append(f"\n{framing}")
+    parts.append(
+        "\nRULES:\n"
+        "- The UN RSS item is the news event that triggers this article. "
+        "The teacher does NOT drive the story — they respond to it.\n"
+        "- Do not write a teacher profile. Write a news story that uses one teacher's "
+        "wisdom as a lens on the news event.\n"
+        "- Output only the final HTML body. No preamble."
+    )
+    parts.append(f"\nDRAFT TO EXPAND:\n{content}")
+    user_prompt = "\n".join(parts)
 
     # Use httpx Timeout so connect/read/write all honour the full timeout value,
     # not just the default 5-second httpx socket timeout that was causing
@@ -152,6 +191,8 @@ def run_expansion(
         title = item.get("article_title") or item.get("title") or ""
         topic = item.get("topic") or "partnerships"
         primary_sdg = item.get("primary_sdg") or "17"
+        teacher = item.get("_teacher_resolved") or {}
+        language = item.get("language") or "en"
         try:
             expanded = expand_article_with_llm(
                 content=content,
@@ -160,6 +201,8 @@ def run_expansion(
                 primary_sdg=primary_sdg,
                 target_word_count=target,
                 config=config,
+                teacher=teacher,
+                language=language,
             )
             if expanded:
                 # Post-process: re-attach source line if LLM stripped it.
