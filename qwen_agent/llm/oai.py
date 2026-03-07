@@ -36,6 +36,8 @@ from qwen_agent.log import logger
 @register_llm('oai')
 class TextChatAtOAI(BaseFnCallModel):
 
+    MAX_OAI_STOP_WORDS = 4
+
     def __init__(self, cfg: Optional[Dict] = None):
         super().__init__(cfg)
         self.model = self.model or 'gpt-4o-mini'
@@ -95,6 +97,18 @@ class TextChatAtOAI(BaseFnCallModel):
             self._complete_create = _complete_create
             self._chat_complete_create = _chat_complete_create
 
+    @classmethod
+    def _normalize_generate_cfg_for_oai(cls, generate_cfg: dict) -> dict:
+        normalized_cfg = copy.deepcopy(generate_cfg)
+        stop = normalized_cfg.get('stop')
+        if isinstance(stop, list) and len(stop) > cls.MAX_OAI_STOP_WORDS:
+            logger.warning(
+                f'OpenAI-compatible APIs support at most {cls.MAX_OAI_STOP_WORDS} stop words. '
+                f'Truncating from {len(stop)} to {cls.MAX_OAI_STOP_WORDS}.'
+            )
+            normalized_cfg['stop'] = stop[:cls.MAX_OAI_STOP_WORDS]
+        return normalized_cfg
+
     def _chat_stream(
         self,
         messages: List[Message],
@@ -102,6 +116,7 @@ class TextChatAtOAI(BaseFnCallModel):
         generate_cfg: dict,
     ) -> Iterator[List[Message]]:
         messages = self.convert_messages_to_dicts(messages)
+        generate_cfg = self._normalize_generate_cfg_for_oai(generate_cfg)
         logger.debug(f'LLM Input generate_cfg: \n{generate_cfg}')
         try:
             response = self._chat_complete_create(model=self.model, messages=messages, stream=True, **generate_cfg)
@@ -164,6 +179,7 @@ class TextChatAtOAI(BaseFnCallModel):
         generate_cfg: dict,
     ) -> List[Message]:
         messages = self.convert_messages_to_dicts(messages)
+        generate_cfg = self._normalize_generate_cfg_for_oai(generate_cfg)
         try:
             response = self._chat_complete_create(model=self.model, messages=messages, stream=False, **generate_cfg)
             if hasattr(response.choices[0].message, 'reasoning_content'):
