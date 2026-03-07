@@ -169,21 +169,25 @@ async def _resolve_model_id(client: Any, model_cfg: dict) -> str:
     """
     env_model = os.environ.get("QWEN_MODEL", "").strip()
     if env_model:
+        logger.info("Model resolve: using QWEN_MODEL=%s", env_model)
         return env_model
 
     configured = str(model_cfg.get("model_id", "local-model")).strip()
     if configured and configured != "local-model":
+        logger.info("Model resolve: using configured model_id=%s", configured)
         return configured
 
     base_url = model_cfg.get("base_url", "http://127.0.0.1:1234/v1")
     cached = _MODEL_CACHE.get(base_url)
     if cached:
+        logger.info("Model resolve: using cached discovered model_id=%s", cached)
         return cached
 
     models = await client.models.list()
     ids = [m.id for m in getattr(models, "data", []) if getattr(m, "id", None)]
     chat_ids = [mid for mid in ids if "embed" not in mid.lower()]
     resolved = chat_ids[0] if chat_ids else (ids[0] if ids else "local-model")
+    logger.info("Model resolve: discovered model_id=%s from /models", resolved)
     _MODEL_CACHE[base_url] = resolved
     return resolved
 
