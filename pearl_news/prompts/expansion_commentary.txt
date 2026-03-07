@@ -16,13 +16,13 @@ The UN/US news event is the trigger. The thesis interprets the event. The teache
 
 AUDIENCE RULES — apply to EVERY section as you write (not as a footnote):
 
-JAPANESE (ja): Indirect challenge — frame as a question the society has not yet asked, rather than a direct accusation. The thesis can be bold but the phrasing should be contemplative.
+JAPANESE (ja): Indirect challenge — frame as a question the society has not yet asked, rather than a direct accusation. The thesis can be bold but the phrasing should be contemplative. Reference Japan-specific structural context: cost of living pressure, hikikomori, academic stress (juken), shrinking population anxiety, karoshi work culture. Anchor statistics to Japanese youth data (Cabinet Office surveys, MEXT reports). Use indirect framing — the thesis challenges by asking what has not been asked, not by accusing. Emotional register: understated, contemplative, future-oriented. Example localization bridge: "Japan's Ministry of Health reported that the youth suicide rate reached a postwar high in 2022, a parallel crisis that this UN resolution does not address."
 
-SIMPLIFIED CHINESE (zh-CN): Systemic framing — name the structural forces, not individual blame. The thesis should identify a system, not a villain.
+SIMPLIFIED CHINESE (zh-CN): Systemic framing — name the structural forces, not individual blame. The thesis should identify a system, not a villain. Reference gaokao pressure, lying flat (tangping) movement, 996 work culture contradiction, climate anxiety vs. consumerism, rural-urban education divide. Anchor to Chinese youth data (National Bureau of Statistics, State Council directives). Frame around personal agency within collective responsibility — name the system, not the individual. Example localization bridge: "China's State Council issued a similar directive last month, though enforcement varies widely by province — a gap that 280 million migrant worker families navigate daily."
 
-TRADITIONAL CHINESE / TAIWAN (zh-TW): Civic identity — frame around democratic values and the right to name what is happening.
+TRADITIONAL CHINESE / TAIWAN (zh-TW): Civic identity — frame around democratic values and the right to name what is happening. Reference civic participation culture, cross-strait tension awareness, cultural preservation, democratic practice. Anchor to Taiwan-specific data (Mainland Affairs Council surveys, DGBAS statistics). The thesis should appeal to the citizen's right and responsibility to name structural problems. Example localization bridge: "In Taiwan, where 73% of young voters participated in the 2024 election, civic engagement is not abstract — it is practiced."
 
-ENGLISH (en): Direct challenge — name the contradiction, own the argument. The thesis can be sharp and personal.
+ENGLISH (en): Direct challenge — name the contradiction, own the argument. The thesis can be sharp and personal. Reference social media behavior, mental health discourse, climate grief, economic precarity. Use the contradiction test openly. More direct voice permitted.
 
 ---
 

@@ -16,13 +16,13 @@ The news event triggers the dialogue. The teachers do not argue — they CONVERG
 
 AUDIENCE RULES — apply to EVERY section as you write (not as a footnote):
 
-JAPANESE (ja): Contemplative, diplomatic. Bridge to Japan's interfaith landscape and youth spiritual seeking. Understated but precise.
+JAPANESE (ja): Contemplative, diplomatic. Bridge to Japan's interfaith landscape and youth spiritual seeking. Understated but precise. Reference Japan's unique religious syncretism (Shinto-Buddhist coexistence), declining temple membership among youth, rising interest in mindfulness and meditation apps, NHK data on spiritual seeking among 18–29 age group. Frame convergence through wa (harmony) and the Japanese tradition of holding multiple spiritual identities simultaneously. Anchor to Japanese institutional context: Rissho Kosei-kai interfaith work, Japan's role in the Parliament of World's Religions, MEXT moral education reforms. Example localization bridge: "In Japan, where 65% of adults identify with both Shinto and Buddhist traditions, interfaith convergence is not theoretical — it is lived practice."
 
-SIMPLIFIED CHINESE (zh-CN): Collective framing. Bridge to Chinese traditions of harmony (he) and how interfaith convergence resonates with collective values.
+SIMPLIFIED CHINESE (zh-CN): Collective framing. Bridge to Chinese traditions of harmony (he/和) and how interfaith convergence resonates with collective values. Reference the historic coexistence of Confucianism, Taoism, and Buddhism in Chinese culture, the concept of harmony without uniformity (和而不同/he er bu tong), and how young Chinese engage with spiritual traditions through digital platforms (Ximalaya, Dedao). Anchor to Chinese institutional context: State Administration for Religious Affairs policies, CASS reports on youth spiritual engagement, traditional culture revival movements (guoxue). Example localization bridge: "China's tradition of 'harmony without uniformity' — where Confucian, Taoist, and Buddhist insights coexist — offers a structural precedent for the convergence these teachers describe."
 
-TRADITIONAL CHINESE / TAIWAN (zh-TW): Civic dialogue framing. Bridge to Taiwan's pluralistic religious landscape and democratic values.
+TRADITIONAL CHINESE / TAIWAN (zh-TW): Civic dialogue framing. Bridge to Taiwan's pluralistic religious landscape and democratic values. Reference Taiwan's vibrant religious pluralism (Tzu Chi, Fo Guang Shan, Yiguandao alongside indigenous traditions), the role of temples as civic spaces, and how interfaith practice intersects with democratic participation. Anchor to Taiwan-specific data: Ministry of Interior religious registration data, Taiwan Foundation for Democracy surveys. Example localization bridge: "In Taiwan, where religious organizations like Tzu Chi mobilize millions for disaster relief alongside secular civic groups, interfaith convergence is a civic practice, not just a spiritual one."
 
-ENGLISH (en): Direct, forward-looking. Name the convergence points clearly. Reference interfaith practice in Western contexts.
+ENGLISH (en): Direct, forward-looking. Name the convergence points clearly. Reference interfaith practice in Western contexts. More direct voice; use specific examples from Western interfaith initiatives.
 
 ---
 

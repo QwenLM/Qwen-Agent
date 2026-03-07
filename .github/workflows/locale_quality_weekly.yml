@@ -1,0 +1,87 @@
+name: "Locale Quality — Weekly EI V2 Loop"
+
+on:
+  schedule:
+    # Every Monday at 06:00 UTC — weekly quality assessment
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+    inputs:
+      locale:
+        description: "Specific locale to evaluate (blank = all)"
+        required: false
+        default: ""
+      system:
+        description: "Which system to evaluate"
+        required: false
+        default: "both"
+        type: choice
+        options:
+          - both
+          - pearl_news
+          - pearl_prime
+
+env:
+  PYTHONPATH: "."
+
+jobs:
+  # ─── Step 1: Audit locale stub coverage ────────────────────────────
+  audit-stubs:
+    name: "Audit locale atom stubs"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install pyyaml
+      - name: Audit stubs
+        run: python scripts/localization/scaffold_locale_atom_stubs.py --audit
+
+  # ─── Step 2: Validate existing translations ────────────────────────
+  validate-translations:
+    name: "Validate translations"
+    runs-on: ubuntu-latest
+    needs: audit-stubs
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install pyyaml
+      - name: Validate
+        run: |
+          LOCALE_FLAG=""
+          if [ -n "${{ github.event.inputs.locale }}" ]; then
+            LOCALE_FLAG="--locale ${{ github.event.inputs.locale }}"
+          else
+            LOCALE_FLAG="--all-locales"
+          fi
+          python scripts/localization/validate_translations.py $LOCALE_FLAG --report
+        continue-on-error: true
+
+  # ─── Step 3: EI V2 Eval + Learn cycle ─────────────────────────────
+  ei-v2-weekly:
+    name: "EI V2 weekly eval & learn"
+    runs-on: ubuntu-latest
+    needs: validate-translations
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install pyyaml
+      - name: Run weekly cycle
+        run: |
+          LOCALE_FLAG=""
+          SYSTEM_FLAG="--system ${{ github.event.inputs.system || 'both' }}"
+          if [ -n "${{ github.event.inputs.locale }}" ]; then
+            LOCALE_FLAG="--locale ${{ github.event.inputs.locale }}"
+          fi
+          python scripts/localization/native_prompts_eval_learn.py --weekly $LOCALE_FLAG $SYSTEM_FLAG \
+            --json-out artifacts/localization/weekly_report_$(date +%Y%m%d).json
+      - name: Upload quality report
+        uses: actions/upload-artifact@v4
+        with:
+          name: locale-quality-report-${{ github.run_id }}
+          path: artifacts/localization/
+          retention-days: 30

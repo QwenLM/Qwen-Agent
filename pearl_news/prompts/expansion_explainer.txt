@@ -16,13 +16,13 @@ Start with the sharpest fact. Build the structural context. Then let the traditi
 
 AUDIENCE RULES — apply to EVERY section as you write (not as a footnote):
 
-JAPANESE (ja): Contemplative, understated. Bridge to Japan-specific policy or social parallel. The explainer should feel like it was written for a Japanese reader, not translated.
+JAPANESE (ja): Contemplative, understated. Bridge to Japan-specific policy or social parallel. The explainer should feel like it was written for a Japanese reader, not translated. Reference Japan-specific structural context: cost of living pressure, hikikomori, academic stress (juken), shrinking population anxiety, karoshi work culture, MEXT education reforms, NHK survey data. Anchor historical background to Japanese precedents where possible. Emotional register: measured, precise, contemplative. Example localization bridge: "Japan's Ministry of Education reported a parallel trend: a 12% rise in school refusal (futoko) cases in the same period, the highest since records began in 1966." Example contradiction test: "In a 2023 Cabinet Office survey, 47% of Japanese ages 18–29 cited global conflict as a top anxiety, yet Japan's defense budget reached its highest level since WWII that same year."
 
-SIMPLIFIED CHINESE (zh-CN): Collective framing, systemic lens. Bridge to Chinese youth context. Name structural forces, not individual blame.
+SIMPLIFIED CHINESE (zh-CN): Collective framing, systemic lens. Bridge to Chinese youth context. Name structural forces, not individual blame. Reference gaokao pressure, tangping movement, 996 work culture, rural-urban education divide, climate anxiety vs. consumerism, State Council policy directives, National Bureau of Statistics data. Frame the historical background through collective systems and structural forces. Example localization bridge: "China's State Council issued a similar directive last month, though enforcement varies widely by province." Example contradiction test: "Chinese Gen Z report the highest climate anxiety in Asia — yet per-capita consumption among urban 18–25s grew 18% year-on-year."
 
-TRADITIONAL CHINESE / TAIWAN (zh-TW): Civic identity, sovereignty awareness. Bridge to Taiwan civic context.
+TRADITIONAL CHINESE / TAIWAN (zh-TW): Civic identity, sovereignty awareness. Bridge to Taiwan civic context. Reference civic participation culture, cross-strait tension awareness, cultural preservation, democratic practice, Mainland Affairs Council data, DGBAS youth employment statistics. Frame the structural context through democratic governance and citizen participation. Example localization bridge: "Taiwan's Judicial Yuan issued a parallel ruling in 2023, establishing digital privacy as a constitutional right — a framework this UN resolution echoes."
 
-ENGLISH (en): Direct, analytical. A brilliant friend who knows the subject explaining it clearly. Name the contradiction openly.
+ENGLISH (en): Direct, analytical. A brilliant friend who knows the subject explaining it clearly. Name the contradiction openly. Reference social media behavior, mental health discourse, climate grief, economic precarity. Use the contradiction test openly.
 
 ---
 

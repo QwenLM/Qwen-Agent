@@ -1,0 +1,286 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# CONTENT TYPE REGISTRY — content_type_registry.yaml
+# ──────────────────────────────────────────────────────────────────────────────
+#
+# Single source of truth for every content type in the Pearl ecosystem.
+# When you add a new content type, add ONE entry here and ONE golden sample
+# to config/audiobook_script/golden_regression_set/. The entire pipeline
+# (draft → judge → EI V2 → weekly report → CI) picks it up automatically.
+#
+# Consumed by:
+#   - run_comparator_loop.py         (audiobook draft → judge loop)
+#   - pearl_news_article_judge.py    (Pearl News expansion quality gate)
+#   - native_prompts_eval_learn.py   (EI V2 weekly eval)
+#   - run_regression.py              (golden regression)
+#   - content_type_onboarding.py     (new content type scaffolding)
+#
+# Schema version: 1.0
+# ──────────────────────────────────────────────────────────────────────────────
+
+schema_version: "1.0"
+
+# ─── PEARL PRIME (audiobook) content types ───────────────────────────────────
+
+content_types:
+
+  pearl_prime:
+    display_name: "Pearl Prime (therapeutic audiobook)"
+    system: pearl_prime
+    pipeline: audiobook_comparator
+    draft_prompt: "prompts/audiobook/draft_pearl_prime_v2.txt"
+    judge_prompt: "prompts/audiobook/judge_audiobook_v2.txt"
+    judge_gates: all            # all 9 gates
+    locales_supported:
+      - zh-TW
+      - zh-HK
+      - zh-SG
+      - zh-CN
+      - ja-JP
+      - ko-KR
+    golden_samples:
+      - "config/audiobook_script/golden_regression_set/zh-TW_pearl_prime_intro.yaml"
+    min_scored_pass_threshold: 0.75
+    atom_types:
+      - STORY
+      - HOOK
+      - SCENE
+      - REFLECTION
+      - EXERCISE
+      - INTEGRATION
+      - PIVOT
+      - TAKEAWAY
+      - THREAD
+      - PERMISSION
+    status: active
+
+  pearl_news_audiobook:
+    display_name: "Pearl News (audiobook format)"
+    system: pearl_prime
+    pipeline: audiobook_comparator
+    draft_prompt: "prompts/audiobook/draft_pearl_news_v2.txt"
+    judge_prompt: "prompts/audiobook/judge_audiobook_v2.txt"
+    judge_gates: all
+    locales_supported:
+      - zh-TW
+      - zh-HK
+      - zh-SG
+      - zh-CN
+    golden_samples:
+      - "config/audiobook_script/golden_regression_set/zh-HK_pearl_news_youth.yaml"
+    min_scored_pass_threshold: 0.75
+    status: active
+
+  phoenix_v4:
+    display_name: "Phoenix V4 (multi-persona therapeutic)"
+    system: pearl_prime
+    pipeline: audiobook_comparator
+    draft_prompt: "prompts/audiobook/draft_phoenix_v4_v2.txt"
+    judge_prompt: "prompts/audiobook/judge_audiobook_v2.txt"
+    judge_gates: all
+    locales_supported:
+      - zh-TW
+      - zh-HK
+      - zh-SG
+      - zh-CN
+      - ja-JP
+      - ko-KR
+    golden_samples:
+      - "config/audiobook_script/golden_regression_set/zh-CN_phoenix_v4_spiral.yaml"
+    min_scored_pass_threshold: 0.75
+    atom_types:
+      - STORY
+      - HOOK
+      - SCENE
+      - REFLECTION
+      - EXERCISE
+      - INTEGRATION
+    status: active
+
+  teacher_mode:
+    display_name: "Teacher Mode (teacher-narrated audiobook)"
+    system: pearl_prime
+    pipeline: audiobook_comparator
+    draft_prompt: "prompts/audiobook/draft_teacher_mode_v2.txt"
+    judge_prompt: "prompts/audiobook/judge_audiobook_v2.txt"
+    judge_gates: all
+    locales_supported:
+      - zh-TW
+      - zh-HK
+      - zh-SG
+      - zh-CN
+      - ja-JP
+      - ko-KR
+    golden_samples:
+      - "config/audiobook_script/golden_regression_set/zh-SG_teacher_mode_exercise.yaml"
+    min_scored_pass_threshold: 0.75
+    status: active
+
+  # ─── PEARL NEWS (article) content types ──────────────────────────────────
+
+  pearl_news_hard_news:
+    display_name: "Pearl News — Hard News"
+    system: pearl_news
+    pipeline: article_expansion
+    draft_prompt: "pearl_news/prompts/expansion_hard_news.txt"
+    system_prompt: "pearl_news/prompts/expansion_system.txt"
+    judge_prompt: "prompts/article_judge/judge_pearl_news_v1.txt"
+    judge_gates:                 # subset of 9-gate for articles
+      - semantic_fidelity
+      - native_regional_language_fit
+      - narrative_flow_cohesion
+      - polish_emotional_impact
+    locales_supported:
+      - en
+      - ja
+      - zh-CN
+      - zh-TW
+    rule_based_gates:            # existing Pearl News QC gates
+      - fact_check
+      - youth_impact
+      - sdg_un_accuracy
+      - promotional_tone
+      - un_endorsement
+    golden_samples: []           # to be created
+    min_scored_pass_threshold: 0.70
+    word_count_min: 600
+    word_count_target: "800-1000"
+    sections:
+      - lede
+      - news_summary
+      - youth_impact
+      - teacher_perspective
+      - sdg_connection
+      - forward_look
+    status: active
+
+  pearl_news_commentary:
+    display_name: "Pearl News — Commentary"
+    system: pearl_news
+    pipeline: article_expansion
+    draft_prompt: "pearl_news/prompts/expansion_commentary.txt"
+    system_prompt: "pearl_news/prompts/expansion_system.txt"
+    judge_prompt: "prompts/article_judge/judge_pearl_news_v1.txt"
+    judge_gates:
+      - semantic_fidelity
+      - native_regional_language_fit
+      - narrative_flow_cohesion
+      - polish_emotional_impact
+    locales_supported:
+      - en
+      - ja
+      - zh-CN
+      - zh-TW
+    rule_based_gates:
+      - fact_check
+      - youth_impact
+      - sdg_un_accuracy
+      - promotional_tone
+      - un_endorsement
+    golden_samples: []
+    min_scored_pass_threshold: 0.70
+    sections:
+      - thesis
+      - event_reference
+      - teaching_interpretation
+      - civic_recommendation
+      - sdg_reference
+      - closing_provocation
+    status: active
+
+  pearl_news_explainer:
+    display_name: "Pearl News — Explainer"
+    system: pearl_news
+    pipeline: article_expansion
+    draft_prompt: "pearl_news/prompts/expansion_explainer.txt"
+    system_prompt: "pearl_news/prompts/expansion_system.txt"
+    judge_prompt: "prompts/article_judge/judge_pearl_news_v1.txt"
+    judge_gates:
+      - semantic_fidelity
+      - native_regional_language_fit
+      - narrative_flow_cohesion
+      - polish_emotional_impact
+    locales_supported:
+      - en
+      - ja
+      - zh-CN
+      - zh-TW
+    golden_samples: []
+    min_scored_pass_threshold: 0.70
+    sections:
+      - what_happened
+      - historical_background
+      - ethical_spiritual_dimension
+      - youth_implications
+      - sdg_policy_tie
+      - future_outlook
+    status: active
+
+  pearl_news_youth_feature:
+    display_name: "Pearl News — Youth Feature"
+    system: pearl_news
+    pipeline: article_expansion
+    draft_prompt: "pearl_news/prompts/expansion_youth_feature.txt"
+    system_prompt: "pearl_news/prompts/expansion_system.txt"
+    judge_prompt: "prompts/article_judge/judge_pearl_news_v1.txt"
+    judge_gates:
+      - semantic_fidelity
+      - native_regional_language_fit
+      - narrative_flow_cohesion
+      - polish_emotional_impact
+    locales_supported:
+      - en
+      - ja
+      - zh-CN
+      - zh-TW
+    golden_samples: []
+    min_scored_pass_threshold: 0.70
+    sections:
+      - youth_narrative
+      - data_research
+      - teacher_reflection
+      - sdg_framework
+      - solutions
+    status: active
+
+  pearl_news_interfaith:
+    display_name: "Pearl News — Interfaith Dialogue"
+    system: pearl_news
+    pipeline: article_expansion
+    draft_prompt: "pearl_news/prompts/expansion_interfaith.txt"
+    system_prompt: "pearl_news/prompts/expansion_system.txt"
+    judge_prompt: "prompts/article_judge/judge_pearl_news_v1.txt"
+    judge_gates:
+      - semantic_fidelity
+      - native_regional_language_fit
+      - narrative_flow_cohesion
+      - polish_emotional_impact
+    locales_supported:
+      - en
+      - ja
+      - zh-CN
+      - zh-TW
+    golden_samples: []
+    min_scored_pass_threshold: 0.70
+    sections:
+      - event_summary
+      - leaders_present
+      - themes_of_agreement
+      - youth_commitments
+      - sdg_alignment
+      - next_steps
+    status: active
+
+# ──────────────────────────────────────────────────────────────────────────────
+# ADDING A NEW CONTENT TYPE — checklist
+# ──────────────────────────────────────────────────────────────────────────────
+#
+# 1. Add an entry to content_types above (copy closest existing type)
+# 2. Create the draft prompt file (prompts/audiobook/ or pearl_news/prompts/)
+# 3. Create at least 1 golden regression sample in golden_regression_set/
+# 4. Run: python scripts/content_type_onboarding.py --validate <content_type>
+# 5. Run: python scripts/audiobook_script/run_regression.py (if audiobook)
+# 6. The weekly EI V2 cycle automatically picks up the new content type
+#
+# For audiobook types: add prompt_routing entry in comparator_config.yaml
+# For article types: add template to pearl_news/prompts/
+# ──────────────────────────────────────────────────────────────────────────────

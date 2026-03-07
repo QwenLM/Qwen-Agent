@@ -1,0 +1,66 @@
+topic_key: mental_health
+locale: ja-JP
+source_locale: en-US
+translation_status: stub
+description: 'Locale atom stubs for ja-JP — topic: mental_health. Awaiting translation
+  from en-US.'
+teachers:
+  ahjan:
+    display_name: Ajahn Ahjan
+    tradition: Theravada Buddhist
+    attribution: From within the Theravada Buddhist tradition, Ajahn Ahjan teaches
+      that
+    status: stub
+    source_locale: en-US
+    atoms: []
+  sai_ma:
+    display_name: Sai Maa
+    tradition: Vedic Hindu
+    attribution: From within the Vedic Hindu tradition, Sai Maa teaches that
+    status: stub
+    source_locale: en-US
+    atoms: []
+  ra:
+    display_name: Ra
+    tradition: witnessing awareness and grounded presence
+    attribution: From the perspective of witnessing awareness and grounded presence,
+      Ra teaches that
+    status: stub
+    source_locale: en-US
+    atoms: []
+  junko:
+    display_name: Junko
+    tradition: Zen Buddhist
+    attribution: From within the Zen Buddhist tradition, Junko teaches that
+    status: stub
+    source_locale: en-US
+    atoms: []
+  miki:
+    display_name: Miki
+    tradition: Shinto
+    attribution: From within the Shinto tradition, Miki teaches that
+    status: stub
+    source_locale: en-US
+    atoms: []
+  master_wu:
+    display_name: Master Wu
+    tradition: Chan Buddhist
+    attribution: From within the Chan Buddhist tradition, Master Wu teaches that
+    status: stub
+    source_locale: en-US
+    atoms: []
+  pamela_fellows:
+    display_name: Pamela Fellows
+    tradition: Christian contemplative
+    attribution: From within the Christian contemplative tradition, Pamela Fellows
+      teaches that
+    status: stub
+    source_locale: en-US
+    atoms: []
+  joshin:
+    display_name: Joshin
+    tradition: Rinzai Zen
+    attribution: From within the Rinzai Zen tradition, Joshin teaches that
+    status: stub
+    source_locale: en-US
+    atoms: []

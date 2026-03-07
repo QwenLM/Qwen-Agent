@@ -1,0 +1,60 @@
+topic_key: partnerships
+locale: ja-JP
+source_locale: en-US
+translation_status: stub
+description: 'Locale atom stubs for ja-JP — topic: partnerships. Awaiting translation
+  from en-US.'
+teachers:
+  master_feung:
+    display_name: Master Feung
+    tradition: Taoist
+    attribution: From within the Taoist tradition, Master Feung teaches that
+    status: stub
+    source_locale: en-US
+    atoms: []
+  sai_ma:
+    display_name: Sai Maa
+    tradition: Vedic Hindu
+    attribution: From within the Vedic tradition, Sai Maa teaches that
+    status: stub
+    source_locale: en-US
+    atoms: []
+  ahjan:
+    display_name: Ajahn Ahjan
+    tradition: Theravada Buddhist
+    attribution: From within the Theravada Buddhist tradition, Ajahn Ahjan teaches
+      that
+    status: stub
+    source_locale: en-US
+    atoms: []
+  ra:
+    display_name: Ra
+    tradition: Witnessing Awareness
+    attribution: Ra, whose teaching centers on witnessing awareness, clarity of being,
+      and grounded presence, teaches that
+    status: stub
+    source_locale: en-US
+    atoms: []
+  miki:
+    display_name: Miki
+    tradition: Shinto
+    attribution: From within the Shinto tradition, Miki teaches that
+    status: stub
+    source_locale: en-US
+    atoms: []
+  pamela_fellows:
+    display_name: Pamela Fellows
+    tradition: Christian Contemplative
+    attribution: From within the Christian contemplative tradition, Pamela Fellows
+      teaches that
+    status: stub
+    source_locale: en-US
+    atoms: []
+  maat:
+    display_name: Ma'at
+    tradition: Ancient Egyptian Ma'at Principle
+    attribution: From within the Ma'at tradition of cosmic justice and truth, Ma'at
+      teaches that
+    status: stub
+    source_locale: en-US
+    atoms: []
