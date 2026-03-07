@@ -59,7 +59,20 @@ PEARL_NEWS_TOPICS = [
     "mental_health", "partnerships", "peace_conflict",
 ]
 
-TARGET_LOCALES = ["ja-JP", "zh-CN", "zh-TW"]
+TARGET_LOCALES = [
+    "ja-JP",
+    "zh-CN",
+    "zh-TW",
+    "zh-HK",
+    "zh-SG",
+    "ko-KR",
+    "es-US",
+    "es-ES",
+    "fr-FR",
+    "de-DE",
+    "it-IT",
+    "hu-HU",
+]
 
 # Validation gates (aligned with comparator_checklist_v2 gate definitions)
 VALIDATION_GATES = [

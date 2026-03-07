@@ -1,0 +1,70 @@
+name: Locale max-agents run
+
+on:
+  workflow_dispatch:
+    inputs:
+      max_agents:
+        description: 'Max parallel locale workers'
+        required: false
+        default: '3'
+        type: string
+      locales:
+        description: 'Space-separated locales, or all'
+        required: false
+        default: 'all'
+        type: string
+      mode:
+        description: 'translate+validate, translate-only, validate-only'
+        required: false
+        default: 'translate+validate'
+        type: choice
+        options:
+          - translate+validate
+          - translate-only
+          - validate-only
+
+jobs:
+  locale-batch:
+    runs-on: self-hosted
+    timeout-minutes: 180
+    env:
+      PYTHONUNBUFFERED: '1'
+      QWEN_BASE_URL: http://127.0.0.1:1234/v1
+      QWEN_API_KEY: lm-studio
+      QWEN_MODEL: qwen3-14b
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Install deps
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install pyyaml openai requests jsonschema
+
+      - name: Run locale batches
+        run: |
+          MODE="${{ inputs.mode || 'translate+validate' }}"
+          LOCALES="${{ inputs.locales || 'all' }}"
+          MAX_AGENTS="${{ inputs.max_agents || '3' }}"
+
+          EXTRA=""
+          if [ "$MODE" = "translate-only" ]; then
+            EXTRA="--translate-only"
+          elif [ "$MODE" = "validate-only" ]; then
+            EXTRA="--validate-only"
+          fi
+
+          if [ "$LOCALES" = "all" ]; then
+            python3 scripts/localization/run_locale_batches.py --max-agents "$MAX_AGENTS" $EXTRA
+          else
+            # shellcheck disable=SC2086
+            python3 scripts/localization/run_locale_batches.py --max-agents "$MAX_AGENTS" --locales $LOCALES $EXTRA
+          fi
+
+      - name: Upload localization batch logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: locale_batch_logs
+          path: artifacts/localization/batch_runs/
+          retention-days: 14
