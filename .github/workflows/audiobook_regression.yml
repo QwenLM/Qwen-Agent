@@ -19,6 +19,12 @@ on:
         required: false
         default: false
         type: boolean
+      locale:
+        description: 'Locale shard for full golden run (use all for full matrix)'
+        required: false
+        default: all
+        type: choice
+        options: [all, zh-TW, zh-HK, zh-SG, zh-CN, ja-JP, ko-KR]
 
 jobs:
   schema-and-config:
@@ -78,10 +84,14 @@ jobs:
       - name: Run full golden regression (optional)
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.full_golden == true }}
         run: |
-          python3 scripts/audiobook_script/run_regression.py --verbose
+          if [ "${{ inputs.locale }}" = "all" ]; then
+            python3 scripts/audiobook_script/run_regression.py --verbose
+          else
+            python3 scripts/audiobook_script/run_regression.py --locale "${{ inputs.locale }}" --verbose
+          fi
       - name: Upload regression report
         uses: actions/upload-artifact@v4
         with:
-          name: audiobook_regression_report
+          name: audiobook_regression_report_${{ inputs.locale || 'all' }}
           path: artifacts/audiobook/regression_report.json
           retention-days: 14
