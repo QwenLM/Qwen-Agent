@@ -40,6 +40,8 @@ import argparse
 import asyncio
 import json
 import logging
+import os
+import requests
 import sys
 import time
 from dataclasses import dataclass
@@ -125,6 +127,41 @@ def _load_golden_index(golden_dir: Path) -> list[dict]:
     if not idx_path.exists():
         raise RuntimeError(f"Golden index missing: {idx_path}")
     return json.loads(idx_path.read_text(encoding="utf-8")).get("samples", [])
+
+
+def _smoke_probe(cfg: dict, timeout: float = 45.0) -> tuple[bool, str]:
+    """
+    Fast probe for CI: ensure model can return a tiny completion quickly.
+    """
+    draft_cfg = cfg.get("draft_model", {}) or {}
+    base_url = draft_cfg.get("base_url", "http://127.0.0.1:1234/v1")
+    api_key = draft_cfg.get("api_key", "lm-studio")
+    model = os.environ.get("QWEN_MODEL", "").strip() or draft_cfg.get("model_id", "local-model")
+
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": "You are concise."},
+            {"role": "user", "content": "Reply exactly with OK"},
+        ],
+        "temperature": 0.0,
+        "max_tokens": 16,
+    }
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+    try:
+        resp = requests.post(f"{base_url}/chat/completions", headers=headers, json=payload, timeout=timeout)
+        if resp.status_code >= 300:
+            return False, f"HTTP {resp.status_code}: {resp.text[:200]}"
+        txt = (
+            (((resp.json().get("choices") or [{}])[0].get("message") or {}).get("content") or "")
+            .strip()
+            .upper()
+        )
+        if "OK" not in txt:
+            return False, f"Unexpected reply: {txt[:80]}"
+        return True, "Smoke probe passed"
+    except Exception as e:
+        return False, f"Smoke probe error: {e}"
 
 
 def _apply_regression_runtime_overrides(cfg: dict) -> None:
@@ -283,6 +320,7 @@ async def _run_regression(
     locale_filter: str | None,
     verbose: bool,
     dry_run: bool,
+    smoke: bool,
 ) -> int:
     from scripts.audiobook_script.run_comparator_loop import _load_config, _load_checklist, _load_result_schema
 
@@ -318,6 +356,22 @@ async def _run_regression(
     if dry_run:
         print("Dry run complete — all checks passed. No API calls made.")
         return 0
+
+    if smoke:
+        print("Running smoke probe...")
+        ok, msg = _smoke_probe(cfg)
+        print(f"  {'✓' if ok else '✗'} {msg}")
+        report = {
+            "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+            "mode": "smoke",
+            "ok": ok,
+            "message": msg,
+        }
+        report_path = repo / "artifacts/audiobook/regression_report.json"
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
+        print(f"  Report written: {report_path.relative_to(repo)}")
+        return 0 if ok else 1
 
     # Load samples
     all_samples = _load_golden_index(golden_dir)
@@ -423,6 +477,7 @@ def main() -> int:
     ap.add_argument("--locale", help="Run only this locale (e.g. zh-TW)")
     ap.add_argument("--repo", help="Repo root path (default: auto-detected)")
     ap.add_argument("--dry-run", action="store_true", help="Validate setup only; no API calls")
+    ap.add_argument("--smoke", action="store_true", help="Run fast smoke probe instead of full golden regression")
     ap.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
     args = ap.parse_args()
 
@@ -432,6 +487,7 @@ def main() -> int:
         locale_filter=args.locale,
         verbose=args.verbose,
         dry_run=args.dry_run,
+        smoke=args.smoke,
     ))
 
 

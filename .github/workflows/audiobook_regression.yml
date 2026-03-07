@@ -1,4 +1,7 @@
 name: Audiobook regression
+concurrency:
+  group: audiobook-regression-${{ github.ref }}
+  cancel-in-progress: false
 
 on:
   pull_request:
@@ -10,6 +13,12 @@ on:
       - 'schemas/comparator_result_v2.schema.json'
       - '.github/workflows/audiobook_*.yml'
   workflow_dispatch:
+    inputs:
+      full_golden:
+        description: 'Run full golden regression (slow). Default false runs smoke probe.'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   schema-and-config:
@@ -63,7 +72,11 @@ jobs:
       - name: Run dry-run validation
         run: |
           python3 scripts/audiobook_script/run_regression.py --dry-run --verbose
-      - name: Run full golden regression
+      - name: Run smoke regression (fast gate)
+        run: |
+          python3 scripts/audiobook_script/run_regression.py --smoke --verbose
+      - name: Run full golden regression (optional)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.full_golden == true }}
         run: |
           python3 scripts/audiobook_script/run_regression.py --verbose
       - name: Upload regression report
