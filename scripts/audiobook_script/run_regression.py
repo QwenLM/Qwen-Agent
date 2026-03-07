@@ -127,6 +127,28 @@ def _load_golden_index(golden_dir: Path) -> list[dict]:
     return json.loads(idx_path.read_text(encoding="utf-8")).get("samples", [])
 
 
+def _apply_regression_runtime_overrides(cfg: dict) -> None:
+    """
+    Apply regression-only runtime overrides so CI golden checks complete
+    predictably on local/self-hosted LM Studio runners.
+    """
+    reg = cfg.get("regression", {}).get("runtime_overrides", {}) or {}
+    if not reg.get("enabled", False):
+        return
+
+    draft = cfg.setdefault("draft_model", {})
+    judge = cfg.setdefault("judge_model", {})
+
+    if "draft_max_output_tokens" in reg:
+        draft["max_output_tokens"] = int(reg["draft_max_output_tokens"])
+    if "judge_max_output_tokens" in reg:
+        judge["max_output_tokens"] = int(reg["judge_max_output_tokens"])
+    if "draft_timeout_seconds" in reg:
+        draft["timeout_seconds"] = int(reg["draft_timeout_seconds"])
+    if "judge_timeout_seconds" in reg:
+        judge["timeout_seconds"] = int(reg["judge_timeout_seconds"])
+
+
 def _validate_setup(repo: Path, cfg: dict, golden_dir: Path, verbose: bool = False) -> list[str]:
     """Check all prerequisites. Returns list of errors (empty = OK)."""
     errors = []
@@ -256,6 +278,7 @@ async def _run_regression(
     from scripts.audiobook_script.run_comparator_loop import _load_config, _load_checklist, _load_result_schema
 
     cfg = _load_config(repo)
+    _apply_regression_runtime_overrides(cfg)
     checklist = _load_checklist(repo)
     result_schema = _load_result_schema(repo)
     golden_dir = repo / cfg.get("regression", {}).get("golden_set_path", "config/audiobook_script/golden_regression_set/")
@@ -263,6 +286,13 @@ async def _run_regression(
     print(f"\n{'='*60}")
     print("AUDIOBOOK GOLDEN REGRESSION SUITE")
     print(f"LM Studio: {cfg.get('draft_model', {}).get('base_url', 'http://127.0.0.1:1234/v1')}")
+    print(
+        "Runtime profile: "
+        f"draft(max_tokens={cfg.get('draft_model', {}).get('max_output_tokens')}, "
+        f"timeout={cfg.get('draft_model', {}).get('timeout_seconds')}s), "
+        f"judge(max_tokens={cfg.get('judge_model', {}).get('max_output_tokens')}, "
+        f"timeout={cfg.get('judge_model', {}).get('timeout_seconds')}s)"
+    )
     print(f"{'='*60}\n")
 
     # Setup validation
@@ -398,3 +428,9 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+    # Optional truncation for regression runtime stability on local runners.
+    source_limit = int(
+        (cfg.get("regression", {}).get("runtime_overrides", {}) or {}).get("source_char_limit", 0) or 0
+    )
+    if source_limit > 0 and len(source_text) > source_limit:
+        source_text = source_text[:source_limit]

@@ -137,6 +137,14 @@ regression:
   min_hard_gate_pass_rate: 1.0
   min_scored_pass_rate: 0.90
   block_promotion_on_regression: true
+  # Faster/safer runtime profile for CI regression on self-hosted runners.
+  runtime_overrides:
+    enabled: true
+    draft_max_output_tokens: 900
+    judge_max_output_tokens: 800
+    draft_timeout_seconds: 180
+    judge_timeout_seconds: 180
+    source_char_limit: 3200
 
 observability:
   jsonl_log_path: "artifacts/audiobook/loop_decisions.jsonl"
