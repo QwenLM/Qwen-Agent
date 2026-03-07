@@ -7,8 +7,23 @@ name: Pearl News scheduled
 
 on:
   schedule:
-    - cron: '0 6,18 * * *'
+    # 3 runs per day, one per language:
+    # 06:00 UTC → English, 10:00 UTC → Japanese, 14:00 UTC → Simplified Chinese
+    - cron: '0 6 * * *'   # English
+    - cron: '0 10 * * *'  # Japanese
+    - cron: '0 14 * * *'  # Simplified Chinese
   workflow_dispatch:
+    inputs:
+      language:
+        description: 'Language (en, ja, zh-cn, or all)'
+        required: false
+        default: 'en'
+        type: choice
+        options:
+          - en
+          - ja
+          - zh-cn
+          - all
 
 jobs:
   pearl-news:
@@ -21,13 +36,29 @@ jobs:
       QWEN_BASE_URL: ${{ secrets.QWEN_BASE_URL }}
       QWEN_API_KEY: ${{ secrets.QWEN_API_KEY }}
       QWEN_MODEL: ${{ secrets.QWEN_MODEL }}
-      # Schedule = no expand (reliable drafts). For manual expand run: set PEARL_NEWS_EXPAND: "true", PEARL_NEWS_LIMIT: "1"
+      # Schedule = no expand (reliable drafts). For manual expand run: use pearl_news_manual_expand.yml
       PEARL_NEWS_EXPAND: "false"
       PEARL_NEWS_LIMIT: "3"
     steps:
       - uses: actions/checkout@v4
         with:
           ref: main
+
+      - name: Determine language from schedule or input
+        id: lang
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "language=${{ inputs.language || 'en' }}" >> "$GITHUB_OUTPUT"
+          else
+            # Map cron schedule to language by hour (UTC)
+            HOUR=$(date -u +%H)
+            case "$HOUR" in
+              06) echo "language=en" >> "$GITHUB_OUTPUT" ;;
+              10) echo "language=ja" >> "$GITHUB_OUTPUT" ;;
+              14) echo "language=zh-cn" >> "$GITHUB_OUTPUT" ;;
+              *)  echo "language=en" >> "$GITHUB_OUTPUT" ;;
+            esac
+          fi
 
       - name: Check Python
         run: |
@@ -60,30 +91,39 @@ jobs:
 
       - name: Run full pipeline (ingest → assemble → optional expand → QC)
         run: |
+          LANG="${{ steps.lang.outputs.language }}"
+          EXPAND_FLAG=""
+          VALIDATE_FLAG=""
           if [ "$PEARL_NEWS_EXPAND" = "true" ]; then
+            EXPAND_FLAG="--expand --validate"
+          fi
+          if [ "$LANG" = "all" ]; then
             python3 -m pearl_news.pipeline.run_article_pipeline \
               --feeds pearl_news/config/feeds.yaml \
               --out-dir artifacts/pearl_news/drafts \
               --limit "$PEARL_NEWS_LIMIT" \
-              --expand
+              --language all \
+              $EXPAND_FLAG
           else
             python3 -m pearl_news.pipeline.run_article_pipeline \
               --feeds pearl_news/config/feeds.yaml \
-              --out-dir artifacts/pearl_news/drafts \
-              --limit "$PEARL_NEWS_LIMIT"
+              --out-dir "artifacts/pearl_news/drafts/$LANG" \
+              --limit "$PEARL_NEWS_LIMIT" \
+              --language "$LANG" \
+              $EXPAND_FLAG
           fi
 
       - name: Upload draft artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: pearl_news_drafts
+          name: pearl_news_drafts_${{ steps.lang.outputs.language }}
           path: artifacts/pearl_news/drafts/
           retention-days: 7
 
       - name: Test WordPress integration (dry-run or post)
         run: |
           shopt -s nullglob
-          first=$(ls -1 artifacts/pearl_news/drafts/article_*.json 2>/dev/null | head -1)
+          first=$(ls -1 artifacts/pearl_news/drafts/*/article_*.json artifacts/pearl_news/drafts/article_*.json 2>/dev/null | head -1)
           if [ -z "$first" ]; then
             echo "No article_*.json found; skipping"
             exit 0

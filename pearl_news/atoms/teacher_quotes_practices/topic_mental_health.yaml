@@ -1,76 +1,295 @@
 # Pearl News — teacher atoms for topic: mental_health
+# STATUS: STARTER — atoms are placeholder approximations.
+# TODO: Replace each atom with a verified teaching sourced from the teacher's actual
+#       published works, talks, or doctrine files in SOURCE_OF_TRUTH/.
+#       Each atom should be 30-50 words, specific enough to connect to a news event.
+
 topic_key: mental_health
 topic_sdg: "3"
+description: "Teacher atoms for mental-health-related articles"
 
 teachers:
   ahjan:
     display_name: "Ajahn Ahjan"
     tradition: "Theravada Buddhist"
     attribution: "From within the Theravada Buddhist tradition, Ajahn Ahjan teaches that"
+    status: starter
     atoms:
       - >
-        the teaching of "dukkha" is consistently mistranslated as suffering; more precisely it
-        describes the structural unsatisfactoriness of grasping. For Gen Z, who were told that
-        achievement and security would follow a predictable path and have found that path broken,
-        this teaching names an experience they have but no culturally legible language for.
+        dukkha is not simply suffering but the structural unsatisfactoriness of grasping.
+        Young people told achievement follows a predictable path, then finding it broken, finally hear language for their experience:
+        not personal failure, but structural recognition that clinging to false security breeds anxiety.
       - >
-        mindfulness in its original context was not a wellness product; it was a practice for
-        seeing how the mind generates and sustains its own distress, and for developing the
-        capacity to interrupt that process. Young people who feel they have "failed at mindfulness"
-        because it did not relieve their anxiety have been given the tool without the philosophy
-        that makes the tool work.
+        mindfulness in its original context was not wellness but practice for seeing how the mind generates
+        its own distress and interrupting that process. Young people feeling they failed at mindfulness lack the philosophy making the tool work.
+        True practice requires seeing, not just calm.
       - >
-        the Buddhist teaching of "kalama"—investigate for yourself, do not accept from authority
-        alone—is a direct antidote to the crisis of institutional trust that characterises how
-        Gen Z relates to mental health systems. The tradition does not ask for compliance; it
-        asks for discernment. This matters when young people are navigating contradictory
-        clinical advice, social media diagnosis, and their own experience simultaneously.
+        the teaching of kalama—investigate yourself, reject mere authority—directly addresses Gen Z's crisis of institutional trust in mental health systems.
+        The tradition asks for discernment, not compliance, when navigating contradictory clinical advice, social media diagnosis, and lived experience simultaneously.
+      - >
+        social media feeds an endless tanha—craving for validation and comparison—that mirrors the traditional understanding of affliction. The Theravada teaching reveals that no scroll ever satisfies thirst.
+        Recognizing compulsive engagement as craving, not connection, allows practitioners to observe the pattern without judgment and gradually free themselves from its grip.
+      - >
+        loneliness arises when humans mistake digital exchange for real sangha—community rooted in shared practice and presence. The Theravada path requires actual witnesses, real accountability, embodied relationship.
+        Isolation disguised as connection deepens suffering; authentic sangha requires face-to-face commitment and collective wisdom.
+      - >
+        burnout signals attachment to outcomes rather than right effort. The Theravada teaching distinguishes striving toward goals—which depletes—from steady practice of virtue regardless of result.
+        When practitioners release the need to achieve and focus on right action itself, exhaustion naturally subsides.
+      - >
+        anatta—non-self—teaches that grief clings to a self that imagines permanence. Loss becomes unbearable when you believe in a fixed "I" that possesses and retains.
+        Understanding that both self and loved ones are processes, not possessions, allows grief to move through you without the additional suffering of identity collapse.
+      - >
+        addictive patterns in Theravada are understood as upadana—the grasping that feeds suffering. Substance dependence reflects the fundamental human impulse to numb dukkha.
+        The practice reveals why craving always leads to suffering and how mindfulness of the craving itself—not the substance—is liberation's door.
+      - >
+        belonging in the Theravada view comes from right sila—ethical conduct that aligns you with the dharma and creates harmony in sangha. When identity is based on ethical coherence rather than external status,
+        the deep acceptance that comes from alignment with natural law replaces the desperate seeking of approval.
+      - >
+        intergenerational trauma flows through families as unexamined tanha—craving and aversion—passed down as inherited reactivity. The Theravada path recognizes that healing breaks this lineage: mindful awareness of your patterns interrupts their automatic transmission to the next generation.
+        Systems that teach mindfulness without acknowledging inherited suffering perpetuate the trauma they claim to heal.
+
+  sai_ma:
+    display_name: "Sai Maa"
+    tradition: "Vedic Hindu"
+    attribution: "From within the Vedic Hindu tradition, Sai Maa teaches that"
+    status: starter
+    atoms:
+      - >
+        prana—life force—flows as dynamic current, not static state. Mental health is flow maintained, not achievement reached.
+        For burnout, ask not "what is wrong with me?" but "where is flow obstructed?" This reframe shifts inquiry from personal
+        failure to recognition of systemic pressure blocking natural vitality.
+      - >
+        svadhyaya—self-study—is disciplined examination of patterns, reactions, inherited scripts. This ancient practice predates metacognition.
+        Young people told to be self-aware without tools find in svadhyaya a structured practice, not a moral injunction demanding
+        impossible introspection while overwhelmed.
+      - >
+        nada Brahma—the universe is sound. Specific vibrational patterns support or disrupt mind-body coherence. This is not mysticism
+        disconnected from evidence; research on sound therapy and nervous systems asks what traditions have always asked: what frequencies do we absorb?
+      - >
+        digital saturation disrupts the subtle energy channels—nadis—through constant stimulation without integration. The Vedic system teaches pratyahara—conscious withdrawal of the senses from external input.
+        Reclaiming intervals of sensory stillness restores the nervous system's capacity to discern signal from noise, presence from compulsion.
+      - >
+        brahmacharya—not celibacy but directed energy—teaches that intimate vulnerability requires protection of vital force. Loneliness amplifies when prana is scattered through shallow digital connection.
+        The Vedic path restores energy through selective presence with those who genuinely nourish your being.
+      - >
+        agni—the digestive fire of consciousness—burns out when overloaded beyond its capacity. Burnout in Sanskrit is samasya—the condition of simultaneous excess and depletion.
+        Restoration requires not more activity but the sacred pause where digestion of experience can occur.
+      - >
+        loss in Hindu philosophy is understood through the lens of eternal atman—the unchanging self—while the body-mind fluctuates. Grief becomes workable when you recognize that what appears lost was never truly possessed by the unchanging self.
+        This is not denial but metaphysical reorientation that holds both the pain and its transcendent context.
+      - >
+        addiction reflects rajas—excessive energy—or tamas—inertia—disrupting the sattvic—balanced—mind. The Vedic path addresses the root imbalance through lifestyle, diet, ritual, and mantra that cultivate equilibrium.
+        Substance use then becomes visible as a symptom of deeper depletion, addressable through fundamental restoration of the gunas.
+      - >
+        svabhava—your essential nature—is taught in the Gita through the caste system understood not as oppression but as dharma, the right action aligned with your nature. When you work against your svabhava, suffering multiplies.
+        True belonging comes from discovering and honoring your actual gifts rather than performing a self that contradicts them.
+      - >
+        generational patterns in the Vedic view are understood as inherited samskaras—deep mental impressions—repeated across families. Healing requires sattvic practices—meditation, proper diet, ritual—that purify the nervous system itself, breaking the karmic cycle.
+        Healthcare systems addressing only individual symptoms ignore the family field perpetuating illness through unhealed collective patterns.
+
+  ra:
+    display_name: "Ra"
+    tradition: "witnessing awareness and grounded presence"
+    attribution: "From the perspective of witnessing awareness and grounded presence, Ra teaches that"
+    status: starter
+    atoms:
+      - >
+        mental health emerges from capacity to witness thoughts without fusion—to observe the mind's narratives as movement, not truth.
+        Anxiety arises when awareness collapses into identification with fear-stories. The practice is simple, radical: remain present as observer,
+        not as the observed story, and the charge dissolves.
+      - >
+        grounding in the body interrupts the feedback loop of anxiety—the mind generating fear, fear triggering physical tension, tension reinforcing
+        fear thoughts. Return to present sensations: feet on earth, breath in chest. This immediate return to embodied reality is not distraction but
+        fundamental rewiring of nervous system response.
+      - >
+        witnessing presence reveals that depression often masks a person's power withheld. When you become aware of how you shrink, defer,
+        silence yourself, you can choose differently. Mental freedom is not feeling happy but claiming agency over your own presence and voice.
+      - >
+        social media floods awareness with others' narratives and curated identities, collapsing the gap between witness and story. The practice of grounded presence requires deliberate intervals where you notice your own sensations, reactions, and being without external stimulus.
+        This reclamation of interior space is essential to mental health.
+      - >
+        loneliness deepens when awareness becomes contracted into shame or self-judgment. Witnessing presence extends compassionate observation toward yourself as you would a friend in pain, creating internal belonging that does not depend on external validation or connection.
+      - >
+        burnout signals the collapse of presence into constant doing. The body kept in perpetual activation loses its capacity to rest and integrate. Grounding restores the rhythm of effort and ease, presence and recovery, that the nervous system requires to sustain itself.
+      - >
+        grief held in awareness without resistance becomes movement and transformation. When you witness grief arise without trying to fix, deny, or escape it, it flows through you like a river rather than damming up as blocked energy.
+        This allowing is not passivity but conscious presence with what is.
+      - >
+        addiction often masks emotional pain that has not been witnessed or integrated. Substances interrupt the body's capacity to feel and process difficult experience. Restored capacity to be present with discomfort without escape is the foundation of freedom from dependence.
+      - >
+        identity confusion weakens when you realize that the witness—awareness itself—remains constant beneath changing thoughts, feelings, and roles. Grounded presence reveals your essential being separate from performance, allowing belonging based on actual presence rather than constructed identity.
+      - >
+        traumatic patterns inherited from parents and communities become grounded in the nervous system. Witnessing presence tracks how you carry your family's unresolved fear and shame in your body. Breaking the cycle requires not just awareness but nervous system rewiring—restoring safety through sustained embodied presence.
+        Systemic healing begins when communities hold space for this ancestral wounding and recovery together.
 
   junko:
     display_name: "Junko"
     tradition: "Zen Buddhist"
     attribution: "From within the Zen Buddhist tradition, Junko teaches that"
+    status: starter
     atoms:
       - >
-        "shoshin"—beginner's mind—is not humility as virtue; it is a specific cognitive practice
-        of approaching each situation without the overlay of how it was last time, or what it
-        should be. For young people whose anxiety is partly produced by comparing their present
-        to an imagined future or a past before things went wrong, shoshin is a practical interrupt,
-        not a spiritual aspiration.
+        shoshin—beginner's mind—is cognitive practice: approaching each moment without overlay of what was or should be.
+        Young people whose anxiety stems from comparing present to imagined futures or lost pasts find in shoshin a practical interrupt.
+        Not aspiration but specific, learnable technique for breaking the time-collapse that generates dread.
       - >
-        Zen practice has always known that sitting with discomfort is not the same as accepting
-        damage. The tradition distinguishes between "dukkha tolerated"—enduring what is harmful
-        because the alternative seems worse—and "dukkha seen clearly"—observing the structure
-        of one's suffering without being consumed by it. Youth mental health systems often teach
-        the first; the tradition insists on the second.
+        Zen distinguishes dukkha tolerated—enduring harm because alternatives seem worse—from dukkha seen clearly—observing suffering's structure without drowning.
+        Youth mental health systems teach the first. The tradition insists on the second: awareness, not acceptance, of what actually harms you.
       - >
-        the Japanese concept of "ma"—the meaningful pause, the productive empty space—is absent
-        from most digital youth culture, where silence is experienced as failure to engage.
-        Junko's teaching on ma is not about disconnecting from technology; it is about
-        developing the capacity to be present in the gap between stimulus and response,
-        which is where choice lives.
+        ma—the meaningful pause—is absent from digital youth culture where silence feels like engagement failure. Zen teaches the capacity to be present
+        in the gap between stimulus and response. This space is where choice lives, where you cease being reactive and become agent.
+      - >
+        digital addiction exploits the nervous system's response to novelty, the same reflex Zen zazen trains you to recognize and release. Shoshin applied to your phone habit reveals the mechanical pattern: notification, grab, scroll, repeat.
+        Seeing this clearly is the beginning of freedom.
+      - >
+        loneliness in modern life stems from the loss of ma—the sacred emptiness—replaced by constant filling. Zen recognizes that the self is not isolated but interconnected within all being. Meditating on this interdependence dissolves the illusion of fundamental separation.
+      - >
+        work burnout reflects grasping at results rather than presence with process. Zen practice teaches that genuine accomplishment emerges from complete absorption in the task itself, without attachment to outcome.
+        This shift from striving to wholehearted engagement restores energy and meaning.
+      - >
+        grief becomes workable through the Zen understanding of mu—emptiness. What you mourn was never a fixed possession but a temporary manifestation. Accepting impermanence does not erase sorrow but places it in proper perspective.
+        From this spaciousness, gratitude for what was can arise.
+      - >
+        addiction in Zen is understood as seeking escape from the direct encounter with reality. Zazen teaches you to sit with discomfort until you discover its emptiness. As you learn you can survive what you fear, craving for escape naturally dissolves.
+      - >
+        identity in Zen is understood as sunyata—emptiness—the interdependent arising of all phenomena. When you stop defending a fixed self and recognize your nature as relational and fluid, the exhausting performance ends.
+        True belonging comes from this fundamental emptiness shared with all beings.
+      - >
+        trauma moves through families as habitual reactivity, each generation inheriting patterns of contraction and avoidance. Zazen reveals these inherited patterns arising without judgment. Generational healing requires zazen communities where the whole family system can witness and release ancestral conditioning.
+        Schools and workplaces perpetuate this cycle by ignoring the intergenerational field; healing systems acknowledge the family as the unit of practice.
 
-  sai_ma:
-    display_name: "Sai Maa"
-    tradition: "Vedic Hindu"
-    attribution: "From within the Vedic tradition, Sai Maa teaches that"
+  miki:
+    display_name: "Miki"
+    tradition: "Shinto"
+    attribution: "From within the Shinto tradition, Miki teaches that"
+    status: starter
     atoms:
       - >
-        Vedic understanding of "prana"—life force—teaches that mental health is not a state
-        to be achieved but a dynamic flow to be maintained. For young people experiencing burnout,
-        the tradition asks not "what is wrong with you" but "where is the flow obstructed, and
-        what is obstructing it." This reframe moves the locus of inquiry from personal failure
-        to systemic pressure.
+        mental clarity arises from right relationship with place and kami. Disconnection from natural cycles and spiritual presence creates emptiness.
+        Shinto restoration of relationship—tending a small garden, recognizing the sacred in seasons—is not supplementary wellness but repair of severed belonging.
       - >
-        the practice of "svadhyaya"—self-study, the disciplined examination of one's own
-        patterns, reactions, and inherited scripts—is a Vedic antecedent to what clinical
-        psychology now calls metacognition. Young people who have been told to "be more
-        self-aware" without tools find in svadhyaya a structured practice rather than
-        a moral injunction.
+        harae—ritual purification—includes purification of actions damaging relational webs between people, land, and kami. Mental distress often signals relational
+        rupture. Healing is not individual therapy but restoration of proper connection to place, community, and the spiritual presences sustaining life.
       - >
-        Vedic cosmology holds that the universe is made of sound—"nada Brahma"—and that
-        specific vibrational patterns either support or disrupt the coherence of the mind-body
-        system. This is not metaphysics disconnected from evidence; contemporary research
-        on sound therapy and the nervous system is asking a version of the same question
-        the tradition has always asked: what frequencies do we surround ourselves with,
-        and what do they do to us?
+        living in accordance with natural order—kannagara no michi—does not require heroic effort but daily attentiveness: what you buy, what you discard,
+        how you move. This alignment with nature's rhythm naturally settles the anxious mind seeking permanence in an impermanent world.
+      - >
+        digital screens sever the direct encounter with kami present in natural forms and places. The Shinto path requires reconnection through actual presence with trees, water, seasonal changes, and hand-worked objects.
+        This is not nostalgia but restoration of the relational field that constitutes human wellbeing.
+      - >
+        loneliness in Shinto reflects the modern severing of relationship with kami and place-based community. The tradition teaches that you are never isolated; you exist within the web of relational presences—human, natural, spiritual—that sustains life.
+        Recognizing and honoring these relationships dissolves the illusion of separation.
+      - >
+        burnout in modern work reflects disconnection from kannagara—the natural order. Shinto teaches rhythms of effort and rest aligned with seasons and cycles. Restoring seasonal attentiveness and natural rhythm corrects the depletion caused by artificial acceleration.
+      - >
+        grief in Shinto is purified not through isolation but through harae—restoring right relationship with what was lost. Rituals honoring the deceased, tending their memory, and recognizing their continued presence in kami sustains connection while acknowledging transformation.
+      - >
+        addiction represents the severing of healthy relationships and the desperate attempt to fill the void with substances. Restoration requires harae—purifying the actions and patterns that damaged relationships—and reconnection to kami and community.
+        The path is relational healing, not individual recovery.
+      - >
+        identity in Shinto is not individual but relational—defined through proper relationship with kami, place, and community. When you know your role in maintaining these sacred relationships, you find belonging not through performance but through genuine participation in the web of being.
+      - >
+        ancestral trauma in Shinto is understood as broken relationships with family and place-kami needing restoration through harae. Modern systems that treat mental illness as individual pathology miss the relational rupture across generations. Community healing requires rituals honoring ancestors and restoring the spiritual web damaged by historical wounds.
+        Schools and workplaces that ignore ancestral belonging perpetuate isolation disguised as efficiency.
+
+  master_wu:
+    display_name: "Master Wu"
+    tradition: "Chan Buddhist"
+    attribution: "From within the Chan Buddhist tradition, Master Wu teaches that"
+    status: starter
+    atoms:
+      - >
+        the mind creating suffering is not your fault but your current practice. Chan asks: who is observing the mind's distress?
+        There is awareness before and beyond the anxious thoughts. Identify with that prior awareness, not the content, and the tyranny
+        of mental stories loses grip.
+      - >
+        enlightenment means seeing directly that the self is fluid, not fixed. Young people clinging to identities—performer, failure, victim—suffer from
+        fixation. When you recognize identity's emptiness, the stories that bind you lose power. This is freedom, not nihilism.
+      - >
+        sudden realization in Chan comes when you stop struggling against what is. Acceptance of present reality—however painful—creates the opening
+        where change becomes possible. Fighting your anxiety amplifies it; seeing it clearly, without resistance, allows it to transform naturally.
+      - >
+        social media feeds the illusion of a solid self requiring external validation. Chan teaching reveals the emptiness of this invented self and its dependence on others' opinions.
+        When you see through the constructed identity, the desperation for likes and followers naturally ceases.
+      - >
+        loneliness arises from clinging to a separate self. Chan directly points to the non-dual awareness that pervades all existence. In this view, you were never separate; loneliness dissolves when the illusion of separation is seen through.
+      - >
+        burnout reflects attachment to the fruits of labor. Chan practice teaches to work with complete engagement yet no grasping toward outcomes. When you release the need to accumulate results, the exhaustion of striving vanishes.
+      - >
+        grief in Chan becomes liberation when you recognize that what you mourn never truly existed as a fixed entity. The apparent person or condition was always empty, always changing. Grief transforms into clear seeing of the dharma.
+      - >
+        addiction represents the inability to rest in the mind's original nature. Substances numb the possibility of direct encounter with awareness itself. Chan meditation leads you to discover that the original mind is already free, requiring no chemical alteration.
+      - >
+        belonging in Chan comes through direct pointing to your Buddha-nature—the original awareness that is not separate from anyone else's. When you realize this shared true nature, the isolation of seeking identity in your individual history dissolves permanently.
+      - >
+        family lineages carry unresolved suffering as patterns of avoidance and numbing passed through generations. Chan teaching recognizes that your mind is not separate from your ancestors' minds. Healing requires facing what the family has avoided, allowing the original mind to know and release ancestral suffering.
+        Institutions treating trauma as individual psychology miss the collective field that systems reproduce and perpetuate.
+
+  pamela_fellows:
+    display_name: "Pamela Fellows"
+    tradition: "Christian contemplative"
+    attribution: "From within the Christian contemplative tradition, Pamela Fellows teaches that"
+    status: starter
+    atoms:
+      - >
+        contemplative prayer is encounter with the divine presence already within you, not achievement of special state. The practice is surrender:
+        releasing the anxious effort to be good enough, worthy enough, safe enough, into the hands of grace that already loves you as you are.
+      - >
+        the Christian teaching of bearing one another's burdens means mental health is not individual project but communal responsibility. Isolation amplifies depression.
+        Vulnerability within trusted community—confessing struggles, receiving witness—restores the relational fabric where healing happens, not in perfect solitude.
+      - >
+        Christ's injunction to "take up your cross" does not mean endure suffering passively but to consciously carry your particular struggle as part of
+        redemptive work. Embracing what is difficult, without denial or despair, transforms it from burden into meaning.
+      - >
+        digital platforms replace the image of God with the image of the algorithm. Christian contemplation calls you away from the endless scroll toward encounter with the divine presence dwelling in silence, solitude, and other persons.
+        This withdrawal is not escape but reclamation of what is sacred.
+      - >
+        loneliness contradicts the Christian teaching of Christ's indwelling presence and the communion of saints—both living and dead. Contemplative practice opens awareness to the presence of Christ within and the company of those who have gone before.
+        True solitude brings company; isolation without prayer deepens despair.
+      - >
+        burnout in Christian contemplative tradition is addressed through Sabbath—the sacred rest that honors created human limitation. God did not demand endless productivity; Christ calls the weary to come and rest.
+        Burnout becomes workable when you understand rest not as laziness but as obedience to your created nature.
+      - >
+        grief in Christian faith is held within the mystery of Resurrection. Death is not the end but transformation into eternal life. While loss is real and must be mourned, the hope of reunion in Christ reframes grief within redemptive purpose.
+      - >
+        addiction represents turning away from the source of life toward empty substitutes. Christian contemplation teaches that all craving finds its true answer in union with God. Addictive substances mask the deeper thirst that only encounter with the divine can satisfy.
+      - >
+        identity in Christian tradition is grounded in being beloved of God, not in performance or status. The contemplative path strips away false identities, revealing your true self as Christ knows it.
+        From this foundation of being fully known and loved, belonging becomes possible without the desperation of seeking approval.
+      - >
+        generational suffering flows through families as inherited sin—unhealed wounding and broken covenant passed to children. Christian contemplation teaches that redemption includes breaking these cycles through confession, forgiveness, and reconciliation that heal the family system across time.
+        Healthcare systems that ignore spiritual rupture and family wounds perpetuate the shame and isolation that trauma builds; healing requires communal witness and grace.
+
+  joshin:
+    display_name: "Joshin"
+    tradition: "Rinzai Zen"
+    attribution: "From within the Rinzai Zen tradition, Joshin teaches that"
+    status: starter
+    atoms:
+      - >
+        face the fact of your distress directly without the comfort of distraction. Rinzai practice demands unflinching honesty: what is actually happening
+        in your mind, body, circumstance? This brutal clarity is not pessimism but the ground from which genuine response emerges.
+      - >
+        zazen teaches sitting with discomfort until you realize it cannot destroy you. The anxiety arises, you breathe, it passes. This lived recognition—
+        that you can contain what you fear—fundamentally alters your relationship to mental difficulty. You are larger than your emotions.
+      - >
+        the great doubt in Rinzai practice—the question that cuts beneath surfaces—applied to depression asks: who is depressed? When you investigate deeply,
+        you find no depressed entity, only patterns of thought, body sensation, circumstance. Seeing this dissolution, depression's grip loosens.
+      - >
+        Rinzai practice faces digital distraction head-on: can you sit with the urge to check your phone without acting on it? The koan-like investigation is: what remains when the distraction is absent?
+        In that gap, your true mind becomes visible.
+      - >
+        loneliness in Rinzai is confronted through the relationship between student and master. The koan points beyond words to direct mind-to-mind encounter. True meeting dissolves the illusion of separation.
+        This model of genuine presence is what modern connection often lacks.
+      - >
+        Rinzai practice addresses burnout through intensive zazen sesshin—extended meditation where you face your resistance and exhaustion until they reveal their emptiness. What seemed unbearable becomes workable when held with unflinching presence.
+      - >
+        the great doubt can be applied to grief: what am I clinging to when I say "I have lost"? Investigation reveals that what you truly are has not changed, though form has. Grief becomes integrated into wisdom.
+      - >
+        addiction in Rinzai practice is confronted through the commitment to zazen. The discipline of sitting with discomfort without escape slowly reveals why craving arose and dissolves the compulsion through clear seeing.
+        Recovery requires facing what was being avoided, not just abstinence.
+      - >
+        identity in Rinzai is exposed as a construct through the koan process. The question "Who am I?" pursued relentlessly reveals no fixed entity. When you stop defending a constructed identity, you discover the original nature that is your true belonging.
+      - >
+        ancestral trauma appears in the body as chronic tension, defensive reactivity, and survival patterns repeated across generations. Rinzai intensive sesshin reveals these inherited patterns in raw form. Generational healing requires facing what your ancestors could not, using the sangha as witness.
+        Workplaces and schools perpetuate trauma through efficiency and denial; true systemic healing must honor the ancestral field and allow space for intergenerational recovery.

@@ -2,11 +2,18 @@
 topic_key: economy_work
 topic_sdg: "8"
 
+# STATUS: STARTER — atoms are placeholder approximations.
+# TODO: Replace each atom with a verified teaching sourced from the teacher's actual
+#       published works, talks, or doctrine files in SOURCE_OF_TRUTH/.
+#       Each atom should be 30-50 words, specific enough to connect to a news event.
+description: "Teacher atoms for economy and work-related articles"
+
 teachers:
   master_feung:
     display_name: "Master Feung"
     tradition: "Taoist"
     attribution: "From within the Taoist tradition, Master Feung teaches that"
+    status: starter
     atoms:
       - >
         the Taoist concept of "wu wei"—effortless action aligned with natural conditions
@@ -28,11 +35,56 @@ teachers:
         support conditions for young people to flourish, without requiring those young
         people to perform gratitude or conformity to access them, are more durable than
         those that attach strings of visibility and compliance.
+      - >
+        the Taoist principle of "returning to the uncarved block"—rejecting unnecessary
+        elaboration and artificial structures—speaks directly to remote work economies.
+        Rather than building ever-more-complex management infrastructure to monitor
+        distributed labour, the tradition asks: what is the simplest trust-based structure
+        that allows work to happen? Surveillance capitalism violates this principle by
+        treating worker attention as raw material to be extracted rather than respected.
+      - >
+        "Ziran"—the Taoist concept of spontaneous naturalness—underlies economic
+        entrepreneurship that emerges organically from actual need rather than venture
+        capital projections. The tradition distinguishes between a gig worker creating
+        genuine service from necessity and a platform designed to minimize labour costs
+        by making work perpetually uncertain. One flows with conditions; the other
+        manufactures scarcity to maintain control.
+      - >
+        the Taoist understanding of "chi" as vital energy flowing through systems applies
+        to labour circulation: when young workers cannot accumulate enough stability to
+        develop mastery, they become depleted conductors rather than flourishing practitioners.
+        The tradition would see this not as individual failure but as a system disrupting
+        the natural accumulation of skill, wisdom, and belonging across time.
+      - >
+        Taoist cosmology teaches that when systems become too rigid, they generate their
+        own dissolution. Applied to wage labour's increasing precarity: the tradition
+        observes that economies which eliminate stable employment eliminate the conditions
+        for genuine loyalty, long-term learning, and the deep reciprocity that makes
+        human work sustainable. What replaces it will not be chosen by workers.
+      - >
+        the concept of "tao fen"—the Taoist "share" or appropriate proportion—holds that
+        each actor in a system should receive what sustains their flourishing relative
+        to their contribution. Housing crises reveal this principle in violation: young
+        workers in wealth-generating sectors unable to afford to live near their work
+        reveals a system where returns are directed away from those whose labour creates
+        them.
+      - >
+        "Dao De Jing" teaches that the useful value of a cup is its emptiness—what it can
+        hold. Applied to economics: treating workers as optimization problems to be filled
+        with tasks destroys their ability to hold genuine capacity. Burnout is not weakness;
+        it is the predictable outcome of systems designed to leave no empty space.
+      - >
+        the Taoist principle that "the sage accomplishes much by doing little" applies to
+        labour organizing: rather than individual heroic accumulation, the tradition points
+        toward collective structures where effort is distributed, no single person is
+        essential, and power cannot concentrate. This is organizational design aligned with
+        nature, not against it.
 
   maat:
     display_name: "Ma'at"
     tradition: "Ancient Egyptian (Ma'at principle)"
     attribution: "From within the Ma'at tradition of cosmic justice and truth, Ma'at teaches that"
+    status: starter
     atoms:
       - >
         the concept of "medjat"—the record, the written account—in ancient Egyptian
@@ -54,11 +106,56 @@ teachers:
         people who feel that economic injustice is too large to address: the tradition
         asks what Ma'at requires of you in your immediate sphere—your workplace, your
         community, your purchasing—before scaling to the systemic level.
+      - >
+        "Apophis"—the chaos-serpent that threatened order in Egyptian cosmology—represents
+        the force of unchecked automation that erases human labour without replacing its
+        social function. Ma'at does not oppose change; it opposes the violation of right
+        order. When AI eliminates a job without creating conditions for humans to
+        participate in distribution of abundance, Ma'at has been broken.
+      - >
+        the Egyptian principle of "hemet-neter"—literally "wife of god," the concept of
+        partnership and complementary contribution—underlies Ma'at's vision of economic
+        relationship. The tradition sees housing as relational: a young person without
+        shelter is not a failure of individual circumstance but a failure of the community's
+        primary covenant to ensure all members have refuge. Housing affordability crisis
+        is a crisis of cosmic order.
+      - >
+        Ma'at's requirement of "hetep"—satisfaction, rightness, peace—includes material
+        peace: a young worker should not have to choose between eating, paying rent, and
+        medical care. The tradition sees such impossible choices not as unfortunate but as
+        evidence that the economic system itself has violated the foundations of cosmic
+        agreement between rulers and the ruled.
+      - >
+        the concept of "shesep"—following, inheritance of responsibility—in ancient Egypt
+        held that those who inherited abundance inherited corresponding obligation. Applied
+        to generational wealth: the tradition would require those who inherited economic
+        advantage to explicitly acknowledge what young people without such inheritance
+        face, and to structure economic participation accordingly, not as charity but as
+        restoration of Ma'at.
+      - >
+        "Isfet"—cosmic disorder and violence—includes structural violence: the erosion of
+        wage floors in industries where young people concentrate, the cost of living rising
+        faster than wages, the mathematical certainty that many cannot escape precarity
+        regardless of effort. Ma'at identifies this as disorder requiring restoration, not
+        as market efficiency requiring acceptance.
+      - >
+        the Egyptian practice of "pesha"—literally judgment or reckoning—depended on
+        transparent records and the ability of the judged to know the standard against which
+        they were measured. Young workers in algorithmic management without access to the
+        standards by which they are evaluated, paid, or fired exist outside Ma'at's
+        protection entirely.
+      - >
+        "Khenti-amenttiu," the Egyptian lord of the west who judges souls, operated on a
+        principle visible in ancient papyri: those who laboured received witness to their
+        labour, and their needs were acknowledged as claims on the system. A labour market
+        where work is invisible to algorithms until it can be extracted, then abandoned, has
+        abandoned the foundation of Ma'at itself.
 
   pamela_fellows:
     display_name: "Pamela Fellows"
     tradition: "Christian contemplative"
     attribution: "From within the Christian contemplative tradition, Pamela Fellows teaches that"
+    status: starter
     atoms:
       - >
         the Christian contemplative tradition of "lectio divina"—slow, attentive reading
@@ -80,3 +177,229 @@ teachers:
         reward individual accumulation: the tradition asks what you would do differently
         if your success were defined by what it enabled in others rather than what it
         protected in yourself.
+      - >
+        the Christian teaching of "stewardship"—not ownership but caretaking—reframes
+        economic power as responsibility. A young worker earning below living wage, unable
+        to steward their own basic needs, reveals an economy where stewards have abandoned
+        their obligation. The tradition asks those with resources: are you stewarding the
+        conditions that allow others to flourish, or merely extracting what you can?
+      - >
+        "Sabbath economics"—the biblical principle that land and workers require regular
+        release from obligation—directly confronts hustle culture and the expectation of
+        perpetual availability. The tradition teaches that rest is not earned through
+        achievement; it is a structural requirement. Gig economies that eliminate Sabbath
+        eliminate the conditions for human renewal and dignity.
+      - >
+        the contemplative practice of "Lectio Communalis"—collective reading and discernment
+        that honors the interpretation of those most affected—offers an alternative to
+        top-down labour organizing. The tradition trusts the wisdom of young workers
+        themselves when gathered in space to discern their own conditions, rather than
+        requiring expert interpretation of their experience.
+      - >
+        Christian tradition teaches "agape"—love that does not calculate return—as the
+        basis for economic organization. Applied to entrepreneurship: the tradition asks
+        whether a young person starting a business is doing so from need (legitimate) or
+        from the ideology that individual hustle can solve structural injustice (a false
+        gospel). Distinguishing these requires contemplative clarity.
+      - >
+        the concept of "metanoia"—fundamental turning around, repentance, seeing the world
+        differently—is required to recognize that housing affordability crisis is not an
+        individual problem but a systems failure. The tradition asks: what would need to
+        change in how we see housing (as commodity vs. right) for young people to have
+        shelter? That turning is contemplative work.
+      - >
+        "Compassio"—literally suffering-with—in Christian tradition means that economic
+        systems that concentrate safety and security in some while distributing risk to
+        others are inherently corrupted. The tradition refuses the division of humanity
+        into those whose stability is protected and those whose precarity is required for
+        others' advantage. This is not charity; it is recognition of shared fragility.
+      - >
+        the Christian principle of "jubilee"—periodic forgiveness of debt, restoration of
+        land, return to household—speaks directly to systems overwhelmed by student debt,
+        medical debt, housing debt. The tradition teaches that some debts are unjust not
+        because the debtor failed but because the system imposed impossible terms. Young
+        workers crushed by debt are crushed by systems that violate jubilee logic.
+
+  junko:
+    display_name: "Junko"
+    tradition: "Zen Buddhist"
+    attribution: "From within the Zen Buddhist tradition, Junko teaches that"
+    status: starter
+    atoms:
+      - >
+        the Zen concept of "shikantaza"—just sitting, the radical presence without goal—
+        contradicts the hustle economy's demand for constant optimization and productivity.
+        Young workers in gig platforms experience the inverse: being timed, measured,
+        and optimized constantly, never simply allowed to be present. The tradition asks:
+        what would labour look like if it honoured the fullness of being rather than
+        extracting every moment of doing?
+      - >
+        Zen teaches "satori"—sudden awakening—as central to understanding reality. Applied
+        to automation: the tradition would ask young workers to awaken to what is actually
+        happening (labour being replaced without social provision) rather than remaining in
+        the dream that effort alone ensures survival. This clarity, however difficult, is
+        the beginning of genuine response.
+      - >
+        the Zen practice of "zazen"—sitting meditation with the body—grounds awareness in
+        embodied reality rather than abstraction. Young workers whose labour is
+        algorithmic and invisibilized are denied even this: their physical effort becomes
+        immaterial data. The tradition insists that all work is bodily work, and
+        invisibilizing it violates what is.
+      - >
+        "Mu"—the Zen koan response meaning not-no and not-yes but a radical deconstruction
+        of false choices—applies to the gig economy's presentation of precarity as freedom.
+        The tradition does not say either "gig work is liberation" or "gig work is slavery"
+        but asks young workers to penetrate beneath both narratives to what actually is:
+        work without protection, autonomy without security.
+      - >
+        Zen's concept of "beginner's mind"—approaching situations without assumptions or
+        fixed views—is what entrepreneurship requires but startup culture destroys through
+        ideology. The tradition teaches young people building businesses to notice: am I
+        actually seeing what customers need, or am I defending an idea? This emptiness is
+        the source of genuine innovation.
+      - >
+        the Zen understanding of "dependent origination"—that all things arise together,
+        nothing stands alone—reveals housing crises as systemic, not individual. When young
+        people cannot afford housing despite working, the tradition identifies this as
+        failure of the entire interdependent system, not failure of individual workers to
+        earn enough. Blame itself is illusion.
+      - >
+        "Sunyata"—emptiness, the absence of fixed, independent essence—means young workers
+        are not diminished by job loss or career interruption. The tradition refuses the
+        capitalist assignment of identity to occupation. Who you are is not what you do for
+        money. This liberates genuine response to unemployment without ego collapse.
+      - >
+        the Zen principle that "form is emptiness, emptiness is form" means young workers
+        should not mistake the structures of platforms (the forms) as inevitable. Apps,
+        algorithms, and contracts are temporary shapes of emptiness. Seeing through their
+        false solidity is the beginning of understanding they can be reorganized entirely
+        differently.
+      - >
+        Zen teaches "non-attachment" not as indifference but as freedom from compulsion.
+        Young professionals convinced they must accumulate wealth to prove their worth
+        remain enslaved. The tradition offers another path: doing work that is needed
+        without requiring it to produce external validation or infinite accumulation.
+      - >
+        the Zen practice of "dokusan"—direct encounter between student and teacher—models
+        what labour organizing becomes when it moves beyond platforms to face-to-face
+        relationship and trust. The tradition suggests that young workers cannot be
+        organized by algorithm but only awakened through direct human presence and
+        collective discernment.
+
+  joshin:
+    display_name: "Joshin"
+    tradition: "Rinzai Zen"
+    attribution: "From within the Rinzai Zen tradition, Joshin teaches that"
+    status: starter
+    atoms:
+      - >
+        Rinzai Zen's use of "koan"—paradoxical questions designed to break conceptual mind
+        —applied to economics asks: how can young people be expected to work for survival
+        while remaining mentally free? The tradition holds this as irresolvable through
+        logic, forcing a jump beyond either acceptance or protest into a third way of
+        seeing that transcends the entire frame.
+      - >
+        the Rinzai emphasis on "keisaku"—the awakening stick used in meditation—suggests
+        that recognition of unjust systems sometimes requires sharp confrontation, not
+        gentle encouragement. The tradition does not teach passive acceptance of wage
+        inequality but active clarity about what is: young workers struck by automation must
+        awaken fully to their actual position.
+      - >
+        Rinzai Zen's concept of "roshi"—the Zen master who meets students with directness
+        and intensity—offers a model for labour leadership that rejects both paternalism
+        and distance. A genuine labour leader, like a roshi, stands in the difficulty with
+        workers, speaks their reality back to them clearly, and trusts their awakening.
+      - >
+        the Rinzai teaching of "instant penetration"—grasping the whole in a moment—speaks
+        to young workers' need to suddenly understand cost-of-living increases, housing
+        crisis, and wage stagnation as connected patterns, not isolated problems. This
+        systemic vision, once achieved, cannot be unseen.
+      - >
+        Rinzai Zen emphasizes "practice-realization"—that understanding and doing are not
+        sequential but simultaneous. Applied to labour organizing: young workers do not
+        wait for perfect theory before acting, nor do they act without critical reflection.
+        The organizing itself is the realization of new economic relationships.
+      - >
+        the Rinzai practice of "mondo"—rapid question-and-answer dialogue meant to provoke
+        awakening—models how young workers might interrogate themselves and each other:
+        What am I accepting without questioning? What story about my worth have I accepted
+        from employers? What would happen if I simply stopped believing it?
+      - >
+        Rinzai Zen teaches that "form is emptiness" means the structures of precarious work
+        lack ultimate reality. Young workers experiencing gig economy fragmentation should
+        awaken to the fact that the system claiming to be inevitable is actually empty—
+        reorganizable, contestable, not given. This insight generates courage.
+      - >
+        the Rinzai insistence on "direct pointing"—clarity without metaphor or gradual
+        approach—demands that economic conversations name reality directly: young workers
+        are being exploited; housing is unaffordable; platforms extract value they do not
+        create. The tradition refuses euphemism that obscures what is.
+      - >
+        "Shikantaza" in Rinzai context becomes urgent: intense presence to what-is-
+        happening-now. For young workers in automation, this means: right now, what is my
+        actual position? What am I actually feeling? What action does this moment require?
+        Not future planning but present clarity.
+      - >
+        Rinzai Zen's teaching that "the student must surpass the teacher" means young
+        workers themselves are the authorities on their own conditions, not advisors or
+        experts. The tradition teaches them to trust their own direct perception over any
+        system that claims to know better what serves their flourishing.
+
+  master_wu:
+    display_name: "Master Wu"
+    tradition: "Chan Buddhist"
+    attribution: "From within the Chan Buddhist tradition, Master Wu teaches that"
+    status: starter
+    atoms:
+      - >
+        Chan Buddhism's "sudden illumination"—direct awakening rather than gradual
+        accumulation—offers young workers an alternative to the promise that individual
+        effort will eventually secure stability. The tradition teaches instead: recognize
+        now that the system offers no such security, and respond from that clarity rather
+        than from false hope deferred.
+      - >
+        the Chan principle of "Buddha-nature in all beings" means young workers excluded
+        from employment due to age, background, or education possess intrinsic worth
+        independent of labour market value. Unemployment does not diminish this. The
+        tradition teaches dignity that cannot be outsourced to employers or algorithms.
+      - >
+        Chan teaches "no-mind"—freedom from the calculating, grasping consciousness—as the
+        source of genuine action. Young workers trapped in constant economic calculation
+        (can I afford this? can I save?) are blocked from the freedom to create, organize,
+        and build. The tradition asks: what becomes possible when you stop calculating?
+      - >
+        the Chan concept of "original mind" holds that before ideology, expectation, and
+        economic pressure shape consciousness, there is direct seeing. Young people
+        experiencing housing crisis should penetrate to this: their need is not shameful
+        failure but the honest condition of being human. Seeing this clearly changes
+        everything.
+      - >
+        Chan Buddhism's teaching that "the finger pointing at the moon is not the moon"
+        applies to economic indicators: GDP, job numbers, growth statistics are fingers
+        pointing at actual human conditions. Young workers should not mistake the data for
+        their reality. Ask instead: what am I actually experiencing? That is the moon.
+      - >
+        the Chan practice of "walking meditation"—taking the teachings into ordinary
+        movement—suggests that young workers do not need to wait for perfect conditions to
+        organize, learn, or build alternatives. Each ordinary day contains the opportunity
+        to practice economic relationships differently, wherever you are.
+      - >
+        Chan teaches "immediate response"—acting without delay or excessive deliberation—
+        which applies to labour conditions: when automation is displacing workers, the time
+        to organize is now, not when conditions have fully clarified. Delayed response is
+        itself a choice to accept displacement.
+      - >
+        the Chan concept of "no-gate" holds that the path to awakening has no entrance or
+        barrier; all are already on it. Applied to economic opportunity: young people are
+        not locked out of possibility but have been taught to believe they are. The
+        tradition teaches that the barriers are constructed, not inherent.
+      - >
+        Chan Buddhism's principle that "wisdom and compassion must move together" means
+        young workers building alternative economic structures must combine clear sight
+        with genuine care for those harmed by current systems. Compassion without clarity
+        is sentimentality; clarity without compassion is cruelty.
+      - >
+        the Chan teaching that "the gateless gate" must be walked through continually—that
+        enlightenment is not destination but ongoing practice—means young workers building
+        new economic relationships must remain awake, humble, and willing to correct course.
+        The emerging alternative is not the final form but itself a practice.

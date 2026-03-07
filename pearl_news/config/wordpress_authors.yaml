@@ -1,13 +1,26 @@
 # Pearl News — WordPress author (byline) assignment.
-# Author is assigned per teacher and alternates across articles.
-# List WordPress user IDs; pipeline assigns round-robin so byline rotates.
+# Each teacher maps to a WordPress user ID so the byline matches the featured teacher.
+# If a teacher has no mapping, falls back to round-robin from author_ids.
 
 schema_version: 1
 
-# WordPress user IDs for article author (displayed as "By ..."). Rotate in order.
+# Fallback WordPress user IDs (round-robin) for articles without a teacher mapping.
 author_ids: [1]
 
-# Optional: map teacher_id → WordPress user ID (overrides rotation when set per article)
-# teacher_author_map:
-#   teacher_01: 1
-#   teacher_02: 2
+# Map teacher_id (from teacher_news_roster.yaml) → WordPress user ID.
+# Pipeline checks this FIRST. If the article's resolved teacher is in this map,
+# that WordPress user ID is used as the author. Otherwise falls back to author_ids rotation.
+#
+# TO SET UP: Create a WordPress author account for each teacher brand,
+# then fill in the numeric user IDs below.
+teacher_author_map:
+  ahjan: 1         # Ajahn Ahjan — UPDATE with actual WP user ID
+  master_feung: 1  # Master Feung — UPDATE with actual WP user ID
+  sai_ma: 1        # Sai Maa — UPDATE with actual WP user ID
+  ra: 1            # Ra — UPDATE with actual WP user ID
+  junko: 1         # Junko — UPDATE with actual WP user ID
+  miki: 1          # Miki — UPDATE with actual WP user ID
+  master_wu: 1     # Master Wu — UPDATE with actual WP user ID
+  pamela_fellows: 1 # Pamela Fellows — UPDATE with actual WP user ID
+  joshin: 1        # Joshin — UPDATE with actual WP user ID
+  maat: 1          # Ma'at — UPDATE with actual WP user ID

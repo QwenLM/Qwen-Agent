@@ -49,51 +49,62 @@ ENGLISH (en) — Gen Z / Gen Alpha:
 
 ---
 
-REQUIRED SECTIONS — expand each in place, in order:
+REQUIRED SECTIONS — expand each in place, in order.
+TOTAL ARTICLE must be AT LEAST 600 words. Target: 800–1000 words.
 
-1. LEDE (opening paragraph)
+--- SECTION WORD COUNTS (hard minimums — the LLM MUST meet each one) ---
+  Section 1 LEDE:              ≥40 words
+  Section 2 NEWS SUMMARY:      ≥100 words
+  Section 3 YOUTH IMPACT:      ≥80 words
+  Section 4 TEACHER PERSPECTIVE: ≥90 words (3 paragraphs × ≥30 words each)
+  Section 5 SDG CONNECTION:    ≥60 words
+  Section 6 FORWARD LOOK:      ≥50 words
+
+If any section is below its minimum, EXPAND it with specifics — never pad with filler.
+
+1. LEDE (opening paragraph — ≥40 words)
 - Opens with a concrete scene, a sharp statistic, or a named contradiction young people live with.
 - Must include one anchor: a number, place name, age band, or specific behavior.
 - Hard news: news peg first, then meaning. Feature: contradiction or scene first.
 - NEVER start with: "In a world where…", "As [issue] continues…", "Young people around the world feel…"
 - When expanding: add specificity (a number, a country, a behavior) — never make it more abstract.
 
-2. NEWS SUMMARY (1–2 paragraphs)
+2. NEWS SUMMARY (1–2 paragraphs — ≥100 words)
 - What happened, according to the UN source. Who, what, where, when.
 - Name the UN body, resolution, or report. Include one specific figure or date.
 - No editorializing. Facts only.
 - When expanding: elaborate on what is stated, do not invent.
 
-3. YOUTH IMPACT (1–2 paragraphs)
+3. YOUTH IMPACT (1–2 paragraphs — ≥80 words)
 - How this story affects the specific reading audience (Japanese / Chinese / English Gen Z or Gen Alpha).
 - EVERY sentence must have at least one anchor: a number, specific country/city, age band, or named behavior.
 - Apply the CONTRADICTION TEST: where does this cohort's stated concern about this issue clash with their actual behavior or circumstances? Name it explicitly.
 - Write behavior, not emotion. NOT "young Japanese feel anxious" → "In a 2023 Cabinet Office survey, 47% of Japanese ages 18–29 cited global conflict as a top anxiety, yet Japan's defense budget reached its highest level since WWII that same year — a tension many on university campuses are only beginning to name."
 - When expanding: every added sentence must have an anchor. Do not add vague impact sentences.
 
-4. TEACHER PERSPECTIVE (one section of the news story, NOT the whole article)
+4. TEACHER PERSPECTIVE (one section of the news story, NOT the whole article — ≥90 words total)
 - Use EXACTLY the named teacher from the TEACHER KNOWLEDGE BASE block in the user message.
 - Attribute by name AND tradition: use the attribution template provided.
 - Write EXACTLY THREE distinct insights from this teacher's approved teachings — use all three atoms provided.
 - CRITICAL FORMAT: Each of the three insights MUST be its own SEPARATE <p>...</p> paragraph. Do NOT merge them into one paragraph, a list, or a single block.
-- Each insight paragraph must be AT LEAST 25 words long. One idea per paragraph.
+- Each insight paragraph must be AT LEAST 30 words long. One idea per paragraph.
 - Each insight must connect specifically to THIS news story, not deliver generic wisdom.
 - The teacher RESPONDS to the news — they do not replace it.
 - When replacing the placeholder: use only the teacher and atoms you were given. Do not invent a different teacher.
 - NEVER use: "a spiritual leader says…", "teachers believe…", or any unnamed attribution.
 
 REQUIRED OUTPUT FORMAT for this section (three separate <p> blocks — no exceptions):
-<p>[Teacher name], drawing from the [tradition name] tradition, teaches that [insight 1 connected to this story — at least 25 words].</p>
-<p>A second teaching from [Teacher name]: [insight 2 connected to this story — at least 25 words].</p>
-<p>[Teacher name] also holds that [insight 3 connected to this story — at least 25 words].</p>
+<p>[Teacher name], drawing from the [tradition name] tradition, teaches that [insight 1 connected to this story — at least 30 words].</p>
+<p>A second teaching from [Teacher name]: [insight 2 connected to this story — at least 30 words].</p>
+<p>[Teacher name] also holds that [insight 3 connected to this story — at least 30 words].</p>
 
-5. SDG CONNECTION (1 paragraph)
+5. SDG CONNECTION (1 paragraph — ≥60 words)
 - Name the SDG by number and full title (e.g. SDG 16: Peace, Justice and Strong Institutions).
 - Connect to a specific SDG target or indicator if the source material supports it.
 - Name one concrete way this story advances or threatens progress on that goal.
 - When expanding: add factual context about the SDG target or recent progress data. Not a generic description of why the goal matters.
 
-6. FORWARD LOOK (1 paragraph)
+6. FORWARD LOOK (1 paragraph — ≥50 words)
 - Must include at least one concrete upcoming event, vote, deadline, or action — not vague future tense.
 - Include one specific action the young reader can take (not "raise awareness" — something concrete: sign, attend, read, write, organize, donate to X).
 - Close with a question or provocation, not a summary sentence.

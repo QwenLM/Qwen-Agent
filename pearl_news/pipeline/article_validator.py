@@ -145,8 +145,45 @@ def _youth_section_text(content: str) -> str:
 
 
 def gate_six_sections_present(content: str) -> tuple[bool, str]:
-    """Check that all 6 required sections are present (proxied by structural signals)."""
+    """
+    Check that all 6 required sections are present.
+
+    Strategy (in priority order):
+    1. If HTML comment markers (<!-- section: ... -->) are present, use them directly.
+       These are injected by the assembler and preserved through expansion.
+    2. Fall back to heuristic keyword detection for articles without markers.
+    """
     lower = content.lower()
+
+    # Priority 1: HTML comment section markers (reliable)
+    marker_sections = re.findall(r"<!-- section: (\w+)", lower)
+    if marker_sections:
+        required = {"lede", "news_summary", "youth_impact", "teacher_perspective", "sdg_connection", "forward_look"}
+        # Normalize: some templates use different names
+        aliases = {
+            "youth_narrative": "youth_impact", "data_research": "news_summary",
+            "teacher_reflection": "teacher_perspective", "teaching_interpretation": "teacher_perspective",
+            "ethical_spiritual": "teacher_perspective", "themes_agreement": "teacher_perspective",
+            "what_happened": "lede", "historical_background": "news_summary",
+            "thesis": "lede", "event_reference": "news_summary",
+            "event_summary": "lede", "leaders_present": "news_summary",
+            "solutions": "forward_look", "next_steps": "forward_look",
+            "future_outlook": "forward_look", "closing_provocation": "forward_look",
+            "sdg_framework": "sdg_connection", "sdg_policy_tie": "sdg_connection",
+            "sdg_reference": "sdg_connection", "sdg_alignment": "sdg_connection",
+            "civic_recommendation": "youth_impact", "youth_commitments": "youth_impact",
+            "youth_implications": "youth_impact",
+        }
+        found = set()
+        for m in marker_sections:
+            canonical = aliases.get(m, m)
+            found.add(canonical)
+        missing = required - found
+        if missing:
+            return False, f"Missing sections (by marker): {', '.join(sorted(missing))}"
+        return True, f"all 6 sections present (by marker, found {len(marker_sections)} markers)"
+
+    # Priority 2: Heuristic fallback (less reliable)
     checks = {
         "lede (<h1>)": _has_h1(content),
         "news_summary (≥2 <p>)": _count_paragraphs(content) >= 2,
@@ -159,7 +196,7 @@ def gate_six_sections_present(content: str) -> tuple[bool, str]:
     failed = [name for name, ok in checks.items() if not ok]
     if failed:
         return False, f"Missing sections: {', '.join(failed)}"
-    return True, "all 6 sections present"
+    return True, "all 6 sections present (heuristic)"
 
 
 def gate_named_teacher(content: str) -> tuple[bool, str]:
@@ -230,6 +267,187 @@ def gate_source_line(content: str) -> tuple[bool, str]:
     return False, "Source line missing — was stripped during expansion"
 
 
+def gate_multi_teacher_present(content: str, teachers: list[dict] | None = None) -> tuple[bool, str]:
+    """For interfaith articles: check that 2+ distinct teacher names appear in content."""
+    if not teachers or len(teachers) < 2:
+        return True, "not an interfaith article — skipped"
+
+    lower = content.lower()
+    found_names = []
+    for t in teachers:
+        name = t.get("display_name", "")
+        if name and name.lower() in lower:
+            found_names.append(name)
+
+    if len(found_names) < 2:
+        return False, f"Only {len(found_names)} of {len(teachers)} teachers found in content: {found_names}"
+
+    # Check for convergence language
+    convergence_signals = ["converge", "agree", "common ground", "shared", "both", "across traditions", "together"]
+    has_convergence = any(sig in lower for sig in convergence_signals)
+    if not has_convergence:
+        return False, f"Teachers found ({found_names}) but no convergence language detected"
+
+    return True, f"Multi-teacher present: {found_names} with convergence language"
+
+
+def gate_fallback_teacher(teacher: dict | None = None) -> tuple[bool, str]:
+    """Articles using fallback teacher must be held for manual review — not published."""
+    if teacher and teacher.get("is_fallback"):
+        return False, "Fallback teacher used — no real teacher atoms available for this topic. Hold for manual review."
+    if teacher and teacher.get("teacher_id") == "__fallback__":
+        return False, "Fallback teacher used — article needs a real named teacher before publishing."
+    return True, "Real named teacher assigned"
+
+
+def gate_evidence_present(content: str) -> tuple[bool, str]:
+    """Article must contain at least 2 evidence signals (reports, surveys, data, named experts)."""
+    lower = content.lower()
+    evidence_patterns = [
+        r"\b\d{4}\b.{0,40}(report|survey|study|paper|white paper|assessment|index)",
+        r"\b(pew|gallup|who|unicef|world bank|imf|oecd|cabinet office|ministry|department of)\b",
+        r"\b\d+\s*%",  # percentage (data signal)
+        r"\b(according to|published by|released by|conducted by)\b",
+        r"\b(professor|researcher|dr\.|economist|analyst)\b",
+        r"\b(resolution|a/\d+|s/\d+)\b",  # UN resolution numbers
+    ]
+    found = 0
+    matched = []
+    for pattern in evidence_patterns:
+        if re.search(pattern, lower):
+            found += 1
+            matched.append(pattern[:30])
+    if found < 2:
+        return False, f"Only {found} evidence signal(s) found (need ≥2). Articles need sourced claims."
+    return True, f"{found} evidence signals found"
+
+
+def gate_localization_bridge(content: str, language: str = "en") -> tuple[bool, str]:
+    """
+    Check that a localization bridge sentence connects the global story to the local audience.
+
+    Position-aware: the bridge must appear BEFORE the teacher/spiritual section
+    (between news summary and youth impact — roughly the first 60% of the article).
+    Content-aware: a country name alone is not enough — must co-occur with a local
+    statistic (number/%), ministry/policy name, or local event reference within ~200 chars.
+    """
+    lower = content.lower()
+
+    # Determine where teacher section starts (bridge must appear before it)
+    teacher_idx = len(lower)  # default: full article
+    for marker in ["<!-- section: teacher", "teaches that", "tradition,", "tradition suggests"]:
+        idx = lower.find(marker)
+        if idx != -1 and idx < teacher_idx:
+            teacher_idx = idx
+    # If no teacher marker found, use first 60% of article
+    if teacher_idx == len(lower):
+        teacher_idx = int(len(lower) * 0.6)
+
+    pre_teacher = lower[:teacher_idx]
+
+    # Country/locality signals per language
+    locality_signals = {
+        "ja": ["japan", "japanese", "ministry of", "cabinet office", "mext", "tokyo",
+               "osaka", "kyoto", "prefectur", "diet", "yen"],
+        "zh-cn": ["china", "chinese", "state council", "beijing", "gaokao", "tangping",
+                   "province", "shanghai", "guangdong", "yuan", "npc", "cppcc"],
+        "en": ["united states", "u.s.", "american", "uk", "australia", "department of",
+               "congress", "senate", "parliament", "federal", "washington"],
+    }
+    signals = locality_signals.get(language, locality_signals["en"])
+
+    # Evidence patterns that indicate a real local statistic/policy (not just passing mention).
+    # Tightened: "report" alone in a headline doesn't count — evidence terms must
+    # co-occur with a number, year, or named institution within the window.
+    evidence_patterns = [
+        r"\b\d+\s*%",                          # percentage (strong signal)
+        r"\b\d[\d,\.]+\s*(million|billion|trillion|yen|yuan|dollar|pound)\b",
+        r"\b(ministry|department|bureau|agency|council|commission|office)\s+of\b",  # "ministry of" not just "office"
+        r"\b\d{4}\b.{0,30}\b(survey|report|white paper|census|index)\b",  # year + report type
+        r"\b(reported|published|released|found|showed|cited|according to)\b",  # attribution verbs
+        r"\b(rose|fell|increased|decreased|dropped|climbed|reached|hit)\b.{0,20}\b\d",
+        r"\b(similar|parallel|comparable|equivalent|likewise|also reported)\b.{0,40}\b\d",
+    ]
+
+    found_signals = []
+    for sig in signals:
+        sig_idx = pre_teacher.find(sig)
+        if sig_idx == -1:
+            continue
+        # Check for evidence within ±200 chars of the signal
+        window_start = max(0, sig_idx - 200)
+        window_end = min(len(pre_teacher), sig_idx + len(sig) + 200)
+        window = pre_teacher[window_start:window_end]
+        for pat in evidence_patterns:
+            if re.search(pat, window):
+                found_signals.append(sig)
+                break
+
+    if not found_signals:
+        return False, (
+            f"No localization bridge found for language={language}. "
+            f"Need a local statistic, ministry/policy reference, or data point — "
+            f"not just a country name in passing. Must appear before teacher section."
+        )
+    return True, f"Localization bridge present (signals: {found_signals[:3]} with local evidence)"
+
+
+def gate_min_word_count(content: str, min_words: int = 600) -> tuple[bool, str]:
+    """Expanded article must meet minimum word count (default 600 words)."""
+    # Strip HTML tags for clean word count
+    import re as _re
+    text = _re.sub(r"<[^>]+>", " ", content)
+    text = _re.sub(r"\s+", " ", text).strip()
+    word_count = len(text.split())
+    if word_count < min_words:
+        return False, f"Article is only {word_count} words (minimum {min_words})"
+    return True, f"Article has {word_count} words (minimum {min_words})"
+
+
+def gate_section_word_counts(content: str) -> tuple[bool, str]:
+    """
+    Check that key sections meet their minimum word counts:
+    - News summary: ≥60 words
+    - Youth impact: ≥50 words
+    - Teacher perspective: ≥75 words (3 paragraphs × 25 words each)
+    - SDG connection: ≥40 words
+    - Forward look: ≥30 words
+    """
+    import re as _re
+
+    def _strip_html(html: str) -> str:
+        return _re.sub(r"\s+", " ", _re.sub(r"<[^>]+>", " ", html)).strip()
+
+    lower = content.lower()
+    failures = []
+
+    # Teacher section (reuse existing helper)
+    teacher_text = _strip_html(_teacher_section_text(content))
+    teacher_wc = len(teacher_text.split())
+    if teacher_wc < 75:
+        failures.append(f"teacher_perspective={teacher_wc}w (need ≥75)")
+
+    # Youth section
+    youth_text = _strip_html(_youth_section_text(content))
+    youth_wc = len(youth_text.split())
+    if youth_wc < 50:
+        failures.append(f"youth_impact={youth_wc}w (need ≥50)")
+
+    # SDG section: find "SDG" keyword and extract surrounding text
+    sdg_match = _re.search(r"sdg\s*\d+", lower)
+    if sdg_match:
+        sdg_start = max(0, sdg_match.start() - 200)
+        sdg_end = min(len(content), sdg_match.end() + 1500)
+        sdg_text = _strip_html(content[sdg_start:sdg_end])
+        sdg_wc = len(sdg_text.split())
+        if sdg_wc < 40:
+            failures.append(f"sdg_connection={sdg_wc}w (need ≥40)")
+
+    if failures:
+        return False, f"Thin sections: {'; '.join(failures)}"
+    return True, "all sections meet minimum word counts"
+
+
 # ---------------------------------------------------------------------------
 # Run all gates
 # ---------------------------------------------------------------------------
@@ -238,6 +456,9 @@ def validate_article(
     content: str,
     primary_sdg: str = "17",
     strict: bool = True,
+    teachers: list[dict] | None = None,
+    teacher: dict | None = None,
+    language: str = "en",
 ) -> dict[str, Any]:
     """
     Run all validation gates on expanded article content.
@@ -252,8 +473,14 @@ def validate_article(
     # Run gates
     gates_to_run = [
         ("six_sections_present", gate_six_sections_present(content)),
+        ("min_word_count", gate_min_word_count(content, min_words=600)),
+        ("section_word_counts", gate_section_word_counts(content)),
         ("named_teacher", gate_named_teacher(content)),
+        ("fallback_teacher", gate_fallback_teacher(teacher=teacher)),
         ("teacher_three_points", gate_teacher_three_points(content)),
+        ("multi_teacher_present", gate_multi_teacher_present(content, teachers=teachers)),
+        ("localization_bridge", gate_localization_bridge(content, language=language)),
+        ("evidence_present", gate_evidence_present(content)),
         ("sdg_number", gate_sdg_number(content)),
         ("sdg_full_title", gate_sdg_full_title(content, primary_sdg)),
         ("youth_anchor", gate_youth_anchor(content)),
@@ -293,7 +520,13 @@ def run_validation(
             item["_needs_manual_review"] = True
             continue
 
-        result = validate_article(content, primary_sdg=primary_sdg)
+        teachers = item.get("_teachers_resolved") or None
+        teacher = item.get("_teacher_resolved") or None
+        language = item.get("language") or "en"
+        result = validate_article(
+            content, primary_sdg=primary_sdg, teachers=teachers,
+            teacher=teacher, language=language,
+        )
         item["_validation"] = result
         item["_validation_failed"] = not result["passed"]
         item["_needs_manual_review"] = not result["passed"]

@@ -1,0 +1,96 @@
+# Pearl News — SDG targets reference.
+# Used by the pipeline to inject SPECIFIC SDG target numbers into the expansion prompt
+# so the model doesn't have to guess. Each topic maps to its most common SDG + target.
+# Source: UN SDG Indicators Framework (https://unstats.un.org/sdgs/indicators/indicators-list/)
+
+schema_version: 1
+
+# Topic → primary SDG mapping with specific targets
+topic_sdg_targets:
+  climate:
+    sdg_number: 13
+    sdg_title: "Climate Action"
+    primary_target: "13.2"
+    target_description: "Integrate climate change measures into national policies, strategies and planning"
+    secondary_targets: ["13.1", "13.3"]
+    metric_example: "global mean temperature increase relative to pre-industrial levels"
+
+  mental_health:
+    sdg_number: 3
+    sdg_title: "Good Health and Well-Being"
+    primary_target: "3.4"
+    target_description: "Reduce by one third premature mortality from non-communicable diseases through prevention and treatment and promote mental health and well-being"
+    secondary_targets: ["3.5", "3.8"]
+    metric_example: "suicide mortality rate per 100,000 population by age group"
+
+  education:
+    sdg_number: 4
+    sdg_title: "Quality Education"
+    primary_target: "4.1"
+    target_description: "Ensure that all girls and boys complete free, equitable and quality primary and secondary education"
+    secondary_targets: ["4.3", "4.4", "4.7"]
+    metric_example: "proportion of children and young people achieving minimum proficiency in reading and mathematics"
+
+  peace_conflict:
+    sdg_number: 16
+    sdg_title: "Peace, Justice and Strong Institutions"
+    primary_target: "16.1"
+    target_description: "Significantly reduce all forms of violence and related death rates everywhere"
+    secondary_targets: ["16.2", "16.3", "16.7", "16.10"]
+    metric_example: "number of victims of intentional homicide per 100,000 population"
+
+  inequality:
+    sdg_number: 10
+    sdg_title: "Reduced Inequalities"
+    primary_target: "10.1"
+    target_description: "Progressively achieve and sustain income growth of the bottom 40 per cent of the population at a rate higher than the national average"
+    secondary_targets: ["10.2", "10.3", "10.4"]
+    metric_example: "growth rates of household expenditure among the bottom 40% of population"
+
+  economy_work:
+    sdg_number: 8
+    sdg_title: "Decent Work and Economic Growth"
+    primary_target: "8.5"
+    target_description: "Achieve full and productive employment and decent work for all, including for young people"
+    secondary_targets: ["8.6", "8.b"]
+    metric_example: "unemployment rate by sex, age, and persons with disabilities"
+
+  partnerships:
+    sdg_number: 17
+    sdg_title: "Partnerships for the Goals"
+    primary_target: "17.16"
+    target_description: "Enhance the Global Partnership for Sustainable Development, complemented by multi-stakeholder partnerships"
+    secondary_targets: ["17.17", "17.6"]
+    metric_example: "number of countries reporting progress in multi-stakeholder development effectiveness monitoring frameworks"
+
+  technology:
+    sdg_number: 9
+    sdg_title: "Industry, Innovation and Infrastructure"
+    primary_target: "9.c"
+    target_description: "Significantly increase access to information and communications technology and strive to provide universal and affordable access to the Internet"
+    secondary_targets: ["9.5", "9.b"]
+    metric_example: "proportion of population covered by a mobile network by technology"
+
+  environment:
+    sdg_number: 15
+    sdg_title: "Life on Land"
+    primary_target: "15.1"
+    target_description: "Ensure the conservation, restoration and sustainable use of terrestrial and inland freshwater ecosystems"
+    secondary_targets: ["15.2", "15.5"]
+    metric_example: "forest area as a proportion of total land area"
+
+  gender:
+    sdg_number: 5
+    sdg_title: "Gender Equality"
+    primary_target: "5.1"
+    target_description: "End all forms of discrimination against all women and girls everywhere"
+    secondary_targets: ["5.2", "5.5", "5.c"]
+    metric_example: "proportion of seats held by women in national parliaments and local governments"
+
+  food_security:
+    sdg_number: 2
+    sdg_title: "Zero Hunger"
+    primary_target: "2.1"
+    target_description: "End hunger and ensure access by all people to safe, nutritious and sufficient food all year round"
+    secondary_targets: ["2.2", "2.4"]
+    metric_example: "prevalence of undernourishment in the population"

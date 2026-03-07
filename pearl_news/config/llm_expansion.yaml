@@ -28,6 +28,13 @@ timeout: 360
 # Target word count for expanded body (overrides site.yaml target_word_count when set)
 target_word_count: 1000
 
+# Minimum word count — articles shorter than this trigger a retry with the short draft as new input.
+# Validation gate also checks this. Set lower than target to allow some flexibility.
+min_word_count: 600
+
+# How many times to retry expansion if article is below min_word_count (0 = no retries)
+expansion_retries: 1
+
 # Max tokens the model can generate per call.
 # 1200 tokens ≈ 900-1000 word article — faster than 2048 and enough for full article.
 # Reducing from 2048 saves ~4 min of unnecessary generation on M4.

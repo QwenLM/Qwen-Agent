@@ -2,11 +2,18 @@
 topic_key: partnerships
 topic_sdg: "17"
 
+# STATUS: STARTER — atoms are placeholder approximations.
+# TODO: Replace each atom with a verified teaching sourced from the teacher's actual
+#       published works, talks, or doctrine files in SOURCE_OF_TRUTH/.
+#       Each atom should be 30-50 words, specific enough to connect to a news event.
+description: "Teacher atoms for partnerships-related articles"
+
 teachers:
   master_feung:
     display_name: "Master Feung"
     tradition: "Taoist"
     attribution: "From within the Taoist tradition, Master Feung teaches that"
+    status: starter
     atoms:
       - >
         the Taoist concept of "he"—harmony that arises from the productive meeting of
@@ -29,11 +36,58 @@ teachers:
         For young people in developing nations negotiating with international institutions,
         the tradition offers a standard for evaluating whether a partnership is actually
         a partnership.
+      - >
+        the Taoist principle of "wu wei"—non-forced action, moving with rather than against
+        the grain—suggests that effective multi-stakeholder coalitions cannot be engineered
+        from the outside. Civil society partnerships that succeed do so by aligning
+        institutional incentives with actual community needs, not by imposing coordination
+        structures. The tradition warns against partnership frameworks that require constant
+        administrative enforcement as evidence they lack the central principle that holds "Bi."
+      - >
+        the Taoist understanding of "yin-yang"—complementary opposites in dynamic relationship—
+        offers a lens for North-South partnerships. Rather than viewing development assistance
+        as North strength serving South need, the tradition suggests each party possesses
+        complementary capacity. Partnerships that obscure the Global South's agency and
+        knowledge treat yin-yang as hierarchy rather than as an energetic system of equals
+        in genuine exchange.
+      - >
+        Taoist cosmology holds that the Dao—the underlying order—works through minimal
+        intervention and maximum alignment. Technology transfer partnerships that impose
+        systems without adapting to local context, leadership, and capacity violate this
+        principle. The tradition would ask: how much does the partnership require technical
+        expertise external to the receiving community to function? If much, the partnership
+        has not yet found the alignment the Dao requires.
+      - >
+        the Taoist teaching that "the five colours blind the eye" applies to funding partnerships.
+        When donors demand reporting across dozens of metrics and frameworks, the foundation's
+        actual work becomes invisible beneath the administrative complexity. The tradition
+        suggests that genuine partnership involves sufficient epistemic humility from the funder
+        to ask: what do we not know about your work that matters most?
+      - >
+        the Taoist principle of "returning to the root"—that sustainable systems depend on
+        being grounded in actual conditions—applies to interfaith partnership. Dialogue
+        between traditions that focuses on abstract principles rather than on the concrete
+        practices that sustain each community lacks grounding. The tradition asks: what does
+        my practice require of yours, materially and not just rhetorically?
+      - >
+        Taoist thought distinguishes between "named" and "nameless" knowing. Partnership
+        accountability frameworks built on explicit metrics can obscure what matters most—the
+        relational trust that enables flexibility when circumstances change. The tradition
+        asks whether data-sharing agreements capture the actual health of the partnership or
+        merely create the appearance of transparency while obscuring deeper dysfunction.
+      - >
+        the Taoist teaching on "the void"—the power of empty space—suggests that truly
+        interdependent partnerships require space for each party to change direction without
+        requiring consensus. Coalition structures that demand unanimity or supermajority
+        decisions reproduce the lowest-common-denominator pattern. The tradition would suggest
+        building partnerships where parties can diverge on tactics while maintaining shared
+        commitment to deeper principles.
 
   sai_ma:
     display_name: "Sai Maa"
     tradition: "Vedic Hindu"
     attribution: "From within the Vedic tradition, Sai Maa teaches that"
+    status: starter
     atoms:
       - >
         the Vedic concept of "yajna"—sacred exchange, the ritual of mutual offering—holds
@@ -57,11 +111,53 @@ teachers:
         than compensation. Sai Maa's teaching distinguishes between seva freely chosen
         and seva structurally imposed: the first is spiritually generative; the second
         is exploitation with a spiritual label applied.
+      - >
+        the Vedic concept of "dana"—giving as a spiritual discipline—teaches that the
+        gift must be appropriate to the receiver's capacity and condition. Funding partnerships
+        that deploy resources without accounting for absorptive capacity, existing institutional
+        strength, or the receiver's agency violate this principle. The tradition asks: does
+        the funder understand what this community can actually do with this much, this quickly?
+      - >
+        Vedic teaching on "sameness and difference"—that creation requires both singular
+        principles and infinite manifestations—applies to cross-sector partnerships. Public
+        institutions, private enterprise, and civil society each embody different dharmas
+        (duties and natures). True partnership requires each sector to honor the others'
+        constraints and purposes rather than asking all to serve a single institutional logic.
+      - >
+        the Vedic understanding of "karma"—that all action produces consequences—teaches
+        that partnership agreements that concentrate benefits in one party while distributing
+        costs across both create karmic imbalance that will eventually destabilize the
+        relationship. Data-sharing agreements that extract Global South information for
+        Northern research institutions without shared ownership of findings violate this principle.
+      - >
+        Vedic cosmology teaches "tapas"—the heat of austerity and discipline—as the force
+        that maintains order through difficulty. Youth-led organizations in precarious partnerships
+        with larger institutions need internal tapas: shared discipline about their non-negotiables.
+        The tradition warns that partnerships without clear boundaries about what each party will
+        not compromise dissolve under pressure.
+      - >
+        the Vedic concept of "daksina"—the gift offered in return for knowledge transmission—
+        teaches that technology transfer partnerships are fundamentally unequal unless the
+        receiving party can negotiate fair compensation for both the knowledge they already possess
+        and the labor required to integrate new systems. The tradition asks: who owns the
+        capacity created by this partnership?
+      - >
+        Vedic teaching on "varna"—the social order of different classes, each with distinct
+        duties—applies to UN partnership frameworks. The tradition does not reject hierarchy
+        but insists it be explicit and honored. Partnerships that claim equality while
+        maintaining structural power differences in voting rights, agenda-setting, and
+        implementation authority are dishonest in ways that the tradition sees as corrupting.
+      - >
+        the Vedic principle of "anna"—the sacred nourishment that sustains all life—teaches
+        that partnerships cannot survive on ideology alone. Civil society coalitions built
+        on shared values without adequate funding, staffing, and material support will
+        eventually fracture. The tradition asks: am I asking partners to subsist on vision alone?
 
   ahjan:
     display_name: "Ajahn Ahjan"
     tradition: "Theravada Buddhist"
     attribution: "From within the Theravada Buddhist tradition, Ajahn Ahjan teaches that"
+    status: starter
     atoms:
       - >
         the Buddhist "sangha"—the community of practitioners—is one of the Three Jewels,
@@ -85,3 +181,317 @@ teachers:
         the communities the organisation serves is in a relational contradiction that
         the tradition does not resolve with good intentions alone. The question the
         tradition asks is structural: what does this partnership require me to be silent about?
+      - >
+        Buddhist teaching on "right speech"—truthful, beneficial, timely, gentle, and motivated
+        by compassion—applies to multilateral negotiation. Partnerships built on language that
+        obscures actual power dynamics, redefines terms to serve particular interests, or avoids
+        naming structural inequities practice wrong speech. The tradition holds that such speech
+        corrupts the sangha even when all parties find it convenient.
+      - >
+        the Buddhist concept of "upadana"—attachment that causes suffering—teaches that
+        partnerships built on dependency create suffering for both parties. When donors create
+        structures that make recipient organizations dependent on continued external funding
+        for core operations, the tradition sees this as a partnership that generates dukkha
+        (suffering) even when it produces measurable outputs.
+      - >
+        Buddhist ethics teach "ahimsa"—non-harm—as foundational to right action. Interfaith
+        partnerships that require participants to subordinate their tradition's core practices
+        or teachings to maintain coalition unity practice harm, even if unintentionally. The
+        tradition asks: what am I being asked to set aside in order to be a good partner?
+      - >
+        Buddhist teaching on "sila"—ethical conduct—distinguishes between actions that violate
+        precepts and actions that merely create discomfort or require adaptation. Technology
+        partnerships that compromise an organization's independent capacity to assess its own
+        data or outcomes violate sila; partnerships that require learning new systems do not.
+        The tradition asks: does this compromise my integrity or my comfort?
+      - >
+        the Buddhist understanding of "anatta"—non-self, the teaching that identity is relational
+        and interdependent—applies to accountability frameworks in partnerships. Such frameworks
+        that assume organizations have fixed, independent essences and can be held to identical
+        metrics miss the relational nature of development. The tradition asks: what does this
+        organization become through our partnership, and do our metrics account for that?
+      - >
+        Buddhist teaching on "samadhi"—focused attention and mental stability—is required for
+        effective coalition work. Civil society coalitions that fracture under external pressure
+        or shift priorities frequently lack the sangha-level discipline to maintain focus. The
+        tradition teaches that stability comes not from enforced alignment but from shared
+        understanding of purpose deep enough to weather disagreement on tactics.
+      - >
+        the Buddhist principle of "dana"—generous giving with no expectation of return—is
+        sometimes invoked to justify inequitable partnerships. But Buddhist teaching distinguishes
+        dana freely given from coerced giving presented as voluntary. North-South partnerships
+        that structure recipient nations as perpetually grateful recipients rather than as
+        contributors of essential knowledge practice a distorted form of dana. True dana requires
+        the receiver's dignity to remain intact.
+
+  ra:
+    display_name: "Ra"
+    tradition: "Witnessing Awareness"
+    attribution: "Ra, whose teaching centers on witnessing awareness, clarity of being, and grounded presence, teaches that"
+    status: starter
+    atoms:
+      - >
+        the practice of "witnessing awareness"—the capacity to observe what is actually happening
+        without immediately moving to fix or judge it—is foundational to sustainable partnership.
+        Multilateral partnerships that skip the stage of genuinely understanding each party's
+        constraints, incentives, and fears move too quickly to consensus. The tradition holds
+        that clarity of seeing precedes clarity of action in any durable collaboration.
+      - >
+        Ra's teaching on "grounded presence"—being fully here rather than performing a role—
+        applies directly to youth-led organization participation in institutional partnerships.
+        When young people are brought to partnership tables but expected to represent their
+        communities rather than speak from their own understanding, their presence is performance
+        not grounding. The tradition asks: are you here as yourself or as a representative?
+      - >
+        the practice of "clear seeing"—recognizing patterns beneath surface events—is essential
+        for assessing North-South partnership dynamics. The tradition teaches that development
+        assistance often appears as generosity while functioning as dependency creation. Clear
+        seeing means naming this pattern without assuming malice. Seeing clearly allows for
+        genuine renegotiation rather than either resentment or grateful acceptance.
+      - >
+        Ra's teaching that "awareness precedes choice" applies to joining funding partnerships.
+        Organizations that sign agreements without genuinely understanding the reporting burden,
+        the implicit values embedded in metrics, or the opportunity costs of compliance practice
+        unconscious partnership. The tradition teaches that conscious partnership requires full
+        awareness of what is being asked and what is being surrendered.
+      - >
+        the principle of "witnessing without agenda"—seeing the other party's actual position
+        rather than the position you hoped they held—is essential for cross-sector partnerships.
+        Public institutions, private enterprise, and civil society have different operating
+        logics. Partnership that works requires each sector to witness and acknowledge these
+        differences rather than expecting all to operate from shared values.
+      - >
+        Ra's teaching on "the cost of unconsciousness" holds that partnerships that lack clarity
+        about power dynamics will eventually be corrupted by unacknowledged power. Interfaith
+        dialogue that avoids naming historical power differentials between traditions, or between
+        traditions and the state, creates partnerships that reproduce existing inequities while
+        believing themselves to be transcending them.
+      - >
+        the practice of "witnessing what is not said" is crucial in data-sharing agreements. The
+        tradition teaches that what partners do not explicitly discuss—assumptions about who owns
+        findings, what counts as success, who benefits from insights—will shape outcomes more than
+        written terms. True partnership requires bringing unspoken assumptions to awareness.
+      - >
+        Ra's teaching that "grounded presence reveals what is real" applies to monitoring and
+        accountability in partnerships. Metrics-based accountability can create performance
+        rather than presence. The tradition teaches that presence-based accountability—regular
+        genuine conversation about what is actually working and what is not—creates conditions
+        for real adaptation and growth.
+      - >
+        the principle of "clarity about limits" is central to sustainable coalition building. Ra
+        teaches that partnerships often fail because parties never clearly state what they cannot
+        or will not do. Civil society coalitions built on clarity about each organization's
+        non-negotiables and capacity limits are more durable than coalitions built on aspirations
+        of total alignment.
+      - >
+        Ra's understanding of "witnessing others' aliveness"—recognizing the full humanity and
+        agency of partners—is foundational to equitable partnerships. Technology transfer that
+        treats the receiving community as empty vessels to be filled, or as problems to be solved,
+        obscures their existing knowledge and capacity. The tradition teaches that true partnership
+        requires witnessing and honoring the aliveness and agency already present.
+
+  miki:
+    display_name: "Miki"
+    tradition: "Shinto"
+    attribution: "From within the Shinto tradition, Miki teaches that"
+    status: starter
+    atoms:
+      - >
+        Shinto teaching on "kami"—the sacred presence in all things and beings—holds that
+        every community, every place, every institution possesses inherent sacred worth and
+        capacity. Applied to development partnerships: the tradition rejects the premise that
+        Global South communities need external salvation and insists that external partners
+        must approach with reverence for capacity that already exists. Genuine partnership
+        acknowledges kami in each party.
+      - >
+        the Shinto principle of "wa"—harmony achieved through mutual respect and acknowledgment
+        of each element's place—applies to multi-stakeholder coalitions. This is not consensus;
+        it is clear recognition of each party's role, authority, and limits. Coalitions built
+        on wa acknowledge that participants have different stakes, different constituencies,
+        and different non-negotiables; harmony comes from honoring these differences.
+      - >
+        Shinto teaching on "matsuri"—sacred ritual that brings community together—suggests that
+        effective partnerships require regular ritual moments of alignment and renewal. Funding
+        partnerships that operate through annual reports alone lack the relational practice that
+        Shinto identifies as essential for sustained community. The tradition would ask: when do
+        we gather for something other than problem-solving?
+      - >
+        the Shinto concept of "omotenashi"—wholehearted hospitality—applied to youth participation
+        in institutional partnerships. True omotenashi requires the institution to genuinely
+        prepare space for young people to bring their full selves and perspectives. Partnerships
+        that include youth but maintain structures that control what young people can say or do
+        practice false hospitality. Miki teaches that false hospitality corrupts the partnership.
+      - >
+        Shinto understanding of "nature's order"—that things have seasons and cycles—applies to
+        technology transfer partnerships. The tradition teaches that importing external systems
+        without attention to local conditions and timing violates natural order. Sustainable
+        partnerships work with local capacity-building timelines rather than imposing donor timelines
+        that prioritize spending and reporting schedules.
+      - >
+        the Shinto principle of "purity and cleansing"—renewal through returning to essence—
+        applies to civil society coalitions experiencing misalignment. Rather than managing
+        conflict through mediation or compromise, Miki's teaching suggests periodic renewal
+        through returning to core shared purpose. This requires honest conversation about whether
+        participants still align on essentials or whether it is time to part.
+      - >
+        Shinto teaching that "sacred places carry memory" applies to interfaith partnerships
+        rooted in specific communities. The tradition holds that partnership divorced from place,
+        from the specific history of relationship between traditions in particular contexts,
+        becomes abstract and unstable. Genuine interfaith partnership requires knowledge of
+        what happened here, between these people, in this place.
+      - >
+        the Shinto practice of "yohakitai"—approaching the unknown with awe rather than the need
+        to control it—applies to outcomes-based accountability. Partnership frameworks that
+        demand full specification of results before implementation assume the funder can control
+        the future. The tradition teaches that genuine partnership requires some willingness to
+        be surprised by what emerges.
+      - >
+        Shinto understanding of "connection across boundaries"—that kami transcend divisions—
+        applies to North-South partnerships. The tradition rejects the notion that development
+        unfolds as transfer from North to South and insists on mutual exchange. Each place has
+        kami; each community has gifts to offer. Genuine partnership requires both parties to
+        recognize what they receive from the other.
+      - >
+        the Shinto principle of "reciprocal obligation"—that receiving creates a relationship
+        that continues over time—applies to donor-recipient dynamics. Miki teaches that when
+        funding is offered and accepted, a relationship is created with weight and duration beyond
+        the project period. Partnerships that treat each grant cycle as a discrete transaction
+        rather than as deepening relationship violate this principle.
+
+  pamela_fellows:
+    display_name: "Pamela Fellows"
+    tradition: "Christian Contemplative"
+    attribution: "From within the Christian contemplative tradition, Pamela Fellows teaches that"
+    status: starter
+    atoms:
+      - >
+        the Christian contemplative teaching on "imago Dei"—that all humans are created in the
+        image of God—grounds genuine partnership. This doctrine insists that the poorest, most
+        marginalized person carries divine image equal to the wealthy and powerful. Applied to
+        development partnerships: the tradition requires that Global South partners be encountered
+        as image-bearers, not as problems. This transforms partnership from helping to recognition.
+      - >
+        Christian contemplative practice of "kenosis"—self-emptying, the willingness to surrender
+        presumed knowledge—is essential for institutional partners in youth-led collaborations.
+        Institutions that enter partnerships with fixed expertise and expect youth to receive
+        wisdom practice inflated selfhood, not kenosis. Pamela's teaching holds that true
+        partnership requires institutions to empty themselves of the certainty that they know
+        what is needed.
+      - >
+        the Christian teaching on "shalom"—peace understood as right relationship and justice—
+        applies to accountability frameworks in partnerships. The tradition distinguishes shalom
+        from mere absence of conflict. Partnerships built on metrics that avoid confronting
+        injustice, or that measure compliance rather than justice, produce false peace. True
+        partnership pursues shalom: the hard work of making things right.
+      - >
+        Christian contemplative teaching on "communion"—shared participation in something larger
+        than individual interest—offers a lens for civil society coalition building. The tradition
+        holds that coalitions that function through shared interests are fragile; coalitions that
+        arise from participation in something larger—a shared vision of the common good—are
+        sustained. Pamela's teaching asks: what are we in communion around?
+      - >
+        the Christian practice of "hospitality"—welcoming the stranger, caring for the vulnerable—
+        applies to technology transfer partnerships. The tradition teaches that bringing new
+        systems into community is not merely technical but profoundly relational. True hospitality
+        means the receiving community determines the pace and conditions of integration. Imposing
+        technology, even with good intentions, practices inhospitality.
+      - >
+        Christian contemplative teaching on "stewardship"—the responsibility to care for what is
+        entrusted to us—applies to data-sharing agreements. The tradition holds that information
+        about a community is entrusted to researchers and institutional partners, not owned by them.
+        Stewardship means using that trust with care for the community's wellbeing, not for the
+        researcher's advancement. Pamela teaches that partnerships sometimes require the researcher
+        to limit publication to protect community.
+      - >
+        the Christian teaching on "the least among you"—the insistence that how we treat the most
+        vulnerable reveals our spiritual condition—applies to North-South partnerships. The
+        tradition would examine whether partnership structures protect or exploit the most
+        vulnerable members of the receiving community. If vulnerable people are burdened by
+        monitoring requirements, if their labor is extracted under partnership frameworks, the
+        partnership violates Christian ethics.
+      - >
+        Christian contemplative practice of "listening prayer"—attentive waiting for what God
+        seeks to communicate—applies to interfaith dialogue. The tradition teaches that genuine
+        encounter with another tradition requires willingness to be changed by the encounter,
+        not merely to translate others' teachings into one's own framework. Interfaith partnership
+        that expects the other tradition to remain static, knowable, and containable practices
+        false listening.
+      - >
+        the Christian teaching on "justice"—understood as the radical redistribution of resources
+        toward the vulnerable—applies to funding partnerships. The tradition does not accept
+        partnerships that maintain structural inequality while providing services. Pamela's
+        teaching holds that justice-oriented partnership requires examination of whether partnership
+        structures perpetuate or interrupt the causes of vulnerability.
+      - >
+        Christian contemplative teaching on "incarnation"—that the sacred becomes present in
+        particular bodies, places, and communities—applies to multilateral partnership frameworks.
+        The tradition insists that abstract agreements and universal metrics miss what matters most:
+        the particular historical reality of each community. True partnership requires presence to
+        incarnate conditions: this place, this people, this history, right now.
+
+  maat:
+    display_name: "Ma'at"
+    tradition: "Ancient Egyptian Ma'at Principle"
+    attribution: "From within the Ma'at tradition of cosmic justice and truth, Ma'at teaches that"
+    status: starter
+    atoms:
+      - >
+        the Ma'at principle of "truth in all things"—cosmic justice requiring complete honesty
+        in relationship—applies to partnership disclosure. The tradition teaches that partnerships
+        cannot be built on partial truths, omissions, or strategic silence about limitations and
+        interests. Multilateral partnerships that permit nations to obscure their actual negotiating
+        positions or strategic interests violate Ma'at. Sustainable partnership requires full truth.
+      - >
+        Ma'at teaching on "balance and equilibrium"—the principle that all forces must be balanced
+        for cosmic order to function—applies to power in partnerships. The tradition does not expect
+        all parties to have equal power; it insists that acknowledged power differentials be balanced
+        through explicit protections for the vulnerable. Unacknowledged power differentials corrupt
+        partnership at a cosmic level, not merely a practical one.
+      - >
+        the Ma'at principle of "reciprocal duty"—that all beings have obligations toward the order
+        of creation—applies to North-South partnerships. The tradition holds that powerful nations
+        have duties toward less powerful ones, not from charity but from cosmic obligation. This
+        transforms development partnership from optional generosity to non-negotiable responsibility.
+        Ma'at requires that Northern nations acknowledge what they owe.
+      - >
+        Ma'at teaching that "truth-telling is the foundation of justice" applies to outcomes
+        reporting and accountability. The tradition would reject partnership frameworks where
+        communities report what funders want to hear rather than what is actually occurring. True
+        accountability requires conditions where communities can speak truth about failures,
+        adaptation, and unexpected learning without penalty.
+      - >
+        the Ma'at principle of "cosmic order through proper alignment"—that the universe requires
+        each element to fulfill its proper function—applies to cross-sector partnerships. Public
+        sector, private sector, and civil society each have distinct proper functions and duties.
+        Partnerships that ask any sector to abandon its proper function corrupt cosmic order. The
+        tradition teaches that genuine partnership respects and preserves each sector's integrity.
+      - >
+        Ma'at teaching on "justice through restoration"—not punishment but restoration to right
+        relationship—applies to partnership conflicts. When partnerships experience breach or harm,
+        the tradition teaches toward restoration rather than dissolution. But restoration requires
+        genuine acknowledgment of harm and commitment to transformation. False restoration that
+        minimizes impact or expects immediate forgetting violates Ma'at.
+      - >
+        the Ma'at principle that "all beings contribute to cosmic wholeness"—that every creature
+        has essential role and value—applies to youth participation in institutional partnerships.
+        The tradition insists that young people's presence is not optional or decorative; their
+        participation is essential to the cosmic health of partnership. Institutions that include
+        youth while controlling what they can say or do deny their essential contribution.
+      - >
+        Ma'at teaching that "deception destroys the foundations of order" applies to data-sharing
+        agreements. The tradition holds that research partnerships built on incomplete disclosure
+        about how findings will be used, who owns the data, or what the researcher's actual
+        interests are create foundational corruption. Even beneficial outcomes cannot legitimize
+        deceptive partnerships in Ma'at's framework.
+      - >
+        the Ma'at principle of "weighing hearts"—honest assessment of intention and integrity—
+        applies to evaluating whether to enter partnerships. The tradition teaches that before
+        agreeing to partnership, each party should honestly examine its own heart: Are we genuinely
+        committed to the other's wellbeing or are we using partnership as a mechanism for other
+        ends? Partnerships built on hidden intentions cannot sustain.
+      - >
+        Ma'at teaching that "harmony cannot coexist with injustice" applies to civil society
+        coalitions. The tradition holds that coalitions may experience surface-level harmony while
+        perpetuating injustice toward vulnerable members or toward excluded communities. True
+        harmony in Ma'at's sense requires confronting injustice, not managing disagreement about
+        whether injustice exists. Uncomfortable truth-telling is required for genuine coalition.

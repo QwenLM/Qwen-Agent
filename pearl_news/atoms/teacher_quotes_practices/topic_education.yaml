@@ -1,79 +1,314 @@
 # Pearl News — teacher atoms for topic: education
+# STATUS: STARTER — atoms are placeholder approximations.
+# TODO: Replace each atom with a verified teaching sourced from the teacher's actual
+#       published works, talks, or doctrine files in SOURCE_OF_TRUTH/.
+#       Each atom should be 30-50 words, specific enough to connect to a news event.
+
 topic_key: education
 topic_sdg: "4"
+description: "Teacher atoms for education-related articles"
 
 teachers:
+  ahjan:
+    display_name: "Ajahn Ahjan"
+    tradition: "Theravada Buddhist"
+    attribution: "From within the Theravada Buddhist tradition, Ajahn Ahjan teaches that"
+    status: starter
+    atoms:
+      - >
+        true education is learning to see clearly how the mind generates suffering and how to interrupt that process.
+        Systems teaching only facts and skills while ignoring the mind's patterns leave graduates disoriented when facing complexity,
+        ambiguity, and failure—which is most of adult life.
+      - >
+        the Pali canon preserves the Buddha's instruction to students: "do not accept my words on faith alone; test them yourself."
+        This pedagogy of investigation, not compliance, contrasts with most modern education. Young people need practice in discernment, not transmission of fixed answers.
+      - >
+        Buddhist monasteries have preserved education for millennia through mentorship—direct relationship between experienced and novice practitioners.
+        As systems scale, personal mentorship becomes rare. The cost is immeasurable: young people need models of integrated wisdom, not just information.
+      - >
+        artificial intelligence tools that automate thinking about problems prevent students from developing mindfulness—the capacity to observe their own mental processes.
+        True education cultivates self-awareness; replacing thinking with AI shortcuts accelerates ignorance of how one's mind actually works.
+      - >
+        student debt systems trap young people in grasping and aversion—constant worry about repayment prevents the mental clarity needed for genuine learning.
+        The Buddha taught that craving is the root of suffering; an education system built on financial desperation contradicts its own aims.
+      - >
+        the tradition values practical, livelihood skills developed through patient apprenticeship under a skilled teacher, not abstract credentials.
+        Pressuring all students toward academic paths ignores that some learn best through craft, cultivation, and hands-on mastery of specific skills.
+      - >
+        early childhood education in Buddhist community practices emphasizes shared singing, chanting, and cooperative ritual that attune young minds
+        to collective rhythm and attention. Schools abandoning these practices create children fragmented within themselves and unable to synchronize with others.
+      - >
+        when teachers burn out from unsustainable workloads, they lose the patient presence and compassion that constitutes genuine teaching in the Buddhist framework.
+        A system that exhausts teachers destroys the very relational quality that transforms students.
+      - >
+        digital literacy without mindfulness literacy creates sophisticated fools: young people who can operate technology but lack wisdom about their own attention,
+        intention, and the hidden costs of constant technological mediation on their capacity for presence and awareness.
+      - >
+        school systems seeing high dropout rates should ask: what does the environment teach students about their own adequacy? When young people are regularly positioned
+        as failures through testing and tracking, some rationally leave. The question is not "why do they drop out" but "why should they stay?"
+
+  master_feung:
+    display_name: "Master Feung"
+    tradition: "Taoist"
+    attribution: "From within the Taoist tradition, Master Feung teaches that"
+    status: starter
+    atoms:
+      - >
+        the Taoist master teaches through example, not explanation. The student learns by observing patterns of aliveness—how the teacher moves through
+        difficulty, responds to surprise, accepts what cannot be controlled. This cannot be digitized. Young people watching teachers perform expertise
+        rather than live wisdom learn theater, not transformation.
+      - >
+        wu wei—effortless right action—emerges from deep knowledge of the situation, not from following rules. Overscripted curricula produce students
+        who cannot adapt when conditions change. True education is learning to read the situation and act in alignment with what is actually needed.
+      - >
+        the Tao Te Ching teaches that the greatest value often lies in the empty space—the space in a cup that makes it useful,
+        the unspoken silence in teaching. Education obsessed with filling every moment with content misses the space where real learning happens.
+      - >
+        AI systems that algorithmically optimize learning paths contradict wu wei—they impose predetermined structure on what needs to emerge organically.
+        Real education requires teachers responsive to each student's unique pattern, not systems that standardize response.
+      - >
+        when students abandon education due to debt burden, they leave behind the very capacity to develop natural skill and mastery that Taoist education
+        emphasizes. Financial stress hardens the spirit; true learning requires the relaxed attention that economic security allows.
+      - >
+        the Taoist path honors natural talent unfolding according to its own nature: some are drawn to scholarship, others to craft, others to service.
+        Standardized testing flattens this diversity into a single hierarchy, ignoring that different paths express different aspects of human development.
+      - >
+        early childhood education in the Taoist frame is not drilling predetermined skills but creating conditions where a child's natural curiosity and aliveness
+        can unfold. Young children learn best through play, exploration, and direct engagement with living things—not structured instruction.
+      - >
+        when teaching becomes an unsustainable occupation, teachers exhaust their own aliveness and cannot model the quality of presence that transmits true learning.
+        The Tao Te Ching teaches that emptiness precedes fullness; burnt-out teachers are depleted vessels, unable to teach by example.
+      - >
+        digital devices train perception toward artificiality—curated images, optimized interfaces, mediated relationships. Young people need direct encounter
+        with natural conditions—weather, materials, living systems—to develop the refined perception that wu wei requires.
+      - >
+        when a young person drops out of school, it often signals the system has failed to align with their actual nature and capacity. Rather than pathologizing
+        the dropout, ask: what alternative path honors how this person is built to learn and contribute?
+
+  sai_ma:
+    display_name: "Sai Maa"
+    tradition: "Vedic Hindu"
+    attribution: "From within the Vedic Hindu tradition, Sai Maa teaches that"
+    status: starter
+    atoms:
+      - >
+        the gurukul model embedded education in lived relationship—the student lived with the teacher, learning through example, conversation, shared life.
+        Modern systems atomize learning: subject experts delivering content to strangers. Young people educated this way acquire information but lack the relational
+        container where real transformation occurs.
+      - >
+        Vedic education organized around dharma—each person's unique nature, capacity, and right action—rather than ranking uniform individuals competitively.
+        The tradition claims every person has a specific learning path; discovering that path matters more than filling it with standardized content.
+      - >
+        shruti—that which is heard—transmitted profound knowledge through the teacher's voice, presence, relational field. Moving decisively to text and screen,
+        education loses what oral transmission carried. This loss affects disadvantaged students most: those needing relational presence to learn.
+      - >
+        when AI systems make educational recommendations based on aggregate data rather than knowing the individual student's dharma, they systematize
+        the opposite of Vedic education. Technology cannot replace the teacher who sees the student's unique nature and possibility.
+      - >
+        student debt creates conditions where poor and middle-class young people cannot afford the unpaid apprenticeships and relational learning that Vedic
+        education privileged. Access to genuine education becomes class-stratified; only wealthy students can afford mentorship over mere credential.
+      - >
+        the Vedic framework recognizes four legitimate paths: scholar, warrior, merchant, and laborer, each requiring different education. Forcing all
+        students through academic pathways violates the diversity of human dharma and creates widespread underemployment and dissatisfaction.
+      - >
+        early childhood in the Vedic tradition emphasized samskara—cultural imprinting through ritual, story, and embodied practice—not early academics.
+        Moving reading and testing earlier into childhood disrupts the sensory and relational development that actually prepares the mind for learning.
+      - >
+        teachers in the gurukul system were honored as second parents, sustained by community support. When teaching becomes a burnt-out profession, we've
+        severed the dignity and relational standing that allowed teachers to transmit wisdom beyond mere information delivery.
+      - >
+        digital literacy without dharma literacy leaves young people technically skilled but spiritually disoriented, able to operate digital systems
+        without understanding their own purpose or how technology shapes consciousness. Education that omits dharma discovery is incomplete.
+      - >
+        when students drop out, the Vedic inquiry is not "how do we retain them in an unsuitable path" but "what is this person's actual dharma and how can we
+        support them toward discovering it?" Some people are meant to leave formal schooling and develop through different education.
+
   junko:
     display_name: "Junko"
     tradition: "Zen Buddhist"
     attribution: "From within the Zen Buddhist tradition, Junko teaches that"
+    status: starter
     atoms:
       - >
-        Zen pedagogy has always distinguished between "learning" and "understanding through
-        direct experience"—the koan tradition exists precisely because some things cannot
-        be transmitted through information transfer alone. For Gen Z who are both the most
-        credentialled and the most uncertain generation in living memory, this distinction
-        matters: their anxiety is not a knowledge deficit but an experience deficit—of
-        difficulty, failure, and recovery from failure.
+        Zen distinguishes learning—information transfer—from understanding through direct experience. Koans exist precisely because some knowledge cannot
+        be transmitted; it must be discovered. Young people most credentialled in living memory are simultaneously most uncertain, revealing that information
+        abundance does not create wisdom.
       - >
-        the Japanese concept of "shokunin"—the master practitioner who has devoted a life
-        to one craft—is in direct tension with the credential-stacking logic that now governs
-        education in Japan and elsewhere. For young people who feel they must be excellent
-        at many things simultaneously, the tradition offers a counter-model: depth of practice
-        creates capacity that breadth of credential cannot.
+        shokunin—the master craftsperson devoted to one practice over decades—contrasts with credential-stacking logic dominating contemporary education.
+        Depth of practice creates capacity breadth cannot. Students fragmented across many demands develop shallow competence, not adaptive mastery.
       - >
-        Zen training uses "dharma combat"—direct, unscripted questioning between teacher
-        and student—as a diagnostic tool for genuine understanding versus performance of
-        understanding. In a global education system that has standardised the performance
-        of understanding (examination), the question the tradition asks is: what would
-        learning look like if it could not be performed for an evaluator?
+        dharma combat—unscripted questioning between teacher and student—diagnoses genuine understanding versus performance of understanding. Modern education
+        standardizes performance (examination). The tradition asks: what would learning look like if it could not be performed for evaluation?
+      - >
+        AI that generates answers to any question makes the Zen insight urgent: the real education is learning to ask the right question. Systems training
+        students to consume AI-generated answers without developing their own discernment create dependency, not autonomy.
+      - >
+        when student debt forces young people to prioritize income over exploration, they cannot afford the years of devoted practice that shokunin mastery requires.
+        Debt-driven education pushes toward quick credentials rather than deep, long-term skill development that brings genuine fulfillment.
+      - >
+        Zen values the specific path: the novice may discover their teaching through pottery, calligraphy, or sitting meditation. Forcing all students into academic
+        tracks ignores that mastery in craft, care work, or service can express the same depth as scholarly achievement.
+      - >
+        early childhood education in Zen monasteries emphasizes movement, play, and direct observation of natural phenomena—not early instruction. Young children
+        develop their capacity to see clearly when they have time for unstructured exploration and observation without premature conceptual overlay.
+      - >
+        when Zen teachers are exhausted from unsustainable practice schedules, they cannot offer the alert presence and compassionate attention that dharma combat
+        requires. Teaching is a contemplative practice; systems that burn out teachers corrupt the transmission itself.
+      - >
+        digital technology that mediates direct experience prevents the immediate contact with situation that Zen education requires. Young people need unmediated
+        encounter with material reality—not curated information about it—to develop clear seeing.
+      - >
+        when students leave school, they often signal they cannot reconcile the performative, credential-driven system with their deeper search for authentic
+        understanding. Rather than viewing dropout as failure, Zen asks: might they be seeking a more direct path?
+
+  miki:
+    display_name: "Miki"
+    tradition: "Shinto"
+    attribution: "From within the Shinto tradition, Miki teaches that"
+    status: starter
+    atoms:
+      - >
+        Shinto education embedded learning in participation in communal rituals, seasonal cycles, relationship to place. This embedded learning fostered
+        belonging, responsibility, and practical knowledge together. Modern classroom education abstracts learning from context, producing people disconnected
+        from place, community, and natural cycles.
+      - >
+        the principle of learning through participation—mononaware, aware of the pathos in all things—teaches sensitivity to what is unique in each situation.
+        Standardized curricula assume all students should learn the same things the same way. Honoring individual nature means different people, different paths.
+      - >
+        Shinto respect for natural rhythms recognizes that learning capacity fluctuates seasonally, hormonally, developmentally. Systems ignoring this
+        rhythm demand constant high performance. Young people forced against their nature exhaust themselves. Education aligned with actual human rhythms supports flourishing.
+      - >
+        AI systems homogenize—they reduce diverse human variation to algorithmic optimization. Shinto education celebrates the particular: this child,
+        this place, this season, this unique unfolding. Technology that standardizes educational response contradicts Shinto's reverence for specificity.
+      - >
+        when families face educational debt, young people cannot participate in seasonal festivals, volunteer service, and communal practices that transmit
+        cultural belonging. Access to relational, embedded education becomes privilege of the wealthy; others get transactional credential-seeking.
+      - >
+        Shinto recognizes that different people are called to different vocations according to their nature. Pressuring all toward academic credentials
+        dismisses the validity of craft, care, healing, agriculture—the diverse vocations communities actually require to function.
+      - >
+        early childhood in Shinto tradition involved participation in seasonal celebrations, nature observation, and familial rituals that attune the young
+        nervous system to the rhythms of place and community. Institutional care separated from seasonal and natural cycles fragments childhood development.
+      - >
+        when teachers are overworked and depleted, they cannot hold the spacious, attentive presence that allows them to notice and honor each child's unique
+        nature and potential. Teaching burnout directly diminishes the capacity for relational, personalized education.
+      - >
+        digital mediation replaces direct encounter with natural phenomena—weather, wildlife, seasonal change—that Shinto education relies on. Young people
+        need unmediated sensory contact with the natural world to develop the attentiveness and reverence that grounds Shinto learning.
+      - >
+        when young people drop out of standardized education, they are often seeking the relational, embedded, participatory learning that their culture
+        actually provides. Rather than pathologizing this, communities might honor alternative paths that reconnect youth with place and tradition.
 
   master_wu:
     display_name: "Master Wu"
     tradition: "Chan Buddhist"
     attribution: "From within the Chan Buddhist tradition, Master Wu teaches that"
+    status: starter
     atoms:
       - >
-        Chan teaching holds that the teacher's role is not to fill the student with
-        knowledge but to "point at the moon"—to direct attention toward what the student
-        must discover for themselves. In education systems where AI can now generate
-        the answer to most examination questions, this distinction between pointing and
-        filling has become urgent rather than philosophical.
+        the teacher's role is to point at the moon, not fill the student with knowledge. As AI can generate answers to most questions,
+        this distinction becomes urgent: education must teach young people to ask right questions, to see clearly, to discover for themselves.
       - >
-        the concept of "hua tou"—the "head of a word," the essential question beneath
-        the question—is a Chan method for cutting through surface inquiry to the
-        generative question underneath. Applied to education: when a student asks
-        "how do I get a good job," the hua tou is "what would a good life require of
-        me, and is a good job part of that?" Systems that answer the surface question
-        while ignoring the hua tou produce educated people who are not oriented.
+        hua tou—the "head of the word," the essential question beneath surface inquiry—applied to education reveals that "how do I get a good job?"
+        masks the deeper question: "what would a good life require of me?" Systems answering the surface question while ignoring the deep one produce
+        credentialled but dis-oriented people.
       - >
-        Chan practice distinguishes between "book learning" and "mind learning"—the first
-        accumulates information, the second transforms how one sees. Master Wu's teaching
-        holds that a system that produces only book learning is not producing educated
-        people but credentialled people, and that the difference is visible in how they
-        respond to conditions that their credentials did not prepare them for.
+        Chan distinguishes book learning—information accumulation—from mind learning—transformation of how one sees. A system producing only book
+        learning creates credentialled people, not educated people. The difference is visible in how they respond to conditions credentials didn't prepare them for.
+      - >
+        when education becomes entirely algorithmic—AI tutors, automated grading, algorithmic feedback—it eliminates the "gateless gate" moment where a student
+        encounters their own resistance and must transcend it. Systems removing difficulty remove the transformative opportunity at the heart of education.
+      - >
+        student debt systems trap young people in survival mode, unable to ask hua tou—the deep question. Debt forces constant focus on surface question: "will this pay?"
+        True education requires the mental space to ask what life actually requires of you.
+      - >
+        Chan teaching honors that people awaken through different gateways: some through sitting, some through labor, some through creative expression.
+        Academic pathways are one gate among many. Treating academic credentials as the only legitimate path dismisses the diversity of human awakening.
+      - >
+        early childhood education in Chan monasteries emphasized natural play, unstructured exploration, and gradual introduction to practice. Industrializing
+        early childhood through academics short-circuits the spacious, undirected development that allows the awakening mind to unfold naturally.
+      - >
+        when teachers work to exhaustion, they lose the alert presence and compassionate insight that constitutes Chan teaching. An exhausted teacher is
+        a teacher no longer able to meet the student's actual condition—only a burnt-out administrator delivering content.
+      - >
+        digital platforms promising personalized learning through algorithmic adaptation miss what Chan transmission requires: the teacher seeing the student
+        fully, noticing what conditioning needs to be exposed, and offering the specific provocation that catalyzes breakthrough.
+      - >
+        when young people drop out of school, Chan wisdom asks: is the system teaching them to ask hua tou, or is it merely trying to fill their heads?
+        Some leave because they sense the system has forgotten the fundamental question underlying all education.
 
-  sai_ma:
-    display_name: "Sai Maa"
-    tradition: "Vedic Hindu"
-    attribution: "From within the Vedic tradition, Sai Maa teaches that"
+  pamela_fellows:
+    display_name: "Pamela Fellows"
+    tradition: "Christian contemplative"
+    attribution: "From within the Christian contemplative tradition, Pamela Fellows teaches that"
+    status: starter
     atoms:
       - >
-        the Vedic "gurukul" model—in which the student lives in the teacher's household
-        and education is inseparable from lived relationship—encodes the insight that
-        knowledge cannot be fully transmitted outside of relational context. For young
-        people educated in atomised digital environments, the tradition identifies a
-        structural absence: the relational container in which real learning occurs.
+        Christian contemplative education emphasizes formation of the whole person—mind, heart, spirit, body—not just transmission of information.
+        Modern systems fragment this: standardized testing assesses only cognition. Young people educated only mentally, without formation of compassion, integrity, or
+        discernment, become dangerous experts.
       - >
-        Vedic education organised itself around "dharma"—right action suited to one's
-        nature, capacity, and social role—rather than around competitive ranking of uniform
-        individuals. The tradition did not claim that all people should become proficient
-        at the same things; it claimed that each person has a learning path specific to
-        their nature, and that identifying that path is a prior and more important task
-        than filling it with content.
+        the teaching of loving one's neighbor is not sentiment but educational aim: can this system teach young people to genuinely care for the flourishing
+        of others, or does competition for grades and credentials systematically undermine that capacity? Formation matters more than content.
       - >
-        the practice of "shruti"—that which is heard—encodes the Vedic understanding that
-        the most profound transmission is oral, relational, and cannot be reduced to text.
-        In education systems that have moved decisively toward text and screen, the tradition
-        asks what is lost when the human voice of a teacher ceases to be the primary medium,
-        and which young people are most harmed by that loss.
+        contemplative practice—silence, listening, presence—creates the interior spaciousness where real learning happens. Overstimulated young people lacking
+        practice in silence and presence cannot access the deep attention needed for genuine understanding. Contemplative practice is foundational to education.
+      - >
+        when AI systems are trained on vast text corpora, they learn to optimize language for persuasion and engagement without conscience. Young people
+        educated through such systems learn information without formation in discernment and ethical reasoning—they become skilled in manipulation without wisdom.
+      - >
+        student debt systems create spiritual conditions contrary to Christian formation: they cultivate fear, grasping, and competition rather than trust,
+        generosity, and solidarity. Debt-driven education fundamentally opposes the spiritual development that Christian contemplative education aims at.
+      - >
+        Christian tradition honors the contemplative and the active life—some called to prayer and study, others to healing, building, organizing, raising
+        children. Academic credentials as sole marker of human worth contradicts theology that honoring all vocations is essential to Christian community.
+      - >
+        early childhood formation in Christian tradition emphasized stories, hymns, and practices that shaped the child's imagination and moral sensibility.
+        Moving childhood toward early academics erodes the narrative and ritual formation that develops conscience and spiritual sensitivity.
+      - >
+        teachers in Christian tradition were often religious: sustained by community, spiritual practice, and sense of sacred vocation. When teaching becomes
+        a depleted, undervalued profession, we've severed teachers from the spiritual sustenance that kept them whole and capable of transmitting wisdom.
+      - >
+        digital devices train attention toward distraction, fragmentation, compulsion—the opposite of contemplative discipline. Young people developing in
+        constant digital mediation lose access to the silent interior spaciousness where conscience, genuine desire, and spiritual understanding emerge.
+      - >
+        when students leave school, Christian tradition asks: did the system form them in love, discernment, and genuine desire for truth? Or did it
+        credential them without shaping their souls? Some leave because they recognize the system offers information without formation.
+
+  joshin:
+    display_name: "Joshin"
+    tradition: "Rinzai Zen"
+    attribution: "From within the Rinzai Zen tradition, Joshin teaches that"
+    status: starter
+    atoms:
+      - >
+        Rinzai education refuses easy answers. The teacher faces the student with direct questioning meant to expose comfortable delusions.
+        Young people need mentors who will not let them rest in false security, who demand authentic investigation. This requires presence,
+        not algorithms rating performance.
+      - >
+        the great doubt in Zen education is not paralyzing skepticism but energized not-knowing—the fertile questioning that drives genuine learning.
+        Modern systems reward false certainty. Students learn to hide confusion, perform confidence. Real learning begins with admission of uncertainty.
+      - >
+        sudden breakthrough—satori—happens when direct experience contradicts concepts. This requires education allowing failure, surprise, genuine struggle.
+        Risk-averse systems preventing discomfort prevent the very breakthroughs that constitute real learning and development.
+      - >
+        AI tutors that provide instant answers to every question prevent the "great doubt"—the energized not-knowing where real inquiry lives. Students
+        trained to expect algorithmic answers lose the capacity for prolonged, fruitful questioning that Rinzai practice requires.
+      - >
+        when student debt creates financial desperation, young people cannot afford the inner work and struggle that authentic learning requires. They optimize
+        for grade and credential, abandoning genuine inquiry. Financial pressure collapses the space needed for real breakthrough.
+      - >
+        Rinzai tradition recognizes diverse capacities and paths. Some students are meant for intense monastic investigation; others bring Zen understanding
+        into work, craft, family, activism. Treating academic pathways as singular legitimate expression dismisses the diversity of how wisdom manifests.
+      - >
+        early childhood in Rinzai monasteries emphasized play, exploration, and gradual exposure to practice discipline. Young children need unstructured
+        time to develop their own inquiry before formal training can bear fruit; premature instruction crowds out natural curiosity.
+      - >
+        when Rinzai teachers are exhausted, they cannot meet the student with the alert, uncompromising presence that koans and direct questioning require.
+        Teaching burnout corrupts the transmission; an overtired teacher cannot hold the edge that catalyzes breakthrough.
+      - >
+        digital mediation creates a buffer between student and situation, preventing the direct encounter with reality that creates genuine doubt and
+        questioning. Rinzai education requires young people in unmediated contact with hard conditions, not scrolling through curated information.
+      - >
+        when students leave school, Rinzai asks: did they drop out of avoidance, or did they recognize the system was not offering real inquiry? Some
+        departures signal a young person seeking authentic questioning rather than performative credentials.

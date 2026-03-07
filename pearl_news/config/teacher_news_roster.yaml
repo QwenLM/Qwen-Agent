@@ -38,11 +38,11 @@ teachers:
 
   ra:
     display_name: "Ra"
-    tradition: "African spiritual"
-    tradition_short: "African spiritual"
+    tradition: "witnessing awareness and grounded presence"
+    tradition_short: "witnessing awareness"
     region_fit: [english, global]
     news_topics: [peace_conflict, inequality, mental_health, partnerships]
-    attribution_template: "From within the African spiritual tradition, Ra teaches that"
+    attribution_template: "Ra, whose teaching centers on witnessing awareness, clarity of being, and grounded presence, teaches that"
 
   junko:
     display_name: "Junko"

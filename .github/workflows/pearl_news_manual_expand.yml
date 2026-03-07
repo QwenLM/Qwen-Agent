@@ -6,11 +6,27 @@ name: Pearl News manual (expand)
 
 on:
   workflow_dispatch:
+    inputs:
+      language:
+        description: 'Language (en, ja, zh-cn, or all)'
+        required: false
+        default: 'en'
+        type: choice
+        options:
+          - en
+          - ja
+          - zh-cn
+          - all
+      limit:
+        description: 'Max articles to process'
+        required: false
+        default: '1'
+        type: string
 
 jobs:
   pearl-news:
     runs-on: self-hosted
-    timeout-minutes: 45
+    timeout-minutes: 60
     env:
       WORDPRESS_SITE_URL: ${{ secrets.WORDPRESS_SITE_URL }}
       WORDPRESS_USERNAME: ${{ secrets.WORDPRESS_USERNAME }}
@@ -19,7 +35,8 @@ jobs:
       QWEN_API_KEY: ${{ secrets.QWEN_API_KEY }}
       QWEN_MODEL: ${{ secrets.QWEN_MODEL }}
       PEARL_NEWS_EXPAND: "true"
-      PEARL_NEWS_LIMIT: "1"
+      PEARL_NEWS_LIMIT: ${{ inputs.limit || '1' }}
+      PEARL_NEWS_LANGUAGE: ${{ inputs.language || 'en' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -54,32 +71,28 @@ jobs:
             tests/test_pearl_news_pipeline_e2e.py \
             -v
 
-      - name: Run full pipeline (ingest → assemble → expand → QC)
+      - name: Run full pipeline (ingest → assemble → expand → validate → QC)
         run: |
-          if [ "$PEARL_NEWS_EXPAND" = "true" ]; then
-            python3 -m pearl_news.pipeline.run_article_pipeline \
-              --feeds pearl_news/config/feeds.yaml \
-              --out-dir artifacts/pearl_news/drafts \
-              --limit "$PEARL_NEWS_LIMIT" \
-              --expand
-          else
-            python3 -m pearl_news.pipeline.run_article_pipeline \
-              --feeds pearl_news/config/feeds.yaml \
-              --out-dir artifacts/pearl_news/drafts \
-              --limit "$PEARL_NEWS_LIMIT"
-          fi
+          python3 -m pearl_news.pipeline.run_article_pipeline \
+            --feeds pearl_news/config/feeds.yaml \
+            --out-dir "artifacts/pearl_news/drafts/$PEARL_NEWS_LANGUAGE" \
+            --limit "$PEARL_NEWS_LIMIT" \
+            --language "$PEARL_NEWS_LANGUAGE" \
+            --expand \
+            --validate \
+            --select-image
 
       - name: Upload draft artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: pearl_news_drafts
+          name: pearl_news_drafts_${{ inputs.language || 'en' }}
           path: artifacts/pearl_news/drafts/
           retention-days: 7
 
       - name: Test WordPress integration (dry-run or post)
         run: |
           shopt -s nullglob
-          first=$(ls -1 artifacts/pearl_news/drafts/article_*.json 2>/dev/null | head -1)
+          first=$(ls -1 artifacts/pearl_news/drafts/*/article_*.json artifacts/pearl_news/drafts/article_*.json 2>/dev/null | head -1)
           if [ -z "$first" ]; then
             echo "No article_*.json found; skipping"
             exit 0

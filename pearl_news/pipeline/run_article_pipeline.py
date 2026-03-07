@@ -44,9 +44,10 @@ from pearl_news.pipeline.article_assembler import assemble_articles
 from pearl_news.pipeline.llm_expand import run_expansion
 from pearl_news.pipeline.quality_gates import run_quality_gates
 from pearl_news.pipeline.qc_checklist import run_qc_checklist
-from pearl_news.pipeline.teacher_resolver import resolve_teacher
+from pearl_news.pipeline.teacher_resolver import resolve_teacher, resolve_multiple_teachers
 from pearl_news.pipeline.article_validator import run_validation
 from pearl_news.pipeline.image_selector import run_image_selection
+from pearl_news.pipeline.teacher_readiness import TeacherReadiness
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -230,6 +231,14 @@ def main() -> int:
         language, out_dir, args.expand, args.validate,
     )
 
+    # Step 0: Teacher readiness check
+    try:
+        readiness = TeacherReadiness(config_root, atoms_root)
+        readiness_report = readiness.report_pipeline_readiness()
+        logger.info("TEACHER READINESS:\n%s", readiness_report)
+    except Exception as e:
+        logger.warning("Teacher readiness check failed (non-fatal): %s", e)
+
     # Step 1: Ingest
     try:
         items = ingest_feeds(feeds_path, limit=args.limit, per_feed_limit=args.per_feed_limit)
@@ -258,6 +267,62 @@ def main() -> int:
     for item in items:
         item["language"] = language
 
+    # Step 1b: Source diversity — max 2 articles per source feed per run,
+    # PLUS rolling 7-day window to prevent the same source dominating across runs.
+    from collections import Counter
+    source_counts: Counter = Counter()
+    max_per_source = 2
+
+    # Load rolling 7-day source history if available
+    diversity_log_path = out_dir / ".source_diversity_log.json"
+    rolling_source_counts: Counter = Counter()
+    max_per_source_7day = 6  # max articles from same source in a 7-day window
+    if diversity_log_path.exists():
+        try:
+            log_data = json.loads(diversity_log_path.read_text(encoding="utf-8"))
+            cutoff = (datetime.now(timezone.utc) - __import__("datetime").timedelta(days=7)).isoformat()
+            for entry in log_data:
+                if entry.get("date", "") >= cutoff:
+                    rolling_source_counts[entry["source"]] += entry.get("count", 1)
+        except Exception as e:
+            logger.debug("Could not load diversity log: %s", e)
+
+    diverse_items = []
+    for item in items:
+        source = item.get("source_feed_id") or "unknown"
+        source_counts[source] += 1
+        rolling_total = rolling_source_counts.get(source, 0) + source_counts[source]
+        if source_counts[source] > max_per_source:
+            logger.debug("Source diversity (per-run): skipping item from %s (already %d)", source, source_counts[source])
+        elif rolling_total > max_per_source_7day:
+            logger.debug("Source diversity (7-day): skipping item from %s (rolling total %d)", source, rolling_total)
+        else:
+            diverse_items.append(item)
+    if len(diverse_items) < len(items):
+        logger.info(
+            "Source diversity: kept %d of %d items (max %d/run, %d/7-day)",
+            len(diverse_items), len(items), max_per_source, max_per_source_7day,
+        )
+    items = diverse_items
+
+    # Save this run's source usage to the rolling log
+    try:
+        existing_log = []
+        if diversity_log_path.exists():
+            existing_log = json.loads(diversity_log_path.read_text(encoding="utf-8"))
+        cutoff = (datetime.now(timezone.utc) - __import__("datetime").timedelta(days=7)).isoformat()
+        existing_log = [e for e in existing_log if e.get("date", "") >= cutoff]
+        run_date = datetime.now(timezone.utc).isoformat()
+        for src, cnt in source_counts.items():
+            kept = min(cnt, max_per_source)
+            if kept > 0:
+                existing_log.append({"source": src, "count": kept, "date": run_date})
+        diversity_log_path.write_text(
+            json.dumps(existing_log, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    except Exception as e:
+        logger.debug("Could not save diversity log: %s", e)
+
     # Step 2: Classify (topic + SDG)
     items = classify_sdgs(items)
     # Step 3: Select template
@@ -265,10 +330,21 @@ def main() -> int:
     # Step 4: Assemble (structural draft from template + atoms/placeholders)
     items = assemble_articles(items)
 
-    # Step 4a (NEW): Resolve named teacher per article
+    # Step 4a (NEW): Resolve named teacher(s) per article
+    # Interfaith dialogue reports get 2-3 teachers from different traditions;
+    # all other templates get exactly 1 teacher.
     for item in items:
-        teacher = resolve_teacher(item, config_root=config_root, atoms_root=atoms_root)
-        item["_teacher_resolved"] = teacher
+        template_id = item.get("template_id") or "hard_news_spiritual_response"
+        if template_id == "interfaith_dialogue_report":
+            teachers = resolve_multiple_teachers(
+                item, num_teachers=3, config_root=config_root, atoms_root=atoms_root,
+            )
+            item["_teachers_resolved"] = teachers
+            # Also set singular for backwards compat (first teacher)
+            item["_teacher_resolved"] = teachers[0] if teachers else {}
+        else:
+            teacher = resolve_teacher(item, config_root=config_root, atoms_root=atoms_root)
+            item["_teacher_resolved"] = teacher
 
     # Step 4b: Optional LLM expansion (v2: injects teacher, research, language, audience)
     if args.expand:
@@ -322,14 +398,16 @@ def main() -> int:
     )
     logger.info("Wrote %s", out_dir / "ingest_manifest.json")
 
-    # Author rotation
+    # Author assignment: teacher → WP user ID mapping, with fallback round-robin
     author_ids = [1]
+    teacher_author_map: dict[str, int] = {}
     if yaml and config_root.exists():
         aw_path = config_root / "wordpress_authors.yaml"
         if aw_path.exists():
             with open(aw_path, "r", encoding="utf-8") as f:
                 aw = yaml.safe_load(f) or {}
             author_ids = list(aw.get("author_ids") or [1])
+            teacher_author_map = aw.get("teacher_author_map") or {}
 
     # Build manifests + article JSON output
     build_manifests = []
@@ -338,7 +416,13 @@ def main() -> int:
         lang_suffix = f"_{language}" if language != "en" else ""
         output_filename = f"article_{article_id}{lang_suffix}.json"
 
-        author_id = author_ids[i % len(author_ids)] if author_ids else None
+        # Author: use teacher → WP user mapping if available, otherwise round-robin
+        teacher = item.get("_teacher_resolved") or {}
+        teacher_id = teacher.get("teacher_id") or ""
+        if teacher_id and teacher_id in teacher_author_map:
+            author_id = teacher_author_map[teacher_id]
+        else:
+            author_id = author_ids[i % len(author_ids)] if author_ids else None
         template_id = item.get("template_id") or "hard_news_spiritual_response"
 
         # Featured image: prefer catalog selection, then feed image, then old placeholder logic
@@ -363,7 +447,6 @@ def main() -> int:
             if feed_images and isinstance(feed_images[0], dict) and feed_images[0].get("url"):
                 featured_image = feed_images[0]
 
-        teacher = item.get("_teacher_resolved") or {}
         validation = item.get("_validation") or {}
 
         article_payload = {

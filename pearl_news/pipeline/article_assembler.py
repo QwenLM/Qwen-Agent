@@ -78,9 +78,24 @@ def _resolve_slot(
         use_group = _is_uslf_group_article(item, config_root)
 
         if use_group:
+            # Multi-teacher interfaith placeholder — LLM expansion will replace with
+            # named teachers' convergence on positive aspects of the news story.
+            teachers = item.get("_teachers_resolved") or []
+            if teachers and len(teachers) >= 2:
+                names_traditions = [
+                    f"{t.get('display_name', '?')} ({t.get('tradition', '?')})"
+                    for t in teachers
+                ]
+                teacher_list = ", ".join(names_traditions[:-1]) + " and " + names_traditions[-1]
+                return (
+                    f"<p>[INTERFAITH DIALOGUE — this section will be replaced during expansion "
+                    f"showing where {teacher_list} CONVERGE on positive aspects of this news story "
+                    f"for helping youth, using their approved teachings from the knowledge base.]</p>"
+                )
             return (
-                "<p>Leaders from the United Spiritual Leaders Forum emphasize reflection and resilience in the face of uncertainty, in line with ethical frameworks that support youth well-being and global goals.</p>\n\n"
-                "<p>Dialogue across traditions helps communities respond to crisis with clarity and compassion.</p>"
+                "<p>[INTERFAITH DIALOGUE — this section will be replaced during expansion "
+                "with 2-3 teachers from different traditions agreeing on positive aspects "
+                "of this news story for helping youth.]</p>"
             )
         # Single-teacher placeholder — LLM expansion will replace this with
         # the named teacher's 3 approved teachings from the TEACHER KNOWLEDGE BASE.
@@ -150,6 +165,41 @@ def _render_article(
             parts.append(content)
 
     body = "\n\n".join(parts)
+
+    # Inject HTML comment section markers for reliable section detection by validator.
+    # These survive LLM expansion because the prompt says "preserve all HTML tags from the draft."
+    # Maps slot names to canonical section IDs used by gate_six_sections_present.
+    _SLOT_TO_SECTION = {
+        "lede": "lede", "headline": None,  # headline becomes <h1>, lede is first content slot
+        "news_summary": "news_summary", "event_reference": "news_summary",
+        "what_happened": "lede", "historical_background": "news_summary",
+        "thesis": "lede", "event_summary": "lede", "leaders_present": "news_summary",
+        "youth_impact": "youth_impact", "youth_narrative": "youth_impact",
+        "youth_implications": "youth_impact", "youth_commitments": "youth_impact",
+        "data_research": "news_summary", "civic_recommendation": "youth_impact",
+        "teacher_perspective": "teacher_perspective", "teacher_reflection": "teacher_perspective",
+        "teaching_interpretation": "teacher_perspective", "ethical_spiritual": "teacher_perspective",
+        "themes_agreement": "teacher_perspective",
+        "sdg_connection": "sdg_connection", "sdg_framework": "sdg_connection",
+        "sdg_policy_tie": "sdg_connection", "sdg_reference": "sdg_connection",
+        "sdg_alignment": "sdg_connection",
+        "forward_look": "forward_look", "solutions": "forward_look",
+        "next_steps": "forward_look", "future_outlook": "forward_look",
+        "closing_provocation": "forward_look",
+    }
+    # Insert section markers before each section's content
+    marked_parts = []
+    for i, part in enumerate(parts):
+        # Find which slot this part came from (by index in slots list)
+        if i < len(slots):
+            s = slots[i]
+            slot_name = (s if isinstance(s, str) else s.get("slot")) or ""
+            section_id = _SLOT_TO_SECTION.get(slot_name)
+            if section_id:
+                marked_parts.append(f"<!-- section: {section_id} -->")
+        marked_parts.append(part)
+    body = "\n\n".join(marked_parts)
+
     # Source at end of article (disclaimer is on site About, not repeated per article)
     url = item.get("url") or ""
     if url:

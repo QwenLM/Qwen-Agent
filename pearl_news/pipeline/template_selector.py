@@ -42,14 +42,40 @@ def _load_index(config_root: Path) -> dict[str, Any]:
         return yaml.safe_load(f) or {}
 
 
+def _is_interfaith_content(item: dict[str, Any]) -> bool:
+    """Check if the item's content actually warrants an interfaith dialogue report.
+    Returns True if the title or summary contains interfaith/multi-faith signals."""
+    text = (
+        (item.get("title") or "") + " " +
+        (item.get("summary") or "") + " " +
+        (item.get("description") or "")
+    ).lower()
+    interfaith_signals = [
+        "interfaith", "inter-faith", "interreligious", "inter-religious",
+        "multi-faith", "multifaith", "ecumenical", "dialogue",
+        "religious leaders", "faith leaders", "spiritual leaders",
+        "forum", "summit", "declaration", "joint statement",
+        "peace forum", "youth peace", "alliance of civilizations",
+        "parliament of religions", "world council of churches",
+    ]
+    return any(signal in text for signal in interfaith_signals)
+
+
 def _use_uslf_group_template(item: dict[str, Any], config_root: Path) -> bool:
-    """True ~5% of the time (deterministic from item id); else use single-teacher template."""
-    ratio = 0.05
+    """Content-aware interfaith selection: True only when the item's content
+    has interfaith signals AND the hash falls within the ratio.
+    Pure hash-only selection (without content signals) is blocked to prevent
+    interfaith reports about unrelated topics like climate data or court rulings."""
+    # First gate: content must actually be about an interfaith-relevant event
+    if not _is_interfaith_content(item):
+        return False
+    # Second gate: deterministic hash to limit frequency even for qualifying content
+    ratio = 0.30  # 30% of interfaith-content items get the interfaith template
     path = config_root / "template_diversity.yaml"
     if path.exists() and yaml:
         with open(path, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f) or {}
-        ratio = float(data.get("uslf_group_article_ratio", 0.05))
+        ratio = float(data.get("uslf_group_article_ratio", 0.30))
     item_id = (item.get("id") or item.get("title") or "").encode("utf-8")
     h = int(hashlib.sha256(item_id).hexdigest(), 16) % 100
     return (h / 100.0) < ratio
@@ -109,6 +135,19 @@ def select_templates(
             item["template_file"] = templates[template_id].get("file") or f"{template_id}.yaml"
         else:
             item["template_file"] = f"{template_id}.yaml"
+
+    # Commentary frequency cap: max 15% of articles can be commentary.
+    # If over cap, demote excess commentary articles to hard_news_spiritual_response.
+    commentary_items = [it for it in items if it.get("template_id") == "commentary"]
+    max_commentary = max(1, int(len(items) * 0.15))
+    if len(commentary_items) > max_commentary:
+        logger.info(
+            "Commentary cap: %d commentary articles exceeds 15%% cap (%d max); demoting %d",
+            len(commentary_items), max_commentary, len(commentary_items) - max_commentary,
+        )
+        for excess in commentary_items[max_commentary:]:
+            excess["template_id"] = "hard_news_spiritual_response"
+            excess["template_file"] = "hard_news_spiritual_response.yaml"
 
     logger.info("Selected templates for %d items", len(items))
     return items

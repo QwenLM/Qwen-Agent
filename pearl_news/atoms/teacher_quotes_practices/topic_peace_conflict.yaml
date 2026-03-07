@@ -1,79 +1,242 @@
 # Pearl News — teacher atoms for topic: peace_conflict
+# STATUS: STARTER — atoms are placeholder approximations.
+# TODO: Replace each atom with a verified teaching sourced from the teacher's actual
+#       published works, talks, or doctrine files in SOURCE_OF_TRUTH/.
+#       Each atom should be 30-50 words, specific enough to connect to a news event.
+
 topic_key: peace_conflict
 topic_sdg: "16"
+description: "Teacher atoms for peace-and-conflict-related articles"
 
 teachers:
   ahjan:
     display_name: "Ajahn Ahjan"
     tradition: "Theravada Buddhist"
     attribution: "From within the Theravada Buddhist tradition, Ajahn Ahjan teaches that"
+    status: starter
     atoms:
       - >
-        the Buddha's teaching on "right speech" applies directly to how governments and media
-        frame armed conflict: words that arise from fear multiply fear across populations;
-        words that arise from clear seeing create space for the recognition of shared interest.
-        Young people who consume news about conflict are being shaped by the speech of those
-        who are afraid, and the tradition offers a standard for evaluation—not optimism,
-        but accuracy about what generates more violence and what doesn't.
+        right speech in conflict begins with words arising from clear seeing, not fear.
+        Fear-based speech multiplies fear across populations, intensifying violence. The Buddhist standard for evaluating conflict communication is not optimism
+        but accuracy about what generates more violence and what creates space for recognizing shared interest.
       - >
-        the concept of "upekkha"—equanimity—is consistently mistranslated as detachment or
-        indifference. In practice it means the capacity to hold suffering clearly in view
-        without being consumed by reactive despair or reactive rage. For Gen Z who are
-        watching atrocities in real time on their phones, upekkha is not a call to feel less;
-        it is a practice for remaining capable of response rather than being paralysed or radicalised.
+        upekkha—equanimity—is not detachment but capacity to hold suffering clearly without reactive despair or reactive rage.
+        Young people consuming atrocities on screens need practice in this equanimity: remaining capable of response rather than being paralyzed or radicalized
+        by the weight of what they witness.
       - >
-        Buddhist analysis of the origins of conflict begins not with ideology but with "tanha"—
-        craving—and "dosa"—aversion: the structural conditions under which groups perceive
-        their survival as requiring the diminishment of another group. This analysis does not
-        excuse violence; it identifies the conditions that make it likely and therefore the
-        conditions that must be changed for it to become unlikely.
+        conflict begins with tanha—craving—and dosa—aversion, creating conditions where groups perceive survival as requiring the diminishment of another.
+        This analysis does not excuse violence but identifies structural conditions making it likely. Peace-building must address these conditions, not only the violence they produce.
+      - >
+        nuclear weapons represent amplified craving and aversion at technological scale: the desire to secure survival by threatening annihilation.
+        Buddhist teaching identifies this as deluded thinking. Disarmament requires both weapons reduction and the inner transformation that allows humans to feel secure without destroying capacity.
+      - >
+        cyber warfare exploits the same mental poisons as physical violence: greed, hatred, delusion. Anonymous digital attack dissolves accountability, making it easier
+        for aggressors to act without witnessing the suffering they cause. Mindfulness practice restores this witnessing connection.
+      - >
+        refugee displacement uproots people from community and livelihood, intensifying suffering and desperation. The Buddhist response is not charity alone but examining
+        systemic conditions that create displacement, and supporting reconstructed community and right livelihood for those forced to migrate.
+      - >
+        post-conflict reconciliation requires the hardest practice: seeing the perpetrator's humanity while neither excusing nor being consumed by what they did.
+        This is sila—ethical conduct toward all beings—extended into trauma. Without this, survivors remain bound to the violence that harmed them.
+      - >
+        youth radicalization begins when young people feel unseen, unheard, stripped of dignity. Buddhist communities offering mentorship, purpose, and witnessed belonging
+        interrupt the psychological conditions where violent ideology becomes attractive. This is preventive compassion.
+      - >
+        economic roots of conflict often trace to desperation and scarcity. The Buddhist principle of sambhara—right livelihood for all—suggests that
+        genuine peace requires addressing material deprivation, not only political grievance.
+      - >
+        diplomatic negotiation requires the capacity to hold two truths simultaneously: your side's legitimate needs and the other side's legitimate needs.
+        This both/and thinking is directly cultivated through meditation practice, making contemplative practitioners valuable in multilateral peace-building.
+
+  sai_ma:
+    display_name: "Sai Maa"
+    tradition: "Vedic Hindu"
+    attribution: "From within the Vedic Hindu tradition, Sai Maa teaches that"
+    status: starter
+    atoms:
+      - >
+        the Vedic teaching of ahimsa—non-harm—is not pacifism but insistence that the means must reflect the ends.
+        Violence used in pursuit of peace poisons the peace it aims to create. Young people seeking justice must investigate whether their methods align
+        with the world they hope to create through their struggle.
+      - >
+        the Bhagavad Gita addresses conflict directly: right action sometimes requires standing firm against harm, but without hatred or attachment
+        to outcome. This teaching distinguishes between righteous response and reactive rage—young people need frameworks for necessary boundaries that don't calcify into enemy-making.
+      - >
+        the principle of brahmacharya—right conduct toward all beings—extends even to those opposing you. The tradition teaches that how you treat your
+        adversary shapes what they become. De-humanization accelerates violence; recognizing shared humanity, even in opposition, preserves possibility of transformation.
+      - >
+        nuclear arsenals violate ahimsa at civilizational scale, threatening all beings indiscriminately. The Vedic teaching demands that rulers defend their people
+        without arming for extinction. Disarmament aligns weapons capacity with the actual protection of life, not species annihilation.
+      - >
+        cyber warfare violates the sacred principle of Satya—truth. Digital attacks hide their source, obscure causality, and spread disinformation that poisons
+        the shared reality required for community. Vedic ethics demand accountability and transparent communication in all conflict.
+      - >
+        displacement of refugees violates Vaishnava compassion: the duty to protect all beings. The Vedic king must create conditions where all populations can flourish.
+        Modern nation-states following Vedic ethics would address causes of displacement, not only walls against the displaced.
+      - >
+        post-conflict reconciliation requires the Hindu principle of Karma Yoga—action without attachment to outcome—applied to forgiveness. The harmed party acts
+        to restore justice without binding themselves to hatred, recognizing the perpetrator as caught in their own ignorance.
+      - >
+        youth radicalization feeds on the perception that the system offers no dharma—no righteous path forward. Communities offering young people purpose aligned
+        with service interrupt the nihilism that makes violent ideology seductive.
+      - >
+        economic exploitation at the root of conflict violates Artha—right acquisition and distribution of resources. The Vedic teaching insists wealth be pursued
+        through dharma, benefiting the whole, not extracted through oppression.
+      - >
+        multilateral diplomacy succeeds when each party's Svadharma—unique dharma—is honored. Nations negotiating from the assumption that others deserve the same dignity
+        and path that we claim for ourselves approach conflict with fundamentally different ethics than those seeking dominance.
 
   ra:
     display_name: "Ra"
-    tradition: "African spiritual"
-    attribution: "From within the African spiritual tradition, Ra teaches that"
+    tradition: "witnessing awareness and grounded presence"
+    attribution: "From the perspective of witnessing awareness and grounded presence, Ra teaches that"
+    status: starter
     atoms:
       - >
-        the African philosophical concept of "ubuntu"—I am because we are—does not function
-        as a slogan in peace work; it is an epistemological claim: that the boundaries of
-        the self are not fixed at the skin but extend into the community. Armed conflict is
-        therefore not only a destruction of others; it is a destruction of the self extended
-        into community. For youth navigating ethnic and national conflict, this teaching reframes
-        peace not as an altruistic project but as a form of self-preservation.
+        conflict escalates when people collapse into identification with their position, losing capacity to witness their own fear and reactivity.
+        The practice of witnessing presence—observing your own defensiveness without being consumed by it—creates the psychological space where genuine
+        listening and negotiation become possible. This is foundational to peace-building.
       - >
-        the tradition of "palaver"—extended communal dialogue as a conflict-resolution
-        technology—treats disagreement not as a problem to be suppressed but as information
-        about unmet need. Many youth-facing conflicts, from school disputes to community
-        violence, escalate because the palaver process has no institutional home. The tradition
-        asks: who is convening the dialogue, and who is excluded from it?
+        grounding in the body interrupts the escalation cycle: your body tenses, adrenaline rises, you perceive threat, you respond aggressively, others respond defensively.
+        Breaking this cycle requires returning to present sensations, breathing, feeling your feet on the ground. Young people practicing this interrupt their own reactivity
+        and model non-escalation.
       - >
-        in the African spiritual tradition, ancestors function not as passive presences but
-        as moral witnesses: those who came before and whose sacrifices created the present
-        are in relationship with the choices made now. For young people in post-conflict
-        societies, this creates a framework for accountability that is neither revenge
-        nor erasure—the ancestors require honest accounting, not performative peace.
+        witnessing reveals that many conflicts persist because neither party is willing to acknowledge the other's legitimate needs and pain.
+        The practice is not forgiveness but presence—fully receiving what the other person is saying before responding. This presence is itself peace-building.
+      - >
+        nuclear weapons escalation originates in the inability to witness the genuine fear of others, remaining instead identified with our own threat perception.
+        Grounding practice restores capacity to feel others' fear as real, not as enemy propaganda, shifting policy from mutual destruction to mutual security.
+      - >
+        cyber attacks exploit psychological distance: digital remoteness allows harm without witnessing the suffering it causes. Presence practices restore this witnessing,
+        making it viscerally clear that pixels represent actual beings. This awareness is the foundation of digital ethics.
+      - >
+        refugees carry displaced witnessing: they have seen their home destroyed, their community scattered, yet the host society often cannot see their loss.
+        Creating space for their testimony—truly hearing—is both honoring and the beginning of genuine integration.
+      - >
+        post-conflict trauma keeps survivors locked in past moments. The practice of bringing awareness back to present sensations allows nervous systems to finally register:
+        the threat is past, you are alive now, safety is possible. This is healing beneath words.
+      - >
+        youth who feel unseen by the broader society often become vulnerable to radicalization. Community structures offering genuine witnessing—elders seeing and honoring
+        young people's real concerns and real capacities—create belonging that competes with extremist recruitment.
+      - >
+        economic deprivation includes the deprivation of being witnessed: invisible, dismissed, counted as less. The practice of seeing each other—truly recognizing
+        one another's humanity—is itself economic justice when it precedes material redistribution.
+      - >
+        multilateral negotiation fails when parties remain defended, collapsed into position. The practice of staying present with discomfort—meeting the other while
+        grounded in your own body—allows for genuine dialogue where actual interests, not only stated positions, become visible.
+
+  master_wu:
+    display_name: "Master Wu"
+    tradition: "Chan Buddhist"
+    attribution: "From within the Chan Buddhist tradition, Master Wu teaches that"
+    status: starter
+    atoms:
+      - >
+        see directly: your enemy is not a separate entity but a reflection of your own unresolved fear and aggression.
+        This does not excuse their harm but recognizes that lasting peace requires transforming what within you makes conflict possible. You cannot end
+        what you cannot see within yourself.
+      - >
+        the sudden realization in Chan comes when you stop trying to change the other person and recognize: they are already whole, and the conflict exists
+        only in your resistance to what is. This does not mean accepting harm but ceasing the mental war that keeps you imprisoned.
+      - >
+        enlightenment includes seeing that the boundary between self and other is permeable. When you recognize this, harming another becomes obviously impossible—
+        it is harming an extension of yourself. This fundamental recognition is the only lasting peace possible.
+      - >
+        nuclear weapons embody the illusion of separation: the fantasy that we can destroy them without destroying ourselves. Chan teaching pierces this delusion—
+        there is no other, only the unified field of consequence. Disarmament is recognition of this fundamental truth.
+      - >
+        cyber warfare thrives in illusion: attacking through screens creates the false feeling of safe distance. Chan asks: what is this distance? Direct seeing reveals
+        the attacker and attacked are joined in the same suffering, the same limited mind creating the same problems.
+      - >
+        refugees fleeing violence carry the ultimate teaching: the self you defend has become unlivable, requiring exodus. Chan points to the deeper teaching:
+        the defended self is always unlivable. Compassion for refugees is compassion for all beings trapped in self-defense.
+      - >
+        post-conflict reconciliation in Chan terms means mutual recognition: I see that your violence arose from conditions, you see that mine did too.
+        This seeing is not forgiveness but direct perception of how causes and conditions created both our suffering.
+      - >
+        youth radicalization offers young people certainty, belonging, purpose. Chan offers something harder: the willingness not to know, to sit in questions,
+        to discover wisdom beyond ideology. Communities offering this paradoxically provide belonging young people actually seek.
+      - >
+        economic injustice persists because the beneficiaries have not directly seen the suffering their advantage requires. Chan teachers encourage direct witnessing:
+        see what your comfort costs. This seeing is not sentimental but the foundation of ethical transformation.
+      - >
+        multilateral negotiation requires the Chan capacity of "not-knowing": releasing fixed positions temporarily to actually hear what others are saying. Nations negotiating
+        from fixed identity miss the movement of actual interests that could align if both parties drop defensive rigidity.
+
+  pamela_fellows:
+    display_name: "Pamela Fellows"
+    tradition: "Christian contemplative"
+    attribution: "From within the Christian contemplative tradition, Pamela Fellows teaches that"
+    status: starter
+    atoms:
+      - >
+        the Christian teaching to love your enemy is not sentiment but recognition that your enemy is also a child of God, beloved,
+        capable of transformation. This belief changes how you engage conflict: not seeking to defeat but to restore right relationship.
+        Young people practicing this perspective approach conflict differently.
+      - >
+        Christ's message of forgiveness is not erasure of accountability but release from the bondage of hatred. Those harmed can forgive while still
+        demanding accountability, still refusing to return harm for harm. This frees victims from the cycle of revenge that perpetuates violence.
+      - >
+        the contemplative practice of praying for those you oppose—genuinely wishing them well—transforms your internal state so thoroughly that you cannot
+        sustain hatred while in genuine prayer. Peace begins with the stilling of the vengeful heart in prayer, then actions follow from that stillness.
+      - >
+        nuclear weapons embody the antithesis of Christ's teaching to forgive seventy times seven. The doctrine of mutual assured destruction is a vow to end all forgiveness,
+        all possibility of reconciliation. Christian ethics demands disarmament as witness to belief in redemption.
+      - >
+        cyber warfare allows harm under anonymity, removing the face-to-face encounter where Christian love becomes possible. The digital veil enables what embodied encounter
+        would make impossible. Christian ethics demands restoring visibility, accountability, and the possibility of encountering the other's humanity.
+      - >
+        refugee displacement echoes the Christian nativity: a family fleeing violence, seeking refuge. The Gospel teaching to welcome the stranger directly addresses the
+        ethics of responding to those displaced by war, not with walls but with hospitality and the recognition of Christ's presence in the stranger.
+      - >
+        post-conflict reconciliation requires the difficult Christian teaching of redemption: the perpetrator can be transformed, reconciled, restored to community. This is not
+        cheap grace but the hard belief that transformation is always possible, demanding both accountability and the opening to the other's capacity to change.
+      - >
+        youth radicalization often targets young people feeling abandoned, worthless, cast out. The Christian community offering genuine welcome, genuine belief in each young person's
+        worth as beloved child of God, offers the belonging that counteracts the seduction of violent ideology.
+      - >
+        economic injustice violates the Christian principle that all are made in God's image and deserve dignified livelihood. Christ's teachings on wealth—that it is harder for the
+        rich to enter the kingdom than for a camel to pass through a needle's eye—demand examination of how our economic peace is built on others' deprivation.
+      - >
+        multilateral diplomacy rooted in Christian ethics assumes all parties contain divine spark, deserve dignity, and can be appealed to through conscience. This fundamentally changes
+        negotiation from a battle of power to a conversation between beings recognized as sacred, capable of moral transformation.
 
   maat:
     display_name: "Ma'at"
     tradition: "Ancient Egyptian (Ma'at principle)"
     attribution: "From within the Ma'at tradition of cosmic justice and truth, Ma'at teaches that"
+    status: starter
     atoms:
       - >
-        the principle of Ma'at—right order, truth, balance—holds that peace is not the absence
-        of conflict but the presence of accurate accounting. Injustice that is named and addressed
-        restores Ma'at; injustice that is suppressed accumulates as cosmic debt. For youth
-        in post-conflict societies, this tradition insists that sustainable peace requires
-        truth before reconciliation—not as a Western legal framework, but as a cosmological
-        necessity.
+        Ma'at—cosmic order and justice—requires that peace be built on accurate accounting, not denial or forgetting of harm.
+        Injustice that is named and addressed restores Ma'at; injustice suppressed accumulates as cosmic debt. Young people in post-conflict societies
+        need frameworks insisting truth precedes reconciliation.
       - >
-        the role of "Thoth" in Egyptian cosmology—the scribe who records, the one who speaks
-        the exact truth of what happened—points to the function of documentation in conflict
-        resolution. Youth-led documentation of human rights violations follows this logic:
-        the record must exist for Ma'at to be restored. Silence and forgetting are enemies
-        of peace in this tradition, not pathways to it.
+        the function of Thoth in Egyptian cosmology—the scribe recording exact truth—points to documentation's role in conflict resolution.
+        Youth-led human rights documentation follows this logic: the record must exist for Ma'at to be restored. Silence is an enemy of peace, not
+        a pathway to it.
       - >
-        Ma'at is sometimes depicted as a feather, the lightest possible measure—suggesting
-        that justice is delicate and requires precision, not force. For young people who
-        experience justice systems as blunt instruments that produce further harm, this
-        image of justice as precise, light, and calibrated offers an alternative standard
-        for what peace-building institutions should aspire to.
+        Ma'at depicted as a feather suggests justice is delicate, requiring precision, not force. For young people experiencing justice systems
+        as blunt instruments causing further harm, this image of justice as calibrated, light, precise offers an alternative standard for what
+        peace-building institutions should aspire to be.
+      - >
+        nuclear weapons violate Ma'at's principle of cosmic balance: they accumulate destructive potential that cannot be justified by any benefit they provide.
+        Truth-telling about nuclear arsenals means acknowledging their actual use: not deterrence but accumulation of species-level threat that destabilizes cosmic order.
+      - >
+        cyber warfare thrives on distortion of truth: false attribution, fabricated evidence, manufactured consensus. Ma'at demands restoration of accurate information
+        as foundational to peace. Cyber peace-building must include truth recovery and transparent attribution of digital harm.
+      - >
+        refugees displaced by violence are witnesses to the breakdown of Ma'at in their home territories. Their testimony must be recorded, honored, and used to restore justice,
+        not suppressed for the comfort of those whose indifference allowed the violence to occur.
+      - >
+        post-conflict reconciliation in Ma'at terms requires the weighing of the heart: both victim and perpetrator must face the truth of what happened. Truth commissions following
+        this model—where both sides' accounts are recorded, weighed, and acknowledged—restore cosmic order by refusing to let either side's experience be erased.
+      - >
+        youth radicalization operates through distortion of narrative: grievances magnified, villains caricatured, complexity erased. Ma'at offers an alternative: the insistence on
+        accuracy, on the full story, on the complexity that restores proportion and possibility of resolution.
+      - >
+        economic injustice embedded in systemic inequality violates Ma'at's principle of proper measure and balance. Those benefiting from economic structures that deprive others must
+        face the truth of that deprivation. Accountability begins with accurate accounting of what the system extracts and from whom.
+      - >
+        multilateral negotiation succeeds when all parties commit to truth-telling—about their needs, their limits, their actual capacity. Ma'at teaches that peace built on
+        acknowledged reality endures, while peace built on hidden resentment or concealed grievance accumulates cosmic debt that erupts in future violence.

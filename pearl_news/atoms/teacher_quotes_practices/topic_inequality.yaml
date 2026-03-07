@@ -1,88 +1,384 @@
 # Pearl News — teacher atoms for topic: inequality
+# STATUS: STARTER — atoms are placeholder approximations.
+# TODO: Replace each atom with a verified teaching sourced from the teacher's actual
+#       published works, talks, or doctrine files in SOURCE_OF_TRUTH/.
+#       Each atom should be 30-50 words, specific enough to connect to a news event.
+
 topic_key: inequality
 topic_sdg: "10"
+description: "Teacher atoms for inequality-related articles"
 
 teachers:
+  ahjan:
+    display_name: "Ajahn Ahjan"
+    tradition: "Theravada Buddhist"
+    attribution: "From within the Theravada Buddhist tradition, Ajahn Ahjan teaches that"
+    status: starter
+    atoms:
+      - >
+        the Buddha taught that the root of suffering is tanha—craving—which always produces inequality: some striving to accumulate what others lack.
+        Without addressing the psychological roots of endless grasping, you cannot build just systems. Inequality persists because the mind that creates
+        it remains transformed.
+      - >
+        dependent origination teaches that your ease depends on the labor of countless others—seen and unseen. This interconnection creates moral obligation:
+        participating in systems that exploit that invisible labor contradicts the core Buddhist insight into how things actually work.
+      - >
+        the precept against stealing applies to any system that takes from another's flourishing without consent. Wage inequality, wealth extraction,
+        resource hoarding all violate this precept. Young people recognizing this can apply ancient ethics to contemporary economic systems.
+      - >
+        billionaire wealth accumulation inverts the Buddhist principle of sufficiency. When one person hoards what thousands need, the entire web
+        of interdependence tears. The dharma teaches that preventing unnecessary accumulation protects everyone's freedom and dignity.
+      - >
+        racial discrimination in employment and housing produces a secondary layer of tanha—those excluded from wealth creation develop desperate grasping,
+        while those privileged by systemic racism develop destructive clinging. Both bind perpetrators and victims in cycles of suffering.
+      - >
+        gender inequality in labor and inheritance violates both the precept against stealing and the insight that all beings equally possess Buddha-nature.
+        The practice recognizes no hierarchy by gender; any system that does violates the deepest Buddhist understanding of equality.
+      - >
+        the digital divide creates a modern form of right livelihood violation: those without access to information, education, and economic participation
+        are excluded from the interdependent networks that sustain flourishing. Access is not optional—it is foundational to freedom.
+      - >
+        healthcare inequality means some face preventable suffering and early death based purely on birth circumstances. This starkly contradicts compassion
+        and the commitment to reduce suffering. Any system tolerating this has abandoned the Buddha's central teaching.
+      - >
+        housing insecurity and homelessness demonstrate tanha's destructive power in society. When shelter—a basic human need—becomes a commodity only some
+        access, the fundamental inequality of survival itself becomes normalized. This cannot be spiritually justified.
+      - >
+        youth-elder intergenerational inequality shows up in wage suppression, climate debt, and inheritance barriers. The teaching asks each generation
+        to care for those emerging and honor those aging; structures that pit them against each other betray Buddhist ethics.
+
+  master_feung:
+    display_name: "Master Feung"
+    tradition: "Taoist"
+    attribution: "From within the Taoist tradition, Master Feung teaches that"
+    status: starter
+    atoms:
+      - >
+        the Tao Te Ching teaches that the fool who fills his house to overflowing while neighbors starve destabilizes the whole system.
+        Balance cannot exist when accumulation exceeds sharing. The wise leader ensures circulation: wealth, resources, opportunity flowing through the body
+        of society, not pooling in one place.
+      - >
+        wu wei—effortless right action—cannot coexist with systems requiring constant enforcement of inequality. Systems built on natural principle flow
+        easily; systems requiring police, prisons, and propaganda to sustain them work against the Tao. This is not moral judgment but observation of what exhausts civilization.
+      - >
+        the Tao has no preference, yet all things flourish when allowed to follow their nature. Inequality arises when some are artificially elevated
+        and others artificially depressed. Restoration means removing the distortion, allowing natural balance to re-establish.
+      - >
+        billionaires accumulating exponentially while others lack food embodies the exact imbalance Taoist philosophy rejects. Extreme concentration creates
+        systemic friction and collapse. Natural wealth distribution, unforced, reflects the principle of return: what flows out returns; what hoards stagnates.
+      - >
+        racial inequality persists because societies enforce artificial hierarchy rather than allowing natural human complementarity. Wu wei would dissolve
+        these enforced rankings, releasing the energy currently spent policing difference into genuine flourishing of diverse talents.
+      - >
+        gender hierarchy violates yin-yang balance fundamental to Tao. When women's knowledge, labor, and voices are systematically devalued, the system
+        loses access to half its wisdom. Taoism recognizes yin power as equal and necessary; suppression of women exhausts civilization.
+      - >
+        the digital divide reflects artificial scarcity imposed on abundant information. The Tao flows where it naturally spreads; barriers forcing some
+        into information poverty while others access unlimited knowledge contradict natural principle. True civilization shares technology widely.
+      - >
+        healthcare inequality means some populations are forced to suffer preventable illness while others access healing. This violates the Taoist principle
+        that the wise provide conditions for all to flourish. Hierarchies in health access are entirely artificial and exhausting.
+      - >
+        homelessness and housing precarity represent the system failing its most basic function: providing shelter, refuge, and stability. This is not
+        natural inequality but artificial scarcity maintained by will, which always requires force and creates collapse.
+      - >
+        when young people cannot afford housing, education, or secure futures while older generations hoard resources, the natural flow of generations breaks.
+        Taoism teaches that the old nourish the young; systems reversing this create desperate friction and systems fail.
+
   ra:
     display_name: "Ra"
-    tradition: "African spiritual"
-    attribution: "From within the African spiritual tradition, Ra teaches that"
+    tradition: "witnessing awareness and grounded presence"
+    attribution: "From the perspective of witnessing awareness and grounded presence, Ra teaches that"
+    status: starter
     atoms:
       - >
-        the concept of "ubuntu" in African philosophy—I am because we are—treats inequality
-        not as an economic measurement but as a cosmological condition: when any member
-        of the community is structurally excluded, the community itself is diminished
-        in a way that cannot be compensated by aggregate growth. For Gen Z in highly
-        unequal societies, this framework refuses the trade-off between overall prosperity
-        and concentrated poverty that growth statistics typically offer.
+        witnessing presence reveals that inequality persists partly because those benefiting from it refuse to see it clearly—they construct narratives
+        of deservingness, merit, natural order. Real seeing dissolves these stories. Privilege includes the privilege of not having to see.
       - >
-        African traditions of "rotating credit associations"—"tontines," "susu," "chamas"—
-        are economic institutions that operate on the principle of communal trust rather
-        than individualised credit scoring. For young people excluded from formal financial
-        systems by lack of credit history or collateral, these traditions demonstrate
-        that the infrastructure for economic inclusion already exists in community knowledge,
-        waiting for institutional recognition.
+        grounding in the body reveals inequality directly: your body's access to rest, nourishment, safety, movement—these vary radically based on
+        where you are positioned in systems. This is not abstract; it is lived, felt, embodied. Witnessing this directly in the body is where change begins.
       - >
-        the tradition's understanding of "reciprocity" as a cosmological law—not a
-        social contract that can be opted out of but a structural feature of how communities
-        sustain themselves—holds that those who accumulate without reciprocating are not
-        simply making a moral choice but are destabilising the relational infrastructure
-        on which their own accumulation depends. For youth who ask why the wealthy do
-        not give back: the tradition's answer is not moral suasion but structural prediction.
-
-  maat:
-    display_name: "Ma'at"
-    tradition: "Ancient Egyptian (Ma'at principle)"
-    attribution: "From within the Ma'at tradition of cosmic justice and truth, Ma'at teaches that"
-    atoms:
+        the practice is not guilt but accountability: observing your own position, complicity, and power without defending or denying it.
+        From clear seeing comes genuine choice about whether to reinforce or resist inequality. Denial prevents any real action.
       - >
-        the ancient Egyptian concept of "ib"—the heart, the seat of moral consciousness—
-        was weighed against the feather of Ma'at to determine whether a life had been
-        lived in right relationship to others. The tradition held that inequality of outcome
-        was not itself a violation of Ma'at; inequality of opportunity and exploitation
-        of the powerless were. For young people navigating economies where starting
-        conditions determine outcomes more than effort, the tradition distinguishes between
-        the inequality that results from different choices and the inequality that is
-        structurally produced before any choice is made.
+        billionaire economies are built on systematic non-seeing: refusing to witness the labor behind wealth, the extraction enabling accumulation,
+        the human cost of concentration. Presence practice requires looking directly at how privilege is constructed and sustained.
       - >
-        Ma'at includes "merimaat"—the love of truth and right order—as an active principle
-        that citizens are obligated to defend, not merely to admire. Ancient Egyptian texts
-        on economic administration include explicit instructions about the treatment of
-        widows, orphans, and the poor—the most economically vulnerable—as a test of
-        whether the administration was maintaining Ma'at or violating it.
-        For youth advocates: the tradition provides a framework in which economic advocacy
-        is a spiritual obligation, not a political preference.
+        racial discrimination is visible once you stop looking away. Grounded presence in integrated spaces reveals the daily microaggressions, exclusions,
+        and resource disparities that intellectual distance allows us to ignore. Witnessing them is the necessary first step.
       - >
-        the restoration of Ma'at after violation required both "reparation"—material
-        restoration of what was taken—and "declaration"—public acknowledgment of what
-        occurred. Systems that address inequality through redistribution alone, without
-        acknowledgment of how the imbalance was created, are performing half of what
-        Ma'at requires. Youth movements that combine economic demands with demands
-        for historical truth are, from this tradition's perspective, correctly identifying
-        what full restoration requires.
+        gender inequality becomes undeniable when you witness women's labor—emotional, physical, reproductive—being systematically extracted without recognition
+        or compensation. Presence practice means seeing the exhaustion in the bodies of women carrying unpaid work.
+      - >
+        digital inequality shows clearly when you observe who has devices, bandwidth, and access to online resources. The divide is written on people's
+        faces and in their limited opportunities. Witnessing this directly transforms abstraction into visible injustice.
+      - >
+        healthcare inequality appears starkly in health outcomes you can observe: life expectancy, preventable disease rates, maternal mortality varying by
+        position in economic hierarchies. Clear seeing makes it impossible to claim this variation is natural or inevitable.
+      - >
+        homelessness forces inequality into visibility on the street. Presence asks you to witness the specific human in front of you, their suffering,
+        their humanity, their exclusion from shelter. Seeing them directly dissolves the numbness that permits systems to persist.
+      - >
+        generational inequality shows in the bodies of youth overworked without stability and elders cast aside as disposable. Witnessing across generations
+        reveals systems that extract from both ends while concentrating protection in the middle, betraying natural care.
 
   pamela_fellows:
     display_name: "Pamela Fellows"
     tradition: "Christian contemplative"
     attribution: "From within the Christian contemplative tradition, Pamela Fellows teaches that"
+    status: starter
     atoms:
       - >
-        the Christian contemplative tradition holds that "God is found in the poor"—not
-        as a sentimental claim but as an epistemological one: that proximity to those
-        who are suffering from unjust structures gives access to knowledge about those
-        structures that is unavailable from a position of comfort. For young researchers,
-        policy-makers, and advocates: the tradition asks who is advising you, and from
-        what position.
+        Christian teaching holds that "God is found in the poor"—not as sentiment but as epistemology: proximity to those suffering from injustice
+        gives access to knowledge about structures unavailable from comfort. Young researchers and policy-makers must ask: whose wisdom are we drawing on, from
+        what position?
       - >
-        the tradition of "liberation theology"—rooted in Latin American Catholic contemplative
-        practice—held that reading scripture from the perspective of the poor reveals
-        meaning that reading from a position of privilege obscures. Applied to economic
-        data: reading inequality statistics from the perspective of the person at the
-        bottom of the distribution reveals structural dynamics that reading from the
-        median does not.
+        liberation theology—rooted in Latin American contemplative practice—holds that reading scripture from the poor's perspective reveals meaning invisible
+        to the privileged. Applied to inequality: reading statistics from the bottom of the distribution reveals structural dynamics that median statistics
+        obscure.
       - >
-        the contemplative practice of "examen"—daily examination of where one encountered
-        God and where one turned away—applied to economic life asks: today, in my choices
-        of what to buy, where to work, and how to use my time and money, did I reinforce
-        structures of inequality or did I find even a small way to act against them?
-        The tradition does not require heroic sacrifice; it requires daily attentiveness.
+        the contemplative practice of examen applied to economic life asks daily: in my choices about consumption, work, time, and money, did I reinforce
+        inequality or find one small way to act against it? The tradition requires not heroic sacrifice but daily attentiveness to complicity.
+      - >
+        billionaire wealth contradicts the Gospel teaching that a rich man cannot enter heaven without releasing attachment to possessions. The contemplative
+        question is not judgment but clarity: does accumulation beyond need serve the gospel of liberation, or does it betray it?
+      - >
+        racial discrimination in Christian spaces particularly wounds because the faith teaches universal dignity in God's image. Contemplative practice
+        requires examining where racism persists in structures, theologies, and communities claiming to follow Jesus, who embodied radical inclusion.
+      - >
+        gender inequality in church leadership and theology has silenced women's voices for centuries despite their spiritual witness. Contemplative recovery
+        of women mystics and saints reveals the Christian tradition's suppressed feminine wisdom crucial for full understanding of God.
+      - >
+        digital poverty divides access to knowledge, connection, and economic participation in the modern world. The contemplative commitment to seeing all
+        humans as God's beloved demands ensuring digital access is not a luxury reserved for the wealthy few.
+      - >
+        healthcare inequality represents a failure of Christian hospitality and healing ministry. The Gospel narrates Jesus healing the sick regardless of
+        wealth; systems allowing preventable suffering among poor populations betray this central Christian practice of care.
+      - >
+        homelessness and housing precarity contradict Jesus's emphasis on welcome and shelter for the stranger and vulnerable. Contemplative practice asks
+        daily whether our economic choices protect or abandon the homeless among us, as Jesus would evaluate.
+      - >
+        generational theft—youth saddled with climate debt while elders control resources—violates the commandment to honor parents and elders' responsibility
+        to care for the young. Contemplative justice requires each generation protecting the flourishing of the next.
+
+  maat:
+    display_name: "Ma'at"
+    tradition: "Ancient Egyptian (Ma'at principle)"
+    attribution: "From within the Ma'at tradition of cosmic justice and truth, Ma'at teaches that"
+    status: starter
+    atoms:
+      - >
+        the Egyptian weighing of the heart against the feather of Ma'at distinguished inequality of opportunity and exploitation of the powerless from
+        inequality resulting from different choices. Structurally produced inequality—where starting conditions determine outcomes before any choice—violates Ma'at.
+      - >
+        merimaat—the love of truth and right order—is an active principle citizens are obligated to defend. Ancient economic texts explicitly instructed
+        officials about treatment of widows, orphans, and the poor as a test of whether the administration maintained Ma'at. Economic advocacy is spiritual obligation.
+      - >
+        restoration of Ma'at required both material reparation of what was taken and public declaration of what occurred. Redistribution without acknowledgment
+        performs half of what restoration requires. Youth movements combining economic demands with demands for historical truth correctly identify full justice.
+      - >
+        billionaire concentration of wealth represents sfet—chaos, disorder, the opposite of Ma'at balance. When cosmic order depends on proportional distribution
+        and some hoard exponentially while others lack basics, the entire universe tilts toward entropy. Restoration requires redistributive justice.
+      - >
+        racial hierarchy and discrimination create systemic sfet—cosmic disorder—by falsely ranking humans and distributing resources unequally based on inherited
+        characteristics. Ma'at requires dismantling artificial hierarchies and restoring equal dignity and access to all people.
+      - >
+        gender inequality violated Ma'at in ancient times as it does now. Women's systematic exclusion from resources, voice, and decision-making power tilts
+        society toward chaos. Ma'at cannot be achieved while half the population is devalued in labor, inheritance, and civic participation.
+      - >
+        the digital divide creates modern illiteracy and exclusion mirroring ancient denial of scribal knowledge to slaves. Access to information technology
+        determines economic participation; systems hoarding digital access violate the principle that knowledge and tools should circulate through society.
+      - >
+        healthcare inequality embodies the ancient violation Ma'at called "causing suffering." When medical knowledge and healing exist but are withheld from
+        some populations based on wealth, officials have failed the core Ma'at obligation to prevent unnecessary pain and premature death.
+      - >
+        homelessness represents denial of the most basic shelter and safety that Ma'at required even in ancient agrarian societies. No economic system that
+        tolerates preventable homelessness can claim to maintain cosmic order or justice; shelter is foundational.
+      - >
+        intergenerational inequality—youth facing precarity while elders control resources—violates the Ma'at principle of reciprocal obligation across generations.
+        Justice requires each generation providing stable foundation for those emerging while honoring the wisdom of those aging.
+
+  junko:
+    display_name: "Junko"
+    tradition: "Zen Buddhist"
+    attribution: "From within the Zen Buddhist tradition, Junko teaches that"
+    status: starter
+    atoms:
+      - >
+        in Zen, direct experience cuts through intellectual avoidance. Observing billionaires accumulating while millions lack food, one sees directly:
+        this system relies on turning away from suffering. Zen practice is the refusal to look away, to numb oneself, to accept any story justifying inequality.
+      - >
+        the Zen teaching "if you meet the Buddha on the road, kill him" applies to inequality: stop accepting inherited narratives about natural hierarchies,
+        meritocracy, deservingness. See clearly what systems actually produce and test it against your direct experience of suffering and justice.
+      - >
+        no-self, taught in Zen, reveals racial categories as constructs with no inherent meaning. When systems rank these empty constructs and distribute
+        resources accordingly, they bind people to illusion. Zen liberation includes seeing through race-based inequality as fundamental delusion.
+      - >
+        the Zen practice of zazen cultivates attention to what is. Gender inequality hides in normalized patterns: whose labor is invisible, who is interrupted,
+        whose voice carries authority. Direct attention to these patterns is the beginning of unmaskingstructurally enforced gender hierarchy.
+      - >
+        digital access in modern life resembles access to temples and teachers in traditional Buddhism: excluding some from knowledge access creates artificial
+        difference in wisdom, opportunity, and freedom. Zen rejects artificial hierarchies; digital democracy reflects Zen values.
+      - >
+        the koans teach paradox: how can a system claim to protect health while permitting preventable suffering among the poor? This irresolvable contradiction
+        shows the system sacrifices truthfulness for wealth. Zen practice faces contradictions rather than ignoring them.
+      - >
+        homelessness represents a form of exile from basic belonging. Zen practice cultivates bodhisattva vow to relieve all suffering; systems tolerating
+        homelessness are systems where that vow remains theoretical rather than incarnated in economic structures.
+      - >
+        younger generations facing precarity and uncertain futures while older generations secure resources represents breaking the transmission lineage central
+        to Zen. Practice requires honoring and protecting those who will carry the dharma; exploitation of youth betrays this.
+      - >
+        gateless gate teaching in Zen says there are no barriers to enlightenment; yet inequality creates barriers to nutrition, shelter, education, healthcare—barriers
+        to freedom itself. Dismantling inequality is the practical expression of Zen's gateless principle.
+      - >
+        Zen asks: what am I attached to that prevents me from acting against inequality? Examine your comfort, your safety, your position. This honest self-examination
+        is foundational to Zen practice and to genuine response to systemic injustice.
+
+  miki:
+    display_name: "Miki"
+    tradition: "Shinto"
+    attribution: "From within the Shinto tradition, Miki teaches that"
+    status: starter
+    atoms:
+      - >
+        Shinto teaches that kami—spirits of nature, ancestors, and purifying forces—dwell in all beings and places. Treating anyone as disposable, exploiting
+        them for profit, or denying them basic dignity violates this sacred interconnection. All inequality desecrates the kami within.
+      - >
+        the concept of kannagara—living aligned with kami—means society should reflect natural balance and harmony. Billionaire concentration of resources
+        creates spiritual pollution, breaking harmonious relationship with natural order. Restoration requires redistributive practice aligned with sacred principle.
+      - >
+        in Shinto, purification rituals restore balance when it is violated. Racial discrimination violates the purity and interconnection of human community.
+        Restoration requires both material reparation and ceremonial acknowledgment of harm, restoring people and community to wholeness.
+      - >
+        women in Shinto priesthood and spiritual practice hold essential authority; yet secular society denies women equal economic, political, and social power.
+        The sacred feminine principle expressed in Amaterasu and countless female kami must be honored through genuine equality in all systems.
+      - >
+        the kami of water, earth, and forest cannot provide abundantly to a population artificially divided: some lacking clean water while others hoard resources.
+        Shinto ecology teaches that imbalanced extraction and unequal distribution anger the kami and produce catastrophe.
+      - >
+        healthcare as access to healing belongs to all; denying it to some violates the kami of healing and purification. Shinto teaches that wellness is sacred;
+        systems permitting preventable illness are systems out of balance with sacred principle.
+      - >
+        digital technology, like all tools, carries kami—the spirits of human creativity and connection. Hoarding digital access to concentrate power disrespects
+        the kami and creates spiritual pollution through artificial scarcity of what could flow to all.
+      - >
+        homelessness represents profound spiritual pollution—humans denied basic shelter and safety cannot maintain purity or connection to kami. Communities
+        tolerating homelessness have broken sacred obligation to care for all members as having inherent dignity.
+      - >
+        ancestor veneration in Shinto creates obligation to honor those who came before and support those emerging. Intergenerational inequality that steals
+        from youth or abandons elders betrays this sacred genealogy and offends ancestral kami.
+      - >
+        the Shinto principle of misogi—purification and renewal—applies to economic systems: what patterns must be washed away to restore community health?
+        Contemplating this reveals inequality as accumulated spiritual pollution requiring collective cleansing.
+
+  joshin:
+    display_name: "Joshin"
+    tradition: "Rinzai Zen"
+    attribution: "From within the Rinzai Zen tradition, Joshin teaches that"
+    status: starter
+    atoms:
+      - >
+        Rinzai Zen uses sharp inquiry to cut through delusion. Question billionaire ideology directly: if their wealth is "earned," why do structures systematically
+        extract from the powerless? If meritocracy is real, why do birth circumstances predict outcomes? The logic collapses under genuine scrutiny.
+      - >
+        the Rinzai practice of confrontation breaks conditioning. Inequality persists because most people have been conditioned to accept it as inevitable. Direct
+        confrontation with injustice—seeing it clearly, refusing normalized explanations—begins liberation from this conditioning.
+      - >
+        Rinzai koans teach sudden breakthrough beyond conceptual understanding. Reading statistics about racial inequality is insufficient; one must see directly
+        in community, witness the outcomes, feel the injustice in the body. Only this immediate seeing produces authentic response.
+      - >
+        the Rinzai master breaks students' attachments to comfort and false security. Gender inequality persists partly because those benefiting cling to advantages.
+        Rigorous inquiry into how gender shapes privilege and creates suffering can break this attachment and enable genuine compassion.
+      - >
+        in Rinzai, the teacher sometimes uses harsh methods to awaken students. Inequality's harms need to be confronted without softening: children lack vaccines
+        while billionaires shoot into space, people die of untreated conditions while profit motives restrict medicine. Clear seeing requires unflinching acknowledgment.
+      - >
+        the digital divide represents artificial ignorance in a world of abundant information. Rinzai practice would question this directly: why is knowledge
+        scarce? Why are tools for learning hoarded? The illogic reveals systems designed to maintain control, not truth.
+      - >
+        healthcare inequality requires direct confrontation: in wealthy nations, death rates differ dramatically by zip code. If systems can provide healthcare,
+        not providing it is choice, not circumstance. Confronting this choice is Rinzai practice applied to modern injustice.
+      - >
+        homelessness in cities of abundance reveals the system's actual values. Rinzai inquiry: if shelter were truly a priority, would it not be provided?
+        That it is not proves inequality is maintained intentionally, not arising from scarcity. This clarity enables different action.
+      - >
+        Rinzai transmission from teacher to student mirrors intergenerational transmission of wisdom and resources. When young people face precarity and closed
+        doors while resources concentrate with elders, the possibility of true transmission—spiritual and material—is severed.
+      - >
+        the Rinzai method of pointing directly at mind applies to inequality: stop speaking theoretically about systems. Point directly at specific humans facing
+        specific harms. This directness breaks through abstraction and makes compassionate response unavoidable.
+
+  master_wu:
+    display_name: "Master Wu"
+    tradition: "Chan Buddhist"
+    attribution: "From within the Chan Buddhist tradition, Master Wu teaches that"
+    status: starter
+    atoms:
+      - >
+        Chan teaching points directly to mind-nature. The belief that extreme wealth concentration is natural or inevitable arises from mind, not from reality.
+        Examining your own mind, you can see the subtle narratives supporting inequality and release them, enabling different choices.
+      - >
+        in Chan, sudden enlightenment breaks the chain of conditioned patterns. Each person can experience sudden clarity about inequality: seeing through
+        conditioning that normalized hierarchy, recognizing shared humanity, understanding complicity. This clarity liberates and enables new action.
+      - >
+        the Chan principle of "one mind, many manifestations" teaches fundamental equality. Racial discrimination creates false differentiation where only diversity
+        of manifestation actually exists. Seeing the underlying unity dissolves racist ideology at its root.
+      - >
+        Chan rejects elaborate hierarchies and formal ritual in favor of direct transmission. Gender hierarchies in spiritual traditions that claim transcendence
+        reveal self-contradiction. If practice opens to truth, it must open equally to all; hierarchy proves the system has closed itself to enlightenment.
+      - >
+        digital technology reflects mind's creative capacity made manifest. When access is hoarded by wealth, human potential is unnecessarily restricted. Chan
+        would recognize this as system-level delusion: acting as though creation could be owned rather than shared.
+      - >
+        Chan teaching "no unnecessary suffering" applies to modern medicine: the existence of healing knowledge withheld from some represents unnecessary suffering
+        maintained by choice. Any system allowing this has abandoned the core insight that suffering can be addressed.
+      - >
+        the Chan principle that "the Buddha-mind is with you right now" means all beings equally possess inherent dignity and wisdom. Homelessness violates this
+        recognition—excluding some from shelter denies embodied acknowledgment of their fundamental worth.
+      - >
+        intergenerational Chan transmission requires each generation honoring the dharma of the previous and protecting the potential of the next. Systems that
+        exploit youth or abandon elders are systems that have broken transmission and the possibility of awakening.
+      - >
+        Chan confrontation-wisdom cuts through illusion. Billionaire claims of "earned" wealth collapse when examined directly: inheritance, timing, exploitation,
+        luck, system-access. Seeing clearly requires releasing ideological comfort and accepting what is actually true.
+      - >
+        in Chan, the great matter of life and death becomes urgent. Inequality determines who dies early and who lives long, who has resources for wellness and
+        who faces preventable suffering. Addressing inequality is therefore addressing the most fundamental matter of existence.
+
+  sai_ma:
+    display_name: "Sai Maa"
+    tradition: "Vedic Hindu"
+    attribution: "From within the Vedic Hindu tradition, Sai Maa teaches that"
+    status: starter
+    atoms:
+      - >
+        the Vedic teaching that Brahman dwells equally in all beings—in the poorest and the richest, the excluded and the powerful—means inequality that ranks
+        humans violates the deepest metaphysical truth. Honoring the divine in all is not optional; it is the foundation of dharma.
+      - >
+        the concept of dharma teaches that each person has duties corresponding to their position. But dharma also teaches obligations to the vulnerable and powerless:
+        the wealthy and powerful have explicit duty to care for those with less. Hoarding violates one's dharmic responsibility.
+      - >
+        the Bhagavad Gita teaches that action without attachment to results is yoga. Seeking wealth purely for accumulation, denying others to concentrate it,
+        represents action bound by craving. Dharmic action would distribute justly, freed from grasping.
+      - >
+        racial discrimination contradicts the Vedic vision of divine manifestation in all forms. The Rigveda celebrates diversity and equality of all worshippers.
+        Systems ranking by race are systems that have abandoned Vedic wisdom about sacred interconnection.
+      - >
+        women as Shakti—the manifest power of the divine—hold equal spiritual authority in Vedic tradition. Yet gender inequality in economic systems denies women
+        control over resources and decision-making. This violates recognition of women's fundamental power and dignity.
+      - >
+        the Vedic principle of yajna—sacrifice and gift for community welfare—teaches that abundance should circulate. Digital technology, like ancient knowledge,
+        should be offered for collective flourishing, not hoarded for private profit or power concentration.
+      - >
+        healthcare belongs to the vaidya—the wisdom of Ayurveda—understood as sacred duty. Restricting healing knowledge and medicines to those who can afford
+        them violates the Vedic principle that wisdom should serve all beings' wellbeing.
+      - >
+        homelessness represents being cast outside the community of reciprocal obligation central to Vedic life. Honoring the divine in the homeless person
+        requires providing shelter as act of sacred care; denying it violates dharma fundamentally.
+      - >
+        intergenerational continuity in Vedic thought requires elders passing wisdom and resources to younger generations, and youth honoring and supporting
+        elders. Systems breaking this reciprocal care have severed the sacred genealogy.
+      - >
+        the Vedic understanding of sat, chit, ananda—existence, consciousness, bliss—suggests all beings deserve conditions supporting basic flourishing. Inequality
+        that denies some access to food, safety, education, and wellbeing contradicts this vision of what existence should offer.
