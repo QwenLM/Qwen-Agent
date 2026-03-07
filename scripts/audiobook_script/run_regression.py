@@ -177,8 +177,9 @@ async def _run_one_golden(
         checklist=checklist,
         result_schema=result_schema,
         repo=repo,
-        draft_system_prompt=draft_prompt,
+        base_system_prompt=draft_prompt,
         judge_system_prompt=judge_prompt,
+        semaphore=asyncio.Semaphore(1),
     )
     elapsed = time.time() - t0
 
