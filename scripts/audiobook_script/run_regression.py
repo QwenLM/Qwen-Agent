@@ -69,6 +69,31 @@ class RegressionResult:
     failure_reason: str | None
 
 
+def _count_hard_gate_failures_from_result(result: Any, checklist: dict) -> int:
+    """Derive hard gate failures from loop traces (SectionResult has no direct field)."""
+    hard_ids = {
+        g.get("id")
+        for g in checklist.get("gates", [])
+        if g.get("type") == "hard"
+    }
+    if not hard_ids:
+        return 0
+
+    traces = getattr(result, "loop_traces", None) or []
+    if not traces:
+        return 0
+    last = traces[-1]
+    gate_results = getattr(last, "gate_results", None) or []
+    if not gate_results:
+        return 0
+
+    failed = 0
+    for g in gate_results:
+        if g.get("gate_id") in hard_ids and not bool(g.get("pass", False)):
+            failed += 1
+    return failed
+
+
 def _load_yaml(path: Path) -> dict:
     try:
         import yaml
@@ -183,13 +208,18 @@ async def _run_one_golden(
     )
     elapsed = time.time() - t0
 
+    hard_gate_failures = _count_hard_gate_failures_from_result(result, checklist)
+
     # Assess regression pass
     regression_pass = True
     failure_reason = None
 
     if expect_pass and result.decision != "pass":
         regression_pass = False
-        failure_reason = f"Expected pass but got {result.decision} (hard_gate_failures={result.hard_gate_failures})"
+        failure_reason = (
+            f"Expected pass but got {result.decision} "
+            f"(hard_gate_failures={hard_gate_failures})"
+        )
     elif result.best_aggregate_score < min_score:
         regression_pass = False
         failure_reason = f"Score {result.best_aggregate_score:.3f} < required {min_score}"
@@ -211,7 +241,7 @@ async def _run_one_golden(
         actual_decision=result.decision,
         actual_aggregate_score=result.best_aggregate_score,
         loops_attempted=result.loops_attempted,
-        hard_gate_failures=result.hard_gate_failures,
+        hard_gate_failures=hard_gate_failures,
         regression_pass=regression_pass,
         failure_reason=failure_reason,
     )

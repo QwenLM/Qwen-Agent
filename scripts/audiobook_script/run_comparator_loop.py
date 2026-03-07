@@ -167,6 +167,19 @@ async def _call_qwen_draft(section_text: str, locale: str, system_prompt: str, c
     draft_cfg = cfg.get("draft_model", {})
     client = _lm_studio_client(draft_cfg)
     model_id = draft_cfg.get("model_id", "local-model")
+    if model_id == "local-model":
+        try:
+            models = await client.models.list()
+            ids = [m.id for m in getattr(models, "data", []) if getattr(m, "id", None)]
+            # Prefer non-embedding model ids for chat completions.
+            chat_ids = [mid for mid in ids if "embed" not in mid.lower()]
+            if chat_ids:
+                model_id = chat_ids[0]
+            elif ids:
+                model_id = ids[0]
+        except Exception:
+            # Keep fallback; downstream call will raise clear API error if invalid.
+            pass
     temperature = float(draft_cfg.get("temperature", 0.7))
     max_tokens = int(draft_cfg.get("max_output_tokens", 3000))
     timeout = float(draft_cfg.get("timeout_seconds", 120))
@@ -207,6 +220,17 @@ async def _call_qwen_judge(english_source: str, draft: str, locale: str,
     judge_cfg = cfg.get("judge_model", {})
     client = _lm_studio_client(judge_cfg)
     model_id = judge_cfg.get("model_id", "local-model")
+    if model_id == "local-model":
+        try:
+            models = await client.models.list()
+            ids = [m.id for m in getattr(models, "data", []) if getattr(m, "id", None)]
+            chat_ids = [mid for mid in ids if "embed" not in mid.lower()]
+            if chat_ids:
+                model_id = chat_ids[0]
+            elif ids:
+                model_id = ids[0]
+        except Exception:
+            pass
     temperature = float(judge_cfg.get("temperature", 0.1))
     max_tokens = int(judge_cfg.get("max_output_tokens", 1500))
     timeout = float(judge_cfg.get("timeout_seconds", 60))
