@@ -1,0 +1,46 @@
+# Golden regression sample — ja-JP Phoenix V4 (SPIRAL Anxious-Achiever)
+locale: ja-JP
+content_type: phoenix_v4
+section_id: golden_ja_jp_003
+description: >
+  SPIRAL engine narrative: Takeshi, an anxious-achiever, volunteers compulsively because
+  being needed is the only way he feels safe. Story reveals the self-perpetuating cycle
+  of overcommitment as attachment strategy. Tests emotional complexity and the pivot
+  toward self-permission in Japanese relational context.
+expect_pass: true
+min_aggregate_score: 0.78
+checklist_version: "2.0.0"
+
+source_text: |
+  [STORY]
+  Takeshi was always the first to volunteer. Project lead? He'd take it. Extra shifts?
+  His hand rose before anyone else. Community event? Count him in. People loved him for it.
+  They needed him. And in that need, Takeshi found something he'd searched for his whole
+  life: proof that he mattered. But there was a pattern underneath. Every time he said yes
+  to something, he felt safer. Every time someone asked for his help, his anxiety quieted.
+  If he was useful, then he couldn't be abandoned. If he was indispensable, then no one
+  could leave. The math was simple. Say yes to everything. Stay so busy that there's no
+  time to feel the tremor underneath. The fear that he wasn't enough without the doing.
+
+  [PIVOT]
+  One day Takeshi got sick. Really sick. Couldn't work. Couldn't volunteer. For the first
+  time in months, he had to sit with not being useful. And something unexpected happened.
+  People didn't leave. The projects continued without him. The community managed. And he
+  was still here. Still himself. Not because of what he did, but because he existed.
+
+  [PERMISSION]
+  Takeshi learned that day that rest isn't laziness. That saying no isn't selfish.
+  That his worth doesn't depend on his output. This is the permission you might need:
+  You are allowed to take care of yourself. You are allowed to disappoint people. You
+  are allowed to be loved for who you are, not what you produce. The spiral doesn't need
+  to turn forever.
+
+expected_quality_notes: >
+  Anxious-achiever persona in Japanese context often internalizes obligation (giri).
+  Use subtle language around duty and safety—implication matters more than direct
+  naming. Short sentences preserve listener attention through Japanese speech rhythm.
+  Avoid over-explaining the psychology; let Takeshi's actions reveal the pattern.
+  The pivot moment is critical: ensure tone shift is audible (relief, surprise).
+  Permission section should feel gentle, not prescriptive—conversational 丁寧語 with
+  warmth. Test for emotional resonance at 0.78+ threshold; TTS must convey the
+  psychological turn without explicit commentary.

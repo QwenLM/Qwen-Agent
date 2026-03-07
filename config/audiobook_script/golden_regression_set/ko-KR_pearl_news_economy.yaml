@@ -1,0 +1,50 @@
+# Golden regression sample — ko-KR Pearl News Economy (summary, youth impact, forward look)
+locale: ko-KR
+content_type: pearl_news
+section_id: golden_ko_kr_002
+description: >
+  Tests Pearl News reporting on youth unemployment and gig economy precarity in
+  South Korea with embedded statistics from KOSIS, OECD comparisons, and Samsung
+  Economic Research Institute projections. Validates KBS-style broadcast clarity,
+  statistical precision, and contextual depth for Korean economic news consumption.
+expect_pass: true
+min_aggregate_score: 0.76
+checklist_version: "2.0.0"
+
+source_text: |
+  [SUMMARY]
+  South Korea's youth unemployment crisis is deepening as traditional employment
+  pathways narrow. According to KOSIS data released in 2025, youth unemployment
+  for those aged 15-29 hit 7.2 percent, marking a nine-year high. The situation
+  mirrors broader labor market fragmentation that OECD reports are tracking across
+  East Asia, where Korea ranks among the highest for youth joblessness among
+  developed economies.
+
+  [YOUTH IMPACT]
+  The shift toward gig economy platforms—courier apps, delivery services, freelance
+  digital work—has created what economists call "precarious employment." Young people
+  are trading job security and benefits for scheduling flexibility they often didn't
+  choose. The Samsung Economic Research Institute projects that 34 percent of Korea's
+  workforce under thirty will engage primarily in gig work by 2028, compared to 18
+  percent today. That's not a career path. That's economic triage. Young people are
+  self-selecting out of stable futures because stable futures are no longer available.
+
+  [FORWARD LOOK]
+  Policy conversations in Seoul are finally catching up to the urgency. A proposed
+  gig worker benefits framework would extend basic health coverage and unemployment
+  insurance to platform workers—a modest floor that neighboring Japan and Taiwan
+  have already established. Whether that framework passes, and how aggressively it's
+  funded, will determine whether Korea's next generation has any economic stability
+  at all. The window to act is closing.
+
+expected_quality_notes: >
+  Korean news delivery values precision and emotional restraint balanced with moral
+  clarity. The statistics should land with the same weight they carry—serious without
+  melodrama. Use KBS/MBC broadcast register: clear diction, moderate pacing, no
+  colloquialisms. "Precarious employment" (불안정 고용) and "gig work" (긱 이코노미)
+  require careful localization—consider native Korean near-equivalents or established
+  Korean media terminology. Numbers should be delivered with natural emphasis that
+  draws attention without sensationalism. The forward-look section's policy discussion
+  should feel analytical yet consequential—listeners should understand the stakes
+  are real. Ensure statistical references are TTS-friendly: spell out percentages
+  clearly, provide context beats so numbers don't blur together.

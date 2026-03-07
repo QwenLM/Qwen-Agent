@@ -1,0 +1,45 @@
+# Golden regression sample — zh-HK Phoenix V4 (STORY, PIVOT, PERMISSION)
+locale: zh-HK
+content_type: phoenix_v4
+section_id: golden_zh_hk_003
+description: >
+  Tests localization of false-alarm anxiety narrative for anxious-achiever persona.
+  Validates technical accuracy of anxiety physiology, motivational reframing, and
+  permission-granting language in zh-HK register.
+expect_pass: true
+min_aggregate_score: 0.78
+checklist_version: "2.0.0"
+
+source_text: |
+  [STORY]
+  David was the kind of person who got things done. He ran a small marketing firm, managed
+  a team of five, and rarely missed a deadline. But his body had other ideas. His heart would
+  race during routine client calls. His palms would sweat sitting at his own desk. His mind
+  would flood with catastrophic scenarios—the client leaving, the company failing, the team
+  losing respect for him—all triggered by an email notification. David's nervous system
+  was stuck in a loop. It treated every stressful stimulus the same way it would treat a
+  tiger in the room: full alarm. Heart rate elevated, cortisol surging, breath shallow.
+  Except there was no tiger. There was just email. Just a deadline. Just the weight of
+  responsibility that he had chosen and, truthfully, executed well. His body couldn't tell
+  the difference between a real threat and a self-imposed one. The false alarms were so
+  convincing that David had begun to believe them. He thought the anxiety meant something
+  was actually wrong.
+
+  [PIVOT]
+  But what if the anxiety meant something else entirely? What if it meant his nervous system
+  was doing its job—maybe a little too well? His body was designed to protect him. It was
+  just misfiring. And misfires can be recalibrated.
+
+  [PERMISSION]
+  You don't have to believe your anxiety. You can acknowledge it, thank your nervous system
+  for trying to protect you, and then choose differently. You can be ambitious, driven, and
+  also—in the midst of the uncertainty—calm.
+
+expected_quality_notes: >
+  Zh-HK register: conversational yet authoritative tone. News-anchor clarity on physiological
+  details (heart rate, cortisol, nervous system concepts) without sounding clinical or
+  distant. Cantonese-influenced speech patterns—natural question pacing, relatable framing.
+  The pivot from problem to reframe should feel like a genuine shift in perspective, not a
+  sudden tonal jump. Permission language must land as genuinely accessible, not prescriptive.
+  Technical terms (cortisol, nervous system, false alarms) spoken precisely and confidently.
+  Maintain steady, measured delivery throughout. All content TTS-compatible.

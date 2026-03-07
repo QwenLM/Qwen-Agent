@@ -1,0 +1,28 @@
+# Golden regression sample — zh-CN Teacher Mode (EXERCISE, REFLECTION)
+locale: zh-CN
+content_type: teacher_mode
+section_id: golden_zh_cn_004
+description: >
+  Tests Teacher Mode format for Mainland Mandarin: guided journaling exercise with three-sentence structure (what you felt, what you needed, what you did instead). Validates contemplative, non-judgmental teacher voice and practical self-awareness building.
+
+expect_pass: true
+min_aggregate_score: 0.77
+checklist_version: "2.0.0"
+
+source_text: |
+  [EXERCISE]
+  This exercise takes about five minutes. Find a quiet place and a notebook or device where you can write freely. You're going to explore a recent moment when you felt triggered—anxious, angry, hurt, or overwhelmed. The goal isn't to solve anything. It's to understand yourself a little better.
+
+  Think of a specific moment from this past week when your emotions felt big or confusing. Hold that moment gently in your mind. Now, write three sentences. Take your time with each one.
+
+  First sentence: What did you feel? Name the emotion or emotions as honestly as you can. Don't simplify or judge what you find. "I felt frustrated and small," or "I felt angry and scared," or "I felt lonely and ashamed." Write what was actually true.
+
+  Second sentence: What did you need in that moment? Not what you got. Not what you should have needed. What did you actually need? "I needed to feel heard," or "I needed space," or "I needed someone to believe in me." Let yourself want what you wanted.
+
+  Third sentence: What did you do instead of getting what you needed? This isn't about blame. It's about awareness. "I shut down," or "I over-explained myself," or "I pretended I was fine." Notice the pattern without judgment.
+
+  [REFLECTION]
+  When you finish, sit with what you've written. You've just mapped the gap between your inner world and your outer behavior. This gap is where growth happens. It's not a failure. It's a signal. Each time you notice this pattern, you have a choice to respond differently. That's not weakness asking for help. That's wisdom meeting itself.
+
+expected_quality_notes: >
+  Mainland standard Mandarin, contemplative and non-judgmental. Teacher voice is warm, patient, and grounded. Clear, actionable instructions. Personal pronouns invite reader participation. Examples feel authentic without being prescriptive. Validates emotions and needs without pathologizing. TTS-ready pacing with natural pauses. Encourages self-compassion throughout. Final reflection lands with gentle wisdom.

@@ -1,0 +1,37 @@
+# Golden regression sample — zh-TW Teacher Mode (EXERCISE + REFLECTION)
+locale: zh-TW
+content_type: teacher_mode
+section_id: golden_zh_tw_004
+description: >
+  Teacher Mode grounding exercise: guided tree roots visualization with somatic
+  awareness instructions. Tests gentle pacing, embodied language, and guided
+  meditation register in zh-TW.
+expect_pass: true
+min_aggregate_score: 0.77
+checklist_version: "2.0.0"
+
+source_text: |
+  [EXERCISE] Let's begin by finding a comfortable seat. Your spine can be tall or relaxed —
+  whatever feels right for your body today. Close your eyes if that feels safe. Now, imagine
+  there are roots growing down from the base of your spine. See them entering the earth below
+  you, spreading wide and deep. These roots are not rigid. They sway with you. They know
+  the contours of the ground beneath you. Feel these roots drawing stability up, pulling
+  nourishment from the earth. You don't have to do anything. Your roots are working for you.
+  With each exhale, let them go deeper. With each inhale, feel the earth's support rising
+  through them. You are held. Your roots are holding you.
+
+  [REFLECTION] This grounding is not about becoming immovable. It is about discovering that
+  you already have the capacity to return to yourself. Your nervous system knows how to find
+  the earth. Your body remembers how to be held. The roots you imagined are a map of a resource
+  you already carry. The next time you feel unmoored, your roots will still be there. They grew
+  while you were resting. They are ready to hold you again.
+
+expected_quality_notes: >
+  zh-TW teacher voice should be gentle, slow, and deeply somatic-aware.
+  Exercise: use short breath-paced sentences for guided meditation (rhythm matters for TTS).
+  Visualization language should be concrete and sensory — not abstract.
+  Reflection: weave permission and self-compassion throughout; gentle reframing of resilience.
+  Avoid imperatives ("you must"); use invitations ("let's," "you can," "it feels").
+  Emotional warmth: speak as a trusted teacher who understands the reader's need for grounding.
+  No run-ons. Every sentence should feel like a single breath or gesture.
+  All content must be naturally speakable — pacing built into the language itself.

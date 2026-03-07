@@ -1,18 +1,86 @@
 {
-  "version": "1.0",
-  "description": "Golden regression set for Qwen-Only Audiobook Pipeline",
+  "version": "2.0",
+  "description": "Golden regression set — 6 locales × 4 content types = 24 samples",
   "required_locales": [
     "zh-TW",
     "zh-HK",
     "zh-SG",
-    "zh-CN"
+    "zh-CN",
+    "ja-JP",
+    "ko-KR"
   ],
   "samples": [
     {
-      "file": "zh-TW_pearl_prime_intro.yaml",
-      "locale": "zh-TW",
+      "file": "ja-JP_pearl_news_education.yaml",
+      "locale": "ja-JP",
+      "content_type": "pearl_news",
+      "section_id": "golden_ja_jp_002"
+    },
+    {
+      "file": "ja-JP_pearl_prime_overwork.yaml",
+      "locale": "ja-JP",
       "content_type": "pearl_prime",
-      "section_id": "golden_zh_tw_001"
+      "section_id": "golden_ja_jp_001"
+    },
+    {
+      "file": "ja-JP_phoenix_v4_spiral.yaml",
+      "locale": "ja-JP",
+      "content_type": "phoenix_v4",
+      "section_id": "golden_ja_jp_003"
+    },
+    {
+      "file": "ja-JP_teacher_mode_walking.yaml",
+      "locale": "ja-JP",
+      "content_type": "teacher_mode",
+      "section_id": "golden_ja_jp_004"
+    },
+    {
+      "file": "ko-KR_pearl_news_economy.yaml",
+      "locale": "ko-KR",
+      "content_type": "pearl_news",
+      "section_id": "golden_ko_kr_002"
+    },
+    {
+      "file": "ko-KR_pearl_prime_comparison.yaml",
+      "locale": "ko-KR",
+      "content_type": "pearl_prime",
+      "section_id": "golden_ko_kr_001"
+    },
+    {
+      "file": "ko-KR_phoenix_v4_watcher.yaml",
+      "locale": "ko-KR",
+      "content_type": "phoenix_v4",
+      "section_id": "golden_ko_kr_003"
+    },
+    {
+      "file": "ko-KR_teacher_mode_body_scan.yaml",
+      "locale": "ko-KR",
+      "content_type": "teacher_mode",
+      "section_id": "golden_ko_kr_004"
+    },
+    {
+      "file": "zh-CN_pearl_news_mental_health.yaml",
+      "locale": "zh-CN",
+      "content_type": "pearl_news",
+      "section_id": "golden_zh_cn_003"
+    },
+    {
+      "file": "zh-CN_pearl_prime_perfectionism.yaml",
+      "locale": "zh-CN",
+      "content_type": "pearl_prime",
+      "section_id": "golden_zh_cn_002"
+    },
+    {
+      "file": "zh-CN_phoenix_v4_spiral.yaml",
+      "locale": "zh-CN",
+      "content_type": "phoenix_v4",
+      "section_id": "golden_zh_cn_001"
+    },
+    {
+      "file": "zh-CN_teacher_mode_journaling.yaml",
+      "locale": "zh-CN",
+      "content_type": "teacher_mode",
+      "section_id": "golden_zh_cn_004"
     },
     {
       "file": "zh-HK_pearl_news_youth.yaml",
@@ -21,16 +89,70 @@
       "section_id": "golden_zh_hk_001"
     },
     {
+      "file": "zh-HK_pearl_prime_silence.yaml",
+      "locale": "zh-HK",
+      "content_type": "pearl_prime",
+      "section_id": "golden_zh_hk_002"
+    },
+    {
+      "file": "zh-HK_phoenix_v4_false_alarm.yaml",
+      "locale": "zh-HK",
+      "content_type": "phoenix_v4",
+      "section_id": "golden_zh_hk_003"
+    },
+    {
+      "file": "zh-HK_teacher_mode_breath.yaml",
+      "locale": "zh-HK",
+      "content_type": "teacher_mode",
+      "section_id": "golden_zh_hk_004"
+    },
+    {
+      "file": "zh-SG_pearl_news_inequality.yaml",
+      "locale": "zh-SG",
+      "content_type": "pearl_news",
+      "section_id": "golden_zh_sg_003"
+    },
+    {
+      "file": "zh-SG_pearl_prime_boundaries.yaml",
+      "locale": "zh-SG",
+      "content_type": "pearl_prime",
+      "section_id": "golden_zh_sg_002"
+    },
+    {
+      "file": "zh-SG_phoenix_v4_spiral.yaml",
+      "locale": "zh-SG",
+      "content_type": "phoenix_v4",
+      "section_id": "golden_zh_sg_004"
+    },
+    {
       "file": "zh-SG_teacher_mode_exercise.yaml",
       "locale": "zh-SG",
       "content_type": "teacher_mode",
       "section_id": "golden_zh_sg_001"
     },
     {
-      "file": "zh-CN_phoenix_v4_spiral.yaml",
-      "locale": "zh-CN",
+      "file": "zh-TW_pearl_news_education.yaml",
+      "locale": "zh-TW",
+      "content_type": "pearl_news",
+      "section_id": "golden_zh_tw_002"
+    },
+    {
+      "file": "zh-TW_pearl_prime_intro.yaml",
+      "locale": "zh-TW",
+      "content_type": "pearl_prime",
+      "section_id": "golden_zh_tw_001"
+    },
+    {
+      "file": "zh-TW_phoenix_v4_watcher.yaml",
+      "locale": "zh-TW",
       "content_type": "phoenix_v4",
-      "section_id": "golden_zh_cn_001"
+      "section_id": "golden_zh_tw_003"
+    },
+    {
+      "file": "zh-TW_teacher_mode_grounding.yaml",
+      "locale": "zh-TW",
+      "content_type": "teacher_mode",
+      "section_id": "golden_zh_tw_004"
     }
   ]
 }

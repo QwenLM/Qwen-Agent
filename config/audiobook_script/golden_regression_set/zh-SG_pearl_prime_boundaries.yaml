@@ -1,0 +1,23 @@
+# Golden regression sample — zh-SG Pearl Prime (HOOK, STORY, TAKEAWAY)
+locale: zh-SG
+content_type: pearl_prime
+section_id: golden_zh_sg_002
+description: >
+  Tests Pearl Prime format for Singapore Mandarin: emotional hook, relatable story about boundary-setting, and personal takeaway. Validates warm, direct TTS-ready prose for the caretaker journey.
+
+expect_pass: true
+min_aggregate_score: 0.78
+checklist_version: "2.0.0"
+
+source_text: |
+  [HOOK]
+  Most caretakers learn to say "yes" long before they learn to say "no." The moment you first refuse a request, a small guilt blooms. Is that normal?
+
+  [STORY]
+  James spent fifteen years over-functioning at work. He answered emails at midnight, completed projects no one asked him to own, and stayed late to fix other people's mistakes. His manager noticed his reliability but rarely questioned his limits. One Tuesday morning, James's boss asked him to lead an additional project alongside his current responsibilities. For the first time, James paused. Instead of the automatic "yes," something shifted. He took a breath and said no. He explained he couldn't deliver excellence on both projects. His voice wavered. His hands felt warm. The guilt arrived instantly, whispering that he was selfish, undependable, letting people down. But something else arrived too: a small, steady sense of self-respect. His boss adjusted expectations. The world didn't collapse. James realized the discomfort wasn't a sign he was doing something wrong. It was the feeling of doing something new.
+
+  [TAKEAWAY]
+  Boundary-setting feels uncomfortable because you've practiced the alternative. The discomfort fades. Self-respect grows.
+
+expected_quality_notes: >
+  Singapore standard Mandarin, clean and direct. No regional colloquialisms or broadcast formality. Warm, accessible voice. Short sentences for TTS clarity. Prose flows naturally when read aloud. Validates emotional authenticity without melodrama.

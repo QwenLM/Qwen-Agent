@@ -1,0 +1,23 @@
+# Golden regression sample — zh-SG Pearl News (SUMMARY, YOUTH IMPACT, FORWARD LOOK)
+locale: zh-SG
+content_type: pearl_news
+section_id: golden_zh_sg_003
+description: >
+  Tests Pearl News format for Singapore Mandarin: summarizes economic inequality crisis, connects to youth impact, projects forward outlook. Validates institutional references and data-driven warmth for Southeast Asian context.
+
+expect_pass: true
+min_aggregate_score: 0.76
+checklist_version: "2.0.0"
+
+source_text: |
+  [SUMMARY]
+  Wealth inequality across Southeast Asia has deepened over the past decade. According to the World Bank, income gaps between richest and poorest have widened in most ASEAN economies. This isn't abstract economics—it shapes how young people experience opportunity, stability, and hope.
+
+  [YOUTH IMPACT]
+  For young people aged eighteen to thirty, the inequality manifests daily. University education costs more. Housing requires family wealth. Entry-level jobs don't pay enough for independence. The International Labour Organization reports that youth unemployment in Southeast Asia remains stubbornly high, with young women facing particular barriers. More troubling: many young people internalize this as personal failure rather than structural inequality. They work harder, sacrifice more, and still feel insufficient. Anxiety and hopelessness follow.
+
+  [FORWARD LOOK]
+  Change is possible, but requires action beyond individual effort. ASEAN countries are beginning to invest in skills training and wage protections. Youth advocacy movements are demanding policy shifts. The question facing each young person now: Will I accept the system as fixed, or will I join the people building alternatives? Your economic security, and your sense of possibility, depends partly on that choice.
+
+expected_quality_notes: >
+  Singapore standard Mandarin, data-grounded and accessible. Institutional references (World Bank, ASEAN, ILO) flow naturally into narrative. No jargon-heavy sections. Warm connection between statistics and lived experience. TTS-friendly pacing and sentence structure. Respects audience intelligence while remaining emotionally engaged.

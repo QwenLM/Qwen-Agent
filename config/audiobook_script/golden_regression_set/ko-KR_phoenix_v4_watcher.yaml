@@ -1,0 +1,55 @@
+# Golden regression sample — ko-KR Phoenix V4 Watcher (story, pivot, permission)
+locale: ko-KR
+content_type: phoenix_v4
+section_id: golden_ko_kr_003
+description: >
+  Tests Phoenix V4 WATCHER engine narrative about the disconnected caretaker persona—
+  someone who sees and manages everyone else but cannot see or acknowledge their own
+  needs. Story follows Soomin's pattern of deflection and self-erasure. Validates
+  emotional recognition and the permissioning moment that opens possibility for
+  self-awareness. Persona: disconnected-caretaker.
+expect_pass: true
+min_aggregate_score: 0.78
+checklist_version: "2.0.0"
+
+source_text: |
+  [STORY]
+  Soomin was the person everyone called when something broke. At work, she was the
+  one who stayed late to help a colleague finish a project. At home, she managed
+  her parents' schedules, her younger brother's applications, and the family calendar
+  that kept everyone else's life running. She watched everything. She saw what
+  everyone needed before they asked.
+
+  But somewhere along the way, watching everyone else became the only lens she had.
+  Last month, her best friend asked her directly: "How are you, really?" Soomin's
+  answer came automatic: "Oh, I'm good. Busy, but good. But let me tell you what's
+  happening with my mom..."
+
+  She pivoted. Every time, she pivoted. Someone would ask how she was, and within
+  thirty seconds she'd have redirected the conversation to someone else's crisis,
+  someone else's need. She knew how to see everyone. She had no idea how to be seen.
+
+  [PIVOT]
+  Here's what happens when you spend years watching everyone else: you become
+  invisible to yourself. You see the cracks in everyone's walls. You miss the fact
+  that you're disappearing. The watcher who sees everyone except herself.
+
+  [PERMISSION]
+  This is permission: your needs are not less important than someone else's. Your
+  exhaustion is not something to manage around. Your life is not a supporting role.
+  Say it: "I need something." Say it to someone you trust. Start there. You don't
+  have to earn the right to be seen.
+
+expected_quality_notes: >
+  The disconnected-caretaker persona resonates deeply in Korean culture, where
+  generational care and self-sacrifice are deeply valued. The localization should
+  honor that cultural context while gently questioning it. Conversational warmth
+  (해요체) with emotional directness is essential here. The pivoting moment—where
+  Soomin redirects the question about herself—should feel painfully recognizable,
+  not exaggerated. Korean listeners will understand the family responsibility dynamics
+  instantly; don't over-explain. The PERMISSION section is the emotional heart: it
+  should feel like someone finally saying what needs to be said, with both care and
+  conviction. Avoid heavy Sino-Korean vocabulary; use language that feels like a
+  trusted person speaking. Break sentences for TTS clarity, especially in the pivot
+  and permission sections where emotional weight matters. The final permission phrase
+  should land at the end of the sentence structure for maximum impact.

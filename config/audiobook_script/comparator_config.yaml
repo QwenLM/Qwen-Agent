@@ -132,8 +132,8 @@ locale_threshold_overrides:
 
 regression:
   golden_set_path: "config/audiobook_script/golden_regression_set/"
-  required_locales: [zh-TW, zh-HK, zh-SG, zh-CN]
-  optional_locales: [ja-JP, ko-KR]
+  required_locales: [zh-TW, zh-HK, zh-SG, zh-CN, ja-JP, ko-KR]
+  optional_locales: []
   min_hard_gate_pass_rate: 1.0
   min_scored_pass_rate: 0.90
   block_promotion_on_regression: true

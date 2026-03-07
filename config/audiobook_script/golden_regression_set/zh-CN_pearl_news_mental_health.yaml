@@ -1,0 +1,23 @@
+# Golden regression sample — zh-CN Pearl News (SUMMARY, YOUTH IMPACT, FORWARD LOOK)
+locale: zh-CN
+content_type: pearl_news
+section_id: golden_zh_cn_003
+description: >
+  Tests Pearl News format for Mainland Mandarin: summarizes youth mental health crisis, connects to lived experience, projects forward action. Validates WHO and Lancet data integration with compassionate accessibility.
+
+expect_pass: true
+min_aggregate_score: 0.76
+checklist_version: "2.0.0"
+
+source_text: |
+  [SUMMARY]
+  The mental health crisis among young people is no longer whispered. The World Health Organization reports that depression and anxiety disorders have become the leading cause of disability among adolescents and young adults worldwide. In China, the Lancet published findings showing alarming increases in anxiety and depression rates among youth aged fifteen to twenty-four over the past decade. This isn't a cultural weakness. It's a systemic crisis.
+
+  [YOUTH IMPACT]
+  For young people navigating education, employment, and identity formation, the pressure feels relentless. Academic competition. Career uncertainty. Social media comparison. Family expectations. Economic anxiety about the future. The result: sleepless nights, persistent worry, a heaviness that makes simple tasks feel insurmountable. Many young people don't recognize these symptoms as mental health conditions—they interpret them as personal failure, weakness, or moral insufficiency. They suffer silently rather than seek help. The shame becomes part of the illness itself.
+
+  [FORWARD LOOK]
+  Change requires honesty at every level. Schools must prioritize mental health as seriously as grades. Parents need education about recognizing signs. Young people must give themselves permission to struggle without shame. Access to counseling services needs expansion. But most importantly: we must stop treating mental health as a personal problem and start treating it as what it is—a public health emergency that deserves investment, compassion, and urgent action. Your mental health is not a luxury. It's a foundation.
+
+expected_quality_notes: >
+  Mainland standard Mandarin, data-grounded and emotionally honest. WHO and Lancet references integrate naturally into narrative without clinical coldness. Accessible tone balances gravitas with hope. Personal pronouns and direct address create connection. TTS-friendly without loss of nuance. Validates young person's lived experience while refusing shame. Contemplative and actionable.

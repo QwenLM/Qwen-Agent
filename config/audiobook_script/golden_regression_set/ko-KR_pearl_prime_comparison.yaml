@@ -1,0 +1,53 @@
+# Golden regression sample — ko-KR Pearl Prime Comparison (hook, story, takeaway)
+locale: ko-KR
+content_type: pearl_prime
+section_id: golden_ko_kr_001
+description: >
+  Tests Pearl Prime comparison narrative about identity erosion through social media
+  curation and comparison culture. Story follows Jimin's realization that her curated
+  life has replaced her authentic self. Validates emotional directness and Korean
+  conversational warmth in narrative delivery.
+expect_pass: true
+min_aggregate_score: 0.78
+checklist_version: "2.0.0"
+
+source_text: |
+  [HOOK]
+  How many of you have felt it—that strange moment when you wake up and realize
+  you're living someone else's life, even though it's supposed to be yours?
+
+  [STORY]
+  Jimin spent the last seven years building what looked like the perfect life.
+  She had the career milestone—promoted to team lead at a Seoul advertising agency.
+  She had the relationship that photographed well. She had the apartment that
+  photographed even better. Every Sunday, she curated a new Instagram post: coffee
+  in the morning light, her boyfriend smiling, the kind of casual perfection that
+  takes twenty minutes to stage. Her feed was the kind people saved. The kind they
+  shared with friends and said, "That's the life I want."
+
+  But one morning in March, Jimin woke up and couldn't remember. She lay there,
+  scrolling through her own photos, and realized she couldn't point to a single
+  thing she'd done in the past year just because she wanted to. Not one decision
+  made for joy. Everything was calculated for visibility—for the approval she could
+  measure in hearts and comments.
+
+  That's when she understood: comparison had become her identity. The person looking
+  back from the mirror wasn't Jimin anymore. It was a composite of everyone she
+  thought she should be.
+
+  [TAKEAWAY]
+  Your life isn't supposed to be a performance with an invisible audience. The
+  things that matter—the decisions you make, the moments you choose—they don't get
+  better when they're watched. They get smaller. Start today. Do one thing this
+  week because you want to. Not because it photographs well. Not because it proves
+  something. Just because.
+
+expected_quality_notes: >
+  Korean localization should emphasize the emotional gut-punch moment when Jimin
+  realizes she's lost herself—this should land with warmth and directness (해요체
+  conversational level, not formal). The Instagram/performance metaphor resonates
+  deeply with Korean audiences. Maintain sentence rhythm that places key realizations
+  at the end of Korean SOV structure for maximum impact. Avoid over-Sino-Korean
+  vocabulary; prefer native Korean terms for psychological concepts where possible.
+  Ensure TTS clarity by breaking longer thoughts at natural breathing points. The
+  takeaway should feel like advice from a trusted friend, not a lecture.

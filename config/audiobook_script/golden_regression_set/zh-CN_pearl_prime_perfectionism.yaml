@@ -1,0 +1,23 @@
+# Golden regression sample — zh-CN Pearl Prime (HOOK, STORY, TAKEAWAY)
+locale: zh-CN
+content_type: pearl_prime
+section_id: golden_zh_cn_002
+description: >
+  Tests Pearl Prime format for Mainland Mandarin: emotional hook, relatable story about perfectionism as fear, and personal takeaway. Validates warm, accessible TTS-ready prose for the achievement-driven journey.
+
+expect_pass: true
+min_aggregate_score: 0.78
+checklist_version: "2.0.0"
+
+source_text: |
+  [HOOK]
+  You've been called disciplined your whole life. High standards. Relentless execution. But what if discipline is just fear wearing a business suit?
+
+  [STORY]
+  Wei started high school already certain about excellence. Perfect grades. Perfect university. Perfect career. Everyone said he had discipline. The truth was quieter and more lonely. Wei was terrified of being ordinary. Ordinary meant invisible, worthless, replaceable. So he built a structure of perfectionism around himself. He revised essays five times. He practiced presentations until they felt robotic. He chose safe careers over interesting ones. Years passed. Wei achieved everything he'd planned. But one morning, sitting at his desk with all the markers of success around him, he felt completely hollow. A quiet voice emerged: What if I've been running from being seen as ordinary, not toward anything real? That voice led him to ask harder questions. Was his success actually his? Or was it a performance for people who wouldn't love him anyway? Slowly, Wei began to release perfect. He made mistakes in meetings. He tried things he'd never attempted before. His hands shook with vulnerability. But underneath the shaking, something authentic stirred.
+
+  [TAKEAWAY]
+  Perfectionism isn't discipline. It's fear of not being enough. The moment you realize this, you can choose differently.
+
+expected_quality_notes: >
+  Mainland standard Mandarin, warm and introspective. Personal, not broadcast voice. Short sentences flow naturally when read aloud. Vulnerable without being melodramatic. Validates the achievement-driven reader's experience while gently questioning it. TTS-ready pacing. Natural colloquial warmth without regional slang. Contemplative tone that invites self-reflection.

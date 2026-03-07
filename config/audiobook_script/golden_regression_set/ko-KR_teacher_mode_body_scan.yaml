@@ -1,0 +1,60 @@
+# Golden regression sample — ko-KR Teacher Mode Body Scan (exercise, reflection)
+locale: ko-KR
+content_type: teacher_mode
+section_id: golden_ko_kr_004
+description: >
+  Tests Teacher Mode guided body scan exercise with warm, systematic, encouraging
+  voice. Guides awareness from feet upward, naming each region and prompting
+  sensation notice or acknowledgment of numbness. Validates therapeutic Korean—
+  structured yet caring tone, appropriate pacing for guided meditation, clear
+  breathing points, and pedagogical warmth that Korean therapeutic culture values.
+expect_pass: true
+min_aggregate_score: 0.77
+checklist_version: "2.0.0"
+
+source_text: |
+  [EXERCISE]
+  Let's start where your body meets the ground. Find a comfortable seat or lie down
+  if you can. There's no right way to do this. This is just an invitation to notice.
+
+  Bring your attention to your feet. Don't try to change anything. Just notice:
+  Are your feet warm or cool? Do you feel the floor beneath them, or is it hard
+  to sense right now? Some of us can feel our feet clearly. Some of us notice
+  numbness instead. Both are okay. Numbness is information too.
+
+  Now, slowly bring your attention up through your ankles, your shins, your knees.
+  If you notice tension anywhere, you don't have to fix it. Just name it: "There's
+  tightness here." Naming is different from fighting.
+
+  Move to your thighs. Your pelvis. Notice what's there. Move up through your
+  stomach, your chest, your heart space. This is tender territory for many of us.
+  You're safe here.
+
+  Notice your shoulders—the place where so many of us carry the world. Can you feel
+  them? Are they heavy? Light? Collapsed forward? Whatever you find, there's no
+  judgment.
+
+  Now your neck, your jaw. Many of us hold tension in our face without realizing it.
+  Your jaw can relax.
+
+  Finally, the crown of your head. You've arrived. You've noticed.
+
+  [REFLECTION]
+  This practice isn't about fixing your body or achieving some perfect calm state.
+  It's about meeting yourself where you are. With gentleness. With curiosity. When
+  you practice this regularly, you build capacity to notice what you need before
+  crisis demands it. You become a friend to yourself.
+
+expected_quality_notes: >
+  Korean therapeutic culture values both warmth and methodological clarity—the
+  teacher voice should be present and caring, not distant. Use conversational Korean
+  (해요체) with gentle directness. Pacing is critical: allow silence and breathing
+  space between body regions so listeners can genuinely notice sensation. The phrase
+  "naming is different from fighting" (이름 붙이는 것은 싸우는 것과 다르다) should
+  feel like a gentle revelation, not instruction. Avoid clinical language; use
+  accessible, embodied Korean. Break guided sections into natural pauses (one body
+  region per breath cycle). The reflection should feel like wisdom offered by someone
+  who understands the practice personally. Ensure all sentences are TTS-speakable:
+  no run-ons, clear emotional rhythm, space for listeners to actually do the practice
+  while hearing guidance. The therapeutic voice should feel simultaneously structured
+  (systematic progression) and warm (genuine care for the listener's experience).

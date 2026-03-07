@@ -1,0 +1,46 @@
+# Golden regression sample — ja-JP Pearl Prime (Overwork Reframe)
+locale: ja-JP
+content_type: pearl_prime
+section_id: golden_ja_jp_001
+description: >
+  A therapeutic narrative exploring karoshi as emotional avoidance. Yuki's story reframes
+  overwork not as dedication but as a coping mechanism for avoiding solitude and
+  self-reflection. Tests short-sentence Japanese readability and emotional nuance
+  through implication.
+expect_pass: true
+min_aggregate_score: 0.78
+checklist_version: "2.0.0"
+
+source_text: |
+  [HOOK]
+  Yuki stayed at the office until nine. Every night. She told herself it was dedication.
+  But one evening, sitting in the empty parking lot, she realized something: going home
+  meant sitting alone. With herself. And that terrified her.
+
+  [STORY]
+  For years, Yuki had built her identity around being indispensable. She volunteered for
+  every project. She answered emails at midnight. She skipped lunch to help colleagues.
+  The company praised her. They promoted her. Everyone called her a model employee.
+  But Yuki knew the truth. She wasn't staying late because the work demanded it. She was
+  staying late because coming home meant confronting the quiet. The silence. The person
+  she was when no one was watching. At home, there was no structure. No purpose. No one
+  needing her. So she invented reasons to stay. Extended deadlines. Additional meetings.
+  Extra revisions. Anything to fill the hours. Anything to avoid that empty apartment.
+  The karoshi pattern—overwork that damages health—had wrapped itself around her need
+  to feel valuable. And she couldn't see it.
+
+  [TAKEAWAY]
+  When Yuki finally sat with that fear, everything shifted. Overwork isn't always ambition.
+  Sometimes it's avoidance wearing a professional mask. Sometimes it's the soul saying:
+  I'm afraid to be alone with myself. The invitation here is simple: notice what you're
+  running from. Notice where you hide inside busyness. Because coming home to yourself
+  isn't weakness. It's the beginning of real strength.
+
+expected_quality_notes: >
+  Japanese TTS must handle sentence fragments naturally (short bursts for emotional
+  impact). Emotional weight relies on implication—"silences" and pauses matter more
+  than explicit statement. Avoid formal keigo; use conversational 丁寧語. Loan words
+  (karoshi, email) are acceptable for contemporary resonance but keep native Japanese
+  for core feelings (怖い, 静か, 価値). Ensure commas and line breaks support natural
+  prosody. Test for listener comprehension at 0.78+ threshold given sentence-compression
+  needs for Japanese rhythm.

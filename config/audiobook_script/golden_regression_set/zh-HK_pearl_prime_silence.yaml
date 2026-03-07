@@ -1,0 +1,45 @@
+# Golden regression sample — zh-HK Pearl Prime (HOOK, STORY, TAKEAWAY)
+locale: zh-HK
+content_type: pearl_prime
+section_id: golden_zh_hk_002
+description: >
+  Tests localization of a reflective story about pre-emptive apology patterns
+  and self-protection mechanisms. Validates emotional tone preservation and
+  therapeutic insight delivery in Cantonese-influenced rhythm.
+expect_pass: true
+min_aggregate_score: 0.78
+checklist_version: "2.0.0"
+
+source_text: |
+  [HOOK]
+  Most of us have heard it before—someone apologizing for something that wasn't their fault.
+  But have you ever noticed yourself doing it? Apologizing before anyone even blames you?
+
+  [STORY]
+  Mei grew up in a household where one misstep meant days of silence. Her father was kind,
+  but unpredictable. On some days a small mistake would go unnoticed. On others, it would
+  trigger hours of disappointment. So Mei learned a strategy: apologize first. Get ahead of
+  the blame. Control the narrative before someone else could. By the time she was thirty,
+  apologizing before anyone pointed a finger had become automatic. She would start meetings
+  with "I'm sorry, but..." even when she had done nothing wrong. She would apologize to
+  her partner for his bad day at work. She apologized to her doctor for taking up his time.
+  What Mei didn't realize was that her pre-emptive apologies had become a kind of invisible
+  prison. They signaled to others that she was responsible for their feelings. They told the
+  world that she was not safe unless she was shrinking herself. One day, a colleague simply
+  said: "You don't need to apologize." It was like someone had handed her a key. Not because
+  the words were magical, but because she was finally ready to see that her apologies had
+  never been about politeness. They had always been about protection—protection from
+  judgment, from abandonment, from being too much.
+
+  [TAKEAWAY]
+  When you notice yourself apologizing without cause, pause and ask: Am I protecting myself
+  or diminishing myself? The answer often reveals a pattern worth understanding.
+
+expected_quality_notes: >
+  Zh-HK register: news-anchor delivery style, clear and measured pacing. Preserve the
+  reflective, intimate tone of the story while maintaining authoritative presence.
+  Cantonese-influenced rhythmic patterns—shorter phrase units, natural speech cadence
+  rather than formal written Mandarin syntax. Emotional beats (Mei's realization) should
+  land with gentle emphasis, not melodrama. All text must be naturally speakable by TTS
+  without awkward pauses or phonetic complications. Therapeutic terminology (pre-emptive,
+  narrative control, protection vs. diminishment) stated clearly and with precision.

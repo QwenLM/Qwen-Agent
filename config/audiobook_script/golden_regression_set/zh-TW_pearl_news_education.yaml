@@ -1,0 +1,40 @@
+# Golden regression sample — zh-TW Pearl News (SUMMARY + YOUTH IMPACT + FORWARD LOOK)
+locale: zh-TW
+content_type: pearl_news
+section_id: golden_zh_tw_002
+description: >
+  Pearl News article segment: summary of climate change impact on Pacific islands +
+  youth impact section + forward look. Tests factual precision, literary warmth,
+  and journalistic cadence in zh-TW.
+expect_pass: true
+min_aggregate_score: 0.76
+checklist_version: "2.0.0"
+
+source_text: |
+  [SUMMARY] A comprehensive IPCC assessment released last month reveals that Pacific island
+  nations face existential climate threats, with sea levels rising at 1.4 millimeters annually.
+  The report documents that 65 percent of critical coastal infrastructure in these regions
+  is already at risk. The Pacific Islands Forum, representing 18 island nations, calls for
+  immediate climate finance commitments of $50 billion by 2030.
+
+  [YOUTH IMPACT] Young people aged 16 to 35 in Pacific nations are experiencing unprecedented
+  climate-driven displacement. UNEP data shows that 340,000 Pacific islanders under age 25
+  have already relocated due to environmental degradation. In Kiribati and Tuvalu, nearly
+  18 percent of the youth population has migrated to seek economic stability. Educational
+  institutions report a 34 percent surge in climate anxiety among students, with direct
+  impacts on academic performance and mental health outcomes.
+
+  [FORWARD LOOK] The United Nations will convene a Pacific Climate Action Summit in Fiji
+  this June, where island nations will present climate adaptation budgets to bilateral donors.
+  The UNEP Green Recovery Initiative has committed to supporting 12 Pacific youth-led
+  environmental organizations over the next two years, allocating $8 million for grassroots
+  climate education and resilience programs.
+
+expected_quality_notes: >
+  zh-TW adaptation should use softer literary Mandarin with emotional warmth throughout.
+  Statistics must be stated precisely without approximation: "一百四十萬人" not rounded.
+  Youth Impact section must preserve every data point and institutional attribution with care.
+  Emotional resonance: convey the human impact of climate displacement without melodrama.
+  All sentences must be TTS-speakable — short breath phrases, no run-ons.
+  Avoid formal written Mandarin register; use natural conversational cadence.
+  Institutional names (IPCC, UNEP, Pacific Islands Forum) should be read clearly.

@@ -1,0 +1,48 @@
+# Golden regression sample — ja-JP Pearl News (Education Crisis)
+locale: ja-JP
+content_type: pearl_news
+section_id: golden_ja_jp_002
+description: >
+  Data-driven analysis of Japan's declining school enrollment and rising futoko rates.
+  Integrates MEXT statistics, OECD comparisons, and demographic projections. Tests
+  precision clarity, statistical integration, and forward-looking tone in conversational
+  Japanese register.
+expect_pass: true
+min_aggregate_score: 0.76
+checklist_version: "2.0.0"
+
+source_text: |
+  [SUMMARY]
+  Japan is facing a silent educational crisis. School enrollment has dropped sharply.
+  Absences have risen. And something more troubling is spreading: futoko. School refusal.
+  Not absence. Refusal. The data tells a story of young people withdrawing from
+  education itself.
+
+  [YOUTH IMPACT]
+  According to the Ministry of Education, Culture, Sports, Science and Technology (MEXT),
+  the number of elementary and middle school students with futoko reached 299,100 in 2022.
+  That's a thirteen percent increase from the previous year. The trend accelerates each
+  year. OECD data shows Japan ranks among the highest in developed nations for student
+  mental health challenges. Young people report feeling disconnected. Teachers report
+  increasing difficulty engaging students. Parents report confusion about how to respond.
+  School refusal isn't laziness. It's a symptom. A signal that the system isn't meeting
+  students where they are. The pressure to conform. The competitive entrance exams. The
+  narrowing sense of acceptable futures. All of it compounds.
+
+  [FORWARD LOOK]
+  Demographic projections show these trends will intensify. By 2040, Japan's school-age
+  population will shrink by twenty-eight percent. Schools will consolidate. Some will
+  close. But the futoko numbers likely won't follow that decline—they may rise. Because
+  this isn't simply about fewer children. It's about children who have lost faith in what
+  school promises. The question facing Japan isn't how to fill empty desks. It's how to
+  rebuild trust in education itself.
+
+expected_quality_notes: >
+  NHK-style precision: statistics must flow naturally without sounding like data dumps.
+  Use short declarative sentences for numbers ("二十八パーセント低下します"). Avoid
+  formal 尊敬語; maintain 丁寧語 conversational tone. Break long explanations into
+  discrete thought units. Futoko (不登校) is native term—use it without explanation
+  (audience knows context). Loan words (MEXT, OECD) acceptable for authority. Emotional
+  undertone (concern, not alarm) should emerge through word choice and pacing, not
+  adjectives. Test readability at 0.76+ for statistical density while maintaining
+  listener engagement.

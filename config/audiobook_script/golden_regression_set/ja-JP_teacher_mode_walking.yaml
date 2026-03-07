@@ -1,0 +1,46 @@
+# Golden regression sample — ja-JP Teacher Mode (Mindful Walking)
+locale: ja-JP
+content_type: teacher_mode
+section_id: golden_ja_jp_004
+description: >
+  Guided mindful walking exercise using ten-step protocol with body awareness and
+  weight-shift attention. Zen-influenced but accessible voice. Tests unhurried pacing,
+  clear directional language, and the capacity of Japanese prosody to hold meditative
+  silence. Requires teacher-voice authority balanced with invitation.
+expect_pass: true
+min_aggregate_score: 0.77
+checklist_version: "2.0.0"
+
+source_text: |
+  [EXERCISE]
+  Find a place where you can walk. Even ten steps is enough. Stand at the beginning
+  and pause. Feel your feet on the ground. Now walk slowly. One step. Feel your heel
+  making contact. Your weight rolling across the ball of your foot. Two steps. Notice
+  how the weight shifts from one side to the other. Three. Your hip opens slightly.
+  Four. There's a rhythm here. Not hurried. Not forced. Just walking. Five steps.
+  Feel the air as it meets your skin. Six. Your breath moves with your movement.
+  Seven. You're not trying to arrive anywhere. You're already here. Eight. The ground
+  holds you. Nine. Your body knows what to do. Ten. Stop. Stand again. Feel everything
+  that just happened.
+
+  [REFLECTION]
+  What did you notice? Was your mind quieter? Or did it chatter? Neither answer is wrong.
+  The practice isn't about achieving silence. It's about noticing. About bringing your
+  full attention to something as simple as walking. In a world that tells you to rush,
+  that says there's never enough time, mindful walking is a small act of resistance.
+  It says: I'm here. Now. In this moment. With myself. That's enough. Whenever you feel
+  scattered or overwhelmed, you can return to this. Ten steps. The feeling of being alive
+  in your own body. It's always available to you. You don't need anything special. Just
+  the willingness to slow down. Try it tomorrow. Or tonight. Whenever you need to come
+  home to yourself.
+
+expected_quality_notes: >
+  Teacher voice in Japanese should evoke calm authority without formality—use 丁寧語
+  with occasional imperative softness ("感じてください" rather than "感じてみてください").
+  Numbered steps (一, 二, 三) must be clear but unrushed; TTS pacing is critical—allow
+  micro-pauses after each number for listener to process. Avoid loan words; use native
+  Japanese (呼吸, 足, 心 not ブレス, フット, マインド). The reflection section should
+  feel like intimate conversation, not instruction. Sentences can be longer here but
+  maintain clarity. Zen influence shows through simplicity and repetition, not Buddhist
+  terminology. Test at 0.77+ for meditative quality—rhythm and pause become part of the
+  therapeutic content itself. Silence and pacing are as important as words.

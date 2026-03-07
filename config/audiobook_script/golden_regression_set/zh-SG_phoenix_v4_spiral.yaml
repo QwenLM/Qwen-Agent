@@ -1,0 +1,23 @@
+# Golden regression sample — zh-SG Phoenix V4 (STORY, PIVOT, PERMISSION)
+locale: zh-SG
+content_type: phoenix_v4
+section_id: golden_zh_sg_004
+description: >
+  Tests Phoenix V4 SPIRAL engine for Singapore Mandarin: identifies recurring relationship pattern (caretaker-achiever attracting partners who need rescuing), pivots to awareness, extends permission to change. Validates pattern recognition and gentle accountability.
+
+expect_pass: true
+min_aggregate_score: 0.78
+checklist_version: "2.0.0"
+
+source_text: |
+  [STORY]
+  You notice a pattern in your relationships. The partners you choose seem to arrive with struggles—financial stress, family conflict, emotional exhaustion. You step in. You offer solutions, stability, understanding. For a while, they stabilize. You feel needed. You believe this is love. Then, as they find their footing, something shifts. They either pull away or stay in a way that feels hollow. You're left wondering if you were ever truly loved, or simply useful. Then the next person appears with their own crisis. And you begin again. This spiral has repeated three times, maybe more. Each time, you blamed your choice of partners. Each time, you told yourself you'd be more careful next time. But you keep landing in the same story because the story meets a need in you.
+
+  [PIVOT]
+  Here's what's true: You're not broken for being drawn to people who need help. You're human. The caretaker-achiever in you finds purpose in being the capable one. But there's a cost. You've made someone else's stability more important than your own wholeness. You've confused rescue with relationship. You've offered everything except the one thing that matters: space for someone to know you, not as their savior, but as a whole person with needs of your own.
+
+  [PERMISSION]
+  You have permission to change this pattern. To choose partners who have their own stability and can meet you there. To be loved not for what you provide, but for who you are. To let people fail and grow without needing to catch them. This isn't selfishness. It's the foundation of real partnership.
+
+expected_quality_notes: >
+  Singapore standard Mandarin, perceptive and compassionate. SPIRAL pattern clearly identified without shame or judgment. Validation precedes accountability. Direct address (you/your) creates intimacy. Permission statement lands with strength and gentleness. TTS-speakable throughout. No defensive language; opens possibility rather than closing it.

@@ -1,0 +1,44 @@
+# Golden regression sample — zh-HK Teacher Mode (EXERCISE, REFLECTION)
+locale: zh-HK
+content_type: teacher_mode
+section_id: golden_zh_hk_004
+description: >
+  Tests localization of guided breath-counting exercise with teacher voice authority.
+  Validates clear procedural language, grounding effectiveness, and supportive yet
+  direct tone in zh-HK register.
+expect_pass: true
+min_aggregate_score: 0.77
+checklist_version: "2.0.0"
+
+source_text: |
+  [EXERCISE]
+  I'm going to guide you through a simple breath-counting exercise. This works best when
+  you're sitting comfortably with your feet on the ground. You can close your eyes if that
+  feels right. Here's how it works: You will count backwards from ten to one, one number
+  with each exhale. When you reach one, start again at ten. If your mind wanders—and it
+  will—simply notice the thought without judgment and return to the count. You don't have to
+  be perfect. You don't have to empty your mind. You just have to come back to the count.
+  Let's begin. Breathe in naturally. Now exhale, and count: ten. Inhale. Exhale, and count:
+  nine. Continue at your own pace. If a thought appears, acknowledge it like a cloud passing
+  through sky, then return to your number. There's no rush. When you reach one, begin again
+  at ten. Stay with this rhythm for the next five minutes. Let the numbers anchor you.
+  Let your breath do the work it knows how to do.
+
+  [REFLECTION]
+  When you're ready, gently open your eyes. Notice where you are. Notice your body without
+  needing to change anything about it. What you just did was simple, but it was powerful.
+  You taught your nervous system that you are safe enough to slow down. Every time you
+  practice this, you strengthen that signal. There's no score. There's no performance.
+  There's only the repetition of coming back to yourself. That's the work. That's the
+  progress. Trust the process.
+
+expected_quality_notes: >
+  Zh-HK register: calm, structured, authoritative teacher voice. Clear procedural instruction
+  delivered in measured, unhurried cadence. Cantonese-influenced rhythm—shorter instructional
+  phrases, natural pausing points that invite listener compliance without pressure. Tone must
+  be simultaneously directive (clear about what to do) and gentle (permission-granting for
+  imperfection). News-anchor precision on counting sequence and timing. Reflection section
+  should feel warm but not manipulative—accessible encouragement from someone who knows what
+  they're teaching. All language naturally speakable, with natural breath pauses built into
+  sentence structure. Therapeutic concepts (nervous system signal, grounding) stated with
+  quiet confidence.

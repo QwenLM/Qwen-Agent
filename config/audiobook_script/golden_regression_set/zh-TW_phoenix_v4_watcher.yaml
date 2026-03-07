@@ -1,0 +1,41 @@
+# Golden regression sample — zh-TW Phoenix V4 (STORY + PIVOT + PERMISSION)
+locale: zh-TW
+content_type: phoenix_v4
+section_id: golden_zh_tw_003
+description: >
+  Phoenix V4 WATCHER engine sample: narrative about observing others' pain while
+  remaining emotionally disconnected. Tests somatic awareness, narrative pivot,
+  and permission-to-feel in zh-TW therapeutic register.
+expect_pass: true
+min_aggregate_score: 0.78
+checklist_version: "2.0.0"
+
+source_text: |
+  [STORY] David has spent seventeen years as a hospice volunteer. He knows how to
+  hold the hand of someone dying. He knows how to sit in silence while families cry.
+  He has learned which words land, which words wound. He has become remarkable at
+  witnessing other people's endings without flinching. But somewhere in those seventeen
+  years, something shifted. He stopped feeling the weight of their hands in his. He
+  stopped noticing the exact shape of their fear. He became a mirror for their pain
+  without ever letting their pain touch him. This is the watcher's paradox: you become
+  so skilled at observing that you forget how to inhabit your own body while you observe.
+
+  [PIVOT] What David did not realize was that disconnection was not evidence of his strength.
+  It was evidence of survival. At some point, the pain of witnessing became too much.
+  So his nervous system made a choice: not to close his heart, but to float slightly above it.
+  He was not heartless. He was protecting himself the only way he knew how.
+
+  [PERMISSION] You can witness the world's pain and still have your own. You can hold space
+  for someone else and demand space for yourself. This is not selfish. This is the boundary
+  between compassion that sustains and compassion that depletes. You are allowed to feel
+  what you feel while you watch what they feel. Both can be true.
+
+expected_quality_notes: >
+  zh-TW adaptation should use gentle, somatic-aware teacher voice — warm and unhurried.
+  Story should flow as natural internal narrative, not clinical language.
+  Pivot: soften the realization with emotional insight, not intellectual analysis.
+  Permission: speak directly to the reader with compassion and reassurance.
+  Use shorter sentences for somatic awareness (breath-paced).
+  No formal written Mandarin; maintain conversational warmth throughout.
+  Literary register should feel intimate, like a trusted mentor speaking.
+  All sentences must be TTS-speakable without strain or run-ons.
