@@ -109,10 +109,17 @@
 | zh-SG golden sample present (`zh-SG_teacher_mode_exercise.yaml`) | ✅ | done |
 | zh-CN golden sample present (`zh-CN_phoenix_v4_spiral.yaml`) | ✅ | done |
 | `scripts/audiobook_script/run_regression.py` present | ✅ | done |
-| Regression run passes all 4 locales (full_golden=true) | ☐ | pending full golden run |
-| Regression results committed to repo as evidence | ☐ | after first run |
+| Regression run passes required locales (full_golden=true, locale-sharded) | ✅ | runs #12–#17 green |
+| Regression results committed to repo as evidence | ✅ | run URLs + artifacts recorded below |
 
-**Notes**: _______________________
+**Notes**:
+- Locale-sharded full-golden regression evidence:
+  - zh-TW pass — [Audiobook regression #12](https://github.com/Ahjan108/Qwen-Agent/actions/runs/22809935828), commit `a2d8b9a`, status: Success, artifact: 1
+  - zh-HK pass — [Audiobook regression #13](https://github.com/Ahjan108/Qwen-Agent/actions/runs/22809996801), commit `4bcdf00`, status: Success, artifact: 1
+  - zh-SG pass — [Audiobook regression #14](https://github.com/Ahjan108/Qwen-Agent/actions/runs/22810031639), commit `4bcdf00`, status: Success, artifact: 1
+  - zh-CN pass — [Audiobook regression #15](https://github.com/Ahjan108/Qwen-Agent/actions/runs/22810061931), commit `4bcdf00`, status: Success, artifact: 1
+  - ja-JP pass — [Audiobook regression #16](https://github.com/Ahjan108/Qwen-Agent/actions/runs/22810087959), commit `4bcdf00`, status: Success, artifact: 1
+  - ko-KR pass — [Audiobook regression #17](https://github.com/Ahjan108/Qwen-Agent/actions/runs/22810108840), commit `4bcdf00`, status: Success, artifact: 1
 
 ---
 
@@ -143,7 +150,7 @@
 | Schema validation in CI (not just runtime) | ✅ | job 1 validates config + checklist + schema + prompts + golden set |
 | DOCS_INDEX governance check passes | ☐ | run after next docs-ci push |
 
-**Notes**: CI workflow created 2026-03-06. Job 1 (schema-and-config) runs on ubuntu-latest, no LM Studio. Job 2 (golden-regression) self-hosted. As of run #11, smoke gate is green; full golden remains a manual deep check (`full_golden=true`).
+**Notes**: CI workflow created 2026-03-06. Job 1 (schema-and-config) runs on ubuntu-latest, no LM Studio. Job 2 (golden-regression) self-hosted. Smoke gate is green (#11), and full-golden locale-sharded deep checks are green (#12–#17).
 
 ---
 
