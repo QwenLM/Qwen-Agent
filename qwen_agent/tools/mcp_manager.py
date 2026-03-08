@@ -195,7 +195,10 @@ class MCPManager:
                     'properties': parameters['properties'],
                     'required': parameters['required']
                 }
-                register_name = server_name + '-' + tool.name
+                if len(mcp_servers) > 1:
+                    register_name = server_name + '-' + tool.name
+                else:
+                    register_name = tool.name
                 agent_tool = self.create_tool_class(register_name=register_name,
                                                     register_client_id=client_id,
                                                     tool_name=tool.name,
