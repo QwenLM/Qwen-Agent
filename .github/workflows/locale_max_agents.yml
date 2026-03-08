@@ -6,12 +6,25 @@ on:
       max_agents:
         description: 'Max parallel locale workers'
         required: false
-        default: '3'
+        default: '2'
         type: string
-      locales:
-        description: 'Space-separated locales, or all'
+      locale_set:
+        description: 'core (6 prod locales) or all'
         required: false
-        default: 'all'
+        default: 'core'
+        type: choice
+        options:
+          - core
+          - all
+      locales:
+        description: 'Optional space-separated locales override (leave blank to use locale_set)'
+        required: false
+        default: ''
+        type: string
+      timeout_sec:
+        description: 'Per-locale hard timeout in seconds'
+        required: false
+        default: '420'
         type: string
       mode:
         description: 'translate+validate, translate-only, validate-only'
@@ -45,8 +58,10 @@ jobs:
       - name: Run locale batches
         run: |
           MODE="${{ inputs.mode || 'translate+validate' }}"
-          LOCALES="${{ inputs.locales || 'all' }}"
-          MAX_AGENTS="${{ inputs.max_agents || '3' }}"
+          LOCALE_SET="${{ inputs.locale_set || 'core' }}"
+          LOCALES="${{ inputs.locales || '' }}"
+          MAX_AGENTS="${{ inputs.max_agents || '2' }}"
+          TIMEOUT_SEC="${{ inputs.timeout_sec || '420' }}"
 
           EXTRA=""
           if [ "$MODE" = "translate-only" ]; then
@@ -55,11 +70,13 @@ jobs:
             EXTRA="--validate-only"
           fi
 
-          if [ "$LOCALES" = "all" ]; then
-            python3 scripts/localization/run_locale_batches.py --max-agents "$MAX_AGENTS" $EXTRA
-          else
+          if [ -n "$LOCALES" ]; then
             # shellcheck disable=SC2086
-            python3 scripts/localization/run_locale_batches.py --max-agents "$MAX_AGENTS" --locales $LOCALES $EXTRA
+            python3 scripts/localization/run_locale_batches.py --max-agents "$MAX_AGENTS" --timeout-sec "$TIMEOUT_SEC" --locales $LOCALES $EXTRA
+          elif [ "$LOCALE_SET" = "all" ]; then
+            python3 scripts/localization/run_locale_batches.py --max-agents "$MAX_AGENTS" --timeout-sec "$TIMEOUT_SEC" $EXTRA
+          else
+            python3 scripts/localization/run_locale_batches.py --max-agents "$MAX_AGENTS" --timeout-sec "$TIMEOUT_SEC" --core-locales $EXTRA
           fi
 
       - name: Upload localization batch logs
