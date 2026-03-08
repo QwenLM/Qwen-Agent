@@ -65,3 +65,8 @@ qwen-agent-docs/website/last-sync.json
 qwen-agent-docs/website/_pagefind/
 qwen-agent-docs/website/*.tsbuildinfo
 actions-runner/
+
+# Local runtime artifacts (do not commit)
+artifacts/localization/
+artifacts/localization_validation_latest.json
+artifacts/pearl_news/

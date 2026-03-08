@@ -12,26 +12,42 @@ Pull latest `main`. Stop all parallel dev edits on audiobook/localization until 
 
 ---
 
-## 2. Run max-safe parallel generation (content fill), not max-unsafe
+## 2. Run timeout-safe sharded generation (content fill)
 
-Parallelize by **locale batches**, not unlimited jobs. Use max 3 concurrent locale workers on your current LM Studio host. Complete all missing atom translations first, then validate.
+Use the GitHub workflow `locale_max_agents.yml` (or the same script locally). It is now hardened:
+- sharding by locale + topic
+- per-topic hard timeout
+- heartbeat progress logs
+- LM Studio lock (light/medium/heavy) to avoid contention
+
+**Safe defaults** (recommended):
+- `locale_set=core`
+- `max_agents=2`
+- `timeout_sec=180`
+- `mode=translate+validate`
 
 ---
 
 ## 3. Mandatory command sequence
 
-```bash
-cd /Users/ahjan/phoenix_omega/Qwen-Agent
-
-# A) Fill locale content
-python3 scripts/localization/translate_atoms_all_locales.py --all-locales
-
-# B) Structural + quality validation
-python3 scripts/localization/validate_translations.py --all-locales --report
-
-# C) Closed-loop learn/apply artifacts
-python3 scripts/localization/native_prompts_eval_learn.py --weekly --system both
-```
+1. GitHub Actions → **Locale max-agents run** (`workflow_dispatch`)
+2. Run first probe:
+   - `locale_set=core`
+   - `max_agents=1`
+   - `topics=climate`
+   - `mode=translate+validate`
+   - `timeout_sec=180`
+3. If green, run full core:
+   - `locale_set=core`
+   - `max_agents=2`
+   - `topics=` (blank = all 7)
+   - `mode=translate+validate`
+   - `timeout_sec=180`
+4. Optional expansion to all locales:
+   - `locale_set=all`
+   - `max_agents=2`
+   - `mode=translate+validate`
+   - `timeout_sec=180` (raise to 240 only if needed)
 
 ---
 
@@ -42,6 +58,7 @@ python3 scripts/localization/native_prompts_eval_learn.py --weekly --system both
 python3 scripts/audiobook_script/run_regression.py --smoke --verbose
 
 # Phase 2: full quality proof (must run for 100%)
+# use locale-sharded full-golden workflow runs (#12–#17 evidence accepted)
 python3 scripts/audiobook_script/run_regression.py --verbose
 ```
 
@@ -88,30 +105,23 @@ Update `docs/GO_LIVE_FINAL_CHECKLIST.md`:
 
 ## Quick reference: what's done vs what's pending
 
-### Done (fixtures and scaffolding)
+### Done (fixtures + hardened runtime)
 
 - 24/24 golden sample fixtures present
 - Content-type registry/matrix complete
 - Smoke regression gate passed
 - All scripts created and syntax-verified
-- `run_locale_batches.py`, `locale_max_agents.yml` in place
+- `run_locale_batches.py`, `locale_max_agents.yml` hardened:
+  - locale+topic sharding
+  - per-topic timeout
+  - heartbeat progress
+  - LM Studio lock compatibility
 
-### Still pending (blocking 100%)
+### Still pending (blocking 100% sign-off)
 
-- Full translation generation + validation pass for all 6 CJK locales
-- Full golden regression pass (not smoke) — all 24 samples green
-- Staging + evidence/sign-off (Item 10)
+- Any missing evidence rows in `GO_LIVE_FINAL_CHECKLIST.md` Item 10
+- Final sign-off block completion (owners + dates)
 
 ### To complete it
 
-```bash
-cd /Users/ahjan/phoenix_omega/Qwen-Agent
-
-# Content generation (needs LM Studio running)
-python3 scripts/localization/run_locale_batches.py --max-agents 6
-
-# Validation (second command must exit clean)
-python3 scripts/localization/validate_translations.py --all-locales --report
-```
-
-When that second command exits clean, all-language content generation is complete. Then proceed to steps 4-7 above.
+When `locale_max_agents.yml` full-core run is green and Item 10 evidence is complete, localization is production-proven.

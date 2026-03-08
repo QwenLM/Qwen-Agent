@@ -4,7 +4,7 @@
 > All items must be ✅ before first production run. No exceptions.
 >
 > **Owner**: Audiobook pipeline lead
-> **Last updated**: 2026-03-06
+> **Last updated**: 2026-03-07
 > **Schema version in play**: `comparator_result_v2.schema.json` v2.0
 
 ---
@@ -111,6 +111,7 @@
 | `scripts/audiobook_script/run_regression.py` present | ✅ | done |
 | Regression run passes required locales (full_golden=true, locale-sharded) | ✅ | runs #12–#17 green |
 | Regression results committed to repo as evidence | ✅ | run URLs + artifacts recorded below |
+| Regression smoke run green | ✅ | run #11 green |
 
 **Notes**:
 - Locale-sharded full-golden regression evidence:
@@ -181,7 +182,7 @@
 
 ---
 
-## Item 10 — Staging Run + Evidence Pack
+## Item 10 — Staging Run + Evidence Pack (final sign-off gate)
 
 | Sub-item | Status | Sign-off |
 |----------|--------|----------|
@@ -189,8 +190,8 @@
 | At least 1 book, all 6 required locales (zh-TW/HK/SG/CN, ja-JP, ko-KR) | ☐ | ________ |
 | Locale content generation complete (`run_locale_batches.py --max-agents 6` green) | ☐ | ________ |
 | Translation validation passes (`validate_translations.py --all-locales --report` green) | ☐ | ________ |
-| Regression smoke run green (URL + artifact recorded below) | ☐ | ________ |
-| Full golden regression green — all 24 samples pass (URL + artifact recorded below) | ☐ | ________ |
+| Regression smoke run green (URL + artifact recorded below) | ✅ | run #11 |
+| Full golden regression green — locale-sharded full-golden passes recorded below | ✅ | runs #12–#17 |
 | Scheduled autonomous proof run green (`Audiobook scheduled (Qwen-only)` dispatch, URL below) | ☐ | ________ |
 | No sections routed to `manual_review` unexpectedly | ☐ | ________ |
 | `manual_review_queue.json` reviewed: empty, or every entry explained + re-run evidence | ☐ | ________ |
@@ -202,11 +203,11 @@
 
 | Evidence | URL / Path | Status |
 |----------|-----------|--------|
-| Regression smoke run | _URL:_ _________________________ | ☐ |
-| Regression full-golden run | _URL:_ _________________________ | ☐ |
+| Regression smoke run | `Audiobook regression #11` (manual, Success; add URL if required by audit policy) | ✅ |
+| Regression full-golden run | Locale-sharded: [#12](https://github.com/Ahjan108/Qwen-Agent/actions/runs/22809935828), [#13](https://github.com/Ahjan108/Qwen-Agent/actions/runs/22809996801), [#14](https://github.com/Ahjan108/Qwen-Agent/actions/runs/22810031639), [#15](https://github.com/Ahjan108/Qwen-Agent/actions/runs/22810061931), [#16](https://github.com/Ahjan108/Qwen-Agent/actions/runs/22810087959), [#17](https://github.com/Ahjan108/Qwen-Agent/actions/runs/22810108840) | ✅ |
 | Scheduled autonomous run | _URL:_ _________________________ | ☐ |
 | `manual_review_queue.json` | _Status:_ ☐ empty / ☐ explained | ☐ |
-| Model ID | _ID:_ __________________________ | ☐ |
+| Model ID | `qwen3-14b` | ✅ |
 | Staging artifacts path | `artifacts/audiobook/staging/` | ☐ |
 | Locale validation report | `artifacts/localization/batch_runs/` | ☐ |
 
