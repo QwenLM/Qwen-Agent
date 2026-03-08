@@ -81,17 +81,63 @@ jobs:
       - name: Run smoke regression (fast gate)
         run: |
           python3 scripts/audiobook_script/run_regression.py --smoke --verbose
-      - name: Run full golden regression (optional)
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.full_golden == true }}
-        run: |
-          if [ "${{ inputs.locale }}" = "all" ]; then
-            python3 scripts/audiobook_script/run_regression.py --verbose
-          else
-            python3 scripts/audiobook_script/run_regression.py --locale "${{ inputs.locale }}" --verbose
-          fi
       - name: Upload regression report
         uses: actions/upload-artifact@v4
         with:
-          name: audiobook_regression_report_${{ inputs.locale || 'all' }}
+          name: audiobook_regression_report_smoke
+          path: artifacts/audiobook/regression_report.json
+          retention-days: 14
+
+  full-golden-single-locale:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.full_golden == true && inputs.locale != 'all' }}
+    runs-on: self-hosted
+    needs: [schema-and-config]
+    env:
+      QWEN_BASE_URL: http://127.0.0.1:1234/v1
+      QWEN_API_KEY: lm-studio
+      QWEN_MODEL: qwen3-14b
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install pyyaml jsonschema openai requests
+      - name: Run full golden regression (single locale)
+        run: |
+          echo "[full-golden] locale=${{ inputs.locale }}"
+          python3 scripts/audiobook_script/run_regression.py --locale "${{ inputs.locale }}" --verbose
+      - name: Upload regression report
+        uses: actions/upload-artifact@v4
+        with:
+          name: audiobook_regression_report_${{ inputs.locale }}
+          path: artifacts/audiobook/regression_report.json
+          retention-days: 14
+
+  full-golden-matrix:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.full_golden == true && inputs.locale == 'all' }}
+    runs-on: self-hosted
+    needs: [schema-and-config]
+    strategy:
+      fail-fast: false
+      matrix:
+        locale: [zh-TW, zh-HK, zh-SG, zh-CN, ja-JP, ko-KR]
+    env:
+      QWEN_BASE_URL: http://127.0.0.1:1234/v1
+      QWEN_API_KEY: lm-studio
+      QWEN_MODEL: qwen3-14b
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install pyyaml jsonschema openai requests
+      - name: Run full golden regression shard
+        run: |
+          echo "[matrix shard] locale=${{ matrix.locale }}"
+          python3 scripts/audiobook_script/run_regression.py --locale "${{ matrix.locale }}" --verbose
+      - name: Upload regression report
+        uses: actions/upload-artifact@v4
+        with:
+          name: audiobook_regression_report_${{ matrix.locale }}
           path: artifacts/audiobook/regression_report.json
           retention-days: 14
