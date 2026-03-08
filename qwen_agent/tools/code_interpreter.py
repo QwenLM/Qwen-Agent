@@ -79,7 +79,7 @@ if threading.current_thread() is threading.main_thread():
 
 @register_tool('code_interpreter')
 class CodeInterpreter(BaseToolWithFileAccess):
-    description = 'Python code sandbox, which can be used to execute Python code.'
+    description = 'Python code sandbox for executing code. Note: For git operations, it is highly recommended to use `--depth 1` for large repositories to avoid timeouts.'
     parameters = {
         'type': 'object',
         'properties': {
