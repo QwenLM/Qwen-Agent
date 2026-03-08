@@ -23,12 +23,18 @@ def setup_logger(level=None):
         else:
             level = logging.INFO
 
+    _logger = logging.getLogger('qwen_agent_logger')
+    
+    # Avoid adding duplicate handlers if logger is already configured
+    if _logger.handlers:
+        _logger.setLevel(level)
+        return _logger
+
     handler = logging.StreamHandler()
     # Do not run handler.setLevel(level) so that users can change the level via logger.setLevel later
     formatter = logging.Formatter('%(asctime)s - %(filename)s - %(lineno)d - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
 
-    _logger = logging.getLogger('qwen_agent_logger')
     _logger.setLevel(level)
     _logger.addHandler(handler)
     return _logger

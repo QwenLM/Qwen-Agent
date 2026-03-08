@@ -298,6 +298,20 @@ def extract_code(text: str) -> str:
 
 
 def json_loads(text: str) -> dict:
+    """Parse JSON text with fallback to json5 for more lenient parsing.
+    
+    This function handles code blocks wrapped in triple backticks and attempts
+    standard JSON parsing first, then falls back to json5 for more flexible parsing.
+    
+    Args:
+        text: The JSON text to parse.
+    
+    Returns:
+        The parsed JSON as a dictionary.
+    
+    Raises:
+        json.decoder.JSONDecodeError: If both json and json5 parsing fail.
+    """
     text = text.strip('\n')
     if text.startswith('```') and text.endswith('\n```'):
         text = '\n'.join(text.split('\n')[1:-1])
@@ -450,9 +464,22 @@ def save_audio_to_file(base_64: str, file_name: str):
 
 def extract_text_from_message(
     msg: Message,
-    add_upload_info: bool,
+    add_upload_info: bool = False,
     lang: Literal['auto', 'en', 'zh'] = 'auto',
 ) -> str:
+    """Extract text content from a message, handling both string and list content types.
+    
+    Args:
+        msg: The message to extract text from.
+        add_upload_info: Whether to include upload information in the extracted text.
+        lang: Language for formatting ('auto', 'en', or 'zh').
+    
+    Returns:
+        The extracted and stripped text content.
+    
+    Raises:
+        TypeError: If msg.content is neither a string nor a list.
+    """
     if isinstance(msg.content, list):
         text = format_as_text_message(msg, add_upload_info=add_upload_info, lang=lang).content
     elif isinstance(msg.content, str):

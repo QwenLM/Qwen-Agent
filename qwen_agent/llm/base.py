@@ -808,7 +808,18 @@ def retry_model_service(
     fn,
     max_retries: int = 10,
 ) -> Any:
-    """Retry a function"""
+    """Retry a function call with exponential backoff on ModelServiceError.
+    
+    Args:
+        fn: The function to retry.
+        max_retries: Maximum number of retry attempts (default: 10).
+    
+    Returns:
+        The result of the function call.
+    
+    Raises:
+        ModelServiceError: If all retry attempts fail.
+    """
 
     num_retries, delay = 0, 1.0
     while True:
@@ -823,7 +834,18 @@ def retry_model_service_iterator(
     it_fn,
     max_retries: int = 10,
 ) -> Iterator:
-    """Retry an iterator"""
+    """Retry an iterator with exponential backoff on ModelServiceError.
+    
+    Args:
+        it_fn: The iterator function to retry.
+        max_retries: Maximum number of retry attempts (default: 10).
+    
+    Yields:
+        The items from the iterator.
+    
+    Raises:
+        ModelServiceError: If all retry attempts fail.
+    """
 
     num_retries, delay = 0, 1.0
     while True:
@@ -856,11 +878,13 @@ def _raise_or_delay(
     # If harmful input or output detected, let it fail
     if e.code == 'DataInspectionFailed':
         raise e
-    if 'inappropriate content' in str(e):
+    
+    error_message = str(e).lower()
+    if 'inappropriate content' in error_message:
         raise e
 
     # Retry is meaningless if the input is too long
-    if 'maximum context length' in str(e):
+    if 'maximum context length' in error_message or 'context length' in error_message and 'exceed' in error_message:
         raise e
 
     logger.warning('ModelServiceError - ' + str(e).strip('\n'))
