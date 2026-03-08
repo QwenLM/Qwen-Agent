@@ -16,7 +16,7 @@ on:
 jobs:
   audiobook:
     runs-on: self-hosted
-    timeout-minutes: 90
+    timeout-minutes: 120
     env:
       PYTHONUNBUFFERED: '1'
       # LM Studio OpenAI-compatible local endpoint
@@ -41,41 +41,41 @@ jobs:
 
       - name: Dry-run setup validation
         run: |
-          python3 scripts/audiobook_script/run_regression.py --dry-run --verbose
+          caffeinate -dimsu python3 scripts/audiobook_script/run_regression.py --dry-run --verbose
 
       - name: Golden regression smoke (fast)
         run: |
-          python3 scripts/audiobook_script/run_regression.py --smoke --verbose
+          caffeinate -dimsu python3 scripts/audiobook_script/run_regression.py --smoke --verbose
 
       - name: Golden regression shard zh-TW
         run: |
           echo "[1/6] zh-TW"
-          python3 scripts/audiobook_script/run_regression.py --locale zh-TW --verbose
+          caffeinate -dimsu python3 scripts/audiobook_script/run_regression.py --locale zh-TW --verbose
 
       - name: Golden regression shard zh-HK
         run: |
           echo "[2/6] zh-HK"
-          python3 scripts/audiobook_script/run_regression.py --locale zh-HK --verbose
+          caffeinate -dimsu python3 scripts/audiobook_script/run_regression.py --locale zh-HK --verbose
 
       - name: Golden regression shard zh-SG
         run: |
           echo "[3/6] zh-SG"
-          python3 scripts/audiobook_script/run_regression.py --locale zh-SG --verbose
+          caffeinate -dimsu python3 scripts/audiobook_script/run_regression.py --locale zh-SG --verbose
 
       - name: Golden regression shard zh-CN
         run: |
           echo "[4/6] zh-CN"
-          python3 scripts/audiobook_script/run_regression.py --locale zh-CN --verbose
+          caffeinate -dimsu python3 scripts/audiobook_script/run_regression.py --locale zh-CN --verbose
 
       - name: Golden regression shard ja-JP
         run: |
           echo "[5/6] ja-JP"
-          python3 scripts/audiobook_script/run_regression.py --locale ja-JP --verbose
+          caffeinate -dimsu python3 scripts/audiobook_script/run_regression.py --locale ja-JP --verbose
 
       - name: Golden regression shard ko-KR
         run: |
           echo "[6/6] ko-KR"
-          python3 scripts/audiobook_script/run_regression.py --locale ko-KR --verbose
+          caffeinate -dimsu python3 scripts/audiobook_script/run_regression.py --locale ko-KR --verbose
 
       - name: Create scheduled source segment
         run: |
@@ -90,7 +90,7 @@ jobs:
         run: |
           LOCALE="${{ inputs.locale || 'zh-TW' }}"
           BATCH_ID="scheduled_$(date -u +%Y%m%dT%H%M%SZ)"
-          python3 scripts/audiobook_script/run_comparator_loop.py \
+          caffeinate -dimsu python3 scripts/audiobook_script/run_comparator_loop.py \
             --section-id "daily_${LOCALE//-/_}_001" \
             --locale "$LOCALE" \
             --english-source artifacts/audiobook/source/scheduled/daily_source.txt \
