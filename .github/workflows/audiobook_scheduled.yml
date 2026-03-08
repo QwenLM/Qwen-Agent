@@ -7,16 +7,16 @@ on:
   workflow_dispatch:
     inputs:
       locale:
-        description: Locale for staging run (en-US, zh-TW, zh-HK, zh-SG, zh-CN)
+        description: Locale for scheduled probe + comparator run
         required: false
         default: zh-TW
         type: choice
-        options: [en-US, zh-TW, zh-HK, zh-SG, zh-CN]
+        options: [en-US, zh-TW, zh-HK, zh-SG, zh-CN, ja-JP, ko-KR]
 
 jobs:
   audiobook:
     runs-on: self-hosted
-    timeout-minutes: 120
+    timeout-minutes: 75
     env:
       PYTHONUNBUFFERED: '1'
       # LM Studio OpenAI-compatible local endpoint
@@ -47,35 +47,11 @@ jobs:
         run: |
           caffeinate -dimsu python3 scripts/audiobook_script/run_regression.py --smoke --verbose
 
-      - name: Golden regression shard zh-TW
+      - name: Golden regression probe shard (single locale)
         run: |
-          echo "[1/6] zh-TW"
-          caffeinate -dimsu python3 scripts/audiobook_script/run_regression.py --locale zh-TW --verbose
-
-      - name: Golden regression shard zh-HK
-        run: |
-          echo "[2/6] zh-HK"
-          caffeinate -dimsu python3 scripts/audiobook_script/run_regression.py --locale zh-HK --verbose
-
-      - name: Golden regression shard zh-SG
-        run: |
-          echo "[3/6] zh-SG"
-          caffeinate -dimsu python3 scripts/audiobook_script/run_regression.py --locale zh-SG --verbose
-
-      - name: Golden regression shard zh-CN
-        run: |
-          echo "[4/6] zh-CN"
-          caffeinate -dimsu python3 scripts/audiobook_script/run_regression.py --locale zh-CN --verbose
-
-      - name: Golden regression shard ja-JP
-        run: |
-          echo "[5/6] ja-JP"
-          caffeinate -dimsu python3 scripts/audiobook_script/run_regression.py --locale ja-JP --verbose
-
-      - name: Golden regression shard ko-KR
-        run: |
-          echo "[6/6] ko-KR"
-          caffeinate -dimsu python3 scripts/audiobook_script/run_regression.py --locale ko-KR --verbose
+          LOCALE_PROBE="${{ inputs.locale || 'zh-TW' }}"
+          echo "[probe] locale=${LOCALE_PROBE}"
+          caffeinate -dimsu python3 scripts/audiobook_script/run_regression.py --locale "$LOCALE_PROBE" --verbose
 
       - name: Create scheduled source segment
         run: |
