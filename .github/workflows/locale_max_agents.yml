@@ -22,9 +22,14 @@ on:
         default: ''
         type: string
       timeout_sec:
-        description: 'Per-locale hard timeout in seconds'
+        description: 'Per-topic hard timeout in seconds'
         required: false
-        default: '420'
+        default: '180'
+        type: string
+      topics:
+        description: 'Optional space-separated topics override (default: all 7)'
+        required: false
+        default: ''
         type: string
       mode:
         description: 'translate+validate, translate-only, validate-only'
@@ -61,7 +66,8 @@ jobs:
           LOCALE_SET="${{ inputs.locale_set || 'core' }}"
           LOCALES="${{ inputs.locales || '' }}"
           MAX_AGENTS="${{ inputs.max_agents || '2' }}"
-          TIMEOUT_SEC="${{ inputs.timeout_sec || '420' }}"
+          TIMEOUT_SEC="${{ inputs.timeout_sec || '180' }}"
+          TOPICS="${{ inputs.topics || '' }}"
 
           EXTRA=""
           if [ "$MODE" = "translate-only" ]; then
@@ -70,13 +76,20 @@ jobs:
             EXTRA="--validate-only"
           fi
 
+          TOPIC_ARGS=""
+          if [ -n "$TOPICS" ]; then
+            TOPIC_ARGS="--topics $TOPICS"
+          fi
+
           if [ -n "$LOCALES" ]; then
             # shellcheck disable=SC2086
-            python3 scripts/localization/run_locale_batches.py --max-agents "$MAX_AGENTS" --timeout-sec "$TIMEOUT_SEC" --locales $LOCALES $EXTRA
+            python3 scripts/localization/run_locale_batches.py --max-agents "$MAX_AGENTS" --timeout-sec "$TIMEOUT_SEC" --locales $LOCALES $TOPIC_ARGS $EXTRA
           elif [ "$LOCALE_SET" = "all" ]; then
-            python3 scripts/localization/run_locale_batches.py --max-agents "$MAX_AGENTS" --timeout-sec "$TIMEOUT_SEC" $EXTRA
+            # shellcheck disable=SC2086
+            python3 scripts/localization/run_locale_batches.py --max-agents "$MAX_AGENTS" --timeout-sec "$TIMEOUT_SEC" $TOPIC_ARGS $EXTRA
           else
-            python3 scripts/localization/run_locale_batches.py --max-agents "$MAX_AGENTS" --timeout-sec "$TIMEOUT_SEC" --core-locales $EXTRA
+            # shellcheck disable=SC2086
+            python3 scripts/localization/run_locale_batches.py --max-agents "$MAX_AGENTS" --timeout-sec "$TIMEOUT_SEC" --core-locales $TOPIC_ARGS $EXTRA
           fi
 
       - name: Upload localization batch logs

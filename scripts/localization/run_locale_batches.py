@@ -21,6 +21,15 @@ ALL_LOCALES = [
     "es-US", "es-ES", "fr-FR", "de-DE", "it-IT", "hu-HU",
 ]
 CORE_LOCALES = ["ja-JP", "zh-CN", "zh-TW", "zh-HK", "zh-SG", "ko-KR"]
+ALL_TOPICS = [
+    "climate",
+    "economy_work",
+    "education",
+    "inequality",
+    "mental_health",
+    "partnerships",
+    "peace_conflict",
+]
 
 
 def run_cmd(cmd: list[str], timeout_sec: int) -> tuple[int, str]:
@@ -47,37 +56,43 @@ def run_cmd(cmd: list[str], timeout_sec: int) -> tuple[int, str]:
 
 def worker(
     locale: str,
+    topics: list[str],
     do_translate: bool,
     do_validate: bool,
     timeout_sec: int,
 ) -> tuple[str, int, str]:
     logs: list[str] = []
     rc = 0
-    if do_translate:
-        c, o = run_cmd(
-            [
-                sys.executable,
-                "scripts/localization/translate_atoms_all_locales.py",
-                "--locale",
-                locale,
-            ],
-            timeout_sec=timeout_sec,
-        )
-        logs.append(f"[translate:{locale}] rc={c}\n{o}")
-        rc = max(rc, c)
-    if do_validate:
-        c, o = run_cmd(
-            [
-                sys.executable,
-                "scripts/localization/validate_translations.py",
-                "--locale",
-                locale,
-                "--report",
-            ],
-            timeout_sec=timeout_sec,
-        )
-        logs.append(f"[validate:{locale}] rc={c}\n{o}")
-        rc = max(rc, c)
+    for topic in topics:
+        if do_translate:
+            c, o = run_cmd(
+                [
+                    sys.executable,
+                    "scripts/localization/translate_atoms_all_locales.py",
+                    "--locale",
+                    locale,
+                    "--topic",
+                    topic,
+                ],
+                timeout_sec=timeout_sec,
+            )
+            logs.append(f"[translate:{locale}:{topic}] rc={c}\n{o}")
+            rc = max(rc, c)
+        if do_validate:
+            c, o = run_cmd(
+                [
+                    sys.executable,
+                    "scripts/localization/validate_translations.py",
+                    "--locale",
+                    locale,
+                    "--topic",
+                    topic,
+                    "--report",
+                ],
+                timeout_sec=timeout_sec,
+            )
+            logs.append(f"[validate:{locale}:{topic}] rc={c}\n{o}")
+            rc = max(rc, c)
     return locale, rc, "\n".join(logs)
 
 
@@ -86,16 +101,18 @@ def main() -> int:
     ap.add_argument("--max-agents", type=int, default=2, help="Max parallel locale workers (safe default: 2)")
     ap.add_argument("--locales", nargs="*", default=ALL_LOCALES, help="Locales to process")
     ap.add_argument("--core-locales", action="store_true", help="Run only core production locales (6)")
+    ap.add_argument("--topics", nargs="*", default=ALL_TOPICS, help="Topics to process per locale")
     ap.add_argument("--translate-only", action="store_true")
     ap.add_argument("--validate-only", action="store_true")
     ap.add_argument("--log-dir", default="artifacts/localization/batch_runs")
-    ap.add_argument("--timeout-sec", type=int, default=420, help="Per-locale subprocess timeout (seconds)")
+    ap.add_argument("--timeout-sec", type=int, default=180, help="Per-topic subprocess timeout (seconds)")
     ap.add_argument("--heartbeat-sec", type=int, default=30, help="Progress heartbeat interval (seconds)")
     args = ap.parse_args()
 
     do_translate = not args.validate_only
     do_validate = not args.translate_only
     locales = CORE_LOCALES if args.core_locales else args.locales
+    topics = args.topics
 
     log_dir = REPO_ROOT / args.log_dir
     log_dir.mkdir(parents=True, exist_ok=True)
@@ -103,7 +120,7 @@ def main() -> int:
     print(
         "starting locale batches: "
         f"locales={len(locales)} max_agents={max(1, args.max_agents)} "
-        f"timeout_sec={args.timeout_sec} heartbeat_sec={args.heartbeat_sec} "
+        f"topics={len(topics)} timeout_sec={args.timeout_sec} heartbeat_sec={args.heartbeat_sec} "
         f"translate={do_translate} validate={do_validate}"
     )
 
@@ -112,7 +129,7 @@ def main() -> int:
     pending = {}
     with ThreadPoolExecutor(max_workers=max(1, args.max_agents)) as ex:
         for loc in locales:
-            fut = ex.submit(worker, loc, do_translate, do_validate, args.timeout_sec)
+            fut = ex.submit(worker, loc, topics, do_translate, do_validate, args.timeout_sec)
             pending[fut] = (loc, time.time())
 
         while pending:
