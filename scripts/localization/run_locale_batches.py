@@ -54,59 +54,84 @@ def run_cmd(cmd: list[str], timeout_sec: int) -> tuple[int, str]:
     return p.returncode, out
 
 
-def worker(
+def _discover_teachers(topic: str) -> list[str]:
+    """Read the en-US topic file and return teacher IDs."""
+    try:
+        import yaml
+        path = REPO_ROOT / "pearl_news" / "atoms" / "teacher_quotes_practices" / f"topic_{topic}.yaml"
+        if not path.exists():
+            return []
+        with open(path) as f:
+            data = yaml.safe_load(f) or {}
+        return list((data.get("teachers") or {}).keys())
+    except Exception:
+        return []
+
+
+def worker_teacher_shard(
     locale: str,
-    topics: list[str],
+    topic: str,
+    teacher_id: str,
     do_translate: bool,
     do_validate: bool,
     timeout_sec: int,
 ) -> tuple[str, int, str]:
+    """Single teacher shard = exactly 1 LLM call. Deterministic, fast."""
     logs: list[str] = []
     rc = 0
-    for topic in topics:
-        if do_translate:
-            c, o = run_cmd(
-                [
-                    sys.executable,
-                    "scripts/localization/translate_atoms_all_locales.py",
-                    "--locale",
-                    locale,
-                    "--topic",
-                    topic,
-                ],
-                timeout_sec=timeout_sec,
-            )
-            logs.append(f"[translate:{locale}:{topic}] rc={c}\n{o}")
-            rc = max(rc, c)
-        if do_validate:
-            c, o = run_cmd(
-                [
-                    sys.executable,
-                    "scripts/localization/validate_translations.py",
-                    "--locale",
-                    locale,
-                    "--topic",
-                    topic,
-                    "--report",
-                ],
-                timeout_sec=timeout_sec,
-            )
-            logs.append(f"[validate:{locale}:{topic}] rc={c}\n{o}")
-            rc = max(rc, c)
-    return locale, rc, "\n".join(logs)
+    shard_id = f"{locale}/{topic}/{teacher_id}"
+
+    if do_translate:
+        c, o = run_cmd(
+            [
+                sys.executable,
+                "scripts/localization/translate_atoms_all_locales.py",
+                "--locale", locale,
+                "--topic", topic,
+                "--teacher", teacher_id,
+            ],
+            timeout_sec=timeout_sec,
+        )
+        logs.append(f"[translate:{shard_id}] rc={c}\n{o}")
+        rc = max(rc, c)
+
+    # Validate only after all teachers for a topic are done (called separately)
+    return shard_id, rc, "\n".join(logs)
+
+
+def worker_validate(
+    locale: str,
+    topic: str,
+    timeout_sec: int,
+) -> tuple[str, int, str]:
+    """Validate one locale/topic (no LLM, fast)."""
+    shard_id = f"validate:{locale}/{topic}"
+    c, o = run_cmd(
+        [
+            sys.executable,
+            "scripts/localization/validate_translations.py",
+            "--locale", locale,
+            "--topic", topic,
+            "--report",
+        ],
+        timeout_sec=timeout_sec,
+    )
+    return shard_id, c, f"[{shard_id}] rc={c}\n{o}"
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Run locale translation/validation with max-agent parallelism")
-    ap.add_argument("--max-agents", type=int, default=2, help="Max parallel locale workers (safe default: 2)")
+    ap.add_argument("--max-agents", type=int, default=2, help="Max parallel workers (safe default: 2)")
     ap.add_argument("--locales", nargs="*", default=ALL_LOCALES, help="Locales to process")
     ap.add_argument("--core-locales", action="store_true", help="Run only core production locales (6)")
     ap.add_argument("--topics", nargs="*", default=ALL_TOPICS, help="Topics to process per locale")
     ap.add_argument("--translate-only", action="store_true")
     ap.add_argument("--validate-only", action="store_true")
     ap.add_argument("--log-dir", default="artifacts/localization/batch_runs")
-    ap.add_argument("--timeout-sec", type=int, default=180, help="Per-topic subprocess timeout (seconds)")
-    ap.add_argument("--heartbeat-sec", type=int, default=30, help="Progress heartbeat interval (seconds)")
+    ap.add_argument("--timeout-sec", type=int, default=120,
+                    help="Per-teacher subprocess timeout (seconds). "
+                         "Each shard = 1 LLM call (~20s). Safe default: 120s.")
+    ap.add_argument("--heartbeat-sec", type=int, default=15, help="Progress heartbeat interval (seconds)")
     args = ap.parse_args()
 
     do_translate = not args.validate_only
@@ -117,47 +142,98 @@ def main() -> int:
     log_dir = REPO_ROOT / args.log_dir
     log_dir.mkdir(parents=True, exist_ok=True)
 
+    # Build shard list: each shard = 1 locale + 1 topic + 1 teacher = 1 LLM call
+    shards: list[tuple[str, str, str]] = []  # (locale, topic, teacher_id)
+    for topic in topics:
+        teachers = _discover_teachers(topic)
+        for loc in locales:
+            for tid in teachers:
+                shards.append((loc, topic, tid))
+
+    total_shards = len(shards)
+    total_validate = len(locales) * len(topics) if do_validate else 0
+
     print(
-        "starting locale batches: "
-        f"locales={len(locales)} max_agents={max(1, args.max_agents)} "
-        f"topics={len(topics)} timeout_sec={args.timeout_sec} heartbeat_sec={args.heartbeat_sec} "
-        f"translate={do_translate} validate={do_validate}"
+        f"locale batches: {total_shards} translate shards + {total_validate} validate shards\n"
+        f"  locales={len(locales)} topics={len(topics)} max_agents={max(1, args.max_agents)} "
+        f"timeout_sec={args.timeout_sec}\n"
+        f"  Each shard = 1 teacher = 1 LLM call (~20s). "
+        f"Total estimated: ~{total_shards * 20 // max(1, args.max_agents)}s"
     )
 
     failures = 0
+    completed = 0
     started = time.time()
-    pending = {}
+    all_logs: list[str] = []
+    pending: dict = {}
+
     with ThreadPoolExecutor(max_workers=max(1, args.max_agents)) as ex:
-        for loc in locales:
-            fut = ex.submit(worker, loc, topics, do_translate, do_validate, args.timeout_sec)
-            pending[fut] = (loc, time.time())
+        # Phase 1: Translation shards (1 LLM call each)
+        if do_translate:
+            for loc, topic, tid in shards:
+                fut = ex.submit(worker_teacher_shard, loc, topic, tid,
+                                True, False, args.timeout_sec)
+                pending[fut] = (f"{loc}/{topic}/{tid}", time.time())
 
-        while pending:
-            done, _ = wait(
-                set(pending.keys()),
-                timeout=max(1, args.heartbeat_sec),
-                return_when=FIRST_COMPLETED,
-            )
-            if not done:
-                now = time.time()
-                in_progress = ", ".join(
-                    f"{loc}:{int(now - st)}s" for _, (loc, st) in list(pending.items())[:8]
+            while pending:
+                done, _ = wait(
+                    set(pending.keys()),
+                    timeout=max(1, args.heartbeat_sec),
+                    return_when=FIRST_COMPLETED,
                 )
-                print(
-                    f"[heartbeat] running={len(pending)} elapsed={int(now - started)}s "
-                    f"in_progress={in_progress}"
+                if not done:
+                    now = time.time()
+                    in_prog = ", ".join(
+                        f"{sid}:{int(now - st)}s"
+                        for _, (sid, st) in list(pending.items())[:5]
+                    )
+                    print(
+                        f"[heartbeat] {completed}/{total_shards} done, "
+                        f"{len(pending)} running, elapsed={int(now - started)}s | {in_prog}"
+                    )
+                    continue
+
+                for fut in done:
+                    sid, _st = pending.pop(fut)
+                    shard_id, rc, out = fut.result()
+                    completed += 1
+                    all_logs.append(out)
+                    status = "OK" if rc == 0 else f"FAIL(rc={rc})"
+                    print(f"  [{completed}/{total_shards}] {shard_id} {status}")
+                    if rc != 0 and rc != 124:  # 124 = timeout, already logged
+                        failures += 1
+
+        # Phase 2: Validation (no LLM, fast)
+        if do_validate:
+            print(f"\n--- Validation phase: {total_validate} locale/topic pairs ---")
+            pending.clear()
+            for loc in locales:
+                for topic in topics:
+                    fut = ex.submit(worker_validate, loc, topic, args.timeout_sec)
+                    pending[fut] = (f"validate:{loc}/{topic}", time.time())
+
+            val_done = 0
+            while pending:
+                done, _ = wait(
+                    set(pending.keys()),
+                    timeout=max(1, args.heartbeat_sec),
+                    return_when=FIRST_COMPLETED,
                 )
-                continue
+                for fut in (done or []):
+                    sid, _st = pending.pop(fut)
+                    shard_id, rc, out = fut.result()
+                    val_done += 1
+                    all_logs.append(out)
+                    status = "OK" if rc == 0 else f"FAIL(rc={rc})"
+                    print(f"  [{val_done}/{total_validate}] {shard_id} {status}")
+                    if rc != 0:
+                        failures += 1
 
-            for fut in done:
-                locale, _st = pending.pop(fut)
-                locale_result, rc, out = fut.result()
-                (log_dir / f"{locale_result}.log").write_text(out, encoding="utf-8")
-                print(f"[{locale_result}] rc={rc}")
-                if rc != 0:
-                    failures += 1
-
-    print(f"done: locales={len(locales)} failures={failures} max_agents={max(1, args.max_agents)}")
+    # Write combined log
+    elapsed = time.time() - started
+    (log_dir / "combined.log").write_text("\n".join(all_logs), encoding="utf-8")
+    print(f"\ndone: shards={total_shards} validate={total_validate} "
+          f"failures={failures} elapsed={int(elapsed)}s")
     return 1 if failures else 0
 
 

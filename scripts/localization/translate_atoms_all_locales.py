@@ -194,17 +194,24 @@ def _call_llm(prompt: str, system_prompt: str, cfg: dict) -> str:
     max_tokens = int(model_cfg.get("max_output_tokens", model_cfg.get("max_tokens", 2000)))
     timeout = float(model_cfg.get("timeout_seconds", model_cfg.get("timeout", 180)))
 
-    client = openai.OpenAI(base_url=base_url, api_key=api_key)
-    response = client.chat.completions.create(
-        model=model_id,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": prompt},
-        ],
-        temperature=temperature,
-        max_tokens=max_tokens,
-        timeout=timeout,
-    )
+    client = openai.OpenAI(base_url=base_url, api_key=api_key, timeout=timeout)
+    t0 = time.time()
+    try:
+        response = client.chat.completions.create(
+            model=model_id,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+    except Exception as e:
+        elapsed = time.time() - t0
+        logger.error("LLM call failed after %.1fs: %s", elapsed, e)
+        raise
+    elapsed = time.time() - t0
+    logger.info("LLM call completed in %.1fs", elapsed)
     return response.choices[0].message.content or ""
 
 
@@ -396,6 +403,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Translate Pearl News atoms to target locales via Qwen LLM")
     ap.add_argument("--locale", default=None, help="Target locale (e.g., ja-JP)")
     ap.add_argument("--topic", default=None, help="Specific topic to translate")
+    ap.add_argument("--teacher", default=None, help="Specific teacher_id to translate (single LLM call)")
     ap.add_argument("--all-locales", action="store_true", help="Translate all target locales")
     ap.add_argument("--dry-run", action="store_true", help="Show what would be translated")
     ap.add_argument("--validate-only", action="store_true", help="Validate existing translations")
@@ -432,24 +440,71 @@ def main() -> int:
 
     cfg = _load_llm_config()
     total_translated = 0
+    total_failed = 0
+    total_pairs = len(locales) * len(topics)
+    pair_idx = 0
 
     for locale in locales:
         for topic in topics:
+            pair_idx += 1
+            t0 = time.time()
             try:
-                topic_data = translate_topic(topic, locale, cfg, dry_run=args.dry_run)
-                if not args.dry_run:
-                    write_translated_topic(topic_data, locale, topic)
-                    errors = validate_translation(topic_data, locale)
-                    if errors:
-                        logger.warning("Validation issues for %s/%s: %s", locale, topic, errors)
-                total_translated += 1
+                # If --teacher specified, only translate that single teacher (1 LLM call)
+                if args.teacher:
+                    en_data = _load_yaml(
+                        REPO_ROOT / "pearl_news" / "atoms" / "teacher_quotes_practices" / f"topic_{topic}.yaml"
+                    )
+                    en_teachers = en_data.get("teachers") or {}
+                    if args.teacher not in en_teachers:
+                        logger.info("[%d/%d] %s/%s: teacher %s not in this topic — skip",
+                                     pair_idx, total_pairs, locale, topic, args.teacher)
+                        continue
+                    teacher_data = en_teachers[args.teacher]
+                    result = translate_teacher_atoms(
+                        args.teacher, teacher_data, topic, locale, cfg, dry_run=args.dry_run
+                    )
+                    if result and not args.dry_run:
+                        # Read existing file, update just this teacher, write back
+                        out_dir = REPO_ROOT / "pearl_news" / "atoms" / "teacher_quotes_practices" / "locales" / locale
+                        out_dir.mkdir(parents=True, exist_ok=True)
+                        out_path = out_dir / f"topic_{topic}.yaml"
+                        existing = _load_yaml(out_path) if out_path.exists() else {
+                            "topic_key": topic, "locale": locale, "source_locale": "en-US",
+                            "translation_status": "draft",
+                            "description": f"Translated atoms for {locale} — topic: {topic}",
+                            "teachers": {},
+                        }
+                        existing.setdefault("teachers", {})[args.teacher] = result
+                        existing["translation_status"] = "draft"
+                        with open(out_path, "w", encoding="utf-8") as f:
+                            yaml.dump(existing, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+                        logger.info("Updated teacher %s in %s", args.teacher, out_path)
+                    elapsed = time.time() - t0
+                    print(f"[{pair_idx}/{total_pairs}] {locale}/{topic}/{args.teacher} "
+                          f"{'OK' if result else 'skip'} ({elapsed:.1f}s)")
+                    total_translated += 1
+                else:
+                    topic_data = translate_topic(topic, locale, cfg, dry_run=args.dry_run)
+                    if not args.dry_run:
+                        write_translated_topic(topic_data, locale, topic)
+                        errors = validate_translation(topic_data, locale)
+                        if errors:
+                            logger.warning("Validation issues for %s/%s: %s", locale, topic, errors)
+                    elapsed = time.time() - t0
+                    n_teachers = len(topic_data.get("teachers", {}))
+                    print(f"[{pair_idx}/{total_pairs}] {locale}/{topic} "
+                          f"{n_teachers} teachers ({elapsed:.1f}s)")
+                    total_translated += 1
             except Exception as e:
-                logger.error("Failed to translate %s/%s: %s", locale, topic, e)
+                elapsed = time.time() - t0
+                logger.error("[%d/%d] Failed %s/%s after %.1fs: %s",
+                             pair_idx, total_pairs, locale, topic, elapsed, e)
+                total_failed += 1
                 continue
 
-    print(f"\nTranslated {total_translated} topic-locale pairs "
+    print(f"\nTranslated {total_translated} pairs, failed {total_failed} "
           f"{'(dry-run)' if args.dry_run else ''}")
-    return 0
+    return 1 if total_failed > 0 else 0
 
 
 if __name__ == "__main__":

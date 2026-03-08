@@ -22,9 +22,9 @@ on:
         default: ''
         type: string
       timeout_sec:
-        description: 'Per-topic hard timeout in seconds'
+        description: 'Per-teacher hard timeout (1 LLM call ~20s, safe default 120s)'
         required: false
-        default: '180'
+        default: '120'
         type: string
       topics:
         description: 'Optional space-separated topics override (default: all 7)'
@@ -66,7 +66,7 @@ jobs:
           LOCALE_SET="${{ inputs.locale_set || 'core' }}"
           LOCALES="${{ inputs.locales || '' }}"
           MAX_AGENTS="${{ inputs.max_agents || '2' }}"
-          TIMEOUT_SEC="${{ inputs.timeout_sec || '180' }}"
+          TIMEOUT_SEC="${{ inputs.timeout_sec || '120' }}"
           TOPICS="${{ inputs.topics || '' }}"
 
           EXTRA=""
