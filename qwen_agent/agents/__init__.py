@@ -17,6 +17,7 @@ from qwen_agent.multi_agent_hub import MultiAgentHub
 
 from .article_agent import ArticleAgent
 from .assistant import Assistant
+from .async_assistant import AsyncAssistant
 from .dialogue_retrieval_agent import DialogueRetrievalAgent
 from .dialogue_simulator import DialogueSimulator
 # DocQAAgent is the default solution for long document question answering.
@@ -44,6 +45,7 @@ __all__ = [
     'HumanSimulator',
     'ParallelDocQA',
     'Assistant',
+    'AsyncAssistant',
     'ArticleAgent',
     'ReActChat',
     'Router',
