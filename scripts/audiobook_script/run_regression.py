@@ -486,7 +486,10 @@ def main() -> int:
     # Acquire LM Studio lock (skip for dry-run which makes no API calls)
     if not args.dry_run:
         from scripts.lm_studio_lock import lm_studio_lock
-        with lm_studio_lock("audiobook-regression"):
+        # Regression: 24 golden samples × up to 3 loops each × (draft + judge) = ~144 LLM calls
+        # Smoke probe: 1 tiny call
+        shard_estimate = 1 if args.smoke else 144
+        with lm_studio_lock("audiobook-regression", shards=shard_estimate, timeout_sec=360):
             return asyncio.run(_run_regression(
                 repo=repo,
                 locale_filter=args.locale,

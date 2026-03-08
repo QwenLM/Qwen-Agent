@@ -181,6 +181,17 @@ def main() -> int:
         f"Total estimated: ~{total_shards * 20 // max_agents}s"
     )
 
+    # ─── LOCK: check before anything else (fast, no network) ───────────────
+    sys.path.insert(0, str(REPO_ROOT))
+    from scripts.lm_studio_lock import lm_studio_lock
+    lock_shards = total_shards if do_translate else 0
+    lock_ctx = lm_studio_lock(
+        "locale-batches",
+        shards=lock_shards,
+        timeout_sec=args.timeout_sec,
+    )
+    lock_ctx.__enter__()
+
     # ─── PRE-FLIGHT: verify LM Studio is reachable ─────────────────────────
     if do_translate and total_shards > 0:
         print("\n[preflight] Checking LM Studio at 127.0.0.1:1234 ...", end=" ", flush=True)
@@ -195,13 +206,8 @@ def main() -> int:
                 "  3. Start the local server\n"
                 "  4. Re-run this script\n"
             )
+            lock_ctx.__exit__(None, None, None)
             return 1
-
-    # ─── LOCK: ensure no other LLM job is running ─────────────────────────
-    from scripts.lm_studio_lock import lm_studio_lock
-    lock_ctx = lm_studio_lock("locale-batches") if do_translate else None
-    if lock_ctx:
-        lock_ctx.__enter__()
 
     failures = 0
     completed = 0
@@ -305,8 +311,7 @@ def main() -> int:
                         failures += 1
 
     # Release lock before writing log
-    if lock_ctx:
-        lock_ctx.__exit__(None, None, None)
+    lock_ctx.__exit__(None, None, None)
 
     # Write combined log
     elapsed = time.time() - started
