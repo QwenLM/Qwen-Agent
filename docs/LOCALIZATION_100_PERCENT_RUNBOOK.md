@@ -108,6 +108,7 @@ Update `docs/GO_LIVE_FINAL_CHECKLIST.md`:
 - **No parallel runs beyond host capacity.**
 - **No doc sign-off without URLs/artifacts.**
 - **If runner disconnects, follow `/Users/ahjan/phoenix_omega/Qwen-Agent/docs/RUNNER_TRIAGE_ONE_PAGER.md` before re-running.**
+- **Localization heavy jobs are window-gated (UTC): 15:00–23:00.**
 
 ---
 

@@ -813,28 +813,38 @@ def main() -> int:
     draft_prompt = _load_prompt(repo, cfg["draft_model"]["system_prompt_id"])
     judge_prompt = _load_prompt(repo, cfg["judge_model"]["system_prompt_id"])
 
+    from scripts.lm_studio_lock import lm_studio_lock
+
+    max_loops = int(cfg.get("loop_control", {}).get("max_loops", 3))
+    timeout_sec = int(cfg.get("draft_model", {}).get("timeout_seconds", 120))
+
     if args.section_id and args.english_source:
         english_source = Path(args.english_source).read_text(encoding="utf-8")
-        result = asyncio.run(run_section_loop(
-            section_id=args.section_id, locale=args.locale,
-            book_id=args.book_id or "unknown", batch_id=args.batch_id,
-            english_source=english_source, cfg=cfg, checklist=checklist,
-            result_schema=result_schema, base_system_prompt=draft_prompt,
-            judge_system_prompt=judge_prompt, repo=repo,
-            semaphore=asyncio.Semaphore(1),
-        ))
+        # 2 calls per loop (draft + judge), plus a small buffer.
+        shard_estimate = max(2, (max_loops * 2) + 2)
+        with lm_studio_lock("audiobook-comparator-single", shards=shard_estimate, timeout_sec=timeout_sec):
+            result = asyncio.run(run_section_loop(
+                section_id=args.section_id, locale=args.locale,
+                book_id=args.book_id or "unknown", batch_id=args.batch_id,
+                english_source=english_source, cfg=cfg, checklist=checklist,
+                result_schema=result_schema, base_system_prompt=draft_prompt,
+                judge_system_prompt=judge_prompt, repo=repo,
+                semaphore=asyncio.Semaphore(1),
+            ))
         print(f"Section {result.section_id}: {result.decision} "
               f"(loops={result.loops_attempted}, score={result.best_aggregate_score:.3f})")
         return 0 if result.decision == "pass" else 1
 
     if args.sections_manifest:
         sections = json.loads(Path(args.sections_manifest).read_text(encoding="utf-8"))
-        results = asyncio.run(run_book_parallel(
-            book_id=args.book_id or "unknown", batch_id=args.batch_id,
-            locale=args.locale, sections=sections, cfg=cfg, checklist=checklist,
-            result_schema=result_schema, base_system_prompt=draft_prompt,
-            judge_system_prompt=judge_prompt, repo=repo,
-        ))
+        shard_estimate = max(4, (len(sections) * max_loops * 2))
+        with lm_studio_lock("audiobook-comparator-book", shards=shard_estimate, timeout_sec=timeout_sec):
+            results = asyncio.run(run_book_parallel(
+                book_id=args.book_id or "unknown", batch_id=args.batch_id,
+                locale=args.locale, sections=sections, cfg=cfg, checklist=checklist,
+                result_schema=result_schema, base_system_prompt=draft_prompt,
+                judge_system_prompt=judge_prompt, repo=repo,
+            ))
         _write_batch_summary(repo, cfg, args.batch_id, results)
         manual = [r for r in results if r.decision == "manual_review"]
         print(f"Book complete: {len(results)} sections, {len(manual)} manual_review")

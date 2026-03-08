@@ -143,6 +143,9 @@ jobs:
         run: |
           python3 -m pip install --upgrade pip
           python3 -m pip install pyyaml jsonschema openai requests
+      - name: Enforce heavy run window (UTC)
+        run: |
+          python3 scripts/runner/heavy_window_guard.py --job-class regression
       - name: Preflight LM warmup
         run: |
           set -euo pipefail
@@ -196,6 +199,9 @@ jobs:
         run: |
           python3 -m pip install --upgrade pip
           python3 -m pip install pyyaml jsonschema openai requests
+      - name: Enforce heavy run window (UTC)
+        run: |
+          python3 scripts/runner/heavy_window_guard.py --job-class regression
       - name: Preflight LM warmup
         run: |
           set -euo pipefail

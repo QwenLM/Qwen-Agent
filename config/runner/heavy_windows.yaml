@@ -1,0 +1,21 @@
+version: 1
+timezone: UTC
+policy:
+  one_heavy_queue: true
+  enforce_windows: true
+windows:
+  regression:
+    # Full-golden audiobook regression runs only in this UTC window.
+    start_hour_utc: 3
+    end_hour_utc: 10
+  localization:
+    # Locale translate+validate heavy batches.
+    start_hour_utc: 15
+    end_hour_utc: 23
+  scheduled_comparator:
+    # Autonomous scheduled comparator lanes (covers 02:00 and 14:00 UTC crons).
+    ranges:
+      - start_hour_utc: 0
+        end_hour_utc: 3
+      - start_hour_utc: 12
+        end_hour_utc: 15
