@@ -10,6 +10,13 @@
 
 Pull latest `main`. Stop all parallel dev edits on audiobook/localization until this run finishes. Keep one runner job at a time.
 
+Before long runs, ensure runner watchdog is installed:
+
+```bash
+chmod +x scripts/runner/*.sh
+scripts/runner/install_watchdog_launchd.sh
+```
+
 ---
 
 ## 2. Run timeout-safe sharded generation (content fill)
@@ -100,6 +107,7 @@ Update `docs/GO_LIVE_FINAL_CHECKLIST.md`:
 - **No "smoke only" as final proof.**
 - **No parallel runs beyond host capacity.**
 - **No doc sign-off without URLs/artifacts.**
+- **If runner disconnects, follow `/Users/ahjan/phoenix_omega/Qwen-Agent/docs/RUNNER_TRIAGE_ONE_PAGER.md` before re-running.**
 
 ---
 

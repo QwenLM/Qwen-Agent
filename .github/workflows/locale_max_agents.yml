@@ -70,6 +70,18 @@ jobs:
           echo "== LM Studio model check =="
           curl -fsS "$QWEN_BASE_URL/models" >/tmp/models.json
           cat /tmp/models.json | head -c 400; echo
+          echo "== LM Studio warmup call =="
+          curl -fsS --max-time 45 "$QWEN_BASE_URL/chat/completions" \
+            -H 'Content-Type: application/json' \
+            -H "Authorization: Bearer $QWEN_API_KEY" \
+            -d "{\"model\":\"$QWEN_MODEL\",\"messages\":[{\"role\":\"user\",\"content\":\"ok\"}],\"max_tokens\":8,\"temperature\":0.0}" >/tmp/warmup.json
+          python3 - <<'PY'
+          import json
+          data = json.load(open("/tmp/warmup.json"))
+          if "error" in data:
+            raise SystemExit(f"Warmup failed: {data['error']}")
+          print("warmup_ok=true")
+          PY
           echo "== Memory check =="
           FREE_PAGES=$(vm_stat | awk '/Pages free/ {gsub("\\.","",$3); print $3}')
           INACTIVE_PAGES=$(vm_stat | awk '/Pages inactive/ {gsub("\\.","",$3); print $3}')

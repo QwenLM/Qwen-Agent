@@ -1,0 +1,36 @@
+name: Runner artifacts cleanup
+concurrency:
+  group: runner-artifacts-cleanup
+  cancel-in-progress: false
+
+on:
+  schedule:
+    - cron: '30 3 * * *'
+  workflow_dispatch:
+    inputs:
+      diag_keep_days:
+        description: Keep runner diag logs newer than this many days
+        required: false
+        default: '14'
+        type: string
+      artifact_keep_days:
+        description: Keep local artifacts newer than this many days
+        required: false
+        default: '14'
+        type: string
+
+jobs:
+  cleanup:
+    runs-on: self-hosted
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Run cleanup
+        env:
+          DIAG_KEEP_DAYS: ${{ inputs.diag_keep_days || '14' }}
+          ARTIFACT_KEEP_DAYS: ${{ inputs.artifact_keep_days || '14' }}
+        run: |
+          chmod +x scripts/runner/runner_cleanup.sh
+          scripts/runner/runner_cleanup.sh
