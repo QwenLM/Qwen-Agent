@@ -41,7 +41,7 @@ python3 scripts/audiobook_script/run_regression.py --dry-run --verbose
 echo ""
 
 # ─── STEP 2: Full golden regression ──────────────────────────────────────────
-echo "STEP 2: Golden regression (all 4 required locales)..."
+echo "STEP 2: Golden regression (all 6 required locales)..."
 LOCALE_ARG=""
 [[ -n "$LOCALE_FILTER" ]] && LOCALE_ARG="--locale $LOCALE_FILTER"
 
@@ -110,7 +110,7 @@ cat > "$EVIDENCE_FILE" << EVIDENCE_EOF
 
 ## Regression
 - Report: artifacts/audiobook/staging/regression_report_${TIMESTAMP}.json
-- Locales tested: zh-TW, zh-HK, zh-SG, zh-CN
+- Locales tested: zh-TW, zh-HK, zh-SG, zh-CN, ja-JP, ko-KR
 - Content types: pearl_prime, pearl_news, teacher_mode, phoenix_v4
 
 ## Real Book Section

@@ -186,12 +186,29 @@
 | Sub-item | Status | Sign-off |
 |----------|--------|----------|
 | Full pipeline run on staging environment (not prod) | ☐ | ________ |
-| At least 1 book, all 4 required locales | ☐ | ________ |
+| At least 1 book, all 6 required locales (zh-TW/HK/SG/CN, ja-JP, ko-KR) | ☐ | ________ |
+| Locale content generation complete (`run_locale_batches.py --max-agents 6` green) | ☐ | ________ |
+| Translation validation passes (`validate_translations.py --all-locales --report` green) | ☐ | ________ |
+| Regression smoke run green (URL + artifact recorded below) | ☐ | ________ |
+| Full golden regression green — all 24 samples pass (URL + artifact recorded below) | ☐ | ________ |
+| Scheduled autonomous proof run green (`Audiobook scheduled (Qwen-only)` dispatch, URL below) | ☐ | ________ |
 | No sections routed to `manual_review` unexpectedly | ☐ | ________ |
-| `manual_review_queue.json` reviewed and cleared | ☐ | ________ |
-| Artifacts reviewed by locale owner | ☐ | ________ |
-| Evidence pack (screenshots, log snippets) committed | ☐ | ________ |
+| `manual_review_queue.json` reviewed: empty, or every entry explained + re-run evidence | ☐ | ________ |
+| Model ID used recorded below | ☐ | ________ |
+| Evidence pack committed to repo | ☐ | ________ |
 | Final sign-off below | ☐ | ________ |
+
+### Evidence Pack (must capture)
+
+| Evidence | URL / Path | Status |
+|----------|-----------|--------|
+| Regression smoke run | _URL:_ _________________________ | ☐ |
+| Regression full-golden run | _URL:_ _________________________ | ☐ |
+| Scheduled autonomous run | _URL:_ _________________________ | ☐ |
+| `manual_review_queue.json` | _Status:_ ☐ empty / ☐ explained | ☐ |
+| Model ID | _ID:_ __________________________ | ☐ |
+| Staging artifacts path | `artifacts/audiobook/staging/` | ☐ |
+| Locale validation report | `artifacts/localization/batch_runs/` | ☐ |
 
 **Notes**: _______________________
 
@@ -205,6 +222,8 @@
 |------|------|------|-----------|
 | Pipeline lead | | | |
 | Locale owner (zh-TW/HK/SG/CN) | | | |
+| Locale owner (ja-JP) | | | |
+| Locale owner (ko-KR) | | | |
 | Engineering lead | | | |
 
 ---
