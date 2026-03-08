@@ -4,6 +4,9 @@ Run locale translation + validation in parallel batches.
 
 This is the "max agents" entrypoint for localization content generation.
 You can set --max-agents to control parallel locale workers.
+
+Architecture: teacher-level sharding — each shard = 1 LLM call = ~20s.
+With --max-agents 6 and 120s timeout, that's a 6x safety margin.
 """
 from __future__ import annotations
 
@@ -11,6 +14,8 @@ import argparse
 import subprocess
 import sys
 import time
+import urllib.request
+import urllib.error
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from pathlib import Path
 
@@ -30,6 +35,20 @@ ALL_TOPICS = [
     "partnerships",
     "peace_conflict",
 ]
+
+# ─── EARLY ABORT THRESHOLD ─────────────────────────────────────────────────
+# If this many consecutive shards fail, assume LM Studio is down and abort.
+CONSECUTIVE_FAIL_ABORT = 5
+
+
+def preflight_lm_studio(base_url: str = "http://127.0.0.1:1234") -> bool:
+    """Quick connectivity check — hit /v1/models. Returns True if reachable."""
+    try:
+        req = urllib.request.Request(f"{base_url}/v1/models", method="GET")
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            return resp.status == 200
+    except Exception:
+        return False
 
 
 def run_cmd(cmd: list[str], timeout_sec: int) -> tuple[int, str]:
@@ -150,26 +169,46 @@ def main() -> int:
             for tid in teachers:
                 shards.append((loc, topic, tid))
 
+    max_agents = max(1, args.max_agents)
     total_shards = len(shards)
     total_validate = len(locales) * len(topics) if do_validate else 0
 
     print(
         f"locale batches: {total_shards} translate shards + {total_validate} validate shards\n"
-        f"  locales={len(locales)} topics={len(topics)} max_agents={max(1, args.max_agents)} "
+        f"  locales={len(locales)} topics={len(topics)} max_agents={max_agents} "
         f"timeout_sec={args.timeout_sec}\n"
         f"  Each shard = 1 teacher = 1 LLM call (~20s). "
-        f"Total estimated: ~{total_shards * 20 // max(1, args.max_agents)}s"
+        f"Total estimated: ~{total_shards * 20 // max_agents}s"
     )
+
+    # ─── PRE-FLIGHT: verify LM Studio is reachable ─────────────────────────
+    if do_translate and total_shards > 0:
+        print("\n[preflight] Checking LM Studio at 127.0.0.1:1234 ...", end=" ", flush=True)
+        if preflight_lm_studio():
+            print("OK")
+        else:
+            print("UNREACHABLE")
+            print(
+                "ERROR: LM Studio is not responding on http://127.0.0.1:1234.\n"
+                "  1. Open LM Studio\n"
+                "  2. Load a model (e.g., Qwen3-14b)\n"
+                "  3. Start the local server\n"
+                "  4. Re-run this script\n"
+            )
+            return 1
 
     failures = 0
     completed = 0
+    consecutive_fails = 0
     started = time.time()
     all_logs: list[str] = []
-    pending: dict = {}
+    aborted = False
 
-    with ThreadPoolExecutor(max_workers=max(1, args.max_agents)) as ex:
+    with ThreadPoolExecutor(max_workers=max_agents) as ex:
         # Phase 1: Translation shards (1 LLM call each)
         if do_translate:
+            # Submit all to the pool — ThreadPoolExecutor only runs max_agents at a time
+            pending: dict = {}
             for loc, topic, tid in shards:
                 fut = ex.submit(worker_teacher_shard, loc, topic, tid,
                                 True, False, args.timeout_sec)
@@ -183,13 +222,21 @@ def main() -> int:
                 )
                 if not done:
                     now = time.time()
-                    in_prog = ", ".join(
-                        f"{sid}:{int(now - st)}s"
-                        for _, (sid, st) in list(pending.items())[:5]
-                    )
+                    # Count truly active (started) vs queued futures
+                    active = [
+                        (sid, int(now - st))
+                        for _, (sid, st) in pending.items()
+                        if now - st > 0.5  # started at least 0.5s ago
+                    ]
+                    # Only show up to max_agents in-flight (the rest are queued)
+                    active.sort(key=lambda x: -x[1])  # longest first
+                    shown = active[:max_agents]
+                    in_prog = ", ".join(f"{sid}:{sec}s" for sid, sec in shown)
+                    queued = max(0, len(pending) - max_agents)
                     print(
                         f"[heartbeat] {completed}/{total_shards} done, "
-                        f"{len(pending)} running, elapsed={int(now - started)}s | {in_prog}"
+                        f"{min(len(pending), max_agents)} active, {queued} queued, "
+                        f"elapsed={int(now - started)}s | {in_prog}"
                     )
                     continue
 
@@ -200,27 +247,49 @@ def main() -> int:
                     all_logs.append(out)
                     status = "OK" if rc == 0 else f"FAIL(rc={rc})"
                     print(f"  [{completed}/{total_shards}] {shard_id} {status}")
-                    if rc != 0 and rc != 124:  # 124 = timeout, already logged
+                    if rc != 0:
                         failures += 1
+                        consecutive_fails += 1
+                        # Surface first few lines of error output
+                        err_lines = [l for l in out.strip().split("\n") if l.strip()][-3:]
+                        if err_lines:
+                            print(f"    └─ {' | '.join(err_lines)}")
+                        # Early abort if LM Studio appears down
+                        if consecutive_fails >= CONSECUTIVE_FAIL_ABORT:
+                            print(
+                                f"\n[ABORT] {consecutive_fails} consecutive failures — "
+                                f"LM Studio may be down. Cancelling remaining shards."
+                            )
+                            # Cancel queued futures (already-running ones will finish/timeout)
+                            for qfut in list(pending.keys()):
+                                qfut.cancel()
+                            pending.clear()
+                            aborted = True
+                            break
+                    else:
+                        consecutive_fails = 0  # reset on success
+
+                if aborted:
+                    break
 
         # Phase 2: Validation (no LLM, fast)
-        if do_validate:
+        if do_validate and not aborted:
             print(f"\n--- Validation phase: {total_validate} locale/topic pairs ---")
-            pending.clear()
+            pending_val: dict = {}
             for loc in locales:
                 for topic in topics:
                     fut = ex.submit(worker_validate, loc, topic, args.timeout_sec)
-                    pending[fut] = (f"validate:{loc}/{topic}", time.time())
+                    pending_val[fut] = (f"validate:{loc}/{topic}", time.time())
 
             val_done = 0
-            while pending:
+            while pending_val:
                 done, _ = wait(
-                    set(pending.keys()),
+                    set(pending_val.keys()),
                     timeout=max(1, args.heartbeat_sec),
                     return_when=FIRST_COMPLETED,
                 )
                 for fut in (done or []):
-                    sid, _st = pending.pop(fut)
+                    sid, _st = pending_val.pop(fut)
                     shard_id, rc, out = fut.result()
                     val_done += 1
                     all_logs.append(out)
@@ -232,7 +301,8 @@ def main() -> int:
     # Write combined log
     elapsed = time.time() - started
     (log_dir / "combined.log").write_text("\n".join(all_logs), encoding="utf-8")
-    print(f"\ndone: shards={total_shards} validate={total_validate} "
+    status_msg = "ABORTED" if aborted else ("PASS" if failures == 0 else f"DONE ({failures} failures)")
+    print(f"\n{status_msg}: shards={total_shards} validate={total_validate} "
           f"failures={failures} elapsed={int(elapsed)}s")
     return 1 if failures else 0
 
