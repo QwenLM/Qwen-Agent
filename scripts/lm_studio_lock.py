@@ -1,37 +1,31 @@
 #!/usr/bin/env python3
 """
-LM Studio job lock with size-aware coexistence.
+LM Studio job lock with three-tier coexistence.
 
-Ensures heavy LLM jobs don't stomp on each other when sharing a single
-local LM Studio instance.  Jobs declare their "weight" — a rough estimate
-of how many concurrent LLM calls they'll make and for how long.
+Jobs declare their weight (light / medium / heavy) based on shard count
+and timeout.  The lock uses a compatibility matrix to decide whether a
+new job can run alongside an existing one.
 
-Rules:
-  - A new job checks the lock.  If no job is running → acquire.
-  - If a job IS running, the new job estimates its own weight.
-    * weight == "light"  → allowed to run alongside (e.g. validate-only,
-      dry-run, single-teacher shard, smoke probe)
-    * weight == "heavy"  → blocked, with a clear message explaining why.
-  - The running job also records its weight, so a second heavy job can
-    see "the holder is heavy, I'm heavy → blocked" while a light job
-    can see "the holder is heavy, I'm light → proceed".
+Compatibility matrix:
+    holder ↓ / new →   light   medium   heavy
+    light               ✓        ✓        ✓
+    medium              ✓        ✓        ✗
+    heavy               ✓        ✗        ✗
 
-Weight heuristics (callers pass shards/timeout hints):
-  shards <= 3  AND  timeout <= 60   → light
-  everything else                    → heavy
+Stale-lock recovery: if the PID that wrote the lock is dead, or the
+lock is older than STALE_THRESHOLD_SEC, it is reclaimed automatically.
 
 Usage:
     from scripts.lm_studio_lock import lm_studio_lock
 
-    # Heavy job (full locale batches)
     with lm_studio_lock("locale-batches", shards=318, timeout_sec=120):
-        ...
+        ...  # heavy — blocks if another heavy/medium is running
 
-    # Light job (validate-only, no LLM calls)
-    with lm_studio_lock("locale-validate", shards=0, timeout_sec=60):
-        ...
+    with lm_studio_lock("marketing-briefs", shards=12, timeout_sec=90):
+        ...  # medium — blocks only if heavy is running
 
-If blocked, prints a clear message and exits(1).
+    with lm_studio_lock("smoke-probe", shards=1, timeout_sec=30):
+        ...  # light — always proceeds
 """
 from __future__ import annotations
 
@@ -46,15 +40,29 @@ from pathlib import Path
 LOCK_FILE = Path("/tmp/lm_studio_job.lock")
 STALE_THRESHOLD_SEC = 7200  # 2 hours — assume stale if older
 
-# ─── Weight thresholds ──────────────────────────────────────────────────────
-LIGHT_MAX_SHARDS = 3
-LIGHT_MAX_TIMEOUT = 60
+# ─── Weight thresholds (config-driven) ──────────────────────────────────────
+# Override these via environment variables if needed:
+#   LM_LOCK_LIGHT_MAX_SHARDS=5 LM_LOCK_MEDIUM_MAX_SHARDS=50 ...
+LIGHT_MAX_SHARDS = int(os.environ.get("LM_LOCK_LIGHT_MAX_SHARDS", 3))
+LIGHT_MAX_TIMEOUT = int(os.environ.get("LM_LOCK_LIGHT_MAX_TIMEOUT", 60))
+MEDIUM_MAX_SHARDS = int(os.environ.get("LM_LOCK_MEDIUM_MAX_SHARDS", 30))
+MEDIUM_MAX_TIMEOUT = int(os.environ.get("LM_LOCK_MEDIUM_MAX_TIMEOUT", 180))
+
+# Compatibility: can NEW weight run alongside HOLDER weight?
+# Read as: COMPAT[holder_weight][new_weight] → bool
+COMPAT = {
+    "light":  {"light": True,  "medium": True,  "heavy": True},
+    "medium": {"light": True,  "medium": True,  "heavy": False},
+    "heavy":  {"light": True,  "medium": False, "heavy": False},
+}
 
 
 def classify_weight(shards: int, timeout_sec: int) -> str:
-    """Classify a job as 'light' or 'heavy' based on its size."""
+    """Classify a job as light / medium / heavy."""
     if shards <= LIGHT_MAX_SHARDS and timeout_sec <= LIGHT_MAX_TIMEOUT:
         return "light"
+    if shards <= MEDIUM_MAX_SHARDS and timeout_sec <= MEDIUM_MAX_TIMEOUT:
+        return "medium"
     return "heavy"
 
 
@@ -85,10 +93,10 @@ def _acquire(job_name: str, weight: str, shards: int, timeout_sec: int) -> bool:
     Returns True if:
       - No lock exists (we take it)
       - Lock exists but owner is dead / stale (we reclaim)
-      - Lock exists, owner is alive, but OUR job is light (coexist)
+      - Lock exists, owner is alive, and compatibility matrix allows coexistence
 
     Returns False if:
-      - Lock exists, owner is alive, and OUR job is heavy (blocked)
+      - Lock exists, owner is alive, and compatibility matrix blocks us
     """
     existing = _read_lock()
 
@@ -100,20 +108,25 @@ def _acquire(job_name: str, weight: str, shards: int, timeout_sec: int) -> bool:
         started = existing.get("started", 0)
         age_sec = time.time() - started
 
-        # Check if the owning process is still alive
-        if _is_process_alive(owner_pid) and age_sec < STALE_THRESHOLD_SEC:
+        # Stale-lock recovery: dead process or too old
+        if not _is_process_alive(owner_pid):
+            print(f"[LOCK] Reclaiming lock — owner process (pid={owner_pid}) is dead")
+        elif age_sec >= STALE_THRESHOLD_SEC:
+            age_hr = age_sec / 3600
+            print(f"[LOCK] Reclaiming lock — stale ({age_hr:.1f}h old, threshold={STALE_THRESHOLD_SEC/3600:.0f}h)")
+        else:
+            # Owner is alive and lock is fresh — check compatibility
             age_min = int(age_sec / 60)
+            allowed = COMPAT.get(owner_weight, {}).get(weight, False)
 
-            # Light jobs can coexist with any running job
-            if weight == "light":
+            if allowed:
                 print(
-                    f"[LOCK] Another job running: {owner_name} ({owner_weight}, "
-                    f"{owner_shards} shards, {age_min}m ago)\n"
-                    f"  This job '{job_name}' is light ({shards} shards) — proceeding alongside."
+                    f"[LOCK] {owner_name} ({owner_weight}, {owner_shards} shards) running for {age_min}m.\n"
+                    f"  This job '{job_name}' is {weight} ({shards} shards) — compatible, proceeding."
                 )
                 return True
 
-            # Heavy job trying to run alongside another job → blocked
+            # Blocked
             print(
                 f"\n[LOCK] LM Studio is busy — job too big to run alongside.\n"
                 f"  Running:  {owner_name} ({owner_weight}, {owner_shards} shards, "
@@ -127,11 +140,8 @@ def _acquire(job_name: str, weight: str, shards: int, timeout_sec: int) -> bool:
             )
             return False
 
-        # Stale lock or dead process — reclaim
-        print(f"[LOCK] Reclaiming stale lock (previous: {owner_name}, pid={owner_pid})")
-
-    # Write our lock (only heavy jobs write — light jobs don't need to block others)
-    if weight == "heavy":
+    # Write lock (only medium/heavy — light jobs don't need to block others)
+    if weight in ("medium", "heavy"):
         LOCK_FILE.write_text(json.dumps({
             "job": job_name,
             "pid": os.getpid(),
@@ -163,25 +173,26 @@ def lm_studio_lock(
     Context manager: acquire LM Studio lock or exit(1).
 
     Args:
-        job_name:    Human-readable job identifier (e.g. "locale-batches")
-        shards:      Number of LLM call units this job will make.
-                     0 = no LLM calls (validate-only). <=3 with short timeout = light.
-        timeout_sec: Per-shard timeout. Used for weight classification.
+        job_name:    Human-readable job identifier
+        shards:      Number of LLM call units (0 = no LLM calls)
+        timeout_sec: Per-shard timeout
 
-    Light jobs (<=3 shards, <=60s timeout) are allowed to coexist with
-    a running heavy job. Heavy jobs block if another job is running.
+    Weight classification:
+        light:   ≤3 shards, ≤60s   → always proceeds
+        medium:  4-30 shards, ≤180s → blocked by heavy, not by medium/light
+        heavy:   >30 shards or >180s → blocked by heavy or medium
     """
     weight = classify_weight(shards, timeout_sec)
 
     if not _acquire(job_name, weight, shards, timeout_sec):
         sys.exit(1)
 
-    # Only register cleanup for heavy jobs (they wrote the lock file)
-    if weight == "heavy":
+    # Only register cleanup for medium/heavy (they wrote the lock file)
+    if weight in ("medium", "heavy"):
         atexit.register(_release)
 
     try:
         yield
     finally:
-        if weight == "heavy":
+        if weight in ("medium", "heavy"):
             _release()
