@@ -116,8 +116,11 @@ class Agent(ABC):
                 if isinstance(new_messages[0][CONTENT], str):
                     new_messages[0][CONTENT] = self.system_message + '\n\n' + new_messages[0][CONTENT]
                 else:
-                    assert isinstance(new_messages[0][CONTENT], list)
-                    assert new_messages[0][CONTENT][0].text
+                    if not isinstance(new_messages[0][CONTENT], list):
+                        raise TypeError(
+                            f'Expected message content to be a list, got {type(new_messages[0][CONTENT])}')
+                    if not new_messages[0][CONTENT][0].text:
+                        raise ValueError('The first content item of the system message must contain text.')
                     new_messages[0][CONTENT] = [ContentItem(text=self.system_message + '\n\n')
                                                ] + new_messages[0][CONTENT]  # noqa
 

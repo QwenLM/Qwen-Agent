@@ -66,7 +66,10 @@ class GroupChat(Agent, MultiAgentHub):
             llm: The LLM for inputting to the host.
         """
         super().__init__(**kwargs)
-        assert agent_selection_method in self._VALID_AGENT_SELECTION_METHODS, f'You must choose agent_selection_method from {", ".join(self._VALID_AGENT_SELECTION_METHODS)}'
+        if agent_selection_method not in self._VALID_AGENT_SELECTION_METHODS:
+            raise ValueError(
+                f'Invalid agent_selection_method: {agent_selection_method}. '
+                f'Must be one of: {", ".join(self._VALID_AGENT_SELECTION_METHODS)}')
         self.agent_selection_method = agent_selection_method
 
         if isinstance(agents, dict):
@@ -75,7 +78,8 @@ class GroupChat(Agent, MultiAgentHub):
             self._agents = agents
 
         if self.agent_selection_method == 'auto':
-            assert llm is not None, 'Need to provide LLM to the host in auto mode'
+            if llm is None:
+                raise ValueError('An LLM must be provided to the host when using auto agent selection mode.')
             self.host = GroupChatAutoRouter(function_list=function_list, llm=llm, agents=self.agents, name='host')
 
     def _run(self,
@@ -89,7 +93,8 @@ class GroupChat(Agent, MultiAgentHub):
         messages = copy.deepcopy(messages)
         for message in messages:
             if message.role == 'assistant':
-                assert message.name, 'In group chat, each agent must be given a name'
+                if not message.name:
+                    raise ValueError('In group chat, each assistant message must have a name.')
             # Name will be used for router
             # Todo: Dealing with situations where there are no real players
             if not message.name:
@@ -140,7 +145,10 @@ class GroupChat(Agent, MultiAgentHub):
                 # The topic ends
                 break
             if mentioned_agents_name:
-                assert rsp[-1].name == mentioned_agents_name[0]
+                if rsp[-1].name != mentioned_agents_name[0]:
+                    raise RuntimeError(
+                        f'Expected response from agent "{mentioned_agents_name[0]}", '
+                        f'but got response from "{rsp[-1].name}".')
                 mentioned_agents_name.pop(0)
 
             response += rsp
@@ -180,7 +188,9 @@ class GroupChat(Agent, MultiAgentHub):
             if isinstance(last[-1]['content'], str):
                 auto_selected_agent = last[-1]['content']
             else:
-                assert isinstance(last[-1]['content'], list)
+                if not isinstance(last[-1]['content'], list):
+                    raise TypeError(
+                        f'Expected content to be a list, got {type(last[-1]["content"])}')
                 if 'text' in last[-1]['content'][0]:
                     auto_selected_agent = last[-1]['content'][0]['text']
             if auto_selected_agent in agents_map.keys():
@@ -231,7 +241,9 @@ class GroupChat(Agent, MultiAgentHub):
                 new_msg = None
                 if msg.function_call:
                     # Append the function call msg
-                    assert messages[i + 1].role == 'function'
+                    if i + 1 >= len(messages) or messages[i + 1].role != 'function':
+                        raise ValueError(
+                            'Expected a function message following a function_call, but it is missing.')
                     new_messages.append(copy.deepcopy(messages[i + 1]))
                     i += 1
             else:
@@ -248,8 +260,12 @@ class GroupChat(Agent, MultiAgentHub):
 
                 if msg.function_call:
                     # Skip the function call msg
-                    assert messages[i + 1].role == 'function'
-                    assert messages[i + 2].role == 'assistant' and messages[i + 2].name == msg.name
+                    if i + 1 >= len(messages) or messages[i + 1].role != 'function':
+                        raise ValueError(
+                            'Expected a function message following a function_call, but it is missing.')
+                    if i + 2 >= len(messages) or messages[i + 2].role != 'assistant' or messages[i + 2].name != msg.name:
+                        raise ValueError(
+                            f'Expected an assistant message from "{msg.name}" after the function result, but it is missing.')
                     i += 1
 
             i += 1

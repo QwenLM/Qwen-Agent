@@ -115,7 +115,8 @@ class ContentItem(BaseModelCompatibleDict):
 
     def get_type_and_value(self) -> Tuple[Literal['text', 'image', 'file', 'audio', 'video'], str]:
         (t, v), = self.model_dump().items()
-        assert t in ('text', 'image', 'file', 'audio', 'video')
+        if t not in ('text', 'image', 'file', 'audio', 'video'):
+            raise ValueError(f"Unexpected content type '{t}'. Must be one of: text, image, file, audio, video.")
         return t, v
 
     @property

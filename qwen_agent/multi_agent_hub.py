@@ -25,12 +25,17 @@ class MultiAgentHub(ABC):
     def agents(self) -> List[Agent]:
         try:
             agent_list = self._agents
-            assert isinstance(agent_list, list)
-            assert all(isinstance(a, Agent) for a in agent_list)
-            assert len(agent_list) > 0
-            assert all(a.name for a in agent_list), 'All agents must have a name.'
-            assert len(set(a.name for a in agent_list)) == len(agent_list), 'Agents must have unique names.'
-        except (AttributeError, AssertionError) as e:
+            if not isinstance(agent_list, list):
+                raise TypeError(f"'_agents' must be a list, got {type(agent_list)}")
+            if not all(isinstance(a, Agent) for a in agent_list):
+                raise TypeError("All items in '_agents' must be instances of Agent.")
+            if len(agent_list) == 0:
+                raise ValueError("'_agents' must be a non-empty list containing at least one agent.")
+            if not all(a.name for a in agent_list):
+                raise ValueError('All agents must have a name.')
+            if len(set(a.name for a in agent_list)) != len(agent_list):
+                raise ValueError('Agents must have unique names.')
+        except (AttributeError, TypeError, ValueError) as e:
             logger.error(
                 f'Class {self.__class__.__name__} inherits from MultiAgentHub. '
                 'However, the following constraints are violated: '
