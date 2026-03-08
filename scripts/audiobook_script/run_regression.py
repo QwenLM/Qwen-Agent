@@ -482,13 +482,26 @@ def main() -> int:
     args = ap.parse_args()
 
     repo = Path(args.repo) if args.repo else REPO_ROOT
-    return asyncio.run(_run_regression(
-        repo=repo,
-        locale_filter=args.locale,
-        verbose=args.verbose,
-        dry_run=args.dry_run,
-        smoke=args.smoke,
-    ))
+
+    # Acquire LM Studio lock (skip for dry-run which makes no API calls)
+    if not args.dry_run:
+        from scripts.lm_studio_lock import lm_studio_lock
+        with lm_studio_lock("audiobook-regression"):
+            return asyncio.run(_run_regression(
+                repo=repo,
+                locale_filter=args.locale,
+                verbose=args.verbose,
+                dry_run=args.dry_run,
+                smoke=args.smoke,
+            ))
+    else:
+        return asyncio.run(_run_regression(
+            repo=repo,
+            locale_filter=args.locale,
+            verbose=args.verbose,
+            dry_run=args.dry_run,
+            smoke=args.smoke,
+        ))
 
 
 if __name__ == "__main__":

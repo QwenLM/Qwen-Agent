@@ -197,6 +197,12 @@ def main() -> int:
             )
             return 1
 
+    # ─── LOCK: ensure no other LLM job is running ─────────────────────────
+    from scripts.lm_studio_lock import lm_studio_lock
+    lock_ctx = lm_studio_lock("locale-batches") if do_translate else None
+    if lock_ctx:
+        lock_ctx.__enter__()
+
     failures = 0
     completed = 0
     consecutive_fails = 0
@@ -297,6 +303,10 @@ def main() -> int:
                     print(f"  [{val_done}/{total_validate}] {shard_id} {status}")
                     if rc != 0:
                         failures += 1
+
+    # Release lock before writing log
+    if lock_ctx:
+        lock_ctx.__exit__(None, None, None)
 
     # Write combined log
     elapsed = time.time() - started

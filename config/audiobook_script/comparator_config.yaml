@@ -138,15 +138,19 @@ regression:
   min_scored_pass_rate: 0.90
   block_promotion_on_regression: true
   # Runtime profile for CI regression on self-hosted runners.
-  # Previous values (900 tokens / 180s) caused draft timeouts on Qwen3-14b
-  # with full-length audiobook prompts (3,400-3,700 bytes + source content).
+  # Qwen3-14b context budget (at default 8k context in LM Studio):
+  #   draft_prompt_template: ~3,700 chars
+  #   source_text:           ~1,500 chars (capped below)
+  #   output tokens:          1,500 tokens
+  #   Total ≈ 6,700 chars → ~2,200 tokens input, fits in 8k with output room.
+  # If context still exceeds, increase LM Studio "Context Length" to 16k.
   runtime_overrides:
     enabled: true
     draft_max_output_tokens: 1500
     judge_max_output_tokens: 1000
     draft_timeout_seconds: 360
     judge_timeout_seconds: 240
-    source_char_limit: 3200
+    source_char_limit: 1800
 
 observability:
   jsonl_log_path: "artifacts/audiobook/loop_decisions.jsonl"
