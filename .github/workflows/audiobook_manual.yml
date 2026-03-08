@@ -1,4 +1,7 @@
 name: Audiobook manual run (Qwen-only)
+concurrency:
+  group: audiobook-manual
+  cancel-in-progress: true
 
 on:
   workflow_dispatch:
@@ -45,6 +48,25 @@ jobs:
           python3 -m pip install --upgrade pip
           python3 -m pip install pyyaml jsonschema openai requests
 
+      - name: Preflight runner + LM health
+        run: |
+          set -euo pipefail
+          echo "== LM Studio model check =="
+          curl -fsS "$QWEN_BASE_URL/models" >/tmp/models.json
+          cat /tmp/models.json | head -c 400; echo
+          echo "== LM Studio warmup call =="
+          curl -fsS --max-time 45 "$QWEN_BASE_URL/chat/completions" \
+            -H 'Content-Type: application/json' \
+            -H "Authorization: Bearer $QWEN_API_KEY" \
+            -d "{\"model\":\"$QWEN_MODEL\",\"messages\":[{\"role\":\"user\",\"content\":\"ok\"}],\"max_tokens\":8,\"temperature\":0.0}" >/tmp/warmup.json
+          python3 - <<'PY'
+          import json
+          data = json.load(open("/tmp/warmup.json"))
+          if "error" in data:
+            raise SystemExit(f"Warmup failed: {data['error']}")
+          print("warmup_ok=true")
+          PY
+
       - name: Prepare source file
         run: |
           mkdir -p artifacts/audiobook/source/manual
@@ -55,13 +77,21 @@ jobs:
       - name: Run comparator loop
         run: |
           BATCH_ID="manual_$(date -u +%Y%m%dT%H%M%SZ)"
-          python3 scripts/audiobook_script/run_comparator_loop.py \
-            --section-id "${{ inputs.section_id }}" \
-            --locale "${{ inputs.locale }}" \
-            --english-source artifacts/audiobook/source/manual/source.txt \
-            --book-id "manual" \
-            --batch-id "$BATCH_ID" \
-            --content-type "${{ inputs.content_type }}"
+          for attempt in 1 2; do
+            echo "attempt=${attempt}"
+            python3 scripts/audiobook_script/run_comparator_loop.py \
+              --section-id "${{ inputs.section_id }}" \
+              --locale "${{ inputs.locale }}" \
+              --english-source artifacts/audiobook/source/manual/source.txt \
+              --book-id "manual" \
+              --batch-id "$BATCH_ID" \
+              --content-type "${{ inputs.content_type }}" && exit 0
+            if [ "$attempt" -eq 2 ]; then
+              echo "comparator loop failed after retry"
+              exit 1
+            fi
+            sleep 15
+          done
 
       - name: Upload audiobook artifacts
         uses: actions/upload-artifact@v4

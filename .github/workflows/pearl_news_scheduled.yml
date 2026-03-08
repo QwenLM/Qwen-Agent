@@ -4,6 +4,9 @@
 # See docs/PEARL_NEWS_OPTION_B_RUNBOOK.md.
 
 name: Pearl News scheduled
+concurrency:
+  group: pearl-news-scheduled
+  cancel-in-progress: false
 
 on:
   schedule:
@@ -69,6 +72,25 @@ jobs:
         run: |
           python3 -m pip install feedparser pyyaml requests pytest openai
 
+      - name: Preflight runner + LM health
+        run: |
+          set -euo pipefail
+          echo "== LM Studio model check =="
+          curl -fsS "$QWEN_BASE_URL/models" >/tmp/models.json
+          cat /tmp/models.json | head -c 400; echo
+          echo "== LM Studio warmup call =="
+          curl -fsS --max-time 45 "$QWEN_BASE_URL/chat/completions" \
+            -H 'Content-Type: application/json' \
+            -H "Authorization: Bearer $QWEN_API_KEY" \
+            -d "{\"model\":\"$QWEN_MODEL\",\"messages\":[{\"role\":\"user\",\"content\":\"ok\"}],\"max_tokens\":8,\"temperature\":0.0}" >/tmp/warmup.json
+          python3 - <<'PY'
+          import json
+          data = json.load(open("/tmp/warmup.json"))
+          if "error" in data:
+            raise SystemExit(f"Warmup failed: {data['error']}")
+          print("warmup_ok=true")
+          PY
+
       - name: Validate WordPress env (if configured)
         run: |
           PYTHONPATH=. python3 - <<'PY'
@@ -97,21 +119,29 @@ jobs:
           if [ "$PEARL_NEWS_EXPAND" = "true" ]; then
             EXPAND_FLAG="--expand --validate"
           fi
-          if [ "$LANG" = "all" ]; then
-            python3 -m pearl_news.pipeline.run_article_pipeline \
-              --feeds pearl_news/config/feeds.yaml \
-              --out-dir artifacts/pearl_news/drafts \
-              --limit "$PEARL_NEWS_LIMIT" \
-              --language all \
-              $EXPAND_FLAG
-          else
-            python3 -m pearl_news.pipeline.run_article_pipeline \
-              --feeds pearl_news/config/feeds.yaml \
-              --out-dir "artifacts/pearl_news/drafts/$LANG" \
-              --limit "$PEARL_NEWS_LIMIT" \
-              --language "$LANG" \
-              $EXPAND_FLAG
-          fi
+          for attempt in 1 2; do
+            echo "attempt=${attempt}"
+            if [ "$LANG" = "all" ]; then
+              python3 -m pearl_news.pipeline.run_article_pipeline \
+                --feeds pearl_news/config/feeds.yaml \
+                --out-dir artifacts/pearl_news/drafts \
+                --limit "$PEARL_NEWS_LIMIT" \
+                --language all \
+                $EXPAND_FLAG && exit 0
+            else
+              python3 -m pearl_news.pipeline.run_article_pipeline \
+                --feeds pearl_news/config/feeds.yaml \
+                --out-dir "artifacts/pearl_news/drafts/$LANG" \
+                --limit "$PEARL_NEWS_LIMIT" \
+                --language "$LANG" \
+                $EXPAND_FLAG && exit 0
+            fi
+            if [ "$attempt" -eq 2 ]; then
+              echo "pipeline failed after retry"
+              exit 1
+            fi
+            sleep 15
+          done
 
       - name: Upload draft artifacts
         uses: actions/upload-artifact@v4
