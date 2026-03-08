@@ -43,9 +43,39 @@ jobs:
         run: |
           python3 scripts/audiobook_script/run_regression.py --dry-run --verbose
 
-      - name: Golden regression
+      - name: Golden regression smoke (fast)
         run: |
-          python3 scripts/audiobook_script/run_regression.py --verbose
+          python3 scripts/audiobook_script/run_regression.py --smoke --verbose
+
+      - name: Golden regression shard zh-TW
+        run: |
+          echo "[1/6] zh-TW"
+          python3 scripts/audiobook_script/run_regression.py --locale zh-TW --verbose
+
+      - name: Golden regression shard zh-HK
+        run: |
+          echo "[2/6] zh-HK"
+          python3 scripts/audiobook_script/run_regression.py --locale zh-HK --verbose
+
+      - name: Golden regression shard zh-SG
+        run: |
+          echo "[3/6] zh-SG"
+          python3 scripts/audiobook_script/run_regression.py --locale zh-SG --verbose
+
+      - name: Golden regression shard zh-CN
+        run: |
+          echo "[4/6] zh-CN"
+          python3 scripts/audiobook_script/run_regression.py --locale zh-CN --verbose
+
+      - name: Golden regression shard ja-JP
+        run: |
+          echo "[5/6] ja-JP"
+          python3 scripts/audiobook_script/run_regression.py --locale ja-JP --verbose
+
+      - name: Golden regression shard ko-KR
+        run: |
+          echo "[6/6] ko-KR"
+          python3 scripts/audiobook_script/run_regression.py --locale ko-KR --verbose
 
       - name: Create scheduled source segment
         run: |
