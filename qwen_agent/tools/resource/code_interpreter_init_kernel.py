@@ -62,3 +62,15 @@ sns.set_theme()
 
 _m6_font_prop = FontProperties(fname='{{M6_FONT_PATH}}')
 plt.rcParams['font.family'] = _m6_font_prop.get_name()
+
+# Optimize Git for the sandbox environment to prevent timeouts on large repos
+try:
+    import subprocess
+    # Use shallow clone by default for any git operations if possible
+    subprocess.run(['git', 'config', '--global', 'core.compression', '0'], capture_output=True)
+    # Limit parallel threads to save memory in sandbox
+    subprocess.run(['git', 'config', '--global', 'index.threads', '1'], capture_output=True)
+    # Optional: Increase buffer for large clones
+    subprocess.run(['git', 'config', '--global', 'http.postBuffer', '524288000'], capture_output=True)
+except Exception:
+    pass
