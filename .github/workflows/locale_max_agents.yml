@@ -1,4 +1,7 @@
 name: Locale max-agents run
+concurrency:
+  group: locale-max-agents
+  cancel-in-progress: true
 
 on:
   workflow_dispatch:
@@ -60,6 +63,34 @@ jobs:
           python3 -m pip install --upgrade pip
           python3 -m pip install pyyaml openai requests jsonschema
 
+      - name: Preflight runner + LM health
+        if: ${{ inputs.mode != 'validate-only' }}
+        run: |
+          set -euo pipefail
+          echo "== LM Studio model check =="
+          curl -fsS "$QWEN_BASE_URL/models" >/tmp/models.json
+          cat /tmp/models.json | head -c 400; echo
+          echo "== Memory check =="
+          FREE_PAGES=$(vm_stat | awk '/Pages free/ {gsub("\\.","",$3); print $3}')
+          INACTIVE_PAGES=$(vm_stat | awk '/Pages inactive/ {gsub("\\.","",$3); print $3}')
+          FREE_BYTES=$(( (FREE_PAGES + INACTIVE_PAGES) * 4096 ))
+          python3 - <<'PY'
+          import os
+          free_gb = int(os.environ["FREE_BYTES"]) / (1024**3)
+          print(f"free_mem_gb={free_gb:.2f}")
+          if free_gb < 2.0:
+            raise SystemExit("Insufficient free memory for locale batches (<2.0 GB).")
+          PY
+          echo "== Disk check =="
+          FREE_KB=$(df -k . | awk 'NR==2{print $4}')
+          python3 - <<'PY'
+          import os
+          free_gb = int(os.environ["FREE_KB"]) / (1024**2)
+          print(f"free_disk_gb={free_gb:.2f}")
+          if free_gb < 10.0:
+            raise SystemExit("Insufficient free disk for artifacts (<10 GB).")
+          PY
+
       - name: Run locale batches
         run: |
           MODE="${{ inputs.mode || 'translate+validate' }}"
@@ -81,16 +112,28 @@ jobs:
             TOPIC_ARGS="--topics $TOPICS"
           fi
 
-          if [ -n "$LOCALES" ]; then
-            # shellcheck disable=SC2086
-            python3 scripts/localization/run_locale_batches.py --max-agents "$MAX_AGENTS" --timeout-sec "$TIMEOUT_SEC" --locales $LOCALES $TOPIC_ARGS $EXTRA
-          elif [ "$LOCALE_SET" = "all" ]; then
-            # shellcheck disable=SC2086
-            python3 scripts/localization/run_locale_batches.py --max-agents "$MAX_AGENTS" --timeout-sec "$TIMEOUT_SEC" $TOPIC_ARGS $EXTRA
-          else
-            # shellcheck disable=SC2086
-            python3 scripts/localization/run_locale_batches.py --max-agents "$MAX_AGENTS" --timeout-sec "$TIMEOUT_SEC" --core-locales $TOPIC_ARGS $EXTRA
-          fi
+          run_cmd() {
+            if [ -n "$LOCALES" ]; then
+              # shellcheck disable=SC2086
+              caffeinate -dimsu python3 scripts/localization/run_locale_batches.py --max-agents "$MAX_AGENTS" --timeout-sec "$TIMEOUT_SEC" --locales $LOCALES $TOPIC_ARGS $EXTRA
+            elif [ "$LOCALE_SET" = "all" ]; then
+              # shellcheck disable=SC2086
+              caffeinate -dimsu python3 scripts/localization/run_locale_batches.py --max-agents "$MAX_AGENTS" --timeout-sec "$TIMEOUT_SEC" $TOPIC_ARGS $EXTRA
+            else
+              # shellcheck disable=SC2086
+              caffeinate -dimsu python3 scripts/localization/run_locale_batches.py --max-agents "$MAX_AGENTS" --timeout-sec "$TIMEOUT_SEC" --core-locales $TOPIC_ARGS $EXTRA
+            fi
+          }
+
+          for attempt in 1 2; do
+            echo "attempt=${attempt}"
+            run_cmd && exit 0
+            if [ "$attempt" -eq 2 ]; then
+              echo "locale batch run failed after retry"
+              exit 1
+            fi
+            sleep 20
+          done
 
       - name: Upload localization batch logs
         uses: actions/upload-artifact@v4

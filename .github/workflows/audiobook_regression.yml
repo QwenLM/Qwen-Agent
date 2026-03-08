@@ -64,6 +64,7 @@ jobs:
   golden-regression:
     if: github.event_name == 'workflow_dispatch'
     runs-on: self-hosted
+    timeout-minutes: 45
     needs: [schema-and-config]
     env:
       QWEN_BASE_URL: http://127.0.0.1:1234/v1
@@ -75,12 +76,38 @@ jobs:
         run: |
           python3 -m pip install --upgrade pip
           python3 -m pip install pyyaml jsonschema openai requests
+      - name: Preflight runner + LM health
+        run: |
+          set -euo pipefail
+          echo "== LM Studio model check =="
+          curl -fsS "$QWEN_BASE_URL/models" >/tmp/models.json
+          cat /tmp/models.json | head -c 400; echo
+          echo "== Memory check =="
+          FREE_PAGES=$(vm_stat | awk '/Pages free/ {gsub("\\.","",$3); print $3}')
+          INACTIVE_PAGES=$(vm_stat | awk '/Pages inactive/ {gsub("\\.","",$3); print $3}')
+          FREE_BYTES=$(( (FREE_PAGES + INACTIVE_PAGES) * 4096 ))
+          python3 - <<'PY'
+          import os
+          free_gb = int(os.environ["FREE_BYTES"]) / (1024**3)
+          print(f"free_mem_gb={free_gb:.2f}")
+          if free_gb < 2.0:
+            raise SystemExit("Insufficient free memory for stable regression run (<2.0 GB).")
+          PY
+          echo "== Disk check =="
+          FREE_KB=$(df -k . | awk 'NR==2{print $4}')
+          python3 - <<'PY'
+          import os
+          free_gb = int(os.environ["FREE_KB"]) / (1024**2)
+          print(f"free_disk_gb={free_gb:.2f}")
+          if free_gb < 10.0:
+            raise SystemExit("Insufficient free disk for artifacts (<10 GB).")
+          PY
       - name: Run dry-run validation
         run: |
-          python3 scripts/audiobook_script/run_regression.py --dry-run --verbose
+          caffeinate -dimsu python3 scripts/audiobook_script/run_regression.py --dry-run --verbose
       - name: Run smoke regression (fast gate)
         run: |
-          python3 scripts/audiobook_script/run_regression.py --smoke --verbose
+          caffeinate -dimsu python3 scripts/audiobook_script/run_regression.py --smoke --verbose
       - name: Upload regression report
         uses: actions/upload-artifact@v4
         with:
@@ -91,6 +118,7 @@ jobs:
   full-golden-single-locale:
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.full_golden == true && inputs.locale != 'all' }}
     runs-on: self-hosted
+    timeout-minutes: 45
     needs: [schema-and-config]
     env:
       QWEN_BASE_URL: http://127.0.0.1:1234/v1
@@ -105,7 +133,15 @@ jobs:
       - name: Run full golden regression (single locale)
         run: |
           echo "[full-golden] locale=${{ inputs.locale }}"
-          python3 scripts/audiobook_script/run_regression.py --locale "${{ inputs.locale }}" --verbose
+          for attempt in 1 2; do
+            echo "attempt=${attempt}"
+            caffeinate -dimsu python3 scripts/audiobook_script/run_regression.py --locale "${{ inputs.locale }}" --verbose && exit 0
+            if [ "$attempt" -eq 2 ]; then
+              echo "full-golden single-locale failed after retry"
+              exit 1
+            fi
+            sleep 15
+          done
       - name: Upload regression report
         uses: actions/upload-artifact@v4
         with:
@@ -116,6 +152,7 @@ jobs:
   full-golden-matrix:
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.full_golden == true && inputs.locale == 'all' }}
     runs-on: self-hosted
+    timeout-minutes: 45
     needs: [schema-and-config]
     strategy:
       fail-fast: false
@@ -134,7 +171,15 @@ jobs:
       - name: Run full golden regression shard
         run: |
           echo "[matrix shard] locale=${{ matrix.locale }}"
-          python3 scripts/audiobook_script/run_regression.py --locale "${{ matrix.locale }}" --verbose
+          for attempt in 1 2; do
+            echo "attempt=${attempt}"
+            caffeinate -dimsu python3 scripts/audiobook_script/run_regression.py --locale "${{ matrix.locale }}" --verbose && exit 0
+            if [ "$attempt" -eq 2 ]; then
+              echo "matrix shard failed after retry locale=${{ matrix.locale }}"
+              exit 1
+            fi
+            sleep 15
+          done
       - name: Upload regression report
         uses: actions/upload-artifact@v4
         with:
