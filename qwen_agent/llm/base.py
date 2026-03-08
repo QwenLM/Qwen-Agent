@@ -110,9 +110,12 @@ class BaseChatModel(ABC):
 
     def quick_chat(self, prompt: str) -> str:
         *_, responses = self.chat(messages=[Message(role=USER, content=prompt)])
-        assert len(responses) == 1
-        assert not responses[0].function_call
-        assert isinstance(responses[0].content, str)
+        if len(responses) != 1:
+            raise ValueError(f'Expected exactly 1 response from quick_chat, got {len(responses)}')
+        if responses[0].function_call:
+            raise ValueError('quick_chat does not support function calls in the response.')
+        if not isinstance(responses[0].content, str):
+            raise TypeError(f'Expected response content to be a string, got {type(responses[0].content)}')
         return responses[0].content
 
     def chat(
@@ -219,7 +222,8 @@ class BaseChatModel(ABC):
 
         if self.use_raw_api:
             logger.debug('`use_raw_api` takes effect.')
-            assert stream and (not delta_stream), '`use_raw_api` only support full stream!!!'
+            if not stream or delta_stream:
+                raise ValueError('`use_raw_api` only supports full stream mode (stream=True, delta_stream=False).')
             return self.raw_chat(messages=messages, functions=functions, stream=stream, generate_cfg=generate_cfg)
 
         if not fncall_mode:
@@ -240,7 +244,8 @@ class BaseChatModel(ABC):
             else:
                 # TODO: Optimize code structure
                 if messages[-1].role == ASSISTANT:
-                    assert not delta_stream, 'Continuation mode does not currently support `delta_stream`'
+                    if delta_stream:
+                        raise ValueError('Continuation mode does not currently support `delta_stream`.')
                     return self._continue_assistant_response(messages, generate_cfg=generate_cfg, stream=stream)
                 else:
                     return self._chat(
@@ -259,7 +264,8 @@ class BaseChatModel(ABC):
             output = retry_model_service(_call_model_service, max_retries=self.max_retries)
 
         if isinstance(output, list):
-            assert not stream
+            if stream:
+                raise RuntimeError('Unexpected list output in stream mode. Expected an iterator.')
             logger.debug(f'LLM Output: \n{pformat([_.model_dump() for _ in output], indent=2)}')
             output = self._postprocess_messages(output, fncall_mode=fncall_mode, generate_cfg=generate_cfg)
             if not self.support_multimodal_output:
@@ -268,12 +274,14 @@ class BaseChatModel(ABC):
                 self.cache.set(cache_key, json_dumps_compact(output))
             return self._convert_messages_to_target_type(output, _return_message_type)
         else:
-            assert stream
+            if not stream:
+                raise RuntimeError('Unexpected iterator output in non-stream mode. Expected a list.')
             if delta_stream:
                 # Hack: To avoid potential errors during the postprocessing of stop words when delta_stream=True.
                 # Man, we should never have implemented the support for `delta_stream=True` in the first place!
                 generate_cfg = copy.deepcopy(generate_cfg)  # copy to avoid conflicts with `_call_model_service`
-                assert 'skip_stopword_postproc' not in generate_cfg
+                if 'skip_stopword_postproc' in generate_cfg:
+                    raise ValueError('`skip_stopword_postproc` should not be set in generate_cfg when using delta_stream.')
                 generate_cfg['skip_stopword_postproc'] = True
             output = self._postprocess_messages_iterator(output, fncall_mode=fncall_mode, generate_cfg=generate_cfg)
 
@@ -537,9 +545,12 @@ def _format_as_text_messages(messages: List[Message]) -> List[Message]:
     for msg in messages:
         if isinstance(msg.content, list):
             for item in msg.content:
-                assert item.type == 'text'
-        else:
-            assert isinstance(msg.content, str)
+                if item.type != 'text':
+                    raise TypeError(
+                        f'Expected all content items to be text, got {item.type}. '
+                        'Non-text content is not supported for text-only models.')
+        elif not isinstance(msg.content, str):
+            raise TypeError(f'Expected message content to be a string or list, got {type(msg.content)}')
     messages = [format_as_text_message(msg, add_upload_info=False) for msg in messages]
     return messages
 
