@@ -1,9 +1,10 @@
 name: "Locale Quality — Weekly EI V2 Loop"
 
 on:
-  schedule:
-    # Every Monday at 06:00 UTC — weekly quality assessment
-    - cron: "0 6 * * 1"
+  # schedule: disabled — production cron moved to phoenix_omega (PR A).
+  # Qwen-Agent is backup/experiment only. Use workflow_dispatch for manual runs.
+  # Previous schedule (for reference):
+  #   - cron: "0 6 * * 1"  # Every Monday at 06:00 UTC
   workflow_dispatch:
     inputs:
       locale:
