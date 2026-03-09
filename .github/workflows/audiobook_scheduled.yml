@@ -4,9 +4,11 @@ concurrency:
   cancel-in-progress: false
 
 on:
-  schedule:
-    - cron: '0 2 * * *'
-    - cron: '0 14 * * *'
+  # schedule: disabled — production cron moved to phoenix_omega (PR A).
+  # Qwen-Agent is backup/experiment only. Use workflow_dispatch for manual runs.
+  # Previous schedule (for reference):
+  #   - cron: '0 2 * * *'
+  #   - cron: '0 14 * * *'
   workflow_dispatch:
     inputs:
       locale:
