@@ -118,4 +118,5 @@ setup(
         ],
     },
     url='https://github.com/QwenLM/Qwen-Agent',
+    python_requires='>=3.10',
 )

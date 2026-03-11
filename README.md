@@ -56,7 +56,8 @@ pip install -U "qwen-agent[gui,rag,code_interpreter,mcp]"
 # The optional requirements, specified in double brackets, are:
 #   [gui] for Gradio-based GUI support;
 #   [rag] for RAG support;
-#   [code_interpreter] for Code Interpreter support;
+#   [code_interpreter] for Code Interpreter support (requires Jupyter/FastAPI);
+#   [python_executor] for Python code execution (for math/TIR);
 #   [mcp] for MCP support.
 ```
 
@@ -64,7 +65,7 @@ pip install -U "qwen-agent[gui,rag,code_interpreter,mcp]"
 ```bash
 git clone https://github.com/QwenLM/Qwen-Agent.git
 cd Qwen-Agent
-pip install -e ./"[gui,rag,code_interpreter,mcp]"
+pip install -e ./"[gui,rag,code_interpreter,python_executor,mcp]"
 # Or `pip install -e ./` for minimal requirements.
 ```
 
