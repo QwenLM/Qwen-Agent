@@ -56,7 +56,8 @@ pip install -U "qwen-agent[gui,rag,code_interpreter,mcp]"
 # The optional requirements, specified in double brackets, are:
 #   [gui] for Gradio-based GUI support;
 #   [rag] for RAG support;
-#   [code_interpreter] for Code Interpreter support;
+#   [code_interpreter] for Code Interpreter support (requires Jupyter/FastAPI);
+#   [python_executor] for Python code execution (for math/TIR);
 #   [mcp] for MCP support.
 ```
 
@@ -64,7 +65,7 @@ pip install -U "qwen-agent[gui,rag,code_interpreter,mcp]"
 ```bash
 git clone https://github.com/QwenLM/Qwen-Agent.git
 cd Qwen-Agent
-pip install -e ./"[gui,rag,code_interpreter,mcp]"
+pip install -e ./"[gui,rag,code_interpreter,python_executor,mcp]"
 # Or `pip install -e ./` for minimal requirements.
 ```
 
@@ -170,7 +171,7 @@ while True:
     messages.extend(response)
 ```
 
-In addition to using built-in agent implementations such as `class Assistant`, you can also develop your own agent implemetation by inheriting from `class Agent`.
+In addition to using built-in agent implementations such as `class Assistant`, you can also develop your own agent implementation by inheriting from `class Agent`.
 
 The framework also provides a convenient GUI interface, supporting the rapid deployment of Gradio Demos for Agents.
 For example, in the case above, you can quickly launch a Gradio Demo using the following code:
