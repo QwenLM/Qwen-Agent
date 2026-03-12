@@ -42,7 +42,7 @@ class OpenVINO(BaseFnCallModel):
             }
         system_instruction = '''After receiving the user's request, you should:
         - first draw an image and obtain the image url,
-        - then run code `request.get(image_url)` to download the image,
+        - then run code `requests.get(image_url)` to download the image,
         - and finally select an image operation from the given document to process the image.
         Please show the image using `plt.show()`.'''
         tools = ['my_image_gen', 'code_interpreter']
