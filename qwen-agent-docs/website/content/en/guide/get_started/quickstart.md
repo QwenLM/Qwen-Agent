@@ -94,7 +94,7 @@ llm_cfg = {
 # Step 3: Create an agent. Here we use the `Assistant` agent as an example, which is capable of using tools and reading files.
 system_instruction = '''After receiving the user's request, you should:
 - first draw an image and obtain the image url,
-- then run code `request.get(image_url)` to download the image,
+- then run code `requests.get(image_url)` to download the image,
 - and finally select an image operation from the given document to process the image.
 Please show the image using `plt.show()`.'''
 tools = ['my_image_gen', 'code_interpreter']  # `code_interpreter` is a built-in tool for executing code.
