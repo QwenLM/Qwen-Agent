@@ -112,8 +112,11 @@ setup(
             # Gradio has bad version compatibility. Therefore, we use `==` instead of `>=`.
             'pydantic==2.9.2',
             'pydantic-core==2.23.4',
-            'gradio==5.23.1',
-            'gradio-client==1.8.0',
+            'gradio==4.44.1; python_version < "3.10"',
+            'gradio-client==1.3.0; python_version < "3.10"',
+            'huggingface-hub<1.0; python_version < "3.10"',
+            'gradio==5.23.1; python_version >= "3.10"',
+            'gradio-client==1.8.0; python_version >= "3.10"',
             'modelscope_studio==1.1.7',
         ],
     },
