@@ -164,6 +164,12 @@ class WebUI:
 
                         agent_plugins_block = self._create_agent_plugins_block()
 
+                        disable_all_plugins_btn = gr.Button(
+                            value="关闭所有插件",
+                            variant="secondary",
+                            size="sm"
+                        )
+
                         if self.prompt_suggestions:
                             gr.Examples(
                                 label='推荐对话',
@@ -179,6 +185,13 @@ class WebUI:
                             queue=False,
                         )
 
+                    # event binding for disable all plugins
+                    disable_all_plugins_btn.click(
+                        fn=lambda: [],
+                        outputs=agent_plugins_block,
+                        queue=False
+                    )
+
                     input_promise = input.submit(
                         fn=self.add_text,
                         inputs=[input, audio_input, chatbot, history],
@@ -193,13 +206,13 @@ class WebUI:
                             [chatbot, agent_selector],
                         ).then(
                             self.agent_run,
-                            [chatbot, history, agent_selector],
+                            [chatbot, history, agent_plugins_block, agent_selector],
                             [chatbot, history, agent_selector],
                         )
                     else:
                         input_promise = input_promise.then(
                             self.agent_run,
-                            [chatbot, history],
+                            [chatbot, history, agent_plugins_block],
                             [chatbot, history],
                         )
 
@@ -265,7 +278,7 @@ class WebUI:
 
         yield _chatbot, _agent_selector
 
-    def agent_run(self, _chatbot, _history, _agent_selector=None):
+    def agent_run(self, _chatbot, _history, _plugins, _agent_selector=None):
         if self.verbose:
             logger.info('agent_run input:\n' + pprint.pformat(_history, indent=2))
 
@@ -277,7 +290,7 @@ class WebUI:
         if self.agent_hub:
             agent_runner = self.agent_hub
         responses = []
-        for responses in agent_runner.run(_history, **self.run_kwargs):
+        for responses in agent_runner.run(_history, active_plugins=_plugins, **self.run_kwargs):
             if not responses:
                 continue
             if responses[-1][CONTENT] == PENDING_USER_INPUT:
@@ -364,13 +377,12 @@ class WebUI:
                 label='插件',
                 value=capabilities,
                 choices=capabilities,
-                interactive=False,
+                interactive=True,
             )
-
         else:
             return gr.CheckboxGroup(
                 label='插件',
                 value=[],
                 choices=[],
-                interactive=False,
+                interactive=True,
             )
