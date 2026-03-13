@@ -44,6 +44,7 @@ Now Qwen-Agent plays as the backend of [Qwen Chat](https://chat.qwen.ai/).
 * Mar 7, 2025: Added [QwQ-32B Tool-call Demo](./examples/assistant_qwq.py). It supports parallel, multi-step, and multi-turn tool calls.
 * Dec 3, 2024: Upgrade GUI to Gradio 5 based. Note: GUI requires Python 3.10 or higher.
 * Sep 18, 2024: Added [Qwen2.5-Math Demo](./examples/tir_math.py) to showcase the Tool-Integrated Reasoning capabilities of Qwen2.5-Math. Note: The python executor is not sandboxed and is intended for local testing only, not for production use.
+* Oct 10, 2025: Added persistent conversation memory using vector database (ChromaDB) for long-term context retention across sessions. Enable with `memory_cfg` in Agent initialization.
 
 # Getting Started
 
