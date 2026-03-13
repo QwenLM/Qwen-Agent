@@ -14,6 +14,7 @@
 
 from .amap_weather import AmapWeather
 from .base import TOOL_REGISTRY, BaseTool
+from .finance import Finance
 from .code_interpreter import CodeInterpreter
 from .doc_parser import DocParser
 from .extract_doc_vocabulary import ExtractDocVocabulary
@@ -34,6 +35,7 @@ __all__ = [
     'CodeInterpreter',
     'ImageGen',
     'AmapWeather',
+    'Finance',
     'TOOL_REGISTRY',
     'DocParser',
     'KeywordSearch',
