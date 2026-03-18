@@ -19,13 +19,14 @@ required.
 
 Install the MCP server::
 
-    pip install free-web-search-ultimate
+    pip install free-web-search-ultimate==13.0.0  # latest
 
 Start the MCP server (required before running this script)::
 
     free-web-search-mcp
 
 GitHub: https://github.com/wd041216-bit/free-web-search-ultimate
+Version: v13.0.0 — Internationalized codebase with Google-style docstrings
 """
 import os
 from typing import Optional
@@ -44,10 +45,15 @@ def init_agent_service() -> Assistant:
         "model": "qwen-max",
         "api_key": os.environ.get("DASHSCOPE_API_KEY", ""),
     }
+    # v13.0.0: Search-First paradigm — instructs the model to treat web search
+    # as the primary knowledge source, not a fallback.
     system = (
-        "You are a helpful research assistant with access to real-time web search. "
-        "Use the web search tool to find up-to-date information when needed. "
-        "Always cite your sources and provide accurate, current information."
+        "You are a research assistant with real-time web search capability "
+        "(powered by free-web-search-ultimate v13.0.0). "
+        "Follow the Search-First paradigm: for any factual, technical, or "
+        "time-sensitive question, call the web search tool BEFORE generating "
+        "a response. Never rely solely on training data for facts that may "
+        "have changed. Always cite your sources with URLs."
     )
     # Use free-web-search-ultimate MCP server — zero cost, no API key needed
     tools = [
