@@ -287,6 +287,12 @@ We have released [a fast RAG solution](https://github.com/QwenLM/Qwen-Agent/blob
 
 BrowserQwen is a browser assistant built upon Qwen-Agent. Please refer to its [documentation](https://github.com/QwenLM/Qwen-Agent/blob/main/browser_qwen.md) for details.
 
+# Ecosystem
+
+### Community Libraries
+
+- [**AgentSmith**](https://github.com/guerro47/agentsmith) - Agent orchestration library for Qwen-Agent. Manage multiple AI agents working together with support for sequential, parallel, collaborative, and hierarchical execution strategies.
+
 # Disclaimer
 
 The Docker container-based code interpreter mounts only the specified working directory and implements basic sandbox isolation, but it should still be used with caution in production environments.
