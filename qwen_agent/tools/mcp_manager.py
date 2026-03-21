@@ -277,8 +277,12 @@ class MCPManager:
                 client = manager.clients[self.client_id]
                 future = asyncio.run_coroutine_threadsafe(client.execute_function(tool_name, tool_args), manager.loop)
                 try:
-                    result = future.result()
+                    result = future.result(timeout=60)
                     return result
+                except TimeoutError:
+                    future.cancel()
+                    logger.warning(f'MCP tool "{tool_name}" timed out after 60s')
+                    raise RuntimeError(f'MCP tool "{tool_name}" timed out after 60s')
                 except Exception as e:
                     logger.info(f'Failed in executing MCP tool: {e}')
                     raise e
