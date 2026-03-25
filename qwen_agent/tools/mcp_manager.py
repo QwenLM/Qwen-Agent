@@ -30,10 +30,12 @@ from qwen_agent.tools.base import BaseTool
 
 class MCPManager:
     _instance = None  # Private class variable to store the unique instance
+    _lock = threading.Lock()  # Lock to ensure thread-safe singleton creation
 
     def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super(MCPManager, cls).__new__(cls, *args, **kwargs)
+        with cls._lock:
+            if cls._instance is None:
+                cls._instance = super(MCPManager, cls).__new__(cls, *args, **kwargs)
         return cls._instance
 
     def __init__(self):
