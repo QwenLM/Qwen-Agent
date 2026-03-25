@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import datetime
+import html
 import json
 import os
 from pathlib import Path
@@ -160,12 +161,14 @@ def update_browser_list():
     res = '<ol>{bl}</ol>'
     bl = ''
     for i, x in enumerate(br_list):
-        ck = '<input type="checkbox" class="custom-checkbox" id="ck-' + x[0] + '" '
+        url = html.escape(x[0], quote=True)
+        title = html.escape(x[1])
+        ck = '<input type="checkbox" class="custom-checkbox" id="ck-' + url + '" '
         if x[2]:
             ck += 'checked>'
         else:
             ck += '>'
-        bl += '<li>{checkbox}{title}<a href="{url}"> [url]</a></li>'.format(checkbox=ck, url=x[0], title=x[1])
+        bl += '<li>{checkbox}{title}<a href="{url}"> [url]</a></li>'.format(checkbox=ck, url=url, title=title)
     res = res.format(bl=bl)
     return res
 
