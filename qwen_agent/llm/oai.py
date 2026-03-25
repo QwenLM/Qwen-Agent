@@ -108,26 +108,26 @@ class TextChatAtOAI(BaseFnCallModel):
             if delta_stream:
                 for chunk in response:
                     if chunk.choices:
-                        if hasattr(chunk.choices[0].delta,
-                                   'reasoning_content') and chunk.choices[0].delta.reasoning_content:
-                            yield [
-                                Message(role=ASSISTANT,
-                                        content='',
-                                        reasoning_content=chunk.choices[0].delta.reasoning_content)
-                            ]
-                        if hasattr(chunk.choices[0].delta, 'content') and chunk.choices[0].delta.content:
-                            yield [Message(role=ASSISTANT, content=chunk.choices[0].delta.content)]
+                        delta = chunk.choices[0].delta
+                        # Support both 'reasoning_content' (vLLM/Qwen) and 'reasoning' (Ollama) fields
+                        reasoning = getattr(delta, 'reasoning_content', None) or getattr(delta, 'reasoning', None)
+                        if reasoning:
+                            yield [Message(role=ASSISTANT, content='', reasoning_content=reasoning)]
+                        if getattr(delta, 'content', None):
+                            yield [Message(role=ASSISTANT, content=delta.content)]
             else:
                 full_response = ''
                 full_reasoning_content = ''
                 full_tool_calls = []
                 for chunk in response:
                     if chunk.choices:
-                        if hasattr(chunk.choices[0].delta,
-                                   'reasoning_content') and chunk.choices[0].delta.reasoning_content:
-                            full_reasoning_content += chunk.choices[0].delta.reasoning_content
-                        if hasattr(chunk.choices[0].delta, 'content') and chunk.choices[0].delta.content:
-                            full_response += chunk.choices[0].delta.content
+                        delta = chunk.choices[0].delta
+                        # Support both 'reasoning_content' (vLLM/Qwen) and 'reasoning' (Ollama) fields
+                        reasoning = getattr(delta, 'reasoning_content', None) or getattr(delta, 'reasoning', None)
+                        if reasoning:
+                            full_reasoning_content += reasoning
+                        if getattr(delta, 'content', None):
+                            full_response += delta.content
                         if hasattr(chunk.choices[0].delta, 'tool_calls') and chunk.choices[0].delta.tool_calls:
                             for tc in chunk.choices[0].delta.tool_calls:
                                 if full_tool_calls and (not tc.id or
