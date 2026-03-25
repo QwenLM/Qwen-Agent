@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import base64
+import html
 
 
 def covert_image_to_base64(image_path):
@@ -74,7 +75,7 @@ def format_cover_html(bot_name, bot_description, bot_avatar):
     <div class="bot_avatar">
         <img src="{image_src}" />
     </div>
-    <div class="bot_name">{bot_name}</div>
-    <div class="bot_desp">{bot_description}</div>
+    <div class="bot_name">{html.escape(bot_name)}</div>
+    <div class="bot_desp">{html.escape(bot_description)}</div>
 </div>
 """
