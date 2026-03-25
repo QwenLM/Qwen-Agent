@@ -15,6 +15,7 @@
 import base64
 import copy
 import hashlib
+import ipaddress
 import json
 import os
 import re
@@ -181,6 +182,61 @@ def sanitize_windows_file_path(file_path: str) -> str:
     return file_path
 
 
+def validate_request_url(url: str) -> None:
+    """Validate that an HTTP(S) URL does not target private or reserved IP addresses.
+
+    This prevents SSRF attacks where a user-controlled URL could be used to access
+    internal network resources (e.g., cloud metadata endpoints, localhost services).
+
+    Args:
+        url: The URL to validate.
+
+    Raises:
+        ValueError: If the URL targets a private, reserved, loopback, or link-local address.
+    """
+    parsed = urllib.parse.urlparse(url)
+    hostname = parsed.hostname
+    if not hostname:
+        raise ValueError(f'Invalid URL: unable to extract hostname from {url}')
+
+    def _is_blocked_ip(ip_str: str) -> bool:
+        try:
+            ip = ipaddress.ip_address(ip_str)
+        except ValueError:
+            return False
+        return ip.is_private or ip.is_reserved or ip.is_loopback or ip.is_link_local
+
+    # Check if the hostname is already an IP literal
+    try:
+        ip = ipaddress.ip_address(hostname)
+        if _is_blocked_ip(hostname):
+            raise ValueError(
+                f'URL targets a private/reserved network address ({hostname}), '
+                f'which is not allowed: {url}'
+            )
+        return
+    except ValueError as e:
+        if 'private/reserved' in str(e):
+            raise
+        # Not an IP literal, proceed to DNS resolution
+
+    try:
+        addr_info = socket.getaddrinfo(hostname, None)
+    except socket.gaierror:
+        raise ValueError(f'Unable to resolve hostname: {hostname}')
+
+    if not addr_info:
+        raise ValueError(f'Unable to resolve hostname: {hostname}')
+
+    for family, _type, _proto, _canonname, sockaddr in addr_info:
+        ip_str = sockaddr[0]
+        if _is_blocked_ip(ip_str):
+            raise ValueError(
+                f'URL targets a private/reserved network address ({ip_str}), '
+                f'which is not allowed: {url}'
+            )
+
+
 def save_url_to_local_work_dir(url: str, save_dir: str, save_filename: str = '') -> str:
     if not save_filename:
         save_filename = get_basename_from_url(url)
@@ -193,6 +249,7 @@ def save_url_to_local_work_dir(url: str, save_dir: str, save_filename: str = '')
         url = sanitize_chrome_file_path(url)
         shutil.copy(url, new_path)
     else:
+        validate_request_url(url)
         headers = {
             'User-Agent':
                 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
@@ -232,6 +289,7 @@ def contains_html_tags(text: str) -> bool:
 
 def get_content_type_by_head_request(path: str) -> str:
     try:
+        validate_request_url(path)
         response = requests.head(path, timeout=5)
         content_type = response.headers.get('Content-Type', '')
         return content_type
