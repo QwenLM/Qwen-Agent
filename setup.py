@@ -67,7 +67,7 @@ setup(
         'requests',
         'tiktoken',
         'pillow',
-        'dotenv',
+        'python-dotenv',
     ],
     extras_require={
         # Extra dependencies for RAG:
