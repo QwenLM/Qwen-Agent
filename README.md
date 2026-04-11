@@ -60,6 +60,11 @@ pip install -U "qwen-agent[gui,rag,code_interpreter,mcp]"
 #   [mcp] for MCP support.
 ```
 
+If you encounter `ModuleNotFoundError: No module named 'dotenv'` on an existing environment, run:
+```bash
+pip install -U python-dotenv
+```
+
 - Alternatively, you can install the latest development version from the source:
 ```bash
 git clone https://github.com/QwenLM/Qwen-Agent.git
