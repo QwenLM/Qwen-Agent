@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-[中文](https://github.com/QwenLM/Qwen-Agent/blob/main/README_CN.md) ｜ English
+[中文](./README_CN.md) ｜ English
 
 <p align="center">
     <img src="https://qianwen-res.oss-accelerate-overseas.aliyuncs.com/logo_qwen_agent.png" width="400"/>
@@ -47,6 +47,15 @@ Now Qwen-Agent plays as the backend of [Qwen Chat](https://chat.qwen.ai/).
 
 # Getting Started
 
+## Quickstart matrix
+
+| I want to build | Install | Start here | Recommended setup | Notes |
+|:--|:--|:--|:--|:--|
+| Function calling | `pip install -U qwen-agent` | [examples/function_calling.py](./examples/function_calling.py) | DashScope first, then any OpenAI-compatible endpoint | Best general-purpose entry point for tool calling |
+| MCP tool use | `pip install -U "qwen-agent[mcp]"` | [examples/assistant_mcp_sqlite_bot.py](./examples/assistant_mcp_sqlite_bot.py) | DashScope or a self-hosted OpenAI-compatible service | Install `uv`, Node.js, Git, and SQLite for the SQLite demo |
+| RAG and long-document QA | `pip install -U "qwen-agent[rag,gui]"` | [examples/assistant_rag.py](./examples/assistant_rag.py) and [examples/parallel_doc_qa.py](./examples/parallel_doc_qa.py) | API-based models are the fastest path; local endpoints also work | Start with `assistant_rag.py`; use `parallel_doc_qa.py` when you need stronger retrieval quality |
+| Browser use | `pip install -U "qwen-agent[gui,code_interpreter]"` | [browser_qwen.md](./browser_qwen.md) and [qwen_server/server_config.json](./qwen_server/server_config.json) | Start with DashScope, then switch to a local OpenAI-compatible endpoint if needed | Requires the BrowserQwen Chrome extension and local services |
+
 ## Installation
 
 - Install the stable version from PyPI:
@@ -74,17 +83,46 @@ You can either use the model service provided by Alibaba
 Cloud's [DashScope](https://help.aliyun.com/zh/dashscope/developer-reference/quick-start), or deploy and use your own
 model service using the open-source Qwen models.
 
+### Recommended setup: API-based vs local
+
+| Setup | Choose this when | `llm_cfg` pattern | Good reference examples |
+|:--|:--|:--|:--|
+| API-based | You want the quickest path, hosted Qwen models, and fewer moving parts | `model_type='qwen_dashscope'` or DashScope's OpenAI-compatible endpoint plus `DASHSCOPE_API_KEY` | [examples/function_calling.py](./examples/function_calling.py), [examples/assistant_qwen3.5.py](./examples/assistant_qwen3.5.py) |
+| Local / self-hosted | You want data locality, your own serving stack, or a custom model/runtime | `model_server='http://localhost:8000/v1'` and `api_key='EMPTY'` against vLLM / Ollama / other OpenAI-compatible services | The commented local blocks in [examples/function_calling.py](./examples/function_calling.py), [examples/assistant_qwen3.5.py](./examples/assistant_qwen3.5.py), and [examples/assistant_qwen3_coder.py](./examples/assistant_qwen3_coder.py) |
+
 - If you choose to use the model service offered by DashScope, please ensure that you set the environment
 variable `DASHSCOPE_API_KEY` to your unique DashScope API key.
 
 - Alternatively, if you prefer to deploy and use your own model service, please follow the instructions provided in the README of Qwen2 for deploying an OpenAI-compatible API service.
 Specifically, consult the [vLLM](https://github.com/QwenLM/Qwen2?tab=readme-ov-file#vllm) section for high-throughput GPU deployment or the [Ollama](https://github.com/QwenLM/Qwen2?tab=readme-ov-file#ollama) section for local CPU (+GPU) deployment.
-For the QwQ and Qwen3 model, it is recommended to **do not** add the `--enable-auto-tool-choice` and `--tool-call-parser hermes` parameters, as Qwen-Agent will parse the tool outputs from vLLM on its own.
-For Qwen3-Coder, it is recommended to enable both of the above parameters, use vLLM's built-in tool parsing, and combine with the `use_raw_api` parameter [usage](#how-to-pass-llm-parameters-to-the-agent).
+
+Runtime recommendations:
+
+- For QwQ and Qwen3 models served by vLLM, **do not** add `--enable-auto-tool-choice` or `--tool-call-parser hermes`; Qwen-Agent parses tool outputs itself.
+- For Qwen3-Coder, do enable the runtime's native tool parser and combine it with `use_raw_api=True` as shown in [examples/assistant_qwen3_coder.py](./examples/assistant_qwen3_coder.py) and [the parameter guide](#how-to-pass-llm-parameters-to-the-agent).
+
+## Environment and config templates
+
+Use these references when you are wiring up a new project:
+
+```bash
+export DASHSCOPE_API_KEY=your-dashscope-api-key
+```
+
+- DashScope / OpenAI-compatible function-calling template:
+  [examples/function_calling.py](./examples/function_calling.py)
+- Qwen3.5 tool-calling template with `use_raw_api`:
+  [examples/assistant_qwen3.5.py](./examples/assistant_qwen3.5.py)
+- Qwen3-Coder tool-calling template with MCP tools:
+  [examples/assistant_qwen3_coder.py](./examples/assistant_qwen3_coder.py)
+- BrowserQwen local server template:
+  [qwen_server/server_config.json](./qwen_server/server_config.json)
+- BrowserQwen full setup guide:
+  [browser_qwen.md](./browser_qwen.md)
 
 ## Developing Your Own Agent
 
-Qwen-Agent offers atomic components, such as LLMs (which inherit from `class BaseChatModel` and come with [function calling](https://github.com/QwenLM/Qwen-Agent/blob/main/examples/function_calling.py)) and Tools (which inherit
+Qwen-Agent offers atomic components, such as LLMs (which inherit from `class BaseChatModel` and come with [function calling](./examples/function_calling.py)) and Tools (which inherit
 from `class BaseTool`), along with high-level components like Agents (derived from `class Agent`).
 
 The following example illustrates the process of creating an agent capable of reading PDF files and utilizing tools, as
@@ -179,7 +217,7 @@ For example, in the case above, you can quickly launch a Gradio Demo using the f
 from qwen_agent.gui import WebUI
 WebUI(bot).run()  # bot is the agent defined in the above code, we do not repeat the definition here for saving space.
 ```
-Now you can chat with the Agent in the web UI. Please refer to the [examples](https://github.com/QwenLM/Qwen-Agent/blob/main/examples) directory for more usage examples.
+Now you can chat with the Agent in the web UI. Please refer to the [examples](./examples/) directory for more usage examples.
 
 # FAQ
 ## How to Use the Code Interpreter Tool?
@@ -187,6 +225,13 @@ Now you can chat with the Agent in the web UI. Please refer to the [examples](ht
 We implement a code interpreter tool based on local Docker containers. You can enable the built-in `code interpreter` tool for your agent, allowing it to autonomously write code according to specific scenarios, execute it securely within an isolated sandbox environment, and return the execution results.
 
 ⚠️ **Note**: Before using this tool, please ensure that Docker is installed and running on your local operating system. The time required to build the container image for the first time depends on your network conditions. For Docker installation and setup instructions, please refer to the [official documentation](https://docs.docker.com/desktop/).
+
+Troubleshooting checklist:
+
+- Run `docker info` first. If it fails, Qwen-Agent will not be able to start the sandbox.
+- Make sure you installed the extra dependencies with `pip install -U "qwen-agent[code_interpreter]"`.
+- Expect the first run to be slower because the Docker image may need to be built locally.
+- For BrowserQwen, the default code interpreter workspace is configured in [qwen_server/server_config.json](./qwen_server/server_config.json) as `workspace/tools/code_interpreter/`. Make sure that directory is writable.
 
 
 ## How to Use MCP?
@@ -234,7 +279,7 @@ winget install git.git sqlite.sqlite
 ```
 ## Do you have function calling (aka tool calling)?
 
-Yes. The LLM classes provide [function calling](https://github.com/QwenLM/Qwen-Agent/blob/main/examples/function_calling.py). Additionally, some Agent classes also are built upon the function calling capability, e.g., FnCallAgent and ReActChat.
+Yes. The LLM classes provide [function calling](./examples/function_calling.py). Additionally, some Agent classes also are built upon the function calling capability, e.g., FnCallAgent and ReActChat.
 
 The current default tool calling template natively supports **Parallel Function Calls**.
 
@@ -277,7 +322,7 @@ llm_cfg = {
 
 ## How to do question-answering over super-long documents involving 1M tokens?
 
-We have released [a fast RAG solution](https://github.com/QwenLM/Qwen-Agent/blob/main/examples/assistant_rag.py), as well as [an expensive but competitive agent](https://github.com/QwenLM/Qwen-Agent/blob/main/examples/parallel_doc_qa.py), for doing question-answering over super-long documents. They have managed to outperform native long-context models on two challenging benchmarks while being more efficient, and perform perfectly in the single-needle "needle-in-the-haystack" pressure test involving 1M-token contexts. See the [blog](https://qwenlm.github.io/blog/qwen-agent-2405/) for technical details.
+We have released [a fast RAG solution](./examples/assistant_rag.py), as well as [an expensive but competitive agent](./examples/parallel_doc_qa.py), for doing question-answering over super-long documents. They have managed to outperform native long-context models on two challenging benchmarks while being more efficient, and perform perfectly in the single-needle "needle-in-the-haystack" pressure test involving 1M-token contexts. See the [blog](https://qwenlm.github.io/blog/qwen-agent-2405/) for technical details.
 
 <p align="center">
     <img src="https://qianwen-res.oss-cn-beijing.aliyuncs.com/assets/qwen_agent/qwen-agent-2405-blog-long-context-results.png" width="400"/>
@@ -285,7 +330,14 @@ We have released [a fast RAG solution](https://github.com/QwenLM/Qwen-Agent/blob
 
 # Application: BrowserQwen
 
-BrowserQwen is a browser assistant built upon Qwen-Agent. Please refer to its [documentation](https://github.com/QwenLM/Qwen-Agent/blob/main/browser_qwen.md) for details.
+BrowserQwen is a browser assistant built upon Qwen-Agent. Please refer to its [documentation](./browser_qwen.md) for details.
+
+BrowserQwen troubleshooting checklist:
+
+- Start the local service first and confirm [http://127.0.0.1:7864/](http://127.0.0.1:7864/) opens before loading the extension.
+- If you need different ports, model names, or workspace roots, update [qwen_server/server_config.json](./qwen_server/server_config.json) before running `python run_server.py`.
+- In Chrome, keep **Developer mode** enabled, load the unpacked `browser_qwen` directory, and refresh the current page after installation so the extension can inject its content scripts.
+- If you are using a local OpenAI-compatible model endpoint, double-check the `--model_server`, `--llm`, and `--api_key` values you pass to `run_server.py`.
 
 # Disclaimer
 
