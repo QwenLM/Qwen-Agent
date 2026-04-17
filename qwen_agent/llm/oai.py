@@ -48,52 +48,8 @@ class TextChatAtOAI(BaseFnCallModel):
 
         api_key = cfg.get('api_key')
         api_key = api_key or os.getenv('OPENAI_API_KEY')
-        api_key = (api_key or 'EMPTY').strip()
 
-        if openai.__version__.startswith('0.'):
-            if api_base:
-                openai.api_base = api_base
-            if api_key:
-                openai.api_key = api_key
-            self._complete_create = openai.Completion.create
-            self._chat_complete_create = openai.ChatCompletion.create
-        else:
-            api_kwargs = {}
-            if api_base:
-                api_kwargs['base_url'] = api_base
-            if api_key:
-                api_kwargs['api_key'] = api_key
-
-            def _chat_complete_create(*args, **kwargs):
-                # OpenAI API v1 does not allow the following args, must pass by extra_body
-                extra_params = ['top_k', 'repetition_penalty']
-                if any((k in kwargs) for k in extra_params):
-                    kwargs['extra_body'] = copy.deepcopy(kwargs.get('extra_body', {}))
-                    for k in extra_params:
-                        if k in kwargs:
-                            kwargs['extra_body'][k] = kwargs.pop(k)
-                if 'request_timeout' in kwargs:
-                    kwargs['timeout'] = kwargs.pop('request_timeout')
-
-                client = openai.OpenAI(**api_kwargs)
-                return client.chat.completions.create(*args, **kwargs)
-
-            def _complete_create(*args, **kwargs):
-                # OpenAI API v1 does not allow the following args, must pass by extra_body
-                extra_params = ['top_k', 'repetition_penalty']
-                if any((k in kwargs) for k in extra_params):
-                    kwargs['extra_body'] = copy.deepcopy(kwargs.get('extra_body', {}))
-                    for k in extra_params:
-                        if k in kwargs:
-                            kwargs['extra_body'][k] = kwargs.pop(k)
-                if 'request_timeout' in kwargs:
-                    kwargs['timeout'] = kwargs.pop('request_timeout')
-
-                client = openai.OpenAI(**api_kwargs)
-                return client.completions.create(*args, **kwargs)
-
-            self._complete_create = _complete_create
-            self._chat_complete_create = _chat_complete_create
+        self.client = openai.OpenAI(api_key=api_key, base_url=api_base)
 
     def _chat_stream(
         self,
@@ -108,21 +64,30 @@ class TextChatAtOAI(BaseFnCallModel):
             if delta_stream:
                 for chunk in response:
                     if chunk.choices:
+                        extra = {}
+                        if hasattr(chunk.choices[0], 'finish_reason') and chunk.choices[0].finish_reason:
+                            extra['finish_reason'] = chunk.choices[0].finish_reason
                         if hasattr(chunk.choices[0].delta,
                                    'reasoning_content') and chunk.choices[0].delta.reasoning_content:
                             yield [
                                 Message(role=ASSISTANT,
                                         content='',
-                                        reasoning_content=chunk.choices[0].delta.reasoning_content)
+                                        reasoning_content=chunk.choices[0].delta.reasoning_content,
+                                        extra=extra)
                             ]
                         if hasattr(chunk.choices[0].delta, 'content') and chunk.choices[0].delta.content:
-                            yield [Message(role=ASSISTANT, content=chunk.choices[0].delta.content)]
+                            yield [Message(role=ASSISTANT, content=chunk.choices[0].delta.content, extra=extra)]
+                        elif extra:
+                            yield [Message(role=ASSISTANT, content='', extra=extra)]
             else:
                 full_response = ''
                 full_reasoning_content = ''
                 full_tool_calls = []
                 for chunk in response:
                     if chunk.choices:
+                        extra = {}
+                        if hasattr(chunk.choices[0], 'finish_reason') and chunk.choices[0].finish_reason:
+                            extra['finish_reason'] = chunk.choices[0].finish_reason
                         if hasattr(chunk.choices[0].delta,
                                    'reasoning_content') and chunk.choices[0].delta.reasoning_content:
                             full_reasoning_content += chunk.choices[0].delta.reasoning_content
@@ -146,14 +111,19 @@ class TextChatAtOAI(BaseFnCallModel):
 
                         res = []
                         if full_reasoning_content:
-                            res.append(Message(role=ASSISTANT, content='', reasoning_content=full_reasoning_content))
+                            res.append(
+                                Message(role=ASSISTANT,
+                                        content='',
+                                        reasoning_content=full_reasoning_content,
+                                        extra=extra.copy()))
                         if full_response:
-                            res.append(Message(
-                                role=ASSISTANT,
-                                content=full_response,
-                            ))
+                            res.append(Message(role=ASSISTANT, content=full_response, extra=extra.copy()))
                         if full_tool_calls:
+                            for tc_msg in full_tool_calls:
+                                tc_msg.extra.update(extra)
                             res += full_tool_calls
+                        if (not res) and extra:
+                            res.append(Message(role=ASSISTANT, content='', extra=extra))
                         yield res
         except OpenAIError as ex:
             raise ModelServiceError(exception=ex)
@@ -166,14 +136,18 @@ class TextChatAtOAI(BaseFnCallModel):
         messages = self.convert_messages_to_dicts(messages)
         try:
             response = self._chat_complete_create(model=self.model, messages=messages, stream=False, **generate_cfg)
+            extra = {}
+            if hasattr(response.choices[0], 'finish_reason') and response.choices[0].finish_reason:
+                extra['finish_reason'] = response.choices[0].finish_reason
             if hasattr(response.choices[0].message, 'reasoning_content'):
                 return [
                     Message(role=ASSISTANT,
                             content=response.choices[0].message.content,
-                            reasoning_content=response.choices[0].message.reasoning_content)
+                            reasoning_content=response.choices[0].message.reasoning_content,
+                            extra=extra)
                 ]
             else:
-                return [Message(role=ASSISTANT, content=response.choices[0].message.content)]
+                return [Message(role=ASSISTANT, content=response.choices[0].message.content, extra=extra)]
         except OpenAIError as ex:
             raise ModelServiceError(exception=ex)
 
@@ -188,3 +162,17 @@ class TextChatAtOAI(BaseFnCallModel):
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(f'LLM Input: \n{pformat(messages, indent=2)}')
         return messages
+
+    def _chat_complete_create(self, **kwargs):
+        return self.client.chat.completions.create(**kwargs)
+
+    def _conv_qwen_agent_messages_to_oai(self, messages: List[dict]) -> List[dict]:
+        new_messages = []
+        for msg in messages:
+            new_msg = copy.deepcopy(msg)
+            if 'extra' in new_msg:
+                del new_msg['extra']
+            if 'reasoning_content' in new_msg:
+                del new_msg['reasoning_content']
+            new_messages.append(new_msg)
+        return new_messages
