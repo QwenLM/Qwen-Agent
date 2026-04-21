@@ -85,6 +85,9 @@ setup(
             'tabulate',
         ],
 
+        # Extra dependencies for LiteLLM AI gateway:
+        'litellm': ['litellm>=1.50.0'],
+
         # Extra dependencies for MCP:
         'mcp': ['mcp'],
 
