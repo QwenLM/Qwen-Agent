@@ -58,6 +58,14 @@ class TextChatAtLiteLLM(BaseFnCallModel):
             'model': self.model,
             'messages': messages,
             'stream': stream,
+            # Qwen-Agent's base class always injects `seed` into generate_cfg, and
+            # fncall_prompts adds `stop=['<|im_end|>', ...]` in some paths. These
+            # kwargs are fine for OpenAI/Azure but throw UnsupportedParamsError on
+            # other backends (e.g. Claude via Vertex, reported in issue #574).
+            # `drop_params=True` tells LiteLLM to silently drop per-provider-
+            # unsupported kwargs instead of raising. This is what the user in
+            # #574 manually enabled on their LiteLLM proxy.
+            'drop_params': True,
         }
         if self._api_key:
             kwargs['api_key'] = self._api_key

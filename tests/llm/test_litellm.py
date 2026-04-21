@@ -64,6 +64,37 @@ def test_litellm_call_kwargs_forwards_api_key_and_base():
     assert kwargs['stream'] is False
 
 
+def test_litellm_call_kwargs_sets_drop_params_by_default():
+    """Qwen-Agent's base class always injects `seed` (base.py line 177) and some
+    fncall paths add `stop=[...]`. These kwargs are unsupported by Claude via
+    Vertex (see issue #574). `drop_params=True` tells LiteLLM to silently drop
+    per-provider-unsupported kwargs so the same config works across providers."""
+    cfg = {'model': 'anthropic/claude-3-5-sonnet-20241022', 'model_type': 'litellm', 'api_key': 'sk-fake'}
+    llm = get_chat_model(cfg)
+    kwargs = llm._call_kwargs(
+        messages=[{'role': 'user', 'content': 'hi'}],
+        generate_cfg={'seed': 42, 'temperature': 0.1},
+        stream=False,
+    )
+    assert kwargs['drop_params'] is True
+    # User-supplied generate_cfg values still flow through.
+    assert kwargs['seed'] == 42
+    assert kwargs['temperature'] == 0.1
+
+
+def test_litellm_call_kwargs_user_can_opt_out_of_drop_params():
+    """If a user explicitly passes drop_params=False in generate_cfg, their
+    choice wins (useful for debugging unsupported-kwarg errors)."""
+    cfg = {'model': 'openai/gpt-4o-mini', 'model_type': 'litellm', 'api_key': 'sk-fake'}
+    llm = get_chat_model(cfg)
+    kwargs = llm._call_kwargs(
+        messages=[{'role': 'user', 'content': 'hi'}],
+        generate_cfg={'drop_params': False},
+        stream=False,
+    )
+    assert kwargs['drop_params'] is False
+
+
 def test_litellm_no_stream(mocker):
     mocker.patch('litellm.completion', return_value=_non_stream_response('pong'))
     cfg = {'model': 'openai/gpt-4o-mini', 'model_type': 'litellm', 'api_key': 'sk-fake'}
