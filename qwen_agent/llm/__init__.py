@@ -17,6 +17,7 @@ from typing import Union
 
 from .azure import TextChatAtAzure
 from .base import LLM_REGISTRY, BaseChatModel, ModelServiceError
+from .litellm import TextChatAtLiteLLM
 from .oai import TextChatAtOAI
 from .openvino import OpenVINO
 from .qwen_dashscope import QwenChatAtDS
@@ -105,6 +106,7 @@ __all__ = [
     'QwenChatAtDS',
     'TextChatAtOAI',
     'TextChatAtAzure',
+    'TextChatAtLiteLLM',
     'QwenVLChatAtDS',
     'QwenVLChatAtOAI',
     'QwenAudioChatAtDS',
