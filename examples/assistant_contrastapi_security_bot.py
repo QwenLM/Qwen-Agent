@@ -14,9 +14,12 @@
 
 """A security research assistant example using the ContrastAPI MCP server.
 
-ContrastAPI exposes 31 security tools (CVE lookup with EPSS + CISA KEV,
-domain audit, IP threat report, dependency scanner, IOC enrichment, ...)
-over a remote MCP server. Free tier: 100 credits/hour, no API key required.
+ContrastAPI exposes 33 cascade-aware security tools (CVE lookup with EPSS +
+CISA KEV, MITRE CWE catalog, domain audit, IP threat report, dependency
+scanner, IOC enrichment, ...) over a remote MCP server. Each response emits
+``next_calls`` workflow hints so the agent chains related lookups
+automatically (e.g. cve_lookup -> exploit_lookup -> kev_detail -> cwe_lookup).
+Free tier: 100 credits/hour, no API key required.
 
 Docs: https://api.contrastcyber.com
 MCP manifest: https://api.contrastcyber.com/mcp.json
