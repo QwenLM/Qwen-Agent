@@ -376,7 +376,7 @@
       },
       "depart_weekday": 7
     },
-    "query_with_constraints": "I plan to travel from Xi'an to Taiyuan, with a departure date of 2025-11-12 and return date of 2025-11-13. Please help me plan the itinerary, including transportation, accommodation, dining, and sightseeing arrangements.\n\n- Travel by train, and I would like to book first-class seats for both outbound and return journeys  \n- Please select the cheapest hotel among 2-star hotels  \n- The itinerary must include the top three highest-rated attractions recommended by the attraction recommendation tool  \n- Arrange one meal at a restaurant near \"Zhonglou Street Pedestrian Street\" that offers birthday set menu service"
+    "query_with_constraints": "I plan to travel from Xi'an to Taiyuan, with a departure date of 2025-11-16 and return date of 2025-11-17. Please help me plan the itinerary, including transportation, accommodation, dining, and sightseeing arrangements.\n\n- Travel by train, and I would like to book first-class seats for both outbound and return journeys  \n- Please select the cheapest hotel among 2-star hotels  \n- The itinerary must include the top three highest-rated attractions recommended by the attraction recommendation tool  \n- Arrange one meal at a restaurant near \"Zhonglou Street Pedestrian Street\" that offers birthday set menu service"
   },
   {
     "id": "7",
@@ -1439,7 +1439,7 @@
       },
       "depart_weekday": 7
     },
-    "query_with_constraints": "I plan to travel from Fuzhou to Hangzhou, with a departure date of 2025-11-12 and return date of 2025-11-14. Please help me plan an itinerary including transportation, accommodation, dining, and sightseeing arrangements.\n- The outbound train must depart between 6:00 AM and 10:00 AM\n- Accommodation should be a 4-star hotel that offers a swimming pool\n- One meal in the itinerary must be at 'Changhua Yijia Ren Restaurant (Gongchen Mountain Residential Area Branch)'\n- The itinerary must include visits to 'Jiuxi Yanshu' and 'Zhejiang Provincial Museum (Gushan Branch)'"
+    "query_with_constraints": "I plan to travel from Fuzhou to Hangzhou, with a departure date of 2025-11-16 and return date of 2025-11-18. Please help me plan an itinerary including transportation, accommodation, dining, and sightseeing arrangements.\n- The outbound train must depart between 6:00 AM and 10:00 AM\n- Accommodation should be a 4-star hotel that offers a swimming pool\n- One meal in the itinerary must be at 'Changhua Yijia Ren Restaurant (Gongchen Mountain Residential Area Branch)'\n- The itinerary must include visits to 'Jiuxi Yanshu' and 'Zhejiang Provincial Museum (Gushan Branch)'"
   },
   {
     "id": "28",
@@ -2968,7 +2968,7 @@
       },
       "depart_weekday": 7
     },
-    "query_with_constraints": "I plan to travel from Hefei to Guangzhou, departing on 2025-11-12 and returning on 2025-11-15. Please help me plan the itinerary, including transportation, accommodation, dining, and sightseeing arrangements.\n- For the outbound journey, I prefer to take a train, and I would like the cheapest available direct train option\n- Please select hotels that are newly renovated or built in 2025 or later\n- The itinerary must include the top three highest-rated attractions recommended by the attraction recommendation tool\n- Arrange one meal at a restaurant near the 'Millennium Ancient Path Ruins', which should offer birthday set menu service"
+    "query_with_constraints": "I plan to travel from Hefei to Guangzhou, departing on 2025-11-16 and returning on 2025-11-19. Please help me plan the itinerary, including transportation, accommodation, dining, and sightseeing arrangements.\n- For the outbound journey, I prefer to take a train, and I would like the cheapest available direct train option\n- Please select hotels that are newly renovated or built in 2025 or later\n- The itinerary must include the top three highest-rated attractions recommended by the attraction recommendation tool\n- Arrange one meal at a restaurant near the 'Millennium Ancient Path Ruins', which should offer birthday set menu service"
   },
   {
     "id": "58",
@@ -3058,7 +3058,7 @@
       },
       "depart_weekday": 7
     },
-    "query_with_constraints": "I plan to travel from Urumqi to Changsha, with a departure date of 2025-11-12 and return date of 2025-11-15. Please help me plan the itinerary, including transportation, accommodation, dining, and sightseeing arrangements.\n- I prefer to travel by air, and both the outbound and return flights must be in first class\n- For accommodation, please choose the most affordable hotel under the Orange brand\n- The itinerary must include one meal at 'Xiangzhiwei Self-Service Restaurant (Four Twos and Two Kings Authorized Store)'\n- One meal during the trip should be arranged at the restaurant nearest to 'Hunan Martyrs' Park'"
+    "query_with_constraints": "I plan to travel from Urumqi to Changsha, with a departure date of 2025-11-16 and return date of 2025-11-19. Please help me plan the itinerary, including transportation, accommodation, dining, and sightseeing arrangements.\n- I prefer to travel by air, and both the outbound and return flights must be in first class\n- For accommodation, please choose the most affordable hotel under the Orange brand\n- The itinerary must include one meal at 'Xiangzhiwei Self-Service Restaurant (Four Twos and Two Kings Authorized Store)'\n- One meal during the trip should be arranged at the restaurant nearest to 'Hunan Martyrs' Park'"
   },
   {
     "id": "60",
