@@ -28,6 +28,54 @@ from qwen_agent.log import logger
 from qwen_agent.tools.base import BaseTool
 
 
+def _resolve_schema_refs(schema, defs, _seen=None):
+    """Recursively resolve JSON Schema $ref pointers using $defs/definitions.
+
+    MCP servers backed by Pydantic models emit schemas with $ref entries
+    (e.g. {"$ref": "#/$defs/MyModel"}) that reference a top-level $defs
+    dict.  This function inlines those references so the resulting schema
+    is self-contained and compatible with OpenAI's tool-calling format.
+
+    Args:
+        schema: The JSON Schema (or sub-schema) to resolve.
+        defs: The definitions dict ($defs or definitions) from the root schema.
+        _seen: Tracks visited $ref targets to prevent infinite recursion from
+               circular references.
+
+    Returns:
+        A new schema dict/list with all resolvable $ref entries replaced by
+        their definitions.  Unresolvable or circular refs are left as-is.
+    """
+    if _seen is None:
+        _seen = set()
+    if isinstance(schema, dict):
+        if '$ref' in schema:
+            ref_path = schema['$ref']
+            # Only handle local refs: #/$defs/Name or #/definitions/Name
+            if not isinstance(ref_path, str):
+                return schema  # malformed $ref, leave as-is
+            if ref_path.startswith('#/$defs/') or ref_path.startswith('#/definitions/'):
+                ref_name = ref_path.rsplit('/', 1)[-1]
+                if ref_name in defs and ref_name not in _seen:
+                    _seen = _seen | {ref_name}
+                    resolved = _resolve_schema_refs(defs[ref_name], defs, _seen)
+                    # Merge sibling properties (description, default, title, etc.)
+                    # that Pydantic v2 places alongside $ref
+                    siblings = {k: v for k, v in schema.items() if k != '$ref'}
+                    if siblings and isinstance(resolved, dict):
+                        return {**resolved, **siblings}
+                    return resolved
+            return schema  # non-local, unresolvable, or circular ref
+        return {
+            k: _resolve_schema_refs(v, defs, _seen)
+            for k, v in schema.items()
+            if k not in ('$defs', 'definitions')
+        }
+    elif isinstance(schema, list):
+        return [_resolve_schema_refs(item, defs, _seen) for item in schema]
+    return schema
+
+
 class MCPManager:
     _instance = None  # Private class variable to store the unique instance
 
@@ -182,6 +230,12 @@ class MCPManager:
                 # The required field in inputSchema may be empty and needs to be initialized.
                 if 'required' not in parameters:
                     parameters['required'] = []
+                # Resolve $ref pointers so the schema is self-contained.
+                # MCP servers using Pydantic models emit $ref/$defs that must
+                # be inlined before we strip the schema down to OpenAI format.
+                defs = parameters.get('$defs') or parameters.get('definitions') or {}
+                if defs:
+                    parameters = _resolve_schema_refs(parameters, defs)
                 # Remove keys from parameters that do not conform to the standard OpenAI schema
                 # Check if the required fields exist
                 required_fields = {'type', 'properties', 'required'}
