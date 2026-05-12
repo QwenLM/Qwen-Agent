@@ -16,6 +16,7 @@ import os
 
 import pytest
 
+from qwen_agent.llm.base import BaseChatModel
 from qwen_agent.llm import get_chat_model
 from qwen_agent.llm.schema import Message
 
@@ -65,3 +66,42 @@ def test_llm_oai(functions, stream, delta_stream):
         assert response[-1].function_call.name == 'image_gen'
     else:
         assert response[-1].function_call is None
+
+
+def test_conv_qwen_agent_messages_to_oai_allows_assistant_first():
+    messages = [{'role': 'assistant', 'content': 'hello'}]
+
+    assert BaseChatModel._conv_qwen_agent_messages_to_oai(messages) == [{
+        'role': 'assistant',
+        'content': 'hello'
+    }]
+
+
+def test_conv_qwen_agent_messages_to_oai_merges_assistant_tool_call():
+    messages = [{
+        'role': 'assistant',
+        'content': 'checking'
+    }, {
+        'role': 'assistant',
+        'content': '',
+        'function_call': {
+            'name': 'search',
+            'arguments': '{"query": "qwen"}'
+        },
+        'extra': {
+            'function_id': 'call_1'
+        }
+    }]
+
+    assert BaseChatModel._conv_qwen_agent_messages_to_oai(messages) == [{
+        'role': 'assistant',
+        'content': 'checking',
+        'tool_calls': [{
+            'id': 'call_1',
+            'type': 'function',
+            'function': {
+                'name': 'search',
+                'arguments': '{"query": "qwen"}'
+            }
+        }]
+    }]
