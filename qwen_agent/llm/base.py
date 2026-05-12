@@ -423,7 +423,7 @@ class BaseChatModel(ABC):
         new_messages = []
         for msg in messages:
             if msg['role'] == ASSISTANT:
-                if new_messages[-1]['role'] != ASSISTANT:
+                if not new_messages or new_messages[-1]['role'] != ASSISTANT:
                     new_messages.append({'role': ASSISTANT})
                 if msg.get('content'):
                     new_messages[-1]['content'] = msg['content']
