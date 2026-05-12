@@ -484,14 +484,25 @@ def extract_images_from_messages(messages: List[Message]) -> List[str]:
     return files
 
 
+def _merge_stop_words(base_stop: List[str], new_stop: List[str]) -> List[str]:
+    stop = []
+    for word in base_stop + new_stop:
+        if word in stop:
+            continue
+        if any(word.startswith(existing) for existing in stop):
+            continue
+        stop = [existing for existing in stop if not existing.startswith(word)]
+        stop.append(word)
+    return stop
+
+
 def merge_generate_cfgs(base_generate_cfg: Optional[dict], new_generate_cfg: Optional[dict]) -> dict:
     generate_cfg: dict = copy.deepcopy(base_generate_cfg or {})
     if new_generate_cfg:
         for k, v in new_generate_cfg.items():
             if k == 'stop':
                 stop = generate_cfg.get('stop', [])
-                stop = stop + [s for s in v if s not in stop]
-                generate_cfg['stop'] = stop
+                generate_cfg['stop'] = _merge_stop_words(stop, v)
             else:
                 generate_cfg[k] = v
     return generate_cfg
