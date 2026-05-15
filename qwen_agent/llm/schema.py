@@ -14,7 +14,7 @@
 
 from typing import List, Literal, Optional, Tuple, Union
 
-from pydantic import BaseModel, field_validator, model_validator
+from pydantic import BaseModel, field_validator, model_serializer, model_validator
 
 DEFAULT_SYSTEM_MESSAGE = ''
 
@@ -41,6 +41,10 @@ class BaseModelCompatibleDict(BaseModel):
 
     def __setitem__(self, key, value):
         setattr(self, key, value)
+
+    @model_serializer(mode='wrap')
+    def _serialize_without_none(self, handler):
+        return {k: v for k, v in handler(self).items() if v is not None}
 
     def model_dump(self, **kwargs):
         if 'exclude_none' not in kwargs:
