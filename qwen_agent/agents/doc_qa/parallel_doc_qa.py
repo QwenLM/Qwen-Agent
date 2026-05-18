@@ -194,6 +194,10 @@ class ParallelDocQA(Assistant):
         logger.info('user_question: ' + user_question)
 
         # Implement chunk strategy for parallel agent
+        if not self._get_files(messages):
+            logger.info('No supported files found, fallback to the base Assistant workflow.')
+            return super()._run(messages=messages, lang=lang, **kwargs)
+
         records = self._parse_and_chunk_files(messages=messages)
         assert len(records) > 0, 'records is empty, all url parsing failed.'
 
