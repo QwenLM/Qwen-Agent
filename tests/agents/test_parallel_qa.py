@@ -12,7 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
+
+from qwen_agent.agents.assistant import Assistant
 from qwen_agent.agents.doc_qa import ParallelDocQA
+from qwen_agent.llm.schema import Message
+
+
+class DummyLLM:
+    model = 'qwen-test'
+    model_type = ''
 
 
 def test_parallel_qa():
@@ -32,3 +41,24 @@ def test_parallel_qa():
     *_, last = agent.run(messages)
 
     assert len(last[-1]['content']) > 0
+
+
+def test_parallel_qa_without_files_falls_back_to_assistant(monkeypatch):
+    def fake_assistant_run(self, messages, lang='en', **kwargs):
+        yield [Message('assistant', 'fallback answer')]
+
+    monkeypatch.setattr(Assistant, '_run', fake_assistant_run)
+
+    agent = ParallelDocQA(llm=DummyLLM())
+    responses = list(agent._run([Message('user', '你好')], lang='zh'))
+
+    assert responses[-1][-1].content == 'fallback answer'
+
+
+def test_parallel_qa_keeps_parse_failure_assertion(monkeypatch):
+    agent = ParallelDocQA(llm=DummyLLM())
+    monkeypatch.setattr(agent, '_get_files', lambda messages: ['bad.pdf'])
+    monkeypatch.setattr(agent, '_parse_and_chunk_files', lambda messages: [])
+
+    with pytest.raises(AssertionError, match='records is empty'):
+        list(agent._run([Message('user', '总结文档')], lang='zh'))
