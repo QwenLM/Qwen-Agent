@@ -103,15 +103,23 @@ class DocParser(BaseTool):
 
         url = params['url']
 
+        # Two cache keys, one per branch of the chunking decision below:
+        #   - chunked branch: keyed by parser_page_size (it sets the chunk size)
+        #   - whole-doc branch: keyed by max_ref_token (it decides this branch),
+        #     so a later call with a smaller max_ref_token does not get served
+        #     a stale whole-doc record that should now be chunked.
         cached_name_chunking = f'{hash_sha256(url)}_{str(parser_page_size)}'
-        try:
-            # Directly load the chunked doc
-            record = self.db.get(cached_name_chunking)
-            record = json.loads(record)
-            logger.info(f'Read chunked {url} from cache.')
-            return record
-        except KeyNotExistsError:
-            doc = self.doc_extractor.call({'url': url})
+        cached_name_without_chunking = f'{hash_sha256(url)}_without_chunking_{str(max_ref_token)}'
+
+        for cached_name in (cached_name_chunking, cached_name_without_chunking):
+            try:
+                record = self.db.get(cached_name)
+                record = json.loads(record)
+                logger.info(f'Read parsed {url} from cache.')
+                return record
+            except KeyNotExistsError:
+                continue
+        doc = self.doc_extractor.call({'url': url})
 
         total_token = 0
         for page in doc:
@@ -136,9 +144,10 @@ class DocParser(BaseTool):
                       },
                       token=total_token)
             ]
-            cached_name_chunking = f'{hash_sha256(url)}_without_chunking'
+            cached_name = cached_name_without_chunking
         else:
             content = self.split_doc_to_chunk(doc, url, title=title, parser_page_size=parser_page_size)
+            cached_name = cached_name_chunking
 
         time2 = time.time()
         logger.info(f'Finished chunking {url} ({title}). Time spent: {time2 - time1} seconds.')
@@ -146,7 +155,7 @@ class DocParser(BaseTool):
         # save the document data
         new_record = Record(url=url, raw=content, title=title).to_dict()
         new_record_str = json.dumps(new_record, ensure_ascii=False)
-        self.db.put(cached_name_chunking, new_record_str)
+        self.db.put(cached_name, new_record_str)
         return new_record
 
     def split_doc_to_chunk(self,
