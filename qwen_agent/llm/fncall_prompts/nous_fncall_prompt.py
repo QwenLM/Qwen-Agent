@@ -99,7 +99,7 @@ class NousFnCallPrompt(BaseFnCallPrompt):
         else:
             messages = [Message(role=SYSTEM, content=[ContentItem(text=tool_system)])] + messages
         return messages
-    
+
     def postprocess_fncall_messages(
         self,
         messages: List[Message],
@@ -311,9 +311,37 @@ def extract_fn(text: str):
             fn_name = _text[:j]
     if k > 0:
         fn_args = text[k + len(fn_args_s):]
-    fn_args = fn_args.strip()
-    if len(fn_args) > 2:
-        fn_args = fn_args[:-1]
-    else:
-        fn_args = ''
+    fn_args = _extract_json_value_prefix(fn_args)
     return fn_name, fn_args
+
+
+def _extract_json_value_prefix(text: str) -> str:
+    text = text.strip()
+    if not text:
+        return ''
+    if text[0] not in '{[':
+        return text
+
+    closers = {'{': '}', '[': ']'}
+    stack = []
+    in_string = False
+    escaped = False
+    for i, ch in enumerate(text):
+        if escaped:
+            escaped = False
+            continue
+        if ch == '\\' and in_string:
+            escaped = True
+            continue
+        if ch == '"':
+            in_string = not in_string
+            continue
+        if in_string:
+            continue
+        if ch in closers:
+            stack.append(closers[ch])
+        elif stack and ch == stack[-1]:
+            stack.pop()
+            if not stack:
+                return text[:i + 1]
+    return text
