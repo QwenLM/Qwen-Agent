@@ -90,7 +90,8 @@ def is_tool_schema(obj: dict) -> bool:
         assert isinstance(obj['description'], str)
         assert isinstance(obj['parameters'], dict)
 
-        assert set(obj['parameters'].keys()) == {'type', 'properties', 'required'}
+        required_param_keys = {'type', 'properties', 'required'}
+        assert required_param_keys.issubset(obj['parameters'].keys())
         assert obj['parameters']['type'] == 'object'
         assert isinstance(obj['parameters']['properties'], dict)
         assert isinstance(obj['parameters']['required'], list)
