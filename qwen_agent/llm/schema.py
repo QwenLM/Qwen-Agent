@@ -55,7 +55,7 @@ class BaseModelCompatibleDict(BaseModel):
     def get(self, key, default=None):
         try:
             value = getattr(self, key)
-            if value:
+            if value is not None:
                 return value
             else:
                 return default
