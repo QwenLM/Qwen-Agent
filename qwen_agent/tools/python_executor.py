@@ -44,8 +44,22 @@ class GenericRuntime:
             self.exec_code(c)
 
     def exec_code(self, code_piece: str) -> None:
-        if regex.search(r'(\s|^)?input\(', code_piece) or regex.search(r'(\s|^)?os.system\(', code_piece):
-            raise RuntimeError()
+        # Block dangerous imports and functions that could compromise security
+        dangerous_patterns = [
+            r'(\s|^)?input\(',
+            r'(\s|^)?os\.system\(',
+            r'(\s|^)?os\.popen\(',
+            r'(\s|^)?subprocess\.',
+            r'(\s|^)?__import__\(',
+            r'(\s|^)?open\(',
+            r'(\s|^)?eval\(',
+            r'(\s|^)?exec\(',
+            r'(\s|^)?compile\(',
+            r'getattr\s*\(\s*__import__',
+        ]
+        for pattern in dangerous_patterns:
+            if regex.search(pattern, code_piece):
+                raise RuntimeError(f'Blocked dangerous operation: {pattern}')
         exec(code_piece, self._global_vars)
 
     def eval_code(self, expr: str) -> Any:
