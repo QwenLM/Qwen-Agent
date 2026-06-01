@@ -41,6 +41,7 @@ class Agent(ABC):
                  system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
                  name: Optional[str] = None,
                  description: Optional[str] = None,
+                 system_prompt_files: Optional[List[str]] = None,
                  **kwargs):
         """Initialization the agent.
 
@@ -52,6 +53,7 @@ class Agent(ABC):
             system_message: The specified system message for LLM chat.
             name: The name of this agent.
             description: The description of this agent, which will be used for multi_agent.
+            system_prompt_files: A list of file paths to load and prepend to the system message.
         """
         if isinstance(llm, dict):
             self.llm = get_chat_model(llm)
@@ -63,6 +65,24 @@ class Agent(ABC):
         if function_list:
             for tool in function_list:
                 self._init_tool(tool)
+
+        # Load system prompt files if provided
+        if system_prompt_files:
+            loaded_content = []
+            for file_path in system_prompt_files:
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        loaded_content.append(f.read())
+                except FileNotFoundError:
+                    logger.warning(f'System prompt file not found: {file_path}')
+                except Exception as e:
+                    logger.warning(f'Error reading system prompt file {file_path}: {e}')
+            if loaded_content:
+                file_prompt = '\n\n'.join(loaded_content)
+                if system_message:
+                    system_message = file_prompt + '\n\n' + system_message
+                else:
+                    system_message = file_prompt
 
         self.system_message = system_message
         self.name = name
