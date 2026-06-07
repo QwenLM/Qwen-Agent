@@ -13,10 +13,12 @@
 # limitations under the License.
 
 import os
+from types import SimpleNamespace
 
 import pytest
 
 from qwen_agent.llm import get_chat_model
+from qwen_agent.llm.oai import TextChatAtOAI
 from qwen_agent.llm.schema import Message
 
 functions = [{
@@ -33,6 +35,56 @@ functions = [{
         'required': ['prompt'],
     }
 }]
+
+
+def test_oai_stop_words_are_limited_for_api_request():
+    llm = TextChatAtOAI({'model': 'qwen2-7b-instruct', 'api_key': 'EMPTY'})
+    captured_kwargs = {}
+
+    def fake_chat_complete_create(**kwargs):
+        captured_kwargs.update(kwargs)
+        message = SimpleNamespace(content='ok e trailing')
+        choice = SimpleNamespace(message=message)
+        return SimpleNamespace(choices=[choice])
+
+    llm._chat_complete_create = fake_chat_complete_create
+    generate_cfg = {'stop': ['a', 'b', 'c', 'd', 'e']}
+
+    response = llm.chat(
+        [Message('user', 'hello')],
+        stream=False,
+        extra_generate_cfg=generate_cfg,
+    )
+
+    assert captured_kwargs['stop'] == ['a', 'b', 'c', 'd']
+    assert response[0].content == 'ok '
+    assert generate_cfg['stop'] == ['a', 'b', 'c', 'd', 'e']
+
+
+def test_oai_stream_stop_words_are_limited_for_api_request():
+    llm = TextChatAtOAI({'model': 'qwen2-7b-instruct', 'api_key': 'EMPTY'})
+    captured_kwargs = {}
+
+    def fake_chat_complete_create(**kwargs):
+        captured_kwargs.update(kwargs)
+        delta = SimpleNamespace(content='ok e trailing')
+        choice = SimpleNamespace(delta=delta)
+        return [SimpleNamespace(choices=[choice])]
+
+    llm._chat_complete_create = fake_chat_complete_create
+    generate_cfg = {'stop': ['a', 'b', 'c', 'd', 'e']}
+
+    response = list(
+        llm.chat(
+            [Message('user', 'hello')],
+            stream=True,
+            extra_generate_cfg=generate_cfg,
+        )
+    )[-1]
+
+    assert captured_kwargs['stop'] == ['a', 'b', 'c', 'd']
+    assert response[0].content == 'ok '
+    assert generate_cfg['stop'] == ['a', 'b', 'c', 'd', 'e']
 
 
 @pytest.mark.parametrize('functions', [None, functions])
