@@ -16,6 +16,7 @@ import asyncio
 import atexit
 import datetime
 import json
+import os
 import threading
 import time
 import uuid
@@ -27,13 +28,21 @@ from dotenv import load_dotenv
 from qwen_agent.log import logger
 from qwen_agent.tools.base import BaseTool
 
+# Configurable timeouts via environment variables (in seconds)
+MCP_INIT_TIMEOUT = int(os.getenv('QWEN_AGENT_MCP_INIT_TIMEOUT', 60))
+MCP_TOOL_CALL_TIMEOUT = int(os.getenv('QWEN_AGENT_MCP_TOOL_CALL_TIMEOUT', 30))
+MCP_SHUTDOWN_TIMEOUT = int(os.getenv('QWEN_AGENT_MCP_SHUTDOWN_TIMEOUT', 5))
+
 
 class MCPManager:
     _instance = None  # Private class variable to store the unique instance
+    _init_lock = threading.Lock()  # Lock for thread-safe singleton initialization
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
-            cls._instance = super(MCPManager, cls).__new__(cls, *args, **kwargs)
+            with cls._init_lock:
+                if cls._instance is None:
+                    cls._instance = super(MCPManager, cls).__new__(cls, *args, **kwargs)
         return cls._instance
 
     def __init__(self):
@@ -46,6 +55,7 @@ class MCPManager:
 
             load_dotenv()  # Load environment variables from .env file
             self.clients: dict = {}
+            self._clients_lock = threading.Lock()  # Protects access to self.clients
             self.loop = asyncio.new_event_loop()
             self.loop_thread = threading.Thread(target=self.start_loop, daemon=True)
             self.loop_thread.start()
@@ -143,8 +153,13 @@ class MCPManager:
         # Submit coroutine to the event loop and wait for the result
         future = asyncio.run_coroutine_threadsafe(self.init_config_async(config), self.loop)
         try:
-            result = future.result()  # You can specify a timeout if desired
+            result = future.result(timeout=MCP_INIT_TIMEOUT)
             return result
+        except TimeoutError:
+            future.cancel()
+            raise TimeoutError(
+                f'MCP server initialization timed out after {MCP_INIT_TIMEOUT}s. '
+                'You can increase this via the QWEN_AGENT_MCP_INIT_TIMEOUT environment variable.')
         except Exception as e:
             logger.info(f'Failed in initializing MCP tools: {e}')
             raise e
@@ -161,7 +176,8 @@ class MCPManager:
             client_id = server_name + '_' + str(
                 uuid.uuid4())  # To allow the same server name be used across different running agents
             client.client_id = client_id  # Ensure client_id is set on the client instance
-            self.clients[client_id] = client  # Add to clients dict after successful connection
+            with self._clients_lock:
+                self.clients[client_id] = client  # Add to clients dict after successful connection
             for tool in client.tools:
                 """MCP tool example:
                 {
@@ -274,11 +290,19 @@ class MCPManager:
                 tool_args = json.loads(params)
                 # Submit coroutine to the event loop and wait for the result
                 manager = MCPManager()
-                client = manager.clients[self.client_id]
+                with manager._clients_lock:
+                    client = manager.clients.get(self.client_id)
+                if client is None:
+                    raise RuntimeError(f'MCP client {self.client_id} not found. It may have been disconnected.')
                 future = asyncio.run_coroutine_threadsafe(client.execute_function(tool_name, tool_args), manager.loop)
                 try:
-                    result = future.result()
+                    result = future.result(timeout=MCP_TOOL_CALL_TIMEOUT)
                     return result
+                except TimeoutError:
+                    future.cancel()
+                    raise TimeoutError(
+                        f'MCP tool "{tool_name}" execution timed out after {MCP_TOOL_CALL_TIMEOUT}s. '
+                        'You can increase this via the QWEN_AGENT_MCP_TOOL_CALL_TIMEOUT environment variable.')
                 except Exception as e:
                     logger.info(f'Failed in executing MCP tool: {e}')
                     raise e
@@ -288,12 +312,19 @@ class MCPManager:
 
     def shutdown(self):
         futures = []
-        for client_id in list(self.clients.keys()):
-            client: MCPClient = self.clients[client_id]
-            future = asyncio.run_coroutine_threadsafe(client.cleanup(), self.loop)
-            futures.append(future)
-            del self.clients[client_id]
-        time.sleep(1)  # Wait for the graceful cleanups, otherwise fall back
+        with self._clients_lock:
+            for client_id in list(self.clients.keys()):
+                client: MCPClient = self.clients[client_id]
+                future = asyncio.run_coroutine_threadsafe(client.cleanup(), self.loop)
+                futures.append(future)
+                del self.clients[client_id]
+
+        # Wait for graceful cleanups with a timeout instead of a fixed sleep
+        for future in futures:
+            try:
+                future.result(timeout=MCP_SHUTDOWN_TIMEOUT)
+            except Exception:
+                pass  # Best-effort cleanup; fall back to process termination below
 
         # fallback
         if asyncio.all_tasks(self.loop):
@@ -411,8 +442,10 @@ class MCPClient:
                 from qwen_agent.tools.mcp_manager import MCPManager
                 manager = MCPManager()
                 if self.client_id is not None:
-                    manager.clients[self.client_id] = await self.reconnect()
-                    return await manager.clients[self.client_id].execute_function(tool_name, tool_args)
+                    new_client = await self.reconnect()
+                    with manager._clients_lock:
+                        manager.clients[self.client_id] = new_client
+                    return await new_client.execute_function(tool_name, tool_args)
                 else:
                     logger.info('Reconnect failed: client_id is None')
                     return 'Session reconnect (client creation) exception: client_id is None'
