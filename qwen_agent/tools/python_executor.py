@@ -61,12 +61,21 @@ class GenericRuntime:
 
 
 class DateRuntime(GenericRuntime):
-    import dateutil.relativedelta
-    GLOBAL_DICT = {
-        'datetime': datetime.datetime,
-        'timedelta': dateutil.relativedelta.relativedelta,
-        'relativedelta': dateutil.relativedelta.relativedelta
-    }
+
+    def __init__(self):
+        try:
+            import dateutil.relativedelta
+        except ImportError as e:
+            raise ImportError(
+                'The dependencies for Python Executor support are not installed. '
+                'Please install the required dependencies by running: pip install "qwen-agent[python_executor]"') from e
+
+        self.GLOBAL_DICT = {
+            'datetime': datetime.datetime,
+            'timedelta': dateutil.relativedelta.relativedelta,
+            'relativedelta': dateutil.relativedelta.relativedelta
+        }
+        super().__init__()
 
 
 class CustomDict(dict):
