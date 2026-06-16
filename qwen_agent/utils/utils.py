@@ -136,7 +136,7 @@ def is_http_url(path_or_url: str) -> bool:
 def is_image(path_or_url: str) -> bool:
     filename = get_basename_from_url(path_or_url).lower()
     for ext in ['jpg', 'jpeg', 'png', 'webp']:
-        if filename.endswith(ext):
+        if filename.endswith('.' + ext):
             return True
     return False
 
