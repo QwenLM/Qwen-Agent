@@ -22,6 +22,7 @@ from qwen_agent.llm.schema import ASSISTANT, ROLE, SYSTEM, Message
 from qwen_agent.log import logger
 from qwen_agent.tools import BaseTool
 from qwen_agent.utils.utils import merge_generate_cfgs
+
 # Design note: The template contains two lines for the routing format:
 #   Call: <agent_name>  – the router outputs this to select a sub-agent
 #   Reply: ...          – this line is a stop anchor only; LLM generation halts
@@ -61,8 +62,8 @@ class Router(Assistant, MultiAgentHub):
                          description=description,
                          files=files,
                          rag_cfg=rag_cfg)
-# Stop generation at 'Reply:' so the router only outputs 'Call: <name>'.
-# The sub-agent produces the actual reply; see ROUTER_PROMPT design note above.
+        # Stop generation at 'Reply:' so the router only outputs 'Call: <name>'.
+        # The sub-agent produces the actual reply; see ROUTER_PROMPT design note above.
         self.extra_generate_cfg = merge_generate_cfgs(
             base_generate_cfg=self.extra_generate_cfg,
             new_generate_cfg={'stop': ['Reply:', 'Reply:\n']},
