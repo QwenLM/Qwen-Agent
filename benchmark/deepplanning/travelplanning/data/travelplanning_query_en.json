@@ -983,7 +983,7 @@
       },
       "depart_weekday": 3
     },
-    "query_with_constraints": "I plan to travel from Hangzhou to Shaoxing, with a departure date of 2025-11-12 and return date of 2025-11-13. Please help me plan the itinerary, including transportation, accommodation, dining, and sightseeing arrangements.  \n- The outbound train must depart between 11:00 AM and 3:00 PM  \n- Please select 2-star accommodation that offers a TV with screen mirroring capability  \n- The itinerary must include all free attractions mentioned in the attraction recommendation tool  \n- Must visit all 'natural风光' type attractions listed in the attraction recommendation tool"
+    "query_with_constraints": "I plan to travel from Hangzhou to Shaoxing, with a departure date of 2025-11-12 and return date of 2025-11-13. Please help me plan the itinerary, including transportation, accommodation, dining, and sightseeing arrangements.  \n- The outbound train must depart between 6:00 AM and 7:00 AM  \n- Please select 2-star accommodation that offers a TV with screen mirroring capability  \n- The itinerary must include all free attractions mentioned in the attraction recommendation tool  \n- Must visit all 'natural风光' type attractions listed in the attraction recommendation tool"
   },
   {
     "id": "19",
