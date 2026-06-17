@@ -108,6 +108,12 @@
 
 .container {
   /* flex-direction: row-reverse; */
+  height: calc(100vh - 32px);
+  overflow: hidden;
+}
+
+.chat-column {
+  min-height: 0;
 }
 
 .markdown-body .message {

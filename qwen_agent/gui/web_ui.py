@@ -104,13 +104,13 @@ class WebUI:
             history = gr.State([])
             with ms.Application():
                 with gr.Row(elem_classes='container'):
-                    with gr.Column(scale=4):
+                    with gr.Column(scale=4, elem_classes='chat-column'):
                         chatbot = mgr.Chatbot(value=convert_history_to_chatbot(messages=messages),
                                               avatar_images=[
                                                   self.user_config,
                                                   self.agent_config_list,
                                               ],
-                                              height=850,
+                                              height='clamp(360px, calc(100vh - 220px), 850px)',
                                               avatar_image_width=80,
                                               flushing=False,
                                               show_copy_button=True,
