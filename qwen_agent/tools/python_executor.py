@@ -31,6 +31,33 @@ from qwen_agent.tools.base import BaseTool
 from qwen_agent.utils.utils import extract_code
 
 
+class CodeExecutionNotAllowedError(RuntimeError):
+    """Raised when model-generated code is blocked before exec/eval.
+
+    PythonExecutor runs model-generated Python in the host process and is NOT
+    sandboxed (see the class docstring and README). This error is raised by the
+    opt-in safety gate below when execution has been disabled or not approved.
+    """
+    pass
+
+
+def _python_executor_is_disabled() -> bool:
+    """Hard kill-switch for environments that must never run model code in-process.
+
+    Set ``QWEN_AGENT_DISABLE_PYTHON_EXECUTOR=1`` to refuse all exec/eval. This is
+    checked inside the runtime, so it also takes effect in the worker processes
+    used by the batch executor. Default (unset) preserves existing behaviour.
+    """
+    return os.getenv('QWEN_AGENT_DISABLE_PYTHON_EXECUTOR', '0') == '1'
+
+
+def _assert_code_execution_allowed(code_piece: str) -> None:
+    if _python_executor_is_disabled():
+        raise CodeExecutionNotAllowedError(
+            'Python code execution is disabled (QWEN_AGENT_DISABLE_PYTHON_EXECUTOR=1). '
+            'PythonExecutor is not sandboxed; refusing to exec/eval model-generated code.')
+
+
 class GenericRuntime:
     GLOBAL_DICT = {}
     LOCAL_DICT = None
@@ -44,11 +71,13 @@ class GenericRuntime:
             self.exec_code(c)
 
     def exec_code(self, code_piece: str) -> None:
+        _assert_code_execution_allowed(code_piece)
         if regex.search(r'(\s|^)?input\(', code_piece) or regex.search(r'(\s|^)?os.system\(', code_piece):
             raise RuntimeError()
         exec(code_piece, self._global_vars)
 
     def eval_code(self, expr: str) -> Any:
+        _assert_code_execution_allowed(expr)
         return eval(expr, self._global_vars)
 
     def inject(self, var_dict: Dict[str, Any]) -> None:
@@ -94,6 +123,20 @@ def _check_deps_for_python_executor():
 
 # @register_tool('python_executor')  # Do not register this tool by default because it is dangerous.
 class PythonExecutor(BaseTool):
+    """Execute model-generated Python in the host process. NOT sandboxed.
+
+    This tool runs arbitrary Python in-process and is intended only for local
+    Tool-Integrated-Reasoning (TIR) math experiments, not production. If model
+    output is untrusted, prefer the sandboxed ``code_interpreter`` tool instead.
+
+    Two opt-in safety controls are available for deployments that must expose this
+    tool to model-controlled input (both default to the historical behaviour):
+
+    * ``confirm_callback`` (cfg): a callable ``(code:str) -> bool`` consulted in
+      ``call()`` before execution; return falsy to refuse the code.
+    * ``QWEN_AGENT_DISABLE_PYTHON_EXECUTOR=1`` (env): hard kill-switch that refuses
+      all exec/eval, enforced at the runtime level (also in worker processes).
+    """
     name = 'python_executor'
     description = 'For executing python code. Not sandboxed. Do not use it for production purposes.'
     parameters = {
@@ -126,6 +169,12 @@ class PythonExecutor(BaseTool):
         self.pool = Pool(multiprocess.cpu_count())
         self.timeout_length = timeout_length
 
+        # Optional human-in-the-loop / policy gate consulted before running any
+        # model-generated code. It receives the code string and must return a
+        # truthy value to allow execution. Default (None) preserves the existing
+        # behaviour for the documented, opt-in local TIR-math use case.
+        self.confirm_callback: Optional[Any] = self.cfg.get('confirm_callback', None)
+
     def call(self, params: Union[str, dict], **kwargs) -> list:
         try:
             params = json5.loads(params)
@@ -135,6 +184,17 @@ class PythonExecutor(BaseTool):
 
         if not code.strip():
             return ['', '']
+
+        # Safety gate (opt-in). PythonExecutor is not sandboxed, so a deployment
+        # that exposes it to model-controlled input can require explicit approval
+        # of each code block, or disable execution entirely via the environment
+        # variable QWEN_AGENT_DISABLE_PYTHON_EXECUTOR=1.
+        if _python_executor_is_disabled():
+            raise CodeExecutionNotAllowedError(
+                'Python code execution is disabled (QWEN_AGENT_DISABLE_PYTHON_EXECUTOR=1). '
+                'PythonExecutor is not sandboxed; refusing to run model-generated code.')
+        if self.confirm_callback is not None and not self.confirm_callback(code):
+            raise CodeExecutionNotAllowedError('Execution of the model-generated Python code was not approved.')
 
         predictions = self.apply(code)
         return predictions
