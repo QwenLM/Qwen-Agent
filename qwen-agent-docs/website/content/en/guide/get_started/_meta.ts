@@ -4,4 +4,5 @@ export default {
   'quickstart': 'QuickStart',
   'features': 'Features',
   'configuration': 'Configuration',
+  'troubleshooting': 'Troubleshooting',
 };
