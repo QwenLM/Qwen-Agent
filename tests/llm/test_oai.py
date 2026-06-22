@@ -13,10 +13,12 @@
 # limitations under the License.
 
 import os
+from types import SimpleNamespace
 
 import pytest
 
 from qwen_agent.llm import get_chat_model
+from qwen_agent.llm.oai import TextChatAtOAI
 from qwen_agent.llm.schema import Message
 
 functions = [{
@@ -65,3 +67,31 @@ def test_llm_oai(functions, stream, delta_stream):
         assert response[-1].function_call.name == 'image_gen'
     else:
         assert response[-1].function_call is None
+
+
+def test_llm_oai_preserves_usage_no_stream():
+    llm = TextChatAtOAI({'model': 'test-model', 'api_key': 'test-key'})
+    usage = {'prompt_tokens': 3, 'completion_tokens': 5, 'total_tokens': 8}
+    llm._chat_complete_create = lambda **kwargs: SimpleNamespace(
+        choices=[SimpleNamespace(message=SimpleNamespace(content='hello'))],
+        usage=usage,
+    )
+
+    response = llm._chat_no_stream([Message('user', 'hi')], {})
+
+    assert response[0].content == 'hello'
+    assert response[0].extra == {'usage': usage}
+
+
+def test_llm_oai_preserves_final_stream_usage():
+    llm = TextChatAtOAI({'model': 'test-model', 'api_key': 'test-key'})
+    usage = {'prompt_tokens': 3, 'completion_tokens': 5, 'total_tokens': 8}
+    llm._chat_complete_create = lambda **kwargs: iter([
+        SimpleNamespace(choices=[SimpleNamespace(delta=SimpleNamespace(content='hello'))], usage=None),
+        SimpleNamespace(choices=[], usage=usage),
+    ])
+
+    responses = list(llm._chat_stream([Message('user', 'hi')], delta_stream=False, generate_cfg={}))
+
+    assert responses[-1][0].content == 'hello'
+    assert responses[-1][0].extra == {'usage': usage}

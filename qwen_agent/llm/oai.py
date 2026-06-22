@@ -16,7 +16,7 @@ import copy
 import logging
 import os
 from pprint import pformat
-from typing import Dict, Iterator, List, Optional
+from typing import Any, Dict, Iterator, List, Optional
 
 import openai
 
@@ -31,6 +31,42 @@ from qwen_agent.llm.base import ModelServiceError, register_llm
 from qwen_agent.llm.function_calling import BaseFnCallModel
 from qwen_agent.llm.schema import ASSISTANT, FunctionCall, Message
 from qwen_agent.log import logger
+
+
+def _safe_model_dump(value: Any) -> Any:
+    if value is None:
+        return None
+    if isinstance(value, dict):
+        return value
+    if hasattr(value, 'model_dump'):
+        return value.model_dump(exclude_none=True)
+    if hasattr(value, 'dict'):
+        return value.dict()
+    if hasattr(value, 'to_dict_recursive'):
+        return value.to_dict_recursive()
+    if hasattr(value, 'to_dict'):
+        return value.to_dict()
+    if hasattr(value, '__dict__'):
+        return {k: v for k, v in value.__dict__.items() if (not k.startswith('_')) and (v is not None)}
+    return value
+
+
+def _usage_extra(response: Any) -> Optional[dict]:
+    if isinstance(response, dict):
+        usage = response.get('usage')
+    else:
+        usage = getattr(response, 'usage', None)
+    if usage is None:
+        return None
+    return {'usage': _safe_model_dump(usage)}
+
+
+def _merge_extra(extra: Optional[dict], usage_extra: Optional[dict]) -> Optional[dict]:
+    if not usage_extra:
+        return extra
+    merged_extra = copy.deepcopy(extra) if extra else {}
+    merged_extra.update(usage_extra)
+    return merged_extra
 
 
 @register_llm('oai')
@@ -107,21 +143,48 @@ class TextChatAtOAI(BaseFnCallModel):
             response = self._chat_complete_create(model=self.model, messages=messages, stream=True, **generate_cfg)
             if delta_stream:
                 for chunk in response:
+                    usage_extra = _usage_extra(chunk)
+                    has_output = False
                     if chunk.choices:
                         if hasattr(chunk.choices[0].delta,
                                    'reasoning_content') and chunk.choices[0].delta.reasoning_content:
+                            has_output = True
                             yield [
                                 Message(role=ASSISTANT,
                                         content='',
-                                        reasoning_content=chunk.choices[0].delta.reasoning_content)
+                                        reasoning_content=chunk.choices[0].delta.reasoning_content,
+                                        extra=usage_extra)
                             ]
                         if hasattr(chunk.choices[0].delta, 'content') and chunk.choices[0].delta.content:
-                            yield [Message(role=ASSISTANT, content=chunk.choices[0].delta.content)]
+                            has_output = True
+                            yield [Message(role=ASSISTANT, content=chunk.choices[0].delta.content, extra=usage_extra)]
+                    if usage_extra and not has_output:
+                        yield [Message(role=ASSISTANT, content='', extra=usage_extra)]
             else:
                 full_response = ''
                 full_reasoning_content = ''
                 full_tool_calls = []
+
+                def _build_full_response(usage_extra: Optional[dict] = None) -> List[Message]:
+                    res = []
+                    if full_reasoning_content:
+                        res.append(
+                            Message(role=ASSISTANT,
+                                    content='',
+                                    reasoning_content=full_reasoning_content,
+                                    extra=usage_extra))
+                    if full_response:
+                        res.append(Message(role=ASSISTANT, content=full_response, extra=usage_extra))
+                    if full_tool_calls:
+                        tool_calls = copy.deepcopy(full_tool_calls) if usage_extra else full_tool_calls
+                        if usage_extra:
+                            for tool_call in tool_calls:
+                                tool_call.extra = _merge_extra(tool_call.extra, usage_extra)
+                        res += tool_calls
+                    return res
+
                 for chunk in response:
+                    usage_extra = _usage_extra(chunk)
                     if chunk.choices:
                         if hasattr(chunk.choices[0].delta,
                                    'reasoning_content') and chunk.choices[0].delta.reasoning_content:
@@ -144,17 +207,11 @@ class TextChatAtOAI(BaseFnCallModel):
                                                                            arguments=tc.function.arguments),
                                                 extra={'function_id': tc.id}))
 
-                        res = []
-                        if full_reasoning_content:
-                            res.append(Message(role=ASSISTANT, content='', reasoning_content=full_reasoning_content))
-                        if full_response:
-                            res.append(Message(
-                                role=ASSISTANT,
-                                content=full_response,
-                            ))
-                        if full_tool_calls:
-                            res += full_tool_calls
-                        yield res
+                        yield _build_full_response(usage_extra)
+                    elif usage_extra:
+                        res = _build_full_response(usage_extra)
+                        if res:
+                            yield res
         except OpenAIError as ex:
             raise ModelServiceError(exception=ex)
 
@@ -166,14 +223,16 @@ class TextChatAtOAI(BaseFnCallModel):
         messages = self.convert_messages_to_dicts(messages)
         try:
             response = self._chat_complete_create(model=self.model, messages=messages, stream=False, **generate_cfg)
+            usage_extra = _usage_extra(response)
             if hasattr(response.choices[0].message, 'reasoning_content'):
                 return [
                     Message(role=ASSISTANT,
                             content=response.choices[0].message.content,
-                            reasoning_content=response.choices[0].message.reasoning_content)
+                            reasoning_content=response.choices[0].message.reasoning_content,
+                            extra=usage_extra)
                 ]
             else:
-                return [Message(role=ASSISTANT, content=response.choices[0].message.content)]
+                return [Message(role=ASSISTANT, content=response.choices[0].message.content, extra=usage_extra)]
         except OpenAIError as ex:
             raise ModelServiceError(exception=ex)
 
