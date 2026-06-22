@@ -33,6 +33,9 @@ from qwen_agent.llm.schema import ASSISTANT, FunctionCall, Message
 from qwen_agent.log import logger
 
 
+OAI_MAX_STOP_WORDS = 4
+
+
 @register_llm('oai')
 class TextChatAtOAI(BaseFnCallModel):
 
@@ -102,9 +105,11 @@ class TextChatAtOAI(BaseFnCallModel):
         generate_cfg: dict,
     ) -> Iterator[List[Message]]:
         messages = self.convert_messages_to_dicts(messages)
+        request_generate_cfg = self._format_generate_cfg_for_oai(generate_cfg)
         logger.debug(f'LLM Input generate_cfg: \n{generate_cfg}')
         try:
-            response = self._chat_complete_create(model=self.model, messages=messages, stream=True, **generate_cfg)
+            response = self._chat_complete_create(
+                model=self.model, messages=messages, stream=True, **request_generate_cfg)
             if delta_stream:
                 for chunk in response:
                     if chunk.choices:
@@ -164,8 +169,10 @@ class TextChatAtOAI(BaseFnCallModel):
         generate_cfg: dict,
     ) -> List[Message]:
         messages = self.convert_messages_to_dicts(messages)
+        request_generate_cfg = self._format_generate_cfg_for_oai(generate_cfg)
         try:
-            response = self._chat_complete_create(model=self.model, messages=messages, stream=False, **generate_cfg)
+            response = self._chat_complete_create(
+                model=self.model, messages=messages, stream=False, **request_generate_cfg)
             if hasattr(response.choices[0].message, 'reasoning_content'):
                 return [
                     Message(role=ASSISTANT,
@@ -176,6 +183,13 @@ class TextChatAtOAI(BaseFnCallModel):
                 return [Message(role=ASSISTANT, content=response.choices[0].message.content)]
         except OpenAIError as ex:
             raise ModelServiceError(exception=ex)
+
+    def _format_generate_cfg_for_oai(self, generate_cfg: dict) -> dict:
+        generate_cfg = copy.deepcopy(generate_cfg)
+        stop = generate_cfg.get('stop')
+        if isinstance(stop, list) and len(stop) > OAI_MAX_STOP_WORDS:
+            generate_cfg['stop'] = stop[:OAI_MAX_STOP_WORDS]
+        return generate_cfg
 
     def convert_messages_to_dicts(self, messages: List[Message]) -> List[dict]:
         # TODO: Change when the VLLM deployed model needs to pass reasoning_complete.
