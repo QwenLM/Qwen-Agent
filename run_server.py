@@ -1,11 +1,11 @@
 # Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #    http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,6 +21,9 @@ import sys
 from pathlib import Path
 
 from qwen_server.schema import GlobalConfig
+
+SERVER_CONFIG_ENV = 'QWEN_SERVER_CONFIG'
+SECRET_FIELDS = {'api_key'}
 
 
 def parse_args():
@@ -77,20 +80,46 @@ def parse_args():
     return args
 
 
-def update_config(server_config, args, server_config_path):
-    server_config.server.model_server = args.model_server
-    server_config.server.api_key = args.api_key
-    server_config.server.llm = args.llm
-    server_config.server.server_host = args.server_host
-    server_config.server.max_ref_token = args.max_ref_token
-    server_config.server.workstation_port = args.workstation_port
-
-    with open(server_config_path, 'w') as f:
+def _dump_config(server_config, config_path):
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(config_path, 'w') as f:
         try:
             cfg = server_config.model_dump_json()
         except AttributeError:  # for pydantic v1
             cfg = server_config.json()
         json.dump(json.loads(cfg), f, ensure_ascii=False, indent=4)
+
+
+def _redact_config(config):
+    try:
+        config_dict = json.loads(config.model_dump_json())
+    except AttributeError:  # for pydantic v1
+        config_dict = json.loads(config.json())
+
+    for section in config_dict.values():
+        if isinstance(section, dict):
+            for field in SECRET_FIELDS:
+                if section.get(field):
+                    section[field] = '***'
+    return config_dict
+
+
+def update_config(server_config, args, server_config_path, runtime_config_path=None):
+    original_api_key = server_config.server.api_key
+
+    server_config.server.model_server = args.model_server
+    server_config.server.api_key = args.api_key or original_api_key
+    server_config.server.llm = args.llm
+    server_config.server.server_host = args.server_host
+    server_config.server.max_ref_token = args.max_ref_token
+    server_config.server.workstation_port = args.workstation_port
+
+    if runtime_config_path is not None:
+        _dump_config(server_config, runtime_config_path)
+
+    server_config.server.api_key = original_api_key
+    _dump_config(server_config, server_config_path)
+    server_config.server.api_key = args.api_key or original_api_key
     return server_config
 
 
@@ -100,7 +129,9 @@ def main():
     with open(server_config_path, 'r') as f:
         server_config = json.load(f)
         server_config = GlobalConfig(**server_config)
-    server_config = update_config(server_config, args, server_config_path)
+    runtime_config_path = Path(__file__).resolve().parent / 'workspace/server_config.local.json'
+    server_config = update_config(server_config, args, server_config_path, runtime_config_path)
+    os.environ[SERVER_CONFIG_ENV] = str(runtime_config_path)
 
     os.makedirs(server_config.path.work_space_root, exist_ok=True)
     os.makedirs(server_config.path.download_root, exist_ok=True)
@@ -112,7 +143,7 @@ def main():
     os.environ['M6_CODE_INTERPRETER_WORK_DIR'] = code_interpreter_work_dir
 
     from qwen_agent.utils.utils import append_signal_handler, get_local_ip, logger
-    logger.info(server_config)
+    logger.info(_redact_config(server_config))
 
     if args.server_host == '0.0.0.0':
         static_url = get_local_ip()
