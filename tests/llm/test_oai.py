@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import os
 from types import SimpleNamespace
 
@@ -80,7 +81,8 @@ def test_llm_oai_preserves_usage_no_stream():
     response = llm._chat_no_stream([Message('user', 'hi')], {})
 
     assert response[0].content == 'hello'
-    assert response[0].extra == {'usage': usage}
+    assert response[0].extra == {'model_service_info': {'usage': usage}}
+    json.dumps(response[0].model_dump())
 
 
 def test_llm_oai_preserves_final_stream_usage():
@@ -94,4 +96,5 @@ def test_llm_oai_preserves_final_stream_usage():
     responses = list(llm._chat_stream([Message('user', 'hi')], delta_stream=False, generate_cfg={}))
 
     assert responses[-1][0].content == 'hello'
-    assert responses[-1][0].extra == {'usage': usage}
+    assert responses[-1][0].extra == {'model_service_info': {'usage': usage}}
+    json.dumps(responses[-1][0].model_dump())
