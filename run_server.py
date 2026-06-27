@@ -77,6 +77,26 @@ def parse_args():
     return args
 
 
+def api_key_env_var(model_server):
+    """Return the env var the model backend reads the key from.
+
+    DashScope reads ``DASHSCOPE_API_KEY``; OpenAI API-compatible endpoints
+    (vLLM, Ollama, ...) read ``OPENAI_API_KEY``.
+    """
+    return 'DASHSCOPE_API_KEY' if model_server == 'dashscope' else 'OPENAI_API_KEY'
+
+
+def redact_secrets(server_config):
+    """Return a config dict safe to log, with the API key masked."""
+    try:
+        cfg = json.loads(server_config.model_dump_json())
+    except AttributeError:  # for pydantic v1
+        cfg = json.loads(server_config.json())
+    if cfg.get('server', {}).get('api_key'):
+        cfg['server']['api_key'] = '***'
+    return cfg
+
+
 def update_config(server_config, args, server_config_path):
     server_config.server.model_server = args.model_server
     server_config.server.api_key = args.api_key
@@ -85,12 +105,18 @@ def update_config(server_config, args, server_config_path):
     server_config.server.max_ref_token = args.max_ref_token
     server_config.server.workstation_port = args.workstation_port
 
+    try:
+        cfg = server_config.model_dump_json()
+    except AttributeError:  # for pydantic v1
+        cfg = server_config.json()
+    cfg = json.loads(cfg)
+    # Security: never persist the API key to the (git-tracked) config file.
+    # The key is passed to the child servers through an environment variable
+    # instead (see main()); the LLM backends fall back to DASHSCOPE_API_KEY /
+    # OPENAI_API_KEY when the config api_key is empty.
+    cfg['server']['api_key'] = ''
     with open(server_config_path, 'w') as f:
-        try:
-            cfg = server_config.model_dump_json()
-        except AttributeError:  # for pydantic v1
-            cfg = server_config.json()
-        json.dump(json.loads(cfg), f, ensure_ascii=False, indent=4)
+        json.dump(cfg, f, ensure_ascii=False, indent=4)
     return server_config
 
 
@@ -102,6 +128,13 @@ def main():
         server_config = GlobalConfig(**server_config)
     server_config = update_config(server_config, args, server_config_path)
 
+    # Security: hand the API key to the child servers via the environment
+    # instead of the on-disk config file, so the secret never touches a
+    # tracked file. Only set it when provided, to avoid clobbering a key the
+    # user may already have exported.
+    if args.api_key:
+        os.environ[api_key_env_var(args.model_server)] = args.api_key
+
     os.makedirs(server_config.path.work_space_root, exist_ok=True)
     os.makedirs(server_config.path.download_root, exist_ok=True)
 
@@ -112,7 +145,7 @@ def main():
     os.environ['M6_CODE_INTERPRETER_WORK_DIR'] = code_interpreter_work_dir
 
     from qwen_agent.utils.utils import append_signal_handler, get_local_ip, logger
-    logger.info(server_config)
+    logger.info(redact_secrets(server_config))
 
     if args.server_host == '0.0.0.0':
         static_url = get_local_ip()
