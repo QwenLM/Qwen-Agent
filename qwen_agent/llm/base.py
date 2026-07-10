@@ -443,7 +443,7 @@ class BaseChatModel(ABC):
             elif msg['role'] == FUNCTION:
                 new_msg = copy.deepcopy(msg)
                 new_msg['role'] = 'tool'
-                new_msg['id'] = msg.get('extra', {}).get('function_id', '1')
+                new_msg['tool_call_id'] = msg.get('extra', {}).get('function_id', '1')
                 new_messages.append(new_msg)
             else:
                 new_messages.append(msg)
