@@ -226,7 +226,10 @@ def read_text_from_file(path: str) -> str:
 
 
 def contains_html_tags(text: str) -> bool:
-    pattern = r'<(p|span|div|li|html|script)[^>]*?'
+    # Match an HTML tag start followed by a valid tag delimiter (whitespace, '/', or '>').
+    # The delimiter avoids false positives on plain text such as ``vector<pair<int>>`` or
+    # ``a<div_b`` where the tag name is only part of a longer word.
+    pattern = r'<(?:p|span|div|li|html|script)(?:\s|/|>)'
     return bool(re.search(pattern, text))
 
 
