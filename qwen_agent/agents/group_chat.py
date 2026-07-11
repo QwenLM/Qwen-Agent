@@ -127,7 +127,7 @@ class GroupChat(Agent, MultiAgentHub):
                 for x in content.split('@'):
                     for agent in self.agents:
                         if x.startswith(agent.name):
-                            if agent not in mentioned_agents_name:
+                            if agent.name not in mentioned_agents_name:
                                 mentioned_agents_name.append(agent.name)
                             break
             rsp = []
