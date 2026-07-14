@@ -271,7 +271,10 @@ class MCPManager:
             client_id = register_client_id
 
             def call(self, params: Union[str, dict], **kwargs) -> str:
-                tool_args = json.loads(params)
+                if isinstance(params, str):
+                    tool_args = json.loads(params)
+                else:
+                    tool_args = params
                 # Submit coroutine to the event loop and wait for the result
                 manager = MCPManager()
                 client = manager.clients[self.client_id]
