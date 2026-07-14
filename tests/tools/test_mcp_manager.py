@@ -1,11 +1,11 @@
 # Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #    http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import json
+from unittest import mock
 
 import pytest
 
@@ -74,8 +75,12 @@ def test_is_valid_mcp_servers_invalid(invalid_cfg, description):
     assert not manager.is_valid_mcp_servers(invalid_cfg)
 
 
-def test_mcp_dynamic_tool_handles_dict_params():
-    """Verify that dynamically created MCP tool classes accept both str and dict params."""
+def test_mcp_dynamic_tool_accepts_str_and_dict_params():
+    """Verify that dynamically created MCP tool classes accept both str and dict params.
+
+    The fix should allow params to be a dict (already parsed by the framework) without
+    crashing in json.loads, and should pass the parsed dict to the underlying MCP client.
+    """
     manager = MCPManager()
     tool = manager.create_tool_class(
         register_name='test_tool',
@@ -84,7 +89,17 @@ def test_mcp_dynamic_tool_handles_dict_params():
         tool_desc='Echo tool',
         tool_parameters={'type': 'object', 'properties': {}, 'required': []},
     )
-    # Verify params is handled for both str and dict (check it doesn't crash before MCP execution)
-    assert tool.name == 'test_tool'
-    assert tool.description == 'Echo tool'
-    assert tool.parameters == {'type': 'object', 'properties': {}, 'required': []}
+
+    dummy_client = mock.MagicMock()
+    dummy_client.execute_function = mock.AsyncMock(return_value='mock result')
+    manager.clients['dummy_client'] = dummy_client
+
+    # Passing a JSON string should still work and forward parsed args.
+    result = tool.call('{"message": "hello from string"}')
+    assert result == 'mock result'
+    dummy_client.execute_function.assert_called_with('echo', {'message': 'hello from string'})
+
+    # Passing a dict directly should not crash and should be forwarded as-is.
+    result = tool.call({'message': 'hello from dict'})
+    assert result == 'mock result'
+    dummy_client.execute_function.assert_called_with('echo', {'message': 'hello from dict'})
