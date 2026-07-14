@@ -139,7 +139,7 @@ def call_llm(
             if tools:
                 params["tools"] = tools
             
-            if not is_reasoning_model and temperature:
+            if not is_reasoning_model and temperature is not None:
                 params["temperature"] = temperature
             
             if extra_body:
