@@ -192,10 +192,14 @@ class DocParser(BaseTool):
 
                         # Define new chunk
                         overlap_txt = self._get_last_part(chunk)
-                        if overlap_txt.strip():
+                        overlap_token = count_tokens(overlap_txt)
+                        # Drop the overlap when it would fill the whole chunk, otherwise
+                        # available_token becomes 0 and splitting a long paragraph below hits
+                        # range(..., 0) -> ValueError.
+                        if overlap_txt.strip() and overlap_token < parser_page_size:
                             chunk = [f'[page: {str(chunk[-1][1])}]', overlap_txt]
                             has_para = False
-                            available_token = parser_page_size - count_tokens(overlap_txt)
+                            available_token = parser_page_size - overlap_token
                         else:
                             chunk = []
                             has_para = False
@@ -248,10 +252,11 @@ class DocParser(BaseTool):
                                           token=parser_page_size - available_token))
 
                                 overlap_txt = self._get_last_part(chunk)
-                                if overlap_txt.strip():
+                                overlap_token = count_tokens(overlap_txt)
+                                if overlap_txt.strip() and overlap_token < parser_page_size:
                                     chunk = [f'[page: {str(chunk[-1][1])}]', overlap_txt]
                                     has_para = False
-                                    available_token = parser_page_size - count_tokens(overlap_txt)
+                                    available_token = parser_page_size - overlap_token
                                 else:
                                     chunk = []
                                     has_para = False
