@@ -25,7 +25,7 @@ from qwen_agent.log import logger
 from qwen_agent.tools import TOOL_REGISTRY, BaseTool, MCPManager
 from qwen_agent.tools.base import ToolServiceError
 from qwen_agent.tools.simple_doc_parser import DocParserError
-from qwen_agent.utils.utils import has_chinese_messages, merge_generate_cfgs
+from qwen_agent.utils.utils import has_chinese_messages, merge_generate_cfgs, read_text_from_file
 
 
 class Agent(ABC):
@@ -41,6 +41,7 @@ class Agent(ABC):
                  system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
                  name: Optional[str] = None,
                  description: Optional[str] = None,
+                 system_prompt_files: Optional[List[str]] = None,
                  **kwargs):
         """Initialization the agent.
 
@@ -52,6 +53,9 @@ class Agent(ABC):
             system_message: The specified system message for LLM chat.
             name: The name of this agent.
             description: The description of this agent, which will be used for multi_agent.
+            system_prompt_files: Optional paths to text files (e.g. AGENTS.md / SOUL.md) whose
+              contents are loaded and prepended to `system_message` at init time. Missing files
+              log a warning and are skipped. Also accepted via kwargs for config-driven setup.
         """
         if isinstance(llm, dict):
             self.llm = get_chat_model(llm)
@@ -64,9 +68,44 @@ class Agent(ABC):
             for tool in function_list:
                 self._init_tool(tool)
 
-        self.system_message = system_message
+        # Config/workspace files may pass system_prompt_files via kwargs.
+        if system_prompt_files is None:
+            system_prompt_files = kwargs.get('system_prompt_files')
+        self.system_message = self._load_system_message_with_prompt_files(
+            system_message, system_prompt_files)
         self.name = name
         self.description = description
+
+    @staticmethod
+    def _load_system_message_with_prompt_files(
+            system_message: Optional[str],
+            system_prompt_files: Optional[List[str]]) -> Optional[str]:
+        """Prepend contents of system_prompt_files to the base system_message.
+
+        Files are read in order. Missing or unreadable files warn and are skipped so
+        agent startup is not blocked by an absent workspace file.
+        """
+        parts: List[str] = []
+        if system_prompt_files:
+            for path in system_prompt_files:
+                if not path:
+                    continue
+                try:
+                    text = read_text_from_file(str(path)).strip()
+                except FileNotFoundError:
+                    logger.warning('system_prompt_files: file not found: %s', path)
+                    continue
+                except Exception as ex:  # noqa: BLE001 - surface path and continue
+                    logger.warning('system_prompt_files: failed to read %s: %s', path, ex)
+                    continue
+                if text:
+                    parts.append(text)
+        base = (system_message or '').strip()
+        if base:
+            parts.append(base)
+        if not parts:
+            return system_message
+        return '\n\n'.join(parts)
 
     def run_nonstream(self, messages: List[Union[Dict, Message]], **kwargs) -> Union[List[Message], List[Dict]]:
         """Same as self.run, but with stream=False,
