@@ -16,6 +16,7 @@ import json
 import multiprocessing
 import os
 from pathlib import Path
+from urllib.parse import urlparse
 
 import jsonlines
 import uvicorn
@@ -31,7 +32,8 @@ except ImportError:
 
 from qwen_agent.log import logger
 from qwen_agent.memory import Memory
-from qwen_agent.utils.utils import get_basename_from_url, get_file_type, get_local_ip, hash_sha256, save_text_to_file
+from qwen_agent.utils.utils import (get_basename_from_url, get_file_type, get_local_ip, hash_sha256,
+                                    sanitize_chrome_file_path, save_text_to_file)
 from qwen_server.schema import GlobalConfig
 from qwen_server.utils import rm_browsing_meta_data, save_browsing_meta_data, save_history
 
@@ -66,6 +68,44 @@ app.mount('/static', StaticFiles(directory=server_config.path.code_interpreter_w
 cache_file_popup_url = os.path.join(server_config.path.work_space_root, 'popup_url.jsonl')
 meta_file = os.path.join(server_config.path.work_space_root, 'meta_data.jsonl')
 history_dir = os.path.join(server_config.path.work_space_root, 'history')
+
+# This endpoint is unauthenticated, so a request url is only allowed to reach the document parser
+# when it is a web page or a file the server itself owns. Anything else is an attempt to make the
+# parser read an arbitrary host file. Local files that the user picked are added by the
+# workstation UI, which calls Memory directly and does not go through this server.
+ALLOWED_URL_SCHEMES = ('http', 'https')
+ALLOWED_LOCAL_ROOTS = (
+    server_config.path.work_space_root,
+    server_config.path.download_root,
+    server_config.path.code_interpreter_ws,
+)
+# Set QWEN_AGENT_ALLOW_LOCAL_FILE_CACHE=true to keep caching local files outside the workspace,
+# such as a 'file:///...' tab opened in the browser. Only do this if the endpoint is unreachable
+# by anyone but you: it lets a caller read any file the server can read.
+ALLOW_LOCAL_FILE_CACHE = os.getenv('QWEN_AGENT_ALLOW_LOCAL_FILE_CACHE', '').strip().lower() in ('1', 'true', 'yes')
+
+
+def is_within_directory(path: str, directory: str) -> bool:
+    try:
+        directory = os.path.realpath(directory)
+        return os.path.commonpath([os.path.realpath(path), directory]) == directory
+    except ValueError:
+        # Raised for e.g. paths on different Windows drives, which are never within the workspace.
+        return False
+
+
+def validate_url(url: str) -> str:
+    if not isinstance(url, str) or not url.strip():
+        raise ValueError('The url must be a non-empty string.')
+    if ALLOW_LOCAL_FILE_CACHE or urlparse(url).scheme.lower() in ALLOWED_URL_SCHEMES:
+        return url
+    # Resolve the same way the parser does, so that the check covers the path that is really read.
+    local_path = sanitize_chrome_file_path(url)
+    if any(is_within_directory(local_path, root) for root in ALLOWED_LOCAL_ROOTS):
+        return url
+    raise ValueError(f'Refusing to read {url}: this endpoint only accepts http(s) urls and files '
+                     'under the server workspace. Set QWEN_AGENT_ALLOW_LOCAL_FILE_CACHE=true to '
+                     'allow caching other local files.')
 
 
 def update_pop_url(url: str):
@@ -120,13 +160,23 @@ async def web_listening(request: Request):
     if msg_type == 'change_checkbox':
         rsp = change_checkbox_state(data['ckid'])
     elif msg_type == 'cache':
+        try:
+            data['url'] = validate_url(data.get('url', ''))
+        except ValueError as ex:
+            logger.warning(str(ex))
+            return JSONResponse(status_code=400, content=str(ex))
         cache_obj = multiprocessing.Process(target=cache_page, kwargs=data)
         cache_obj.start()
         # rsp = cache_data(data, cache_file)
         rsp = 'caching'
     elif msg_type == 'pop_url':
         # What a misleading name! pop_url actually means add_url. pop is referring to the pop_up ui.
-        rsp = update_pop_url(data['url'])
+        try:
+            url = validate_url(data.get('url', ''))
+        except ValueError as ex:
+            logger.warning(str(ex))
+            return JSONResponse(status_code=400, content=str(ex))
+        rsp = update_pop_url(url)
     else:
         raise NotImplementedError
 
