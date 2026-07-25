@@ -17,6 +17,8 @@ import os
 import shutil
 from pathlib import Path
 
+import pytest
+
 from qwen_agent.utils.utils import get_basename_from_url, hash_sha256
 from qwen_server.schema import GlobalConfig
 from qwen_server.utils import read_meta_data_by_condition
@@ -58,3 +60,25 @@ def test_database_server():
     update_pop_url(new_url)
     cache_file_popup_url = os.path.join(server_config.path.work_space_root, 'popup_url.jsonl')
     assert os.path.exists(cache_file_popup_url)
+
+
+def test_validate_url_rejects_host_files():
+    server_config_path = Path(__file__).resolve().parent.parent.parent / 'qwen_server/server_config.json'
+    with open(server_config_path, 'r') as f:
+        server_config = GlobalConfig(**json.load(f))
+    os.makedirs(server_config.path.download_root, exist_ok=True)
+
+    from qwen_server.database_server import validate_url
+
+    # Web pages and files the server owns keep working.
+    assert validate_url('https://github.com/QwenLM/Qwen-Agent') == 'https://github.com/QwenLM/Qwen-Agent'
+    workspace_file = os.path.join(server_config.path.download_root, 'cached.txt')
+    with open(workspace_file, 'w', encoding='utf-8') as f:
+        f.write('cached page')
+    assert validate_url(workspace_file) == workspace_file
+
+    # Files outside the workspace are not readable through the unauthenticated endpoint.
+    outside_file = str(Path(__file__).resolve())
+    for url in [outside_file, 'file://' + outside_file, '', os.path.join('workspace', '..', '..', 'secret.txt')]:
+        with pytest.raises(ValueError):
+            validate_url(url)
