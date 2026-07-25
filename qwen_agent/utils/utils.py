@@ -15,6 +15,7 @@
 import base64
 import copy
 import hashlib
+import ipaddress
 import json
 import os
 import re
@@ -181,6 +182,42 @@ def sanitize_windows_file_path(file_path: str) -> str:
     return file_path
 
 
+_ALLOW_PRIVATE_URL_ENV = 'QWEN_AGENT_ALLOW_PRIVATE_URL'
+_MAX_URL_REDIRECTS = 5
+
+
+def _resolves_to_private_address(host: str) -> bool:
+    try:
+        addr_infos = socket.getaddrinfo(host, None)
+    except socket.gaierror:
+        # Let requests report the resolution failure with its own message.
+        return False
+    return any(not ipaddress.ip_address(info[4][0]).is_global for info in addr_infos)
+
+
+def _assert_downloadable_url(url: str) -> None:
+    """Reject URLs that resolve to loopback, private, or link-local addresses (SSRF)."""
+    if os.getenv(_ALLOW_PRIVATE_URL_ENV, '').strip().lower() in ('1', 'true', 'yes'):
+        return
+    host = urllib.parse.urlparse(url).hostname
+    if host and _resolves_to_private_address(host):
+        raise ValueError(f'Refusing to download {url}: it resolves to a non-public (private, loopback, or '
+                         f'link-local) address. Set {_ALLOW_PRIVATE_URL_ENV}=1 to allow internal addresses.')
+
+
+def _download_public_url(url: str, headers: dict) -> requests.Response:
+    """Follow redirects manually so that every hop is checked, not just the URL we were given."""
+    for _ in range(_MAX_URL_REDIRECTS + 1):
+        _assert_downloadable_url(url)
+        response = requests.get(url, headers=headers, allow_redirects=False)
+        location = response.headers.get('location')
+        if response.is_redirect and location:
+            url = urllib.parse.urljoin(url, location)
+            continue
+        return response
+    raise ValueError(f'Too many redirects while downloading {url}.')
+
+
 def save_url_to_local_work_dir(url: str, save_dir: str, save_filename: str = '') -> str:
     if not save_filename:
         save_filename = get_basename_from_url(url)
@@ -197,7 +234,7 @@ def save_url_to_local_work_dir(url: str, save_dir: str, save_filename: str = '')
             'User-Agent':
                 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
         }
-        response = requests.get(url, headers=headers)
+        response = _download_public_url(url, headers=headers)
         if response.status_code == 200:
             with open(new_path, 'wb') as file:
                 file.write(response.content)
