@@ -157,7 +157,33 @@ There are two subtypes of dictionary formats:
 
 ---
 
-### 2. Handling Duplicate Tool Names
+### 2. Xquik Tweet Search
+
+Set `XQUIK_API_KEY`, then add the built-in tool by name:
+
+```bash
+export XQUIK_API_KEY=<your_api_key>
+```
+
+```python
+bot = Assistant(
+    llm=llm_cfg,
+    function_list=["xquik_tweet_search"],
+)
+```
+
+The tool accepts X search syntax, post IDs, and status URLs. Its JSON response
+contains `tweets`, `has_more`, and `next_cursor`. Pass `next_cursor` back as
+`cursor` to continue pagination. See the
+[Xquik API documentation](https://docs.xquik.com/api-reference/overview) for
+search syntax and authentication details.
+
+Xquik is an independent third-party service. Not affiliated with X Corp.
+"Twitter" and "X" are trademarks of X Corp.
+
+---
+
+### 3. Handling Duplicate Tool Names
 
 - If multiple entries attempt to register a tool with the **same name**, the system:
    **Overwrites** any previous tool with the **latest occurrence** in the list.
@@ -166,7 +192,7 @@ There are two subtypes of dictionary formats:
 
 ---
 
-### 3. Full Usage Example
+### 4. Full Usage Example
 
 ```python
 tools = [
@@ -205,7 +231,7 @@ bot = Assistant(
 
 ---
 
-### 4. Common Errors
+### 5. Common Errors
 
 | Error | Cause | Solution |
 |------|------|--------|
@@ -214,7 +240,7 @@ bot = Assistant(
 
 ---
 
-### 5. Summary
+### 6. Summary
 
 The `function_list` parameter is designed to **flexibly support multiple tool integration strategies**:
 - **Simple**: Use strings for quick access to built-in tools.

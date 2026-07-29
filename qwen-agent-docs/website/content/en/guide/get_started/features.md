@@ -15,6 +15,7 @@ Qwen-Agent is a powerful and flexible framework for building intelligent LLM-pow
   Includes versatile tools out of the box:
   - `code_interpreter`: Execute Python code
   - `web_search` and `web_extractor`: Perform web searches and extract page content
+  - `xquik_tweet_search`: Search public X posts with cursor pagination
   - `image_search`: Perform image searches with image
   - `image_zoom_in_tool`: Zoom in on a specific region of an image by cropping it based on a bounding box
 
