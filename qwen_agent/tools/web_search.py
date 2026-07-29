@@ -1,11 +1,11 @@
 # Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #    http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,6 +21,7 @@ from qwen_agent.tools.base import BaseTool, register_tool
 
 SERPER_API_KEY = os.getenv('SERPER_API_KEY', '')
 SERPER_URL = os.getenv('SERPER_URL', 'https://google.serper.dev/search')
+DEFAULT_WEB_SEARCH_TIMEOUT = 30
 
 
 @register_tool('web_search', allow_overwrite=True)
@@ -53,7 +54,12 @@ class WebSearch(BaseTool):
             )
         headers = {'Content-Type': 'application/json', 'X-API-KEY': SERPER_API_KEY}
         payload = {'q': query}
-        response = requests.post(SERPER_URL, json=payload, headers=headers)
+        response = requests.post(
+            SERPER_URL,
+            json=payload,
+            headers=headers,
+            timeout=DEFAULT_WEB_SEARCH_TIMEOUT,
+        )
         response.raise_for_status()
 
         return response.json()['organic']
