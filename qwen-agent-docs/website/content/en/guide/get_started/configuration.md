@@ -60,6 +60,18 @@ llm_cfg = {
 }
 ```
 
+#### ✅ **Using an OpenAI-compatible multi-model gateway**
+
+The same `model_server` / `base_url` pattern works with any OpenAI-compatible multi-model gateway — for example [DaoXE](https://daoxe.com/?utm_source=github&utm_medium=organic&utm_campaign=qwen-agent&utm_content=configuration) at `https://api.daoxe.com/v1`:
+
+```python
+llm_cfg = {
+    'model': 'gpt-4o-mini',  # or any model id exposed by the gateway
+    'model_server': 'https://api.daoxe.com/v1',  # base_url / api_base
+    'api_key': 'YOUR_GATEWAY_KEY',
+}
+```
+
 ---
 
 #### 🔒 Notes
