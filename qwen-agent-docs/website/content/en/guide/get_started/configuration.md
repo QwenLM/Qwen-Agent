@@ -62,7 +62,7 @@ llm_cfg = {
 
 #### ✅ **Using an OpenAI-compatible multi-model gateway**
 
-The same `model_server` / `base_url` pattern works with any OpenAI-compatible multi-model gateway — for example [DaoXE](https://daoxe.com/?utm_source=github&utm_medium=organic&utm_campaign=qwen-agent&utm_content=configuration) at `https://api.daoxe.com/v1`:
+The same `model_server` / `base_url` pattern works with any OpenAI-compatible multi-model gateway — for example [DaoXE](https://daoxe.com/) at `https://api.daoxe.com/v1`:
 
 ```python
 llm_cfg = {
