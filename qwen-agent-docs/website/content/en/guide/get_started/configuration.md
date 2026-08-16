@@ -26,6 +26,7 @@ This part explains all configuration parameters used when setting up an LLM back
 | `max_input_tokens` | `int` | 90000    | The maximum context length of the agent, when the context exceeds this length, [context management](../../core_moduls/context/) will be automatically performed. This parameter should be lower than the maximum input length supported by the model to ensure the normal operation of the agent.                                                    |
 | `use_raw_api`      | `bool` | `False`  | Whether to use the model server’s native tool-call parsing (e.g., vLLM’s built-in parser).<br> We recommend set `True` for models in the qwen3-coder, qwen3-max, and subsequent series. It will be changed to the default `True` in the future.                                                                                                      |
 | enable thinking    | —      | —        | Enables "thinking mode" if supported by the model. Depends on the parameter protocol of the model service side. <br>• DashScope: `enable_thinking=True` <br>• OpenAI-compatible API of DashScope: `'extra_body': {'enable_thinking': True}` <br>• OpenAI-compatible API of vLLM: `'extra_body': {'chat_template_kwargs': {'enable_thinking': True}}` |
+| `thinking_budget`  | `int` | —        | Maximum token budget for thinking. Required by DashScope when `enable_thinking=True`; must be a positive integer not exceeding the model's max thinking length. <br>• DashScope: `thinking_budget=12000` <br>• OpenAI-compatible API of DashScope: `'extra_body': {'thinking_budget': 12000}` |
 | *(Other params)*   | —     | —        | Parameters directly transmitted to the model service, such as `top_p`, `temperature`, `max_tokens`, etc                                                                                                                                                                                                                                              |
 
 ---
@@ -40,6 +41,7 @@ llm_cfg = {
     # 'api_key': 'your-key',  # Optional if DASHSCOPE_API_KEY env var is set
     'generate_cfg': {
         'enable_thinking': 'True',
+        'thinking_budget': 12000,  # required when enable_thinking=True
         'use_raw_api': 'True',
         'top_p': 0.8,
     }
