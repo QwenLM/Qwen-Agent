@@ -186,7 +186,10 @@ class Agent(ABC):
             The output of tools.
         """
         if tool_name not in self.function_map:
-            return f'Tool {tool_name} does not exists.'
+            resolved = self._resolve_tool_name(tool_name)
+            if resolved is None:
+                return f'Tool {tool_name} does not exist.'
+            tool_name = resolved
         tool = self.function_map[tool_name]
         try:
             tool_result = tool.call(tool_args, **kwargs)
@@ -208,6 +211,35 @@ class Agent(ABC):
             return tool_result  # multimodal tool results
         else:
             return json.dumps(tool_result, ensure_ascii=False, indent=4)
+
+    def _resolve_tool_name(self, tool_name: str) -> Optional[str]:
+        """Resolve model-emitted tool names to registered tools.
+
+        MCP tools are registered as ``{server}-{tool}``. Smaller models sometimes
+        emit only the server name (e.g. ``fetch``) or only the tool name, which
+        previously failed with "Tool ... does not exist".
+        """
+        if not tool_name:
+            return None
+        if tool_name in self.function_map:
+            return tool_name
+
+        candidates = [
+            name for name in self.function_map
+            if name.endswith(f'-{tool_name}') or name.startswith(f'{tool_name}-')
+        ]
+        # Prefer the shortest unique match (e.g. ``fetch-fetch`` over longer aliases).
+        candidates = sorted(set(candidates), key=len)
+        if len(candidates) == 1:
+            logger.warning('Tool name `%s` resolved to registered tool `%s`', tool_name, candidates[0])
+            return candidates[0]
+        if len(candidates) > 1:
+            logger.warning(
+                'Tool name `%s` is ambiguous among %s; keep model output unchanged',
+                tool_name,
+                candidates,
+            )
+        return None
 
     def _init_tool(self, tool: Union[str, Dict, BaseTool]):
         if isinstance(tool, BaseTool):
