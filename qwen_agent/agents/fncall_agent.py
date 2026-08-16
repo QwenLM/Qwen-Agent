@@ -109,7 +109,10 @@ class FnCallAgent(Agent):
 
     def _call_tool(self, tool_name: str, tool_args: Union[str, dict] = '{}', **kwargs) -> str:
         if tool_name not in self.function_map:
-            return f'Tool {tool_name} does not exists.'
+            resolved = self._resolve_tool_name(tool_name)
+            if resolved is None:
+                return f'Tool {tool_name} does not exist.'
+            tool_name = resolved
         # Temporary plan: Check if it is necessary to transfer files to the tool
         # Todo: This should be changed to parameter passing, and the file URL should be determined by the model
         if self.function_map[tool_name].file_access:
