@@ -1,11 +1,11 @@
 # Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #    http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+from types import SimpleNamespace
 
 import pytest
 
@@ -65,3 +66,40 @@ def test_llm_oai(functions, stream, delta_stream):
         assert response[-1].function_call.name == 'image_gen'
     else:
         assert response[-1].function_call is None
+
+
+def test_parallel_tool_call_chunks_are_merged_by_index():
+
+    def tool_call(index, call_id=None, name=None, arguments=None):
+        return SimpleNamespace(index=index, id=call_id, function=SimpleNamespace(name=name, arguments=arguments))
+
+    def chunk(*tool_calls):
+        delta = SimpleNamespace(content=None, reasoning_content=None, tool_calls=list(tool_calls))
+        return SimpleNamespace(choices=[SimpleNamespace(delta=delta)])
+
+    chunks = [
+        chunk(
+            tool_call(0, call_id='call-weather', name='get_weather', arguments='{"city":"'),
+            tool_call(1, call_id='call-time', name='get_time', arguments='{"zone":"'),
+        ),
+        chunk(
+            tool_call(0, arguments='Paris"}'),
+            tool_call(1, arguments='UTC"}'),
+        ),
+    ]
+    llm = get_chat_model({'model': 'test', 'model_server': 'http://localhost/v1', 'api_key': 'EMPTY'})
+    llm._chat_complete_create = lambda **kwargs: iter(chunks)
+
+    responses = list(
+        llm._chat_stream(
+            messages=[Message(role='user', content='Run both tools')],
+            delta_stream=False,
+            generate_cfg={},
+        ))
+
+    tool_calls = [message for message in responses[-1] if message.function_call]
+    assert [(message.function_call.name, message.function_call.arguments) for message in tool_calls] == [
+        ('get_weather', '{"city":"Paris"}'),
+        ('get_time', '{"zone":"UTC"}'),
+    ]
+    assert [message.extra['function_id'] for message in tool_calls] == ['call-weather', 'call-time']

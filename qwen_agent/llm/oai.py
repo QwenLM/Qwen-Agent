@@ -120,7 +120,7 @@ class TextChatAtOAI(BaseFnCallModel):
             else:
                 full_response = ''
                 full_reasoning_content = ''
-                full_tool_calls = []
+                full_tool_calls: Dict[int, Message] = {}
                 for chunk in response:
                     if chunk.choices:
                         if hasattr(chunk.choices[0].delta,
@@ -130,19 +130,25 @@ class TextChatAtOAI(BaseFnCallModel):
                             full_response += chunk.choices[0].delta.content
                         if hasattr(chunk.choices[0].delta, 'tool_calls') and chunk.choices[0].delta.tool_calls:
                             for tc in chunk.choices[0].delta.tool_calls:
-                                if full_tool_calls and (not tc.id or
-                                                        tc.id == full_tool_calls[-1]['extra']['function_id']):
-                                    if tc.function.name:
-                                        full_tool_calls[-1].function_call['name'] += tc.function.name
-                                    if tc.function.arguments:
-                                        full_tool_calls[-1].function_call['arguments'] += tc.function.arguments
-                                else:
-                                    full_tool_calls.append(
-                                        Message(role=ASSISTANT,
-                                                content='',
-                                                function_call=FunctionCall(name=tc.function.name,
-                                                                           arguments=tc.function.arguments),
-                                                extra={'function_id': tc.id}))
+                                if tc.function is None:
+                                    continue
+
+                                if tc.index not in full_tool_calls:
+                                    full_tool_calls[tc.index] = Message(role=ASSISTANT,
+                                                                        content='',
+                                                                        function_call=FunctionCall(
+                                                                            name=tc.function.name or '',
+                                                                            arguments=tc.function.arguments or ''),
+                                                                        extra={'function_id': tc.id})
+                                    continue
+
+                                tool_call = full_tool_calls[tc.index]
+                                if tc.id:
+                                    tool_call.extra['function_id'] = tc.id
+                                if tc.function.name:
+                                    tool_call.function_call['name'] += tc.function.name
+                                if tc.function.arguments:
+                                    tool_call.function_call['arguments'] += tc.function.arguments
 
                         res = []
                         if full_reasoning_content:
@@ -153,7 +159,7 @@ class TextChatAtOAI(BaseFnCallModel):
                                 content=full_response,
                             ))
                         if full_tool_calls:
-                            res += full_tool_calls
+                            res += [full_tool_calls[index] for index in sorted(full_tool_calls)]
                         yield res
         except OpenAIError as ex:
             raise ModelServiceError(exception=ex)
