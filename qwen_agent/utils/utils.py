@@ -116,13 +116,16 @@ def get_basename_from_url(path_or_url: str) -> str:
     # "https://github.com/here?k=v" -> "here"
     # "https://github.com/" -> ""
     basename = urllib.parse.urlparse(path_or_url).path
-    basename = os.path.basename(basename)
+    # SECURITY: decode percent-escapes BEFORE isolating the leaf name, so that
+    # "..%2f" cannot turn into "../" after sanitization (CVE-style traversal).
     basename = urllib.parse.unquote(basename)
+    basename = os.path.basename(os.path.normpath(basename))
     basename = basename.strip()
 
     # "https://github.com/" -> "" -> "github.com"
-    if not basename:
-        basename = [x.strip() for x in path_or_url.split('/') if x.strip()][-1]
+    if not basename or basename in ('.', '..'):
+        fallback = [x.strip() for x in path_or_url.split('/') if x.strip()]
+        basename = os.path.basename(urllib.parse.unquote(fallback[-1])) if fallback else 'file'
 
     return basename
 
@@ -181,10 +184,20 @@ def sanitize_windows_file_path(file_path: str) -> str:
     return file_path
 
 
+def _ensure_within_directory(path: str, directory: str) -> None:
+    """Raise ValueError if path escapes directory after symlink/.. resolution."""
+    real_dir = os.path.realpath(directory)
+    real_path = os.path.realpath(path)
+    if os.path.commonpath([real_path, real_dir]) != real_dir:
+        raise ValueError(f'Refusing unsafe path {path!r} outside of {directory!r}')
+
+
 def save_url_to_local_work_dir(url: str, save_dir: str, save_filename: str = '') -> str:
     if not save_filename:
         save_filename = get_basename_from_url(url)
     new_path = os.path.join(save_dir, save_filename)
+    # SECURITY: containment check — basename must not traverse out of save_dir
+    _ensure_within_directory(new_path, save_dir)
     if os.path.exists(new_path):
         os.remove(new_path)
     logger.info(f'Downloading {url} to {new_path}...')

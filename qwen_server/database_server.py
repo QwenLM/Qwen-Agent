@@ -96,6 +96,11 @@ def cache_page(**kwargs):
         # map to local url
         os.makedirs(os.path.join(server_config.path.download_root, hash_sha256(url)), exist_ok=True)
         url = os.path.join(server_config.path.download_root, hash_sha256(url), get_basename_from_url(url))
+        # SECURITY: containment check — the derived path must stay in download_root
+        if os.path.commonpath([os.path.realpath(url),
+                               os.path.realpath(server_config.path.download_root)
+                               ]) != os.path.realpath(server_config.path.download_root):
+            raise ValueError(f'Refusing unsafe path {url!r} outside of download_root')
         save_browsing_meta_data(url, '[CACHING]', meta_file)
         # rm history
         save_history(None, url, history_dir)
