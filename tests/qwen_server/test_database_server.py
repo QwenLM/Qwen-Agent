@@ -58,3 +58,34 @@ def test_database_server():
     update_pop_url(new_url)
     cache_file_popup_url = os.path.join(server_config.path.work_space_root, 'popup_url.jsonl')
     assert os.path.exists(cache_file_popup_url)
+
+
+def test_cache_page_traversal_url_stays_in_download_root():
+    # Regression: encoded '..%2f' must not escape download_root when the
+    # basename is decoded after sanitization (see get_basename_from_url).
+    server_config_path = Path(__file__).resolve().parent.parent.parent / 'qwen_server/server_config.json'
+    with open(server_config_path, 'r') as f:
+        server_config = GlobalConfig(**json.load(f))
+    if os.path.exists('workspace'):
+        shutil.rmtree('workspace')
+    os.makedirs(server_config.path.work_space_root)
+    os.makedirs(server_config.path.download_root)
+    os.makedirs(server_config.path.code_interpreter_ws)
+
+    from qwen_server.database_server import cache_page
+
+    data = {
+        'url':
+            'https://github.com/a/..%2f..%2f..%2fpwned.html',
+        'content':
+            '<p>pwned</p>'
+    }
+    try:
+        cache_page(**data)
+    except ValueError:
+        return  # containment check refused the write
+
+    resolved = os.path.realpath(os.path.join(server_config.path.download_root, hash_sha256(data['url']),
+                                             get_basename_from_url(data['url'])))
+    allowed = os.path.realpath(server_config.path.download_root)
+    assert os.path.commonpath([resolved, allowed]) == allowed
