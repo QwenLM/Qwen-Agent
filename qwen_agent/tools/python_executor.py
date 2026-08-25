@@ -24,8 +24,6 @@ from functools import partial
 from typing import Any, Dict, List, Optional, Union
 
 import json5
-import regex
-from tqdm import tqdm
 
 from qwen_agent.tools.base import BaseTool
 from qwen_agent.utils.utils import extract_code
@@ -44,8 +42,14 @@ class GenericRuntime:
             self.exec_code(c)
 
     def exec_code(self, code_piece: str) -> None:
-        if regex.search(r'(\s|^)?input\(', code_piece) or regex.search(r'(\s|^)?os.system\(', code_piece):
-            raise RuntimeError()
+        try:
+            import regex
+            if regex.search(r'(\s|^)?input\(', code_piece) or regex.search(r'(\s|^)?os.system\(', code_piece):
+                raise RuntimeError()
+        except ImportError:
+            import re
+            if re.search(r'(\s|^)?input\(', code_piece) or re.search(r'(\s|^)?os.system\(', code_piece):
+                raise RuntimeError()
         exec(code_piece, self._global_vars)
 
     def eval_code(self, expr: str) -> Any:
@@ -61,12 +65,19 @@ class GenericRuntime:
 
 
 class DateRuntime(GenericRuntime):
-    import dateutil.relativedelta
-    GLOBAL_DICT = {
-        'datetime': datetime.datetime,
-        'timedelta': dateutil.relativedelta.relativedelta,
-        'relativedelta': dateutil.relativedelta.relativedelta
-    }
+    def __init__(self):
+        try:
+            import dateutil.relativedelta
+            self.GLOBAL_DICT = {
+                'datetime': datetime.datetime,
+                'timedelta': dateutil.relativedelta.relativedelta,
+                'relativedelta': dateutil.relativedelta.relativedelta
+            }
+        except ImportError as e:
+            raise ImportError(
+                'The dependencies for DateRuntime are not installed. '
+                'Please install python-dateutil with `pip install python-dateutil`.') from e
+        super().__init__()
 
 
 class CustomDict(dict):
@@ -205,7 +216,11 @@ class PythonExecutor(BaseTool):
             iterator = future.result()
 
             if len(all_code_snippets) > 100:
-                progress_bar = tqdm(total=len(all_code_snippets), desc='Execute')
+                try:
+                    from tqdm import tqdm
+                    progress_bar = tqdm(total=len(all_code_snippets), desc='Execute')
+                except ImportError:
+                    progress_bar = None
             else:
                 progress_bar = None
 
