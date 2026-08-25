@@ -76,7 +76,7 @@ def test():
 
     print('# Assistant Response 1:')
     responses = []
-    for responses in llm.chat(
+    for response in llm.chat(
             messages=messages,
             functions=functions,
             stream=True,
@@ -92,7 +92,8 @@ def test():
                 # function_choice='get_current_weather',
             ),
     ):
-        print(responses)
+        print(response)
+        responses = response
 
     messages.extend(responses)  # extend conversation with assistant's reply
 
@@ -125,7 +126,7 @@ def test():
             })  # extend conversation with function response
 
         print('# Assistant Response 2:')
-        for responses in llm.chat(
+        for response in llm.chat(
                 messages=messages,
                 functions=functions,
                 extra_generate_cfg={
@@ -134,7 +135,7 @@ def test():
                 },
                 stream=True,
         ):  # get a new response from the model where it can see the function response
-            print(responses)
+            print(response)
 
 
 if __name__ == '__main__':
