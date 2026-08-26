@@ -310,6 +310,24 @@ class MCPManager:
         self.loop_thread.join()
 
 
+def _import_streamable_http_client():
+    try:
+        from mcp.client.streamable_http import streamablehttp_client
+        return streamablehttp_client, True
+    except ImportError:
+        from mcp.client.streamable_http import streamable_http_client
+        return streamable_http_client, False
+
+
+def _streamable_http_async_client(headers, sse_read_timeout):
+    try:
+        import httpx2 as httpx_lib
+    except ImportError:
+        import httpx as httpx_lib
+    timeout = httpx_lib.Timeout(30.0, read=float(sse_read_timeout))
+    return httpx_lib.AsyncClient(headers=headers or {}, timeout=timeout, follow_redirects=True)
+
+
 class MCPClient:
 
     def __init__(self):
@@ -326,7 +344,6 @@ class MCPClient:
         from mcp import ClientSession, StdioServerParameters
         from mcp.client.sse import sse_client
         from mcp.client.stdio import stdio_client
-        from mcp.client.streamable_http import streamablehttp_client
         """Connect to an MCP server and retrieve the available tools."""
         # Save parameters
         self._last_mcp_server_name = mcp_server_name
@@ -349,10 +366,16 @@ class MCPClient:
                     }
                     """
                     headers = mcp_server.get('headers', {})
-                    self._streams_context = streamablehttp_client(
-                        url=url, headers=headers, sse_read_timeout=datetime.timedelta(seconds=sse_read_timeout))
-                    read_stream, write_stream, get_session_id = await self.exit_stack.enter_async_context(
-                        self._streams_context)
+                    streamable_http_client, uses_headers = _import_streamable_http_client()
+                    if uses_headers:
+                        self._streams_context = streamable_http_client(
+                            url=url, headers=headers, sse_read_timeout=datetime.timedelta(seconds=sse_read_timeout))
+                    else:
+                        http_client = _streamable_http_async_client(headers, sse_read_timeout)
+                        await self.exit_stack.enter_async_context(http_client)
+                        self._streams_context = streamable_http_client(url=url, http_client=http_client)
+                    streams = await self.exit_stack.enter_async_context(self._streams_context)
+                    read_stream, write_stream = streams[0], streams[1]
                     self._session_context = ClientSession(read_stream, write_stream)
                     self.session = await self.exit_stack.enter_async_context(self._session_context)
                 else:
