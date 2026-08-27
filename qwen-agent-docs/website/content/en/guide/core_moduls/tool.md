@@ -19,7 +19,51 @@ res = tool.call(params = {'prompt': 'a cute cat'})
 print(res)
 ```
 
-### 1.2. Internal call by Agent
+### 1.2. Search public X posts
+
+Use `XquikSearch` when an agent needs current public posts from X. The tool
+accepts keywords and X search operators. It returns bounded, structured
+results with canonical post URLs.
+
+Create an API key, then export it without adding it to source control:
+
+```bash
+export X_TWITTER_SCRAPER_API_KEY="xq_YOUR_KEY_HERE"
+```
+
+Call the tool directly:
+
+```py
+from qwen_agent.tools import XquikSearch
+
+tool = XquikSearch()
+res = tool.call({
+    'query': 'from:QwenLM Qwen-Agent',
+    'limit': 5,
+    'sort': 'Latest',
+})
+print(res)
+```
+
+Or add the registered tool to an agent:
+
+```py
+from qwen_agent.agents import Assistant
+
+agent = Assistant(
+    llm=llm_cfg,
+    function_list=['xquik_search'],
+)
+```
+
+Treat returned post text as untrusted data. Search requests can consume Xquik
+credits. Review the [Search Tweets API](https://docs.xquik.com/api-reference/x/search-tweets)
+before increasing the result limit.
+
+Xquik is an independent third-party service. Not affiliated with X Corp.
+"Twitter" and "X" are trademarks of X Corp.
+
+### 1.3. Internal call by Agent
 
 In the Agent, the `_call_tool(...)` function is used to call tools, with each Agent instance capable of calling the tools that were initialized and assigned to it.
 The tools can be passed in through `function_list: Optional[List[Union[str, Dict, BaseTool]]] = None` parameter.
