@@ -21,6 +21,7 @@ from qwen_agent.tools.base import BaseTool, register_tool
 
 SERPER_API_KEY = os.getenv('SERPER_API_KEY', '')
 SERPER_URL = os.getenv('SERPER_URL', 'https://google.serper.dev/search')
+SERPER_TIMEOUT = 30
 
 
 @register_tool('web_search', allow_overwrite=True)
@@ -53,7 +54,7 @@ class WebSearch(BaseTool):
             )
         headers = {'Content-Type': 'application/json', 'X-API-KEY': SERPER_API_KEY}
         payload = {'q': query}
-        response = requests.post(SERPER_URL, json=payload, headers=headers)
+        response = requests.post(SERPER_URL, json=payload, headers=headers, timeout=SERPER_TIMEOUT)
         response.raise_for_status()
 
         return response.json()['organic']
