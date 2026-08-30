@@ -83,6 +83,23 @@ class Transformers(BaseFnCallModel):
 
         return TextIteratorStreamer(self.tokenizer, timeout=60.0, skip_prompt=True, skip_special_tokens=True)
 
+    def _get_stopping_criteria(self, stop_sequences):
+        from transformers.generation.stopping_criteria import StoppingCriteria, StoppingCriteriaList
+
+        class StopSequenceCriteria(StoppingCriteria):
+
+            def __init__(self, stop_sequences, tokenizer):
+                if isinstance(stop_sequences, str):
+                    stop_sequences = [stop_sequences]
+                self.stop_sequences = stop_sequences
+                self.tokenizer = tokenizer
+
+            def __call__(self, input_ids, scores, **kwargs) -> bool:
+                decoded_output = self.tokenizer.decode(input_ids.tolist()[0])
+                return any(decoded_output.endswith(stop_sequence) for stop_sequence in self.stop_sequences)
+
+        return StoppingCriteriaList([StopSequenceCriteria(stop_sequences, self.tokenizer)])
+
     def _get_inputs(self, messages: List[Message]):
         import torch
         
@@ -138,20 +155,9 @@ class Transformers(BaseFnCallModel):
         delta_stream: bool,
         generate_cfg: dict,
     ) -> Iterator[List[Message]]:
-        generate_cfg = copy.deepcopy(generate_cfg)
         inputs = self._get_inputs(messages)
         streamer = self._get_streamer()
-
-        generate_cfg.update(inputs)
-        generate_cfg.update(dict(
-            streamer=streamer,
-            max_new_tokens=generate_cfg.get('max_new_tokens', 2048)
-        ))
-        
-        if 'seed' in generate_cfg:
-            from transformers import set_seed
-            set_seed(generate_cfg['seed'])
-            del generate_cfg['seed']
+        generate_cfg = self._prepare_generate_cfg(generate_cfg, inputs, streamer=streamer)
 
         def generate_and_signal_complete():
             self.hf_model.generate(**generate_cfg)
@@ -171,20 +177,28 @@ class Transformers(BaseFnCallModel):
         messages: List[Message],
         generate_cfg: dict,
     ) -> List[Message]:
-        generate_cfg = copy.deepcopy(generate_cfg)
-
         inputs = self._get_inputs(messages)
-        generate_cfg.update(inputs)
-        generate_cfg.update(dict(
-            max_new_tokens=generate_cfg.get('max_new_tokens', 2048)
-        ))
-        
-        if 'seed' in generate_cfg:
-            from transformers import set_seed
-            set_seed(generate_cfg['seed'])
-            del generate_cfg['seed']
+        generate_cfg = self._prepare_generate_cfg(generate_cfg, inputs)
 
         response = self.hf_model.generate(**generate_cfg)
         response = response[:, inputs['input_ids'].size(-1):]
         answer = self.tokenizer.batch_decode(response, skip_special_tokens=True)[0]
         return [Message(ASSISTANT, answer)]
+
+    def _prepare_generate_cfg(self, generate_cfg: dict, inputs: dict, streamer=None) -> dict:
+        generate_cfg = copy.deepcopy(generate_cfg)
+        generate_cfg.update(inputs)
+        generate_cfg.update(dict(
+            max_new_tokens=generate_cfg.get('max_new_tokens', 2048)
+        ))
+        if streamer is not None:
+            generate_cfg['streamer'] = streamer
+        stop = generate_cfg.pop('stop', None)
+        if stop:
+            generate_cfg['stopping_criteria'] = self._get_stopping_criteria(stop)
+
+        if 'seed' in generate_cfg:
+            from transformers import set_seed
+            set_seed(generate_cfg['seed'])
+            del generate_cfg['seed']
+        return generate_cfg
