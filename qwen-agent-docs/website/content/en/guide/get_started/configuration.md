@@ -23,7 +23,7 @@ This part explains all configuration parameters used when setting up an LLM back
 
 | Parameter          | Type  | Default  | Description                                                                                                                                                                                                                                                                                                                                          |
 |--------------------|-------|----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `max_input_tokens` | `int` | 90000    | The maximum context length of the agent, when the context exceeds this length, [context management](../../core_moduls/context/) will be automatically performed. This parameter should be lower than the maximum input length supported by the model to ensure the normal operation of the agent.                                                    |
+| `max_input_tokens` | `int` | 58000    | The maximum context length of the agent, when the context exceeds this length, [context management](../../core_moduls/context/) will be automatically performed. This parameter should be lower than the maximum input length supported by the model to ensure the normal operation of the agent.                                                    |
 | `use_raw_api`      | `bool` | `False`  | Whether to use the model server’s native tool-call parsing (e.g., vLLM’s built-in parser).<br> We recommend set `True` for models in the qwen3-coder, qwen3-max, and subsequent series. It will be changed to the default `True` in the future.                                                                                                      |
 | enable thinking    | —      | —        | Enables "thinking mode" if supported by the model. Depends on the parameter protocol of the model service side. <br>• DashScope: `enable_thinking=True` <br>• OpenAI-compatible API of DashScope: `'extra_body': {'enable_thinking': True}` <br>• OpenAI-compatible API of vLLM: `'extra_body': {'chat_template_kwargs': {'enable_thinking': True}}` |
 | *(Other params)*   | —     | —        | Parameters directly transmitted to the model service, such as `top_p`, `temperature`, `max_tokens`, etc                                                                                                                                                                                                                                              |
@@ -225,3 +225,47 @@ The `function_list` parameter is designed to **flexibly support multiple tool in
 By combining these approaches, you can build powerful, extensible tool-calling agents.
 
 ---
+
+## RAG configuration
+
+When initializing an `Assistant` (or the `Memory` agent directly), the RAG behavior can be tuned via the `rag_cfg` dictionary.
+This is useful when the default settings do not fit your model's context window or your documents, for example:
+when an agent errors out or stops responding after many documents are uploaded, or when retrieved content should occupy more or less of the context.
+
+```python
+bot = Assistant(
+    llm=llm_cfg,
+    rag_cfg={
+        'max_ref_token': 4000,
+        'parser_page_size': 500,
+        'rag_keygen_strategy': 'SplitQueryThenGenKeyword',
+        'rag_searchers': ['keyword_search', 'front_page_search'],
+    }
+)
+```
+
+### Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `max_ref_token` | `int` | `20000` | The token budget reserved for retrieved RAG materials in the context. Reduce it for models with smaller context windows. |
+| `parser_page_size` | `int` | `500` | The maximum number of tokens per chunk when parsing documents for retrieval. |
+| `rag_keygen_strategy` | `str` | `'GenKeyword'` | The keyword-generation strategy for retrieval. One of `'None'`, `'GenKeyword'`, `'SplitQueryThenGenKeyword'`, `'GenKeywordWithKnowledge'`, `'SplitQueryThenGenKeywordWithKnowledge'`. Falls back to no keyword generation when no LLM is available. |
+| `rag_searchers` | `list[str]` | `['keyword_search', 'front_page_search']` | The retrieval tools to use, e.g., `'keyword_search'`, `'front_page_search'`, or a hybrid combination. |
+
+### Global defaults via environment variables
+
+Each of these settings also has a corresponding environment variable that overrides the built-in default (defined in `qwen_agent/settings.py`):
+
+| Environment variable | Default | Corresponding parameter |
+|----------------------|---------|------------------------|
+| `QWEN_AGENT_DEFAULT_MAX_INPUT_TOKENS` | `58000` | `generate_cfg.max_input_tokens` |
+| `QWEN_AGENT_DEFAULT_MAX_REF_TOKEN` | `20000` | `rag_cfg.max_ref_token` |
+| `QWEN_AGENT_DEFAULT_PARSER_PAGE_SIZE` | `500` | `rag_cfg.parser_page_size` |
+| `QWEN_AGENT_DEFAULT_RAG_KEYGEN_STRATEGY` | `'GenKeyword'` | `rag_cfg.rag_keygen_strategy` |
+| `QWEN_AGENT_DEFAULT_RAG_SEARCHERS` | `"['keyword_search', 'front_page_search']"` | `rag_cfg.rag_searchers` |
+| `QWEN_AGENT_MAX_LLM_CALL_PER_RUN` | `20` | Maximum LLM calls per agent run |
+| `QWEN_AGENT_DEFAULT_WORKSPACE` | `'workspace'` | Default workspace directory |
+
+Explicit parameters passed in `llm_cfg` / `rag_cfg` take precedence over the environment-variable defaults.
+For how retrieved content is arranged in the context window, see [RAG](../../core_moduls/rag/) and [Context Management](../../core_moduls/context/).
