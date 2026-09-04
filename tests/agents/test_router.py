@@ -13,7 +13,34 @@
 # limitations under the License.
 
 from qwen_agent.agents import Assistant, Router
-from qwen_agent.llm.schema import ContentItem, Message
+from qwen_agent.llm.schema import ContentItem, FunctionCall, Message
+from qwen_agent.tools.base import BaseTool
+
+
+class DummyTool(BaseTool):
+    name = 'dummy_tool'
+    description = 'A dummy tool for tests.'
+
+    def call(self, params, **kwargs):
+        return 'dummy-result'
+
+
+class FakeLLM:
+    """Minimal LLM stub that records chat() calls and returns scripted replies."""
+
+    def __init__(self, replies):
+        self.model = 'fake-llm'
+        self.model_type = 'fake'
+        self.calls = []
+        self._replies = list(replies)
+
+    def chat(self, messages, functions=None, stream=True, extra_generate_cfg=None, **kwargs):
+        self.calls.append({'functions': functions})
+        reply = self._replies.pop(0)
+        if stream:
+            yield reply
+        else:
+            return reply
 
 
 def test_router():
@@ -51,3 +78,83 @@ def test_router():
     assert last[-3].function_call.arguments == '{"location": "海淀区"}'
     assert last[-2].name == 'amap_weather'
     assert len(last[-1].content) > 0
+
+
+def test_router_direct_reply_with_function_list():
+    router_llm = FakeLLM([[Message(role='assistant', content='Hello!')]])
+    child_llm = FakeLLM([[Message(role='assistant', content='child should not be called')]])
+    child = Assistant(llm=child_llm, name='weather_agent', description='query weather')
+    bot = Router(llm=router_llm, agents=[child], function_list=[DummyTool()])
+
+    *_, last = bot.run([Message('user', 'hi')])
+
+    assert not router_llm.calls[0]['functions']
+    assert not child_llm.calls
+    assert last[-1].content == 'Hello!'
+    assert all(msg.role != 'function' for msg in last)
+
+
+def test_router_function_list_does_not_pass_tools_on_routing_turn():
+    router_llm = FakeLLM([[Message(role='assistant', content='Call: weather_agent')]])
+    child_llm = FakeLLM([[Message(role='assistant', content='Sunny in Beijing')]])
+    child = Assistant(llm=child_llm,
+                      name='weather_agent',
+                      description='query weather',
+                      function_list=[DummyTool()])
+    bot = Router(llm=router_llm, agents=[child], function_list=[DummyTool()])
+
+    *_, last = bot.run([Message('user', 'what is the weather in Beijing?')])
+
+    assert router_llm.calls, 'Router should call the LLM once for routing'
+    assert not router_llm.calls[0]['functions']
+    assert last[-1].content == 'Sunny in Beijing'
+    assert last[-1].name == 'weather_agent'
+    assert all('does not exists' not in (msg.content or '') for msg in last)
+
+
+def test_router_function_list_does_not_execute_hallucinated_tools():
+    router_llm = FakeLLM([[
+        Message(role='assistant',
+                content='',
+                function_call=FunctionCall(name='invented_tool', arguments='{}'),
+                extra={})
+    ]])
+    child_llm = FakeLLM([[Message(role='assistant', content='child should not be called')]])
+    child = Assistant(llm=child_llm,
+                      name='weather_agent',
+                      description='query weather',
+                      function_list=[DummyTool()])
+    bot = Router(llm=router_llm, agents=[child], function_list=[DummyTool()])
+
+    *_, last = bot.run([Message('user', 'what is the weather in Beijing?')])
+
+    assert not router_llm.calls[0]['functions']
+    assert not child_llm.calls
+    assert all(msg.role != 'function' for msg in last)
+    assert all('does not exists' not in (msg.content or '') for msg in last)
+
+
+def test_router_still_lets_child_agent_use_tools():
+    router_llm = FakeLLM([[Message(role='assistant', content='Call: weather_agent')]])
+    child_llm = FakeLLM([
+        [
+            Message(role='assistant',
+                    content='',
+                    function_call=FunctionCall(name='dummy_tool', arguments='{}'),
+                    extra={})
+        ],
+        [Message(role='assistant', content='Sunny in Beijing')],
+    ])
+    child = Assistant(llm=child_llm,
+                      name='weather_agent',
+                      description='query weather',
+                      function_list=[DummyTool()])
+    bot = Router(llm=router_llm, agents=[child], function_list=[DummyTool()])
+
+    *_, last = bot.run([Message('user', 'what is the weather in Beijing?')])
+
+    assert not router_llm.calls[0]['functions']
+    assert child_llm.calls[0]['functions']
+    assert any(msg.role == 'function' and msg.name == 'dummy_tool' for msg in last)
+    assert last[-1].content == 'Sunny in Beijing'
+    assert last[-1].name == 'weather_agent'

@@ -65,11 +65,19 @@ class Router(Assistant, MultiAgentHub):
             if msg[ROLE] == ASSISTANT:
                 msg = self.supplement_name_special_token(msg)
             messages_for_router.append(msg)
+        messages_for_router = self._prepend_knowledge_prompt(messages=messages_for_router, lang=lang, **kwargs)
+
+        extra_generate_cfg = {'lang': lang}
+        if kwargs.get('seed') is not None:
+            extra_generate_cfg['seed'] = kwargs['seed']
+        # Routing uses Call:/Reply: text, not native function-calling (issue #622).
         response = []
-        for response in super()._run(messages=messages_for_router, lang=lang, **kwargs):
+        for response in self._call_llm(messages=messages_for_router,
+                                       functions=None,
+                                       extra_generate_cfg=extra_generate_cfg):
             yield response
 
-        if 'Call:' in response[-1].content and self.agents:
+        if response and 'Call:' in response[-1].content and self.agents:
             # According to the rule in prompt to selected agent
             selected_agent_name = response[-1].content.split('Call:')[-1].strip().split('\n')[0].strip()
             logger.info(f'Need help from {selected_agent_name}')
