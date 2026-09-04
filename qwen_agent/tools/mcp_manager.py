@@ -17,7 +17,6 @@ import atexit
 import datetime
 import json
 import threading
-import time
 import uuid
 from contextlib import AsyncExitStack
 from typing import Dict, Optional, Union
@@ -28,15 +27,21 @@ from qwen_agent.log import logger
 from qwen_agent.tools.base import BaseTool
 
 
+def _wait_for_future(future, timeout: float):
+    """Wait for a cross-thread MCP operation without allowing an infinite hang."""
+    return future.result(timeout=timeout)
+
+
 class MCPManager:
     _instance = None  # Private class variable to store the unique instance
+    DEFAULT_TIMEOUT = 30.0
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
-            cls._instance = super(MCPManager, cls).__new__(cls, *args, **kwargs)
+            cls._instance = super(MCPManager, cls).__new__(cls)
         return cls._instance
 
-    def __init__(self):
+    def __init__(self, timeout: Optional[float] = None):
         if not hasattr(self, 'clients'):  # The singleton should only be inited once
             """Set a new event loop in a separate thread"""
             try:
@@ -46,6 +51,10 @@ class MCPManager:
 
             load_dotenv()  # Load environment variables from .env file
             self.clients: dict = {}
+            self._clients_lock = threading.RLock()
+            self.timeout = self.DEFAULT_TIMEOUT if timeout is None else float(timeout)
+            if self.timeout <= 0:
+                raise ValueError('MCP timeout must be greater than zero')
             self.loop = asyncio.new_event_loop()
             self.loop_thread = threading.Thread(target=self.start_loop, daemon=True)
             self.loop_thread.start()
@@ -143,7 +152,7 @@ class MCPManager:
         # Submit coroutine to the event loop and wait for the result
         future = asyncio.run_coroutine_threadsafe(self.init_config_async(config), self.loop)
         try:
-            result = future.result()  # You can specify a timeout if desired
+            result = _wait_for_future(future, self.timeout)
             return result
         except Exception as e:
             logger.info(f'Failed in initializing MCP tools: {e}')
@@ -161,7 +170,8 @@ class MCPManager:
             client_id = server_name + '_' + str(
                 uuid.uuid4())  # To allow the same server name be used across different running agents
             client.client_id = client_id  # Ensure client_id is set on the client instance
-            self.clients[client_id] = client  # Add to clients dict after successful connection
+            with self._clients_lock:
+                self.clients[client_id] = client  # Add to clients dict after successful connection
             for tool in client.tools:
                 """MCP tool example:
                 {
@@ -274,10 +284,11 @@ class MCPManager:
                 tool_args = json.loads(params)
                 # Submit coroutine to the event loop and wait for the result
                 manager = MCPManager()
-                client = manager.clients[self.client_id]
+                with manager._clients_lock:
+                    client = manager.clients[self.client_id]
                 future = asyncio.run_coroutine_threadsafe(client.execute_function(tool_name, tool_args), manager.loop)
                 try:
-                    result = future.result()
+                    result = _wait_for_future(future, manager.timeout)
                     return result
                 except Exception as e:
                     logger.info(f'Failed in executing MCP tool: {e}')
@@ -288,12 +299,17 @@ class MCPManager:
 
     def shutdown(self):
         futures = []
-        for client_id in list(self.clients.keys()):
-            client: MCPClient = self.clients[client_id]
+        with self._clients_lock:
+            clients = list(self.clients.items())
+            self.clients.clear()
+        for client_id, client in clients:
             future = asyncio.run_coroutine_threadsafe(client.cleanup(), self.loop)
             futures.append(future)
-            del self.clients[client_id]
-        time.sleep(1)  # Wait for the graceful cleanups, otherwise fall back
+        for future in futures:
+            try:
+                _wait_for_future(future, self.timeout)
+            except Exception as e:
+                logger.info(f'Failed to clean up MCP client: {e}')
 
         # fallback
         if asyncio.all_tasks(self.loop):
@@ -411,8 +427,10 @@ class MCPClient:
                 from qwen_agent.tools.mcp_manager import MCPManager
                 manager = MCPManager()
                 if self.client_id is not None:
-                    manager.clients[self.client_id] = await self.reconnect()
-                    return await manager.clients[self.client_id].execute_function(tool_name, tool_args)
+                    reconnected = await self.reconnect()
+                    with manager._clients_lock:
+                        manager.clients[self.client_id] = reconnected
+                    return await reconnected.execute_function(tool_name, tool_args)
                 else:
                     logger.info('Reconnect failed: client_id is None')
                     return 'Session reconnect (client creation) exception: client_id is None'
@@ -450,7 +468,9 @@ class MCPClient:
                 logger.info(f'Failed to read resource: {e}')
                 return f'Error: {e}'
         else:
-            response = await self.session.call_tool(tool_name, tool_args)
+            manager = MCPManager()
+            response = await asyncio.wait_for(
+                self.session.call_tool(tool_name, tool_args), timeout=manager.timeout)
             texts = []
             for content in response.content:
                 if content.type == 'text':
