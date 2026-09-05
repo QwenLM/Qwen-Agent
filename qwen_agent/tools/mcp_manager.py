@@ -326,7 +326,15 @@ class MCPClient:
         from mcp import ClientSession, StdioServerParameters
         from mcp.client.sse import sse_client
         from mcp.client.stdio import stdio_client
-        from mcp.client.streamable_http import streamablehttp_client
+        try:  # mcp 1.x; this name was removed in mcp 2.0
+            from mcp.client.streamable_http import streamablehttp_client
+
+            streamable_http_uses_mcp_v2 = False
+        except ImportError:  # mcp >= 2.0 renamed the client and changed its signature
+            from mcp.client.streamable_http import streamable_http_client
+            from mcp.shared._httpx_utils import create_mcp_http_client
+
+            streamable_http_uses_mcp_v2 = True
         """Connect to an MCP server and retrieve the available tools."""
         # Save parameters
         self._last_mcp_server_name = mcp_server_name
@@ -349,10 +357,26 @@ class MCPClient:
                     }
                     """
                     headers = mcp_server.get('headers', {})
-                    self._streams_context = streamablehttp_client(
-                        url=url, headers=headers, sse_read_timeout=datetime.timedelta(seconds=sse_read_timeout))
-                    read_stream, write_stream, get_session_id = await self.exit_stack.enter_async_context(
-                        self._streams_context)
+                    if streamable_http_uses_mcp_v2:
+                        # mcp >= 2.0 takes a pre-configured httpx2 client and
+                        # yields a 2-tuple. Build the client ourselves so the
+                        # headers and SSE read timeout still apply, and enter
+                        # it into the stack before the transport so it is
+                        # closed last (the transport only closes clients it
+                        # created itself).
+                        import httpx2
+                        http_client = create_mcp_http_client(
+                            headers=headers or None,
+                            timeout=httpx2.Timeout(30.0, read=sse_read_timeout))
+                        await self.exit_stack.enter_async_context(http_client)
+                        self._streams_context = streamable_http_client(url=url, http_client=http_client)
+                        read_stream, write_stream = await self.exit_stack.enter_async_context(
+                            self._streams_context)
+                    else:
+                        self._streams_context = streamablehttp_client(
+                            url=url, headers=headers, sse_read_timeout=datetime.timedelta(seconds=sse_read_timeout))
+                        read_stream, write_stream, get_session_id = await self.exit_stack.enter_async_context(
+                            self._streams_context)
                     self._session_context = ClientSession(read_stream, write_stream)
                     self.session = await self.exit_stack.enter_async_context(self._session_context)
                 else:
