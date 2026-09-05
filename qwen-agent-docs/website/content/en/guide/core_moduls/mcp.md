@@ -13,7 +13,7 @@ This document provides a comprehensive guide on how to configure and use MCP wit
 Install the stable version from PyPI:
 
 ```bash
-pip install -U "qwen-agent[mcp]"
+pip install -U "qwen-agent[mcp]" "mcp<2"
 ```
 
 Or install the latest development version from source:
@@ -21,12 +21,20 @@ Or install the latest development version from source:
 ```bash
 git clone https://github.com/QwenLM/Qwen-Agent.git
 cd Qwen-Agent
-pip install -e ./"[mcp]"
+pip install -U -e ./"[mcp]" "mcp<2"
+```
+
+Use MCP SDK 1.x: Qwen-Agent currently imports `streamablehttp_client`, which is not available under that name in SDK 2.x.
+
+In a minimal environment, also install the dependencies imported by Qwen-Agent's shared utilities and tools:
+
+```bash
+pip install numpy soundfile tqdm python-dateutil
 ```
 
 ### 1.2 Install Required System Dependencies
 
-MCP servers typically rely on Node.js or Python-based toolchains. Ensure the following are installed:
+Local MCP servers typically rely on Node.js or Python-based toolchains. Install the dependencies required by your chosen local servers (the remote example in section 2.3 does not need these):
 
 - **Node.js** (latest LTS version)
 - **uv** (version ≥ 0.4.18) – for running Python-based MCP servers
@@ -131,6 +139,35 @@ WebUI(
 
 ---
 
+### 2.3 Remote Web Search with Parallel
+
+Qwen-Agent also connects directly to remote MCP servers over Streamable HTTP. [Parallel Search MCP](https://docs.parallel.ai/integrations/mcp/search-mcp) provides public web search and page extraction without a Parallel account or API key. Free access is rate limited.
+
+Use this configuration with your existing `llm_cfg` from section 2.2:
+
+```python
+from qwen_agent.agents import Assistant
+
+parallel_config = {
+    "mcpServers": {
+        "parallel-search": {
+            "type": "streamable-http",
+            "url": "https://search.parallel.ai/mcp"
+        }
+    }
+}
+
+agent = Assistant(llm=llm_cfg, function_list=[parallel_config])
+```
+
+Set `type` to `streamable-http` explicitly: a URL without this field defaults to SSE. No local server process or authentication header is needed. Your LLM configuration and any credentials it requires are separate.
+
+Initializing the agent connects to Parallel and discovers `parallel-search-web_search` and `parallel-search-web_fetch`. Once enabled, the agent may call these tools during a conversation. Search queries, requested URLs, and any supplied objectives, context, or metadata go to Parallel. See Parallel's [Customer Terms](https://parallel.ai/customer-terms) and [Privacy Policy](https://parallel.ai/privacy-policy).
+
+For example, ask the agent to find the official Python documentation for `asyncio` and summarize the page. To keep other tools, include their existing entries alongside `parallel_config` in `function_list`. To disable Parallel, remove `parallel_config` and create a new agent. This example does not change the built-in search provider or the local server configurations above.
+
+---
+
 ## 3. Example Use Cases
 
 ### Use Case 1: Reading/Writing Local Files
@@ -154,15 +191,15 @@ With `sqlite` MCP, the agent can execute queries like:
    - **The MCP services may not be sandboxed**. Use only in trusted, local development environments—**not in production**.
 
 2. **Service Lifecycle**:
-   - Qwen-Agent automatically starts configured MCP services when the agent is initialized.
-   - Ensure that commands like `npx` and `uvx` are available in your system’s `PATH`.
+   - Qwen-Agent starts configured local MCP services or connects to remote services when the agent is initialized.
+   - For local services, ensure that commands like `npx` and `uvx` are available in your system’s `PATH`.
 
 3. **Debugging Tips**:
    - Check terminal logs to confirm MCP services start successfully.
    - Test with official examples, such as [`assistant_mcp_sqlite_bot.py`](https://github.com/QwenLM/Qwen-Agent/blob/main/examples/assistant_mcp_sqlite_bot.py).
 
 4. **Performance**:
-   - Each MCP server runs as a separate subprocess. Avoid defining unnecessary services to reduce overhead.
+   - Each local MCP server runs as a separate subprocess; remote servers use network connections. Avoid defining unnecessary services to reduce overhead.
 
 ---
 
