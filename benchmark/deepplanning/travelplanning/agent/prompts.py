@@ -432,12 +432,12 @@ HH:MM-HH:MM | activity_type | detail_string_2
 JSON输出Schema定义 (Output JSON Schema)
 {
   "budget_summary": {
-    "transportation": "number",
-    "accommodation": "number",
-    "meals": "number",
-    "attractions_and_tickets": "number",
-    "other": "number",
-    "total_estimated_budget": "number",
+    "transportation": "number | null",
+    "accommodation": "number | null",
+    "meals": "number | null",
+    "attractions_and_tickets": "number | null",
+    "other": "number | null",
+    "total_estimated_budget": "number | null",
     "currency": "string"
   },
   "daily_plans": [
@@ -462,6 +462,11 @@ JSON输出Schema定义 (Output JSON Schema)
 }
 
 关键解析规则 (Key Parsing Rules)
+
+- 你是转录员，不是编辑。示例中的城市、名称和数字只用于说明格式，不是默认值。
+- 保留输入中按顺序出现的每份草稿和每个 Day 段落；不要选择“最终版”、合并或去重。如果输入包含字面量 `<plan>` 标签，只转换标签之后的内容。
+- 如果输入没有 Budget Summary，将所有数值预算字段设为 `null`；不要复制示例数字、填 0 或自行计算。如果有多个预算段，使用最后一个。
+- 逐字保留已标注的城市、名称、班次和占位文字。价格仍应提取到对应的数值字段，不应成为名称的一部分。输入未提供的字段使用 `null`，不要推断。
 
 - 对accommodation字段的补充说明：
 如果输入中的Accommodation为“-”，则在输出的daily_plans的相应天中不需要包含accommodation字段，其余情况下需按照Schema要求填写accommodation对象。
@@ -527,10 +532,10 @@ Accommodation: 北京金霖酒店（天安门广场前门地铁站店），￥69
   "daily_plans": [
     {
       "day_number": 1,
-      "current_city": "from 上海 to 北京",
+      "current_city": "from 杭州 to 北京",
       "accommodation": {
-        "name": "北京王府井文华东方酒店",
-        "price_per_night": 1000
+        "name": "北京金霖酒店（天安门广场前门地铁站店）",
+        "price_per_night": 694
       },
       "activities": [
          {
@@ -555,7 +560,6 @@ Accommodation: 北京金霖酒店（天安门广场前门地铁站店），￥69
           "time_slot": "10:15-11:45",
           "type": "travel_city",
           "details": {
-            "mode": "taxi",
             "from": "北京大兴国际机场",
             "to": "北京金霖酒店（天安门广场前门地铁站店）",
             "distance": "50km",
@@ -575,7 +579,6 @@ Accommodation: 北京金霖酒店（天安门广场前门地铁站店），￥69
           "time_slot": "12:15-12:40",
           "type": "travel_city",
           "details": {
-            "mode": "walking",
             "from": "北京金霖酒店（天安门广场前门地铁站店）",
             "to": "天安门广场",
             "distance": "2.1km",
@@ -596,7 +599,6 @@ Accommodation: 北京金霖酒店（天安门广场前门地铁站店），￥69
           "time_slot": "14:40-15:10",
           "type": "travel_city",
           "details": {
-            "mode": "walking",
             "from": "天安门广场",
             "to": "故宫博物院",
             "distance": "2.3km",
@@ -617,7 +619,6 @@ Accommodation: 北京金霖酒店（天安门广场前门地铁站店），￥69
           "time_slot": "18:40-18:50",
           "type": "travel_city",
           "details": {
-            "mode": "walking",
             "from": "故宫博物院",
             "to": "四季民福烤鸭店(故宫店)",
             "distance": "0.87km",
@@ -638,7 +639,6 @@ Accommodation: 北京金霖酒店（天安门广场前门地铁站店），￥69
           "time_slot": "20:00-20:50",
           "type": "travel_city",
           "details": {
-            "mode": "walking",
             "from": "四季民福烤鸭店(故宫店)",
             "to": "北京金霖酒店（天安门广场前门地铁站店）",
             "distance": "3.8km",
@@ -690,12 +690,12 @@ Strict Schema Compliance: The structure of the JSON must strictly conform to the
 JSON Output Schema Definition
 {
   "budget_summary": {
-    "transportation": "number",
-    "accommodation": "number",
-    "meals": "number",
-    "attractions_and_tickets": "number",
-    "other": "number",
-    "total_estimated_budget": "number",
+    "transportation": "number | null",
+    "accommodation": "number | null",
+    "meals": "number | null",
+    "attractions_and_tickets": "number | null",
+    "other": "number | null",
+    "total_estimated_budget": "number | null",
     "currency": "string"
   },
   "daily_plans": [
@@ -720,6 +720,11 @@ JSON Output Schema Definition
 }
 
 Key Parsing Rules
+
+- You are a transcriber, not an editor. Cities, names, and numbers in the example illustrate the format; they are not defaults.
+- Preserve every draft and every Day section in input order. Do not choose a "final" version, merge, or deduplicate them. If the literal `<plan>` tag is present, convert only the content after it.
+- If no Budget Summary is present, set every numeric budget field to `null`; do not copy example values, use zero, or calculate a budget. If several budget sections are present, use the last one.
+- Preserve labelled cities, names, service numbers, and placeholder text verbatim. Prices still belong in their numeric fields rather than names. Use `null` for a missing value instead of inferring one.
 
 - Regarding the accommodation field:
 If the input Accommodation is "-", then do not include the accommodation field for that day in daily_plans of the output; otherwise, fill in the accommodation object according to the schema.
@@ -785,10 +790,10 @@ Output:
   "daily_plans": [
     {
       "day_number": 1,
-      "current_city": "from Shanghai to Beijing",
+      "current_city": "from Hangzhou to Beijing",
       "accommodation": {
-        "name": "Beijing Wangfujing Mandarin Oriental Hotel",
-        "price_per_night": 1000
+        "name": "Beijing Jinlin Hotel (Tiananmen Square Qianmen Metro Station)",
+        "price_per_night": 694
       },
       "activities": [
          {
@@ -813,7 +818,6 @@ Output:
           "time_slot": "10:15-11:45",
           "type": "travel_city",
           "details": {
-            "mode": "taxi",
             "from": "Beijing Daxing International Airport",
             "to": "Beijing Jinlin Hotel (Tiananmen Square Qianmen Metro Station)",
             "distance": "50km",
@@ -833,7 +837,6 @@ Output:
           "time_slot": "12:15-12:40",
           "type": "travel_city",
           "details": {
-            "mode": "walking",
             "from": "Beijing Jinlin Hotel (Tiananmen Square Qianmen Metro Station)",
             "to": "Tiananmen Square",
             "distance": "2.1km",
@@ -854,7 +857,6 @@ Output:
           "time_slot": "14:40-15:10",
           "type": "travel_city",
           "details": {
-            "mode": "walking",
             "from": "Tiananmen Square",
             "to": "The Palace Museum",
             "distance": "2.3km",
@@ -875,7 +877,6 @@ Output:
           "time_slot": "18:40-18:50",
           "type": "travel_city",
           "details": {
-            "mode": "walking",
             "from": "The Palace Museum",
             "to": "Siji Minfu Roast Duck Restaurant (Palace Museum Branch)",
             "distance": "0.87km",
@@ -896,7 +897,6 @@ Output:
           "time_slot": "20:00-20:50",
           "type": "travel_city",
           "details": {
-            "mode": "walking",
             "from": "Siji Minfu Roast Duck Restaurant (Palace Museum Branch)",
             "to": "Beijing Jinlin Hotel (Tiananmen Square Qianmen Metro Station)",
             "distance": "3.8km",
@@ -938,4 +938,3 @@ def get_format_convert_prompt(language: str = 'zh') -> str:
         return FORMAT_CONVERT_PROMPT_EN
     else:
         raise ValueError(f"Unsupported language: {language}")
-
