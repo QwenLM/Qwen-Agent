@@ -59,6 +59,27 @@ for response in bot.run(messages=messages):
 In the [examples](../../../../../../examples) directory,
 we provide more Single-Agent use cases developed based on the Assistant class.
 
+#### Approve tool calls before execution
+
+For tools that can have side effects or incur significant costs, pass a `tool_call_approval` callback to `run`.
+The callback receives the tool name and arguments, and the tool is executed only when it returns `True`.
+If the callback rejects the call or raises an exception, Qwen-Agent does not execute the tool and returns that result to the model as the tool observation.
+
+```py
+def approve_tool_call(tool_name, tool_args):
+    # Safe tools can be approved without prompting.
+    if tool_name == 'amap_weather':
+        return True
+    answer = input(f'Execute {tool_name} with arguments {tool_args}? [y/N] ')
+    return answer.strip().lower() == 'y'
+
+for response in bot.run(
+    messages=messages,
+    tool_call_approval=approve_tool_call,
+):
+    print('bot response:', response)
+```
+
 ### 1.2. GroupChat Class
 We also provide a generic Multi-Agent class: the [GroupChat](../../../../../../qwen_agent/agents/group_chat.py) class. This class manages a list of Agents and automatically maintains their speech orders.
 The features of this class include:

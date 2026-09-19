@@ -18,6 +18,7 @@ from typing import Dict, Iterator, List, Literal, Optional, Union
 from qwen_agent import Agent
 from qwen_agent.llm import BaseChatModel
 from qwen_agent.llm.schema import DEFAULT_SYSTEM_MESSAGE, FUNCTION, Message
+from qwen_agent.log import logger
 from qwen_agent.memory import Memory
 from qwen_agent.settings import MAX_LLM_CALL_PER_RUN
 from qwen_agent.tools import BaseTool
@@ -110,6 +111,20 @@ class FnCallAgent(Agent):
     def _call_tool(self, tool_name: str, tool_args: Union[str, dict] = '{}', **kwargs) -> str:
         if tool_name not in self.function_map:
             return f'Tool {tool_name} does not exists.'
+        tool_call_approval = kwargs.pop('tool_call_approval', None)
+        if tool_call_approval is not None:
+            try:
+                approved = tool_call_approval(tool_name, tool_args)
+            except Exception as ex:
+                error_message = f'Tool call approval failed for `{tool_name}`: {type(ex).__name__}: {ex}'
+                logger.warning(error_message)
+                return error_message
+            if not isinstance(approved, bool):
+                error_message = f'Tool call approval failed for `{tool_name}`: callback must return a bool.'
+                logger.warning(error_message)
+                return error_message
+            if not approved:
+                return f'Tool call `{tool_name}` was rejected by the user.'
         # Temporary plan: Check if it is necessary to transfer files to the tool
         # Todo: This should be changed to parameter passing, and the file URL should be determined by the model
         if self.function_map[tool_name].file_access:
