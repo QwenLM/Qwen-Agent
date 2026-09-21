@@ -25,7 +25,6 @@ from typing import Any, Dict, List, Optional, Union
 
 import json5
 import regex
-from tqdm import tqdm
 
 from qwen_agent.tools.base import BaseTool
 from qwen_agent.utils.utils import extract_code
@@ -61,12 +60,15 @@ class GenericRuntime:
 
 
 class DateRuntime(GenericRuntime):
-    import dateutil.relativedelta
-    GLOBAL_DICT = {
-        'datetime': datetime.datetime,
-        'timedelta': dateutil.relativedelta.relativedelta,
-        'relativedelta': dateutil.relativedelta.relativedelta
-    }
+
+    def __init__(self):
+        import dateutil.relativedelta  # optional dependency, only needed by this runtime
+        self.GLOBAL_DICT = {
+            'datetime': datetime.datetime,
+            'timedelta': dateutil.relativedelta.relativedelta,
+            'relativedelta': dateutil.relativedelta.relativedelta
+        }
+        super().__init__()
 
 
 class CustomDict(dict):
@@ -188,6 +190,7 @@ class PythonExecutor(BaseTool):
 
     def batch_apply(self, batch_code: List[str]) -> list:
         from pebble import ProcessPool
+        from tqdm import tqdm  # optional dependency, only needed here
         all_code_snippets = self.process_generation_to_code(batch_code)
 
         timeout_cnt = 0
