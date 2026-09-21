@@ -73,27 +73,19 @@ class Storage(BaseTool):
             return self.scan(key)
 
     def put(self, key: str, value: str, path: Optional[str] = None) -> str:
-        path = path or self.root
-
-        # one file for one key value pair
-        path = os.path.join(path, key)
-
-        path_dir = path[:path.rfind('/') + 1]
-        if path_dir:
-            os.makedirs(path_dir, exist_ok=True)
-
+        path = self._get_path(key, path)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
         save_text_to_file(path, value)
         return f'Successfully saved {key}.'
 
     def get(self, key: str, path: Optional[str] = None) -> str:
-        path = path or self.root
-        if not os.path.exists(os.path.join(path, key)):
+        path = self._get_path(key, path)
+        if not os.path.exists(path):
             raise KeyNotExistsError(f'Get Failed: {key} does not exist')
-        return read_text_from_file(os.path.join(path, key))
+        return read_text_from_file(path)
 
     def delete(self, key, path: Optional[str] = None) -> str:
-        path = path or self.root
-        path = os.path.join(path, key)
+        path = self._get_path(key, path)
         if os.path.exists(path):
             os.remove(path)
             return f'Successfully deleted {key}'
@@ -101,8 +93,7 @@ class Storage(BaseTool):
             return f'Delete Failed: {key} does not exist'
 
     def scan(self, key: str, path: Optional[str] = None) -> str:
-        path = path or self.root
-        path = os.path.join(path, key)
+        path = self._get_path(key, path)
         if os.path.exists(path):
             if not os.path.isdir(path):
                 return 'Scan Failed: The scan operation requires passing in a folder path as the key.'
@@ -118,3 +109,14 @@ class Storage(BaseTool):
             return '\n'.join([f'{k}: {v}' for k, v in kvs.items()])
         else:
             return f'Scan Failed: {key} does not exist.'
+
+    def _get_path(self, key: str, path: Optional[str] = None) -> str:
+        root = os.path.realpath(path or self.root)
+        target = os.path.realpath(os.path.join(root, key))
+        try:
+            is_within_root = os.path.normcase(os.path.commonpath([root, target])) == os.path.normcase(root)
+        except ValueError:
+            is_within_root = False
+        if not is_within_root:
+            raise ValueError('Storage key must be within storage root.')
+        return target
