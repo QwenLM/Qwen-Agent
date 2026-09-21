@@ -24,6 +24,31 @@ class KeyNotExistsError(ValueError):
     pass
 
 
+class UnsafeKeyError(ValueError):
+    pass
+
+
+def _safe_path(root: str, key: str) -> str:
+    """Resolve ``key`` relative to ``root``, refusing to escape ``root``.
+
+    The key is a tool-call argument, which means it is produced by the LLM and
+    can therefore be steered by any text injected into the conversation.
+    Without this check, a key such as ``../../id_rsa`` (or ``//etc/passwd``,
+    which survives the single leading-slash strip done in ``call``) makes
+    ``os.path.join`` point outside of the storage root, so that put/get/delete/
+    scan read, overwrite or remove arbitrary files of the host.
+    """
+    root = os.path.realpath(root)
+    path = os.path.realpath(os.path.join(root, key))
+    try:
+        within_root = os.path.commonpath([root, path]) == root
+    except ValueError:  # e.g. different drives on Windows
+        within_root = False
+    if not within_root:
+        raise UnsafeKeyError(f'Invalid key: {key} is outside of the storage root.')
+    return path
+
+
 @register_tool('storage')
 class Storage(BaseTool):
     """
@@ -76,9 +101,9 @@ class Storage(BaseTool):
         path = path or self.root
 
         # one file for one key value pair
-        path = os.path.join(path, key)
+        path = _safe_path(path, key)
 
-        path_dir = path[:path.rfind('/') + 1]
+        path_dir = os.path.dirname(path)
         if path_dir:
             os.makedirs(path_dir, exist_ok=True)
 
@@ -87,13 +112,14 @@ class Storage(BaseTool):
 
     def get(self, key: str, path: Optional[str] = None) -> str:
         path = path or self.root
-        if not os.path.exists(os.path.join(path, key)):
+        path = _safe_path(path, key)
+        if not os.path.exists(path):
             raise KeyNotExistsError(f'Get Failed: {key} does not exist')
-        return read_text_from_file(os.path.join(path, key))
+        return read_text_from_file(path)
 
     def delete(self, key, path: Optional[str] = None) -> str:
         path = path or self.root
-        path = os.path.join(path, key)
+        path = _safe_path(path, key)
         if os.path.exists(path):
             os.remove(path)
             return f'Successfully deleted {key}'
@@ -102,7 +128,7 @@ class Storage(BaseTool):
 
     def scan(self, key: str, path: Optional[str] = None) -> str:
         path = path or self.root
-        path = os.path.join(path, key)
+        path = _safe_path(path, key)
         if os.path.exists(path):
             if not os.path.isdir(path):
                 return 'Scan Failed: The scan operation requires passing in a folder path as the key.'
