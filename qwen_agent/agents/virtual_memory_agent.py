@@ -60,6 +60,14 @@ class VirtualMemoryAgent(Assistant):
                     yield response + output
             if output:
                 response.extend(output)
+            if not response:
+                # The model service may return a stream that carries no message at all,
+                # e.g. when it only sends keep-alive chunks or drops the connection early.
+                # There is nothing to detect a tool call from, so emit the (empty)
+                # response once here -- so callers such as `run_nonstream()` still get a
+                # value -- and stop, instead of indexing into an empty list.
+                yield response
+                return
             use_tool, action, action_input, _ = self._detect_tool(response[-1])
             if use_tool:
                 observation = self._call_tool(action, action_input, messages=messages)
