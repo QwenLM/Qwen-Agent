@@ -297,23 +297,106 @@ def remove_incomplete_special_tokens(text: str) -> str:
     return text
 
 
+def _skip_ws(text: str, i: int) -> int:
+    while i < len(text) and text[i] in ' \t\r\n':
+        i += 1
+    return i
+
+
+def _scan_json_string(text: str, i: int) -> tuple[str, int]:
+    """Read the JSON string starting at ``text[i] == '"'``.
+
+    Returns the decoded value and the index just past the closing quote. An
+    unterminated string (a stream cut mid-value) yields what has arrived.
+    """
+    i += 1
+    out = []
+    while i < len(text):
+        ch = text[i]
+        if ch == '\\' and i + 1 < len(text):
+            escape = text[i + 1]
+            out.append({'n': '\n', 't': '\t', 'r': '\r'}.get(escape, escape))
+            i += 2
+            continue
+        if ch == '"':
+            return ''.join(out), i + 1
+        out.append(ch)
+        i += 1
+    return ''.join(out), i
+
+
+def _scan_json_value_prefix(text: str) -> str:
+    """Return the shortest balanced JSON object/array prefix of ``text``.
+
+    Unlike a strict parse this tolerates a stream cut mid-value, which is the
+    only reason a truncated tool call reaches :func:`extract_fn`.
+    """
+    text = text.strip()
+    if not text or text[0] not in '{[':
+        return text
+
+    closers = {'{': '}', '[': ']'}
+    stack: list[str] = []
+    in_string = False
+    escaped = False
+    for i, ch in enumerate(text):
+        if escaped:
+            escaped = False
+            continue
+        if ch == '\\' and in_string:
+            escaped = True
+            continue
+        if ch == '"':
+            in_string = not in_string
+            continue
+        if in_string:
+            continue
+        if ch in closers:
+            stack.append(closers[ch])
+        elif stack and ch == stack[-1]:
+            stack.pop()
+            if not stack:
+                return text[:i + 1]
+    return text
+
+
 def extract_fn(text: str):
+    """Best-effort recovery of a tool call from a (possibly truncated) payload.
+
+    ``json5`` has already rejected the payload by the time this runs, so the
+    structure is scanned directly instead of being matched against literal
+    ``"name": "`` separators: that pattern silently drops any model output
+    written without the spaces a pretty-printer emits, leaving an empty name
+    that the caller cannot dispatch.
+    """
     fn_name, fn_args = '', ''
-    fn_name_s = '"name": "'
-    fn_name_e = '", "'
-    fn_args_s = '"arguments": '
-    i = text.find(fn_name_s)
-    k = text.find(fn_args_s)
-    if i > 0:
-        _text = text[i + len(fn_name_s):]
-        j = _text.find(fn_name_e)
-        if j > -1:
-            fn_name = _text[:j]
+    text = text.strip()
+    i = _skip_ws(text, 0)
+
+    # Locate "name" wherever it sits, then read its string value.
+    while i < len(text):
+        if text[i] != '"':
+            i += 1
+            continue
+        key, end = _scan_json_string(text, i)
+        i = _skip_ws(text, end)
+        if i < len(text) and text[i] == ':':
+            i = _skip_ws(text, i + 1)
+            if key == 'name' and i < len(text) and text[i] == '"':
+                fn_name, i = _scan_json_string(text, i)
+                i = _skip_ws(text, i)
+            elif i < len(text) and text[i] in '{["':
+                # Skip a nested value without parsing it: only the arguments
+                # payload is needed, and a truncated one must survive intact.
+                i += _scan_json_value_prefix(text[i:]).__len__()
+            else:
+                i += 1
+        else:
+            i += 1
+
+    k = text.find('"arguments"')
     if k > 0:
-        fn_args = text[k + len(fn_args_s):]
-    fn_args = fn_args.strip()
-    if len(fn_args) > 2:
-        fn_args = fn_args[:-1]
-    else:
-        fn_args = ''
+        k = _skip_ws(text, k + len('"arguments"'))
+        if k < len(text) and text[k] == ':':
+            fn_args = _scan_json_value_prefix(text[_skip_ws(text, k + 1):])
     return fn_name, fn_args
