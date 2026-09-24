@@ -1,11 +1,11 @@
 # Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #    http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -53,9 +53,14 @@ class KeywordSearch(BaseSearch):
         for doc in docs:
             all_chunks.extend(doc.raw)
 
+        tokenized_chunks = [split_text_into_keywords(x.content) for x in all_chunks]
+        if not any(tokenized_chunks):
+            # BM25 cannot compute IDF when every chunk has an empty vocabulary.
+            return []
+
         # Using bm25 retrieval
         from rank_bm25 import BM25Okapi
-        bm25 = BM25Okapi([split_text_into_keywords(x.content) for x in all_chunks])
+        bm25 = BM25Okapi(tokenized_chunks)
         doc_scores = bm25.get_scores(wordlist)
         chunk_and_score = [
             (chk.metadata['source'], chk.metadata['chunk_id'], score) for chk, score in zip(all_chunks, doc_scores)
