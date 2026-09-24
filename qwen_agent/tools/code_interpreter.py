@@ -304,9 +304,11 @@ class CodeInterpreter(BaseToolWithFileAccess):
     def _connect_kernel(self, container_id: str, host_connection_file: str):
         """Wait for the container, then build and connect a kernel client.
 
-        Raises on any failure; the caller (`_start_kernel`) owns cleanup of the
-        container and of the client's channels, so this method deliberately does
-        no cleanup of its own beyond the diagnostic `docker logs` reads.
+        Raises on any failure. Ownership is split: this method owns the kernel
+        client, so if anything after `BlockingKernelClient` is constructed fails
+        it stops the client's channels before propagating; the caller
+        (`_start_kernel`) owns the container and removes it on any failure raised
+        here. The `docker logs` reads are diagnostic only.
         """
         max_wait = 30
         wait_interval = 0.5
