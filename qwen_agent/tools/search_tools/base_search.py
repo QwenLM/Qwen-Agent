@@ -73,9 +73,9 @@ class BaseSearch(BaseTool):
         query = params['query']
         if not docs:
             return []
-        if not query:
-            return self._get_the_front_part(docs, max_ref_token)
         new_docs, all_tokens = self.format_docs(docs)
+        if not query:
+            return self._get_the_front_part(new_docs, max_ref_token)
         logger.info(f'all tokens: {all_tokens}')
         if all_tokens <= max_ref_token:
             # Todo: Whether to use full window
