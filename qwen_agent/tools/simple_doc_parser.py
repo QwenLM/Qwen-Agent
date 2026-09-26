@@ -337,7 +337,6 @@ def get_font(element):
                 if isinstance(character, LTChar):
                     fonts_list.append((character.fontname, character.size))
 
-    fonts_list = list(set(fonts_list))
     if fonts_list:
         counter = Counter(fonts_list)
         most_common_fonts = counter.most_common(1)[0][0]
