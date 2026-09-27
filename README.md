@@ -77,8 +77,8 @@ model service using the open-source Qwen models.
 - If you choose to use the model service offered by DashScope, please ensure that you set the environment
 variable `DASHSCOPE_API_KEY` to your unique DashScope API key.
 
-- Alternatively, if you prefer to deploy and use your own model service, please follow the instructions provided in the README of Qwen2 for deploying an OpenAI-compatible API service.
-Specifically, consult the [vLLM](https://github.com/QwenLM/Qwen2?tab=readme-ov-file#vllm) section for high-throughput GPU deployment or the [Ollama](https://github.com/QwenLM/Qwen2?tab=readme-ov-file#ollama) section for local CPU (+GPU) deployment.
+- Alternatively, if you prefer to deploy and use your own model service, please follow the instructions provided in the README of Qwen3 for deploying an OpenAI-compatible API service.
+Specifically, consult the [vLLM](https://github.com/QwenLM/Qwen3?tab=readme-ov-file#vllm) section for high-throughput GPU deployment or the [Ollama](https://github.com/QwenLM/Qwen3?tab=readme-ov-file#ollama) section for local CPU (+GPU) deployment.
 For the QwQ and Qwen3 model, it is recommended to **do not** add the `--enable-auto-tool-choice` and `--tool-call-parser hermes` parameters, as Qwen-Agent will parse the tool outputs from vLLM on its own.
 For Qwen3-Coder, it is recommended to enable both of the above parameters, use vLLM's built-in tool parsing, and combine with the `use_raw_api` parameter [usage](#how-to-pass-llm-parameters-to-the-agent).
 
