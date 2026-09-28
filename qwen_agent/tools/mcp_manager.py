@@ -375,7 +375,11 @@ class MCPClient:
 
             await self.session.initialize()
             list_tools = await self.session.list_tools()
-            self.tools = list_tools.tools
+            tools = list(list_tools.tools)
+            while list_tools.nextCursor is not None:
+                list_tools = await self.session.list_tools(cursor=list_tools.nextCursor)
+                tools.extend(list_tools.tools)
+            self.tools = tools
             try:
                 list_resources = await self.session.list_resources()  # Check if the server has resources
                 if list_resources.resources:
