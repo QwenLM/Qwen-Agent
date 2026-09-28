@@ -275,12 +275,41 @@ class CodeInterpreter(BaseToolWithFileAccess):
         
         # start Docker container
         result = subprocess.run(docker_run_cmd, capture_output=True, text=True, encoding='utf-8', errors='replace')
-        if result.returncode != 0:
-            raise RuntimeError(f'Failed to start Docker container: {result.stderr}')
-        
+        # `docker run -d` creates the container object before it starts the entrypoint,
+        # so a non-zero return code can still leave a real container behind (and it
+        # still prints the id on stdout). Read the id before the error check so such a
+        # container can be removed here: `_DOCKER_CONTAINERS` is only populated by
+        # `call()` after this method returns, so nothing else will ever clean it up.
         container_id = result.stdout.strip()
+        if result.returncode != 0:
+            self._remove_container_quietly(container_id)
+            raise RuntimeError(f'Failed to start Docker container: {result.stderr}')
+
         logger.info(f"INFO: Docker container ID = {container_id}")
 
+        # From here until `return`, the container exists but is not yet tracked in
+        # `_DOCKER_CONTAINERS` (that happens in `call()` after we return). Any
+        # failure in this span - the readiness wait, the jupyter client import or
+        # construction, load_connection_file(), start_channels(), the final
+        # wait_for_ready() - must release the container, or it leaks and its
+        # deterministic name blocks every later attempt by this instance.
+        # `_connect_kernel` releases the client's channels on its own failures.
+        try:
+            kc = self._connect_kernel(container_id, host_connection_file)
+        except BaseException:
+            self._remove_container_quietly(container_id)
+            raise
+        return kc, container_id
+
+    def _connect_kernel(self, container_id: str, host_connection_file: str):
+        """Wait for the container, then build and connect a kernel client.
+
+        Raises on any failure. Ownership is split: this method owns the kernel
+        client, so if anything after `BlockingKernelClient` is constructed fails
+        it stops the client's channels before propagating; the caller
+        (`_start_kernel`) owns the container and removes it on any failure raised
+        here. The `docker logs` reads are diagnostic only.
+        """
         max_wait = 30
         wait_interval = 0.5
         elapsed = 0
@@ -313,31 +342,59 @@ class CodeInterpreter(BaseToolWithFileAccess):
         from jupyter_client import BlockingKernelClient
 
         kc = BlockingKernelClient(connection_file=host_connection_file)
-        asyncio.set_event_loop_policy(AnyThreadEventLoopPolicy())
-        kc.load_connection_file()
-        kc.start_channels()
+        # `kc` is owned here: if anything after construction fails, stop its
+        # channels before propagating. The caller owns the container.
+        try:
+            asyncio.set_event_loop_policy(AnyThreadEventLoopPolicy())
+            kc.load_connection_file()
+            kc.start_channels()
         
-        max_retries = 3
-        for attempt in range(max_retries):
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    kc.wait_for_ready(timeout=10)
+                    logger.info("Kernel is ready")
+                    break
+                except Exception as e:
+                    if attempt < max_retries - 1:
+                        logger.warning(f"Kernel not ready (attempt {attempt + 1}/{max_retries}), retrying...")
+                        time.sleep(2)
+                    else:
+                        logs = subprocess.run(
+                            ['docker', 'logs', container_id],
+                            capture_output=True,
+                            text=True,
+                            encoding='utf-8',
+                            errors='replace'
+                        )
+                        raise RuntimeError(f'Kernel failed to start: {e}\nContainer logs:\n{logs.stdout}\n{logs.stderr}')
+
+        except BaseException:
             try:
-                kc.wait_for_ready(timeout=10)
-                logger.info("Kernel is ready")
-                break
-            except Exception as e:
-                if attempt < max_retries - 1:
-                    logger.warning(f"Kernel not ready (attempt {attempt + 1}/{max_retries}), retrying...")
-                    time.sleep(2)
-                else:
-                    logs = subprocess.run(
-                        ['docker', 'logs', container_id],
-                        capture_output=True,
-                        text=True,
-                        encoding='utf-8',
-                        errors='replace'
-                    )
-                    raise RuntimeError(f'Kernel failed to start: {e}\nContainer logs:\n{logs.stdout}\n{logs.stderr}')
-        
-        return kc, container_id
+                kc.stop_channels()
+            except Exception:
+                logger.warning('Failed to stop kernel client channels during cleanup')
+            raise
+        return kc
+
+    @staticmethod
+    def _remove_container_quietly(container_id: str):
+        """Best-effort stop+rm for a container started here that will never be tracked.
+
+        `_DOCKER_CONTAINERS` is only populated by `call()` after `_start_kernel`
+        returns, so a container created before `_start_kernel` raises is invisible to
+        `_kill_kernels_and_containers()` and `__del__`. It would stay on the host and,
+        because the container name is derived from the deterministic
+        `{instance_id}_{pid}` kernel id, block every later attempt by the same
+        instance with a name conflict.
+        """
+        if not container_id:
+            return
+        for cmd in (['docker', 'stop', container_id], ['docker', 'rm', container_id]):
+            try:
+                subprocess.run(cmd, timeout=10, capture_output=True, encoding='utf-8', errors='replace')
+            except Exception:
+                logger.warning(f'Failed to clean up Docker container {container_id} via {cmd[1]}')
 
     def _execute_code(self, kc, code: str) -> str:
         kc.wait_for_ready()
