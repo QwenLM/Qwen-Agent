@@ -1,11 +1,11 @@
 # Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #    http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -75,6 +75,7 @@ class ReActChat(FnCallAgent):
 
         num_llm_calls_available = MAX_LLM_CALL_PER_RUN
         response: str = 'Thought: '
+        last_response: List[Message] = []
         while num_llm_calls_available > 0:
             num_llm_calls_available -= 1
 
@@ -82,11 +83,14 @@ class ReActChat(FnCallAgent):
             output = []
             for output in self._call_llm(messages=text_messages):
                 if output:
-                    yield [Message(role=ASSISTANT, content=response + output[-1].content)]
+                    last_response = [Message(role=ASSISTANT, content=response + output[-1].content)]
+                    yield last_response
 
             # Accumulate the current response
-            if output:
-                response += output[-1].content
+            if not output:
+                yield last_response
+                break
+            response += output[-1].content
 
             has_action, action, action_input, thought = self._detect_tool(output[-1].content)
             if not has_action:
@@ -96,7 +100,8 @@ class ReActChat(FnCallAgent):
             observation = self._call_tool(action, action_input, messages=messages, **kwargs)
             observation = f'\nObservation: {observation}\nThought: '
             response += observation
-            yield [Message(role=ASSISTANT, content=response)]
+            last_response = [Message(role=ASSISTANT, content=response)]
+            yield last_response
 
             if (not text_messages[-1].content.endswith('\nThought: ')) and (not thought.startswith('\n')):
                 # Add the '\n' between '\nQuestion:' and the first 'Thought:'
