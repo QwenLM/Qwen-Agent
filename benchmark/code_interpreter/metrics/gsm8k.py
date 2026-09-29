@@ -11,8 +11,9 @@ INVALID_ANS = '[invalid]'
 def extract_answer(completion):
 
     def _get_last_digit(s):
+        # The fraction had to end on a non-zero digit, so 1.50 was read as 1.
         _PAT_LAST_DIGIT = re.compile(
-            r'(?<=(\s|[\$%#{]))([+-])?(?=(\S))(0|([1-9](\d*|\d{0,2}(,\d{3})*)))?(\.\d*[1-9])?(?=(\s|[.,}]|$))')
+            r'(?<=(\s|[\$%#{]))([+-])?(?=(\S))(0|([1-9](\d*|\d{0,2}(,\d{3})*)))?(\.\d+)?(?=(\s|[.,}]|$))')
         match = list(_PAT_LAST_DIGIT.finditer(s))
         if match:
             last_digit = match[-1].group().replace(',', '').replace('+', '')
