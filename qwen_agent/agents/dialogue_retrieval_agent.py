@@ -14,6 +14,7 @@
 
 import datetime
 import os
+import uuid
 from typing import Iterator, List
 
 from qwen_agent.agents.assistant import Assistant
@@ -78,7 +79,14 @@ class DialogueRetrievalAgent(Assistant):
 
         # Save content as file: This file is related to the session and the time
         content = '\n'.join(content)
-        file_path = os.path.join(DEFAULT_WORKSPACE, f'dialogue_history_{session_id}_{datetime.datetime.now():%Y%m%d_%H%M%S}.txt')
+        # Uniquify per run: the second-resolution timestamp alone lets two
+        # runs that start in the same second (e.g. independent runs with the
+        # default session_id) share one path, and the document cache then
+        # serves the first conversation's history to the second run (#985).
+        file_path = os.path.join(
+            DEFAULT_WORKSPACE,
+            f'dialogue_history_{session_id}_{datetime.datetime.now():%Y%m%d_%H%M%S}_{uuid.uuid4().hex[:8]}.txt',
+        )
         save_text_to_file(file_path, content)
 
         new_content = [ContentItem(text=query), ContentItem(file=file_path)]
