@@ -36,6 +36,7 @@ from pydantic import BaseModel
 
 from qwen_agent.llm.schema import ASSISTANT, DEFAULT_SYSTEM_MESSAGE, FUNCTION, SYSTEM, USER, ContentItem, Message
 from qwen_agent.log import logger
+from qwen_agent.utils.url_guard import fetch_public_url
 
 
 def append_signal_handler(sig, handler):
@@ -197,7 +198,7 @@ def save_url_to_local_work_dir(url: str, save_dir: str, save_filename: str = '')
             'User-Agent':
                 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
         }
-        response = requests.get(url, headers=headers)
+        response = fetch_public_url(url, headers=headers)
         if response.status_code == 200:
             with open(new_path, 'wb') as file:
                 file.write(response.content)
