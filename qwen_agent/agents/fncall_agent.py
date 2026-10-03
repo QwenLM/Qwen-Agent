@@ -105,6 +105,8 @@ class FnCallAgent(Agent):
                         used_any_tool = True
                 if not used_any_tool:
                     break
+            else:
+                break
         yield response
 
     def _call_tool(self, tool_name: str, tool_args: Union[str, dict] = '{}', **kwargs) -> str:
