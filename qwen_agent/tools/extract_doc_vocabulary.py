@@ -77,6 +77,18 @@ class ExtractDocVocabulary(BaseTool):
                                   reverse=True)
             all_voc = ', '.join([term for term, score in sorted_items])
             if document_id:
-                self.db.call({'operate': 'put', 'key': document_id, 'value': json.dumps(all_voc, ensure_ascii=False)})
+                self.db.call({'operate': 'put', 'key': document_id, 'value': all_voc})
+        else:
+            # 兼容旧版本缓存：旧代码写入时用 json.dumps 做了编码，而 Storage.get 原样读回，
+            # 导致带引号的字符串会一直被命中返回。这里在读取侧解码一次并回写迁移。
+            if all_voc.startswith('"') and all_voc.endswith('"'):
+                try:
+                    decoded = json.loads(all_voc)
+                except ValueError:
+                    decoded = all_voc
+                if isinstance(decoded, str):
+                    all_voc = decoded
+                    if document_id:
+                        self.db.call({'operate': 'put', 'key': document_id, 'value': all_voc})
 
         return all_voc
