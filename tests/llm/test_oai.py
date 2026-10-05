@@ -1,17 +1,18 @@
 # Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #    http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import os
 
 import pytest
@@ -65,3 +66,63 @@ def test_llm_oai(functions, stream, delta_stream):
         assert response[-1].function_call.name == 'image_gen'
     else:
         assert response[-1].function_call is None
+
+
+@pytest.mark.parametrize('call_count', [1, 2])
+@pytest.mark.parametrize('interleaved', [False, True])
+def test_llm_oai_streamed_tool_calls_keep_arguments_by_index(monkeypatch, call_count, interleaved):
+    ChatCompletionChunk = pytest.importorskip('openai.types.chat').ChatCompletionChunk
+    cities = ['Paris', 'Tokyo'][:call_count]
+    chunks = []
+
+    def add_chunk(tool_calls):
+        chunks.append(
+            ChatCompletionChunk(id='test',
+                                created=0,
+                                model='local-model',
+                                object='chat.completion.chunk',
+                                choices=[{
+                                    'index': 0,
+                                    'delta': {
+                                        'tool_calls': tool_calls
+                                    }
+                                }]))
+
+    initial = [{
+        'index': index,
+        'id': f'call_{index}',
+        'type': 'function',
+        'function': {
+            'name': 'get_weather',
+            'arguments': '{"city":"'
+        },
+    } for index in range(call_count)]
+    if interleaved:
+        add_chunk(initial)
+        add_chunk([{
+            'index': index,
+            'function': {
+                'arguments': cities[index]
+            },
+        } for index in range(call_count - 1, -1, -1)])
+        add_chunk([{'index': index, 'function': {'arguments': '"}'}} for index in range(call_count)])
+    else:
+        for index, tool_call in enumerate(initial):
+            add_chunk([tool_call])
+            add_chunk([{'index': index, 'function': {'arguments': cities[index] + '"}'}}])
+
+    llm = get_chat_model({
+        'model': 'local-model',
+        'model_type': 'oai',
+        'api_key': 'unused',
+        'generate_cfg': {
+            'use_raw_api': True
+        },
+    })
+    monkeypatch.setattr(llm, '_chat_complete_create', lambda **kwargs: iter(chunks))
+
+    response = list(llm.chat(messages=[Message('user', 'Check the weather')]))[-1]
+
+    assert [msg.extra['function_id'] for msg in response] == [f'call_{index}' for index in range(call_count)]
+    assert [msg.function_call.name for msg in response] == ['get_weather'] * call_count
+    assert [json.loads(msg.function_call.arguments) for msg in response] == [{'city': city} for city in cities]
