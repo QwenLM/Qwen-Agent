@@ -640,6 +640,8 @@ def _truncate_input_messages_roughly(messages: List[Message], max_tokens: int) -
                 text.append(item.text)
             text = '\n'.join(text)
             content = tokenizer.truncate(text, max_token=max_tokens, keep_both_sides=keep_both_sides)
+        if msg.role == FUNCTION:
+            return Message(role=msg.role, content=content, name=msg.name, extra=copy.deepcopy(msg.extra))
         return Message(role=msg.role, content=content)
 
     def _truncate_turn(indexed_messages1: list, message_tokens1: dict, exceedance: int, is_last_turn: bool):
