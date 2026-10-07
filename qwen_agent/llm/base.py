@@ -468,8 +468,9 @@ class BaseChatModel(ABC):
                     new_msg['role'] = 'function'
                     new_messages.append(new_msg)
                 elif msg['role'] == 'assistant':
-                    if msg['content']:
-                        new_messages.append({'role': 'assistant', 'content': msg['content']})
+                    content = msg.get('content') if msg.get('tool_calls') else msg['content']
+                    if content:
+                        new_messages.append({'role': 'assistant', 'content': content})
                     if msg.get('reasoning_content', ''):
                         new_messages.append({
                             'role': 'assistant',
