@@ -110,7 +110,9 @@ class Storage(BaseTool):
             kvs = {}
             for root, dirs, files in os.walk(path):
                 for file in files:
-                    k = os.path.join(root, file)[len(path):]
+                    # Normalize to forward slashes so scan keys are consistent
+                    # across platforms (the key contract uses '/' as separator).
+                    k = os.path.join(root, file)[len(path):].replace(os.sep, '/')
                     if not k.startswith('/'):
                         k = '/' + k
                     v = read_text_from_file(os.path.join(root, file))
