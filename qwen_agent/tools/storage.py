@@ -24,6 +24,21 @@ class KeyNotExistsError(ValueError):
     pass
 
 
+def _normalize_scan_key(relative_path: str, sep: str) -> str:
+    """Normalize a scanned relative path to the tool's '/' key form.
+
+    ``os.walk`` hands back native separators — ``\\`` on Windows — while a key is
+    addressed with '/', so slicing the walk path straight into the result makes
+    ``scan`` output OS-dependent. ``sep`` is passed in rather than read from
+    ``os.sep`` inside, so the normalization can be exercised for a separator
+    other than the host's.
+    """
+    key = relative_path.replace(sep, '/')
+    if not key.startswith('/'):
+        key = '/' + key
+    return key
+
+
 @register_tool('storage')
 class Storage(BaseTool):
     """
@@ -112,9 +127,7 @@ class Storage(BaseTool):
                 for file in files:
                     # Normalize to forward slashes so scan keys are consistent
                     # across platforms (the key contract uses '/' as separator).
-                    k = os.path.join(root, file)[len(path):].replace(os.sep, '/')
-                    if not k.startswith('/'):
-                        k = '/' + k
+                    k = _normalize_scan_key(os.path.join(root, file)[len(path):], os.sep)
                     v = read_text_from_file(os.path.join(root, file))
                     kvs[k] = v
             return '\n'.join([f'{k}: {v}' for k, v in kvs.items()])
