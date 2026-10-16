@@ -58,7 +58,8 @@ class TextChatAtOAI(BaseFnCallModel):
             self._complete_create = openai.Completion.create
             self._chat_complete_create = openai.ChatCompletion.create
         else:
-            api_kwargs = {}
+            # BaseChatModel owns retries; SDK retries would multiply that budget.
+            api_kwargs = {'max_retries': 0}
             if api_base:
                 api_kwargs['base_url'] = api_base
             if api_key:
