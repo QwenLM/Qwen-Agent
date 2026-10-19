@@ -21,8 +21,6 @@ import requests
 
 from pydantic import BaseModel, Field
 
-import socket
-import requests.packages.urllib3.util.connection as connection
 from qwen_agent.tools.base import BaseTool, register_tool
 from qwen_agent.log import logger
 from qwen_agent.llm.schema import Message, ContentItem
@@ -32,14 +30,6 @@ from qwen_agent.utils.utils import extract_images_from_messages
 SERPAPI_IMAGE_SEARCH_KEY = os.getenv('SERPAPI_IMAGE_SEARCH_KEY', '')
 QWEN_IMAGE_SEARCH_MAX_RETRY_TIMES = int(os.getenv('QWEN_IMAGE_SEARCH_MAX_RETRY_TIMES', '3'))
 SERPAPI_URL = 'https://serpapi.com/search.json'
-
-_orig_getaddrinfo = socket.getaddrinfo
-
-def _new_getaddrinfo(*args, **kwargs):
-    responses = _orig_getaddrinfo(*args, **kwargs)
-    return [r for r in responses if r[0] == socket.AF_INET]
-
-socket.getaddrinfo = _new_getaddrinfo
 
 class ImageResult(BaseModel):
     """
