@@ -71,6 +71,7 @@ Only return the role name from [{agent_names}] or '[STOP]'. Do not reply any oth
 
     def _run(self, messages: List[Message], lang: str = 'en', **kwargs) -> Iterator[List[Message]]:
         dialogue = [] # convert existing messages into a prompt
+        previous_speaker = None
         for msg in messages:
             if msg.role == SYSTEM:
                 continue
@@ -83,10 +84,11 @@ Only return the role name from [{agent_names}] or '[STOP]'. Do not reply any oth
             display_name = msg.role
             if msg.name:
                 display_name = msg.name
-            if dialogue and dialogue[-1].startswith(display_name):
+            if dialogue and previous_speaker == display_name:
                 dialogue[-1] += f'\n{content}'
             else:
                 dialogue.append(f'{display_name}: {content}')
+            previous_speaker = display_name
 
         if not dialogue:
             dialogue.append('对话刚开始，请任意选择一个发言人，别选真实用户')
