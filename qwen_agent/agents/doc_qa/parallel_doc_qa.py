@@ -1,11 +1,11 @@
 # Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #    http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -111,12 +111,13 @@ class ParallelDocQA(Assistant):
         unuse_member_res = member_res_token_num > MAX_RAG_TOKEN_SIZE
         query = user_question if unuse_member_res else f'{user_question}\n\n{member_res}'
 
+        keyword = ''
         try:
             *_, last = keygen.run([Message(USER, query)])
+            keyword = last[-1].content
         except ModelServiceError:
             print_traceback()
 
-        keyword = last[-1].content
         keyword = keyword.strip()
         if keyword.startswith('```json'):
             keyword = keyword[len('```json'):]
