@@ -264,7 +264,7 @@ class BaseChatModel(ABC):
             output = self._postprocess_messages(output, fncall_mode=fncall_mode, generate_cfg=generate_cfg)
             if not self.support_multimodal_output:
                 output = _format_as_text_messages(messages=output)
-            if self.cache:
+            if self.cache is not None:
                 self.cache.set(cache_key, json_dumps_compact(output))
             return self._convert_messages_to_target_type(output, _return_message_type)
         else:
