@@ -632,13 +632,27 @@ def _truncate_input_messages_roughly(messages: List[Message], max_tokens: int) -
     def _truncate_message(msg: Message, max_tokens: int, keep_both_sides: bool = False):
         if isinstance(msg.content, str):
             content = tokenizer.truncate(msg.content, max_token=max_tokens, keep_both_sides=keep_both_sides)
+        elif any(item.text is None for item in msg.content):
+            # Only shorten text. Keep media in place and preserve the message's
+            # tool-call identity; returning None here breaks message preprocessing.
+            truncated = copy.deepcopy(msg)
+            text_items = [item for item in truncated.content if item.text is not None]
+            texts = [item.text for item in text_items]
+            text_tokens = [tokenizer.count_tokens(text) for text in texts]
+            for item in text_items:
+                item.text = ''
+            # Reserve the rough cost of upload annotations. Actual image/audio/
+            # video tokens are not estimated by this text-based truncator.
+            available = max(0, max_tokens - _count_tokens(truncated))
+            remaining = sum(text_tokens)
+            for item, text, tokens in zip(text_items, texts, text_tokens):
+                budget = min(tokens, available * tokens // remaining) if remaining else 0
+                item.text = tokenizer.truncate(text, max_token=budget, keep_both_sides=keep_both_sides)
+                available -= budget
+                remaining -= tokens
+            return truncated
         else:
-            text = []
-            for item in msg.content:
-                if not item.text:
-                    return None
-                text.append(item.text)
-            text = '\n'.join(text)
+            text = '\n'.join(item.text for item in msg.content)
             content = tokenizer.truncate(text, max_token=max_tokens, keep_both_sides=keep_both_sides)
         return Message(role=msg.role, content=content)
 
@@ -726,7 +740,7 @@ def _truncate_input_messages_roughly(messages: List[Message], max_tokens: int) -
         logger.debug(f'exceedance step3 **trunk FUNCTION of last step**: {exceedance}')
         messages_to_keep = []
         for msg_idx, msg in messages_per_step[-1]:
-            if msg.role != FUNCTION:
+            if exceedance <= 0 or msg.role != FUNCTION:
                 messages_to_keep.append([msg_idx, msg])
                 continue
 
