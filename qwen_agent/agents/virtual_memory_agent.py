@@ -1,11 +1,11 @@
 # Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #    http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -60,21 +60,32 @@ class VirtualMemoryAgent(Assistant):
                     yield response + output
             if output:
                 response.extend(output)
-            use_tool, action, action_input, _ = self._detect_tool(response[-1])
-            if use_tool:
+            used_any_tool = False
+            # Refresh knowledge per model step, retaining every retrieval in this batch.
+            retrieval_messages = ori_messages
+            for out in output:
+                use_tool, action, action_input, _ = self._detect_tool(out)
+                if not use_tool:
+                    continue
                 observation = self._call_tool(action, action_input, messages=messages)
                 if action == self.retrieval_tool_name:
-                    # Filling the knowledge
-                    messages = self._prepend_knowledge_prompt(messages=ori_messages, lang=lang, knowledge=observation)
+                    retrieval_messages = self._prepend_knowledge_prompt(messages=retrieval_messages,
+                                                                        lang=lang,
+                                                                        knowledge=observation)
+                    messages = retrieval_messages
                     observation = 'The relevant content has already been retrieved and updated in the previous system message.'
                 fn_msg = Message(
                     role=FUNCTION,
                     name=action,
                     content=observation,
+                    extra={'function_id': (out.extra or {}).get('function_id', '1')},
                 )
                 response.append(fn_msg)
+                used_any_tool = True
                 yield response
-            else:
+            if not used_any_tool:
+                if not response:
+                    yield response
                 break
 
     def _format_file(self, messages: List[Message], lang: str = 'en') -> List[Message]:
