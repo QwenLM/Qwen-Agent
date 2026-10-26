@@ -49,7 +49,7 @@ class ExtractDocVocabulary(BaseTool):
         self.data_root = self.cfg.get('path', os.path.join(DEFAULT_WORKSPACE, 'tools', self.name))
         self.db = Storage({'storage_root_path': self.data_root})
 
-    def call(self, params: Union[str, dict], **kwargs) -> str:
+    def call(self, params: Union[str, dict], force_refresh: bool = False, **kwargs) -> str:
         params = self._verify_json_format_args(params)
         files = params.get('files', [])
         document_id = str(files)
@@ -58,12 +58,16 @@ class ExtractDocVocabulary(BaseTool):
             files = json5.loads(files)
         docs = []
         for file in files:
-            _doc = self.simple_doc_parse.call(params={'url': file}, **kwargs)
+            _doc = self.simple_doc_parse.call(params={'url': file}, force_refresh=force_refresh, **kwargs)
             docs.append(_doc)
 
-        try:
-            all_voc = self.db.call({'operate': 'get', 'key': document_id})
-        except KeyNotExistsError:
+        all_voc = None
+        if not force_refresh:
+            try:
+                all_voc = self.db.call({'operate': 'get', 'key': document_id})
+            except KeyNotExistsError:
+                pass
+        if all_voc is None:
             try:
                 from sklearn.feature_extraction.text import TfidfVectorizer
             except ModuleNotFoundError:

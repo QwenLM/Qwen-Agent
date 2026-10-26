@@ -275,6 +275,27 @@ llm_cfg = {
 }
 ```
 
+## Refreshing cached documents
+
+RAG reuses document caches by path/URL by default. If a source has changed at the same
+path or URL, explicitly refresh the files used by one `Assistant` run:
+
+```python
+for response in bot.run(messages, force_refresh=True):
+    print(response)
+```
+
+This re-reads local files or re-downloads URLs, rebuilds parsed/chunked data, and refreshes
+the vocabulary used by knowledge-based keyword strategies. Other chunk-size caches for
+the refreshed document are invalidated; unrelated documents are left untouched.
+Subsequent runs without the option reuse the updated cache. There is no automatic
+file-change detection, so use the option when a source changes rather than on every turn.
+
+`Retrieval.call(...)` and `DocParser.call(...)` also accept `force_refresh=True` as a
+Python keyword argument. `SimpleDocParser.call(...)` refreshes only its parsed-source
+cache: use the highest-level API you normally call to refresh its dependent caches too.
+An explicit `knowledge=` value bypasses file retrieval, as before.
+
 ## How to do question-answering over super-long documents involving 1M tokens?
 
 We have released [a fast RAG solution](https://github.com/QwenLM/Qwen-Agent/blob/main/examples/assistant_rag.py), as well as [an expensive but competitive agent](https://github.com/QwenLM/Qwen-Agent/blob/main/examples/parallel_doc_qa.py), for doing question-answering over super-long documents. They have managed to outperform native long-context models on two challenging benchmarks while being more efficient, and perform perfectly in the single-needle "needle-in-the-haystack" pressure test involving 1M-token contexts. See the [blog](https://qwenlm.github.io/blog/qwen-agent-2405/) for technical details.

@@ -400,8 +400,12 @@ class SimpleDocParser(BaseTool):
 
         self.db = Storage({'storage_root_path': self.data_root})
 
-    def call(self, params: Union[str, dict], **kwargs) -> Union[str, list]:
-        """Parse pdf by url, and return the formatted content.
+    def call(self, params: Union[str, dict], force_refresh: bool = False, **kwargs) -> Union[str, list]:
+        """Parse a document by URL or local path.
+
+        Args:
+            force_refresh: Re-read the source (re-download HTTP URLs) and replace its
+                parsed cache after successful parsing. Defaults to using cached data.
 
         Returns:
             Extracted doc as plain text or the following list format:
@@ -423,12 +427,16 @@ class SimpleDocParser(BaseTool):
         params = self._verify_json_format_args(params)
         path = params['url']
         cached_name_ori = f'{hash_sha256(path)}_ori'
-        try:
-            # Directly load the parsed doc
-            parsed_file = self.db.get(cached_name_ori)
+        parsed_file = None
+        if not force_refresh:
+            try:
+                parsed_file = self.db.get(cached_name_ori)
+            except KeyNotExistsError:
+                pass
+        if parsed_file is not None:
             parsed_file = json.loads(parsed_file)
             logger.info(f'Read parsed {path} from cache.')
-        except KeyNotExistsError:
+        else:
             logger.info(f'Start parsing {path}...')
             time1 = time.time()
 
