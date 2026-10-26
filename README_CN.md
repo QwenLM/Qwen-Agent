@@ -268,6 +268,25 @@ llm_cfg = {
 }
 ```
 
+## 刷新文档缓存
+
+RAG 默认按文件路径或 URL 复用文档缓存。如果原路径或 URL 的内容已更新，可在一次
+`Assistant` 调用中显式刷新本次使用的文件：
+
+```python
+for response in bot.run(messages, force_refresh=True):
+    print(response)
+```
+
+该选项会重新读取本地文件或下载 URL，重建解析与分块数据，并刷新基于文档知识生成关键词时
+使用的词表。同一文档其他分块大小的旧缓存会失效，其他文档的缓存不受影响。
+后续不传该选项的调用会复用更新后的缓存。默认不自动检测文件变更，建议仅在源文件更新时使用，
+不必每轮都重新读取或下载。
+
+直接使用 `Retrieval.call(...)` 或 `DocParser.call(...)` 时，也可传入 Python 关键字参数
+`force_refresh=True`。`SimpleDocParser.call(...)` 只刷新原始解析缓存；应在平时使用的最高层
+接口发起刷新，以同时更新其依赖的缓存。显式传入 `knowledge=` 时仍会跳过文件检索。
+
 ## 如何让AI基于超长文档进行问答？
 
 我们已发布了一个[快速的RAG解决方案](https://github.com/QwenLM/Qwen-Agent/blob/main/examples/assistant_rag.py)，以及一个虽运行成本较高但[准确度较高的智能体](https://github.com/QwenLM/Qwen-Agent/blob/main/examples/parallel_doc_qa.py)，用于在超长文档中进行问答。它们在两个具有挑战性的基准测试中表现出色，超越了原生的长上下文模型，同时更加高效，并在涉及100万字词上下文的“大海捞针”式单针查询压力测试中表现完美。欲了解技术细节，请参阅[博客](https://qwenlm.github.io/blog/qwen-agent-2405/)。

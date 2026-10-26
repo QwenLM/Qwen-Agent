@@ -84,6 +84,8 @@ class Retrieval(BaseTool):
 
         Args:
             params: The files and query.
+            force_refresh: Optional keyword argument. Re-read each supplied file and
+                refresh its parsed/chunked caches before retrieval. Defaults to False.
         Returns:
             The parsed file list or retrieved file list.
         """

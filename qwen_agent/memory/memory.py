@@ -1,11 +1,11 @@
 # Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #    http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -109,7 +109,9 @@ class Memory(Agent):
                 module = import_module(module_name)
                 cls = getattr(module, self.rag_keygen_strategy)
                 keygen = cls(llm=self.llm)
-                response = keygen.run([Message(USER, query)], files=rag_files)
+                response = keygen.run([Message(USER, query)],
+                                      files=rag_files,
+                                      force_refresh=kwargs.get('force_refresh', False))
                 last = None
                 for last in response:
                     continue

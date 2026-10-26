@@ -77,8 +77,12 @@ class DocParser(BaseTool):
 
         self.doc_extractor = SimpleDocParser({'structured_doc': True})
 
-    def call(self, params: Union[str, dict], **kwargs) -> dict:
+    def call(self, params: Union[str, dict], force_refresh: bool = False, **kwargs) -> dict:
         """Extracting and blocking
+
+        Args:
+            force_refresh: Re-read the source and rebuild its parsed/chunked caches.
+                Other chunk-size variants for this document are invalidated on success.
 
         Returns:
             Parse doc as the following chunks:
@@ -104,14 +108,14 @@ class DocParser(BaseTool):
         url = params['url']
 
         cached_name_chunking = f'{hash_sha256(url)}_{str(parser_page_size)}'
-        try:
-            # Directly load the chunked doc
-            record = self.db.get(cached_name_chunking)
-            record = json.loads(record)
-            logger.info(f'Read chunked {url} from cache.')
-            return record
-        except KeyNotExistsError:
-            doc = self.doc_extractor.call({'url': url})
+        if not force_refresh:
+            try:
+                record = json.loads(self.db.get(cached_name_chunking))
+                logger.info(f'Read chunked {url} from cache.')
+                return record
+            except KeyNotExistsError:
+                pass
+        doc = self.doc_extractor.call({'url': url}, force_refresh=force_refresh)
 
         total_token = 0
         for page in doc:
@@ -147,6 +151,15 @@ class DocParser(BaseTool):
         new_record = Record(url=url, raw=content, title=title).to_dict()
         new_record_str = json.dumps(new_record, ensure_ascii=False)
         self.db.put(cached_name_chunking, new_record_str)
+        if force_refresh:
+            # Other chunk sizes (and a previous whole-doc cache) describe the old source.
+            # Invalidate only this document, after successfully building its replacement.
+            prefix = f'{hash_sha256(url)}_'
+            for cached_name in os.listdir(self.data_root):
+                if cached_name == cached_name_chunking or not cached_name.startswith(prefix):
+                    continue
+                if re.fullmatch(r'\d+|without_chunking(?:_\d+)?', cached_name[len(prefix):]):
+                    self.db.delete(cached_name)
         return new_record
 
     def split_doc_to_chunk(self,
