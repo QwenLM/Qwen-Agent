@@ -83,6 +83,12 @@ class BaseChatModel(ABC):
         self.max_retries = generate_cfg.pop('max_retries', 0)
         self.generate_cfg = generate_cfg
         self.model_type = cfg.get('model_type', '')
+        self._cache_model_cfg = {
+            key: cfg[key]
+            for key in ('api_base', 'base_url', 'model_server', 'azure_endpoint', 'api_version')
+            if key in cfg
+        }
+        self._cache_model_cfg['fncall_prompt_type'] = generate_cfg.get('fncall_prompt_type')
         if 'dashscope' in self.model_type:
             self.generate_cfg['incremental_output'] = True
 
@@ -153,9 +159,18 @@ class BaseChatModel(ABC):
         if not messages:
             raise ValueError('Messages can not be empty.')
 
+        generate_cfg = merge_generate_cfgs(base_generate_cfg=self.generate_cfg, new_generate_cfg=extra_generate_cfg)
+
         # Cache lookup:
         if self.cache is not None:
-            cache_key = dict(messages=messages, functions=functions, extra_generate_cfg=extra_generate_cfg)
+            cache_key = dict(messages=messages,
+                             functions=functions,
+                             model=self.model,
+                             model_type=self.model_type,
+                             backend=f'{type(self).__module__}.{type(self).__qualname__}',
+                             model_cfg=self._cache_model_cfg,
+                             generate_cfg=generate_cfg,
+                             use_raw_api=self.use_raw_api)
             cache_key: str = json_dumps_compact(cache_key, sort_keys=True)
             cache_value: str = self.cache.get(cache_key)
             if cache_value:
@@ -173,7 +188,6 @@ class BaseChatModel(ABC):
                 'Using `delta_stream=True` makes it difficult to implement advanced postprocessing and retry mechanisms.'
             )
 
-        generate_cfg = merge_generate_cfgs(base_generate_cfg=self.generate_cfg, new_generate_cfg=extra_generate_cfg)
         if 'seed' not in generate_cfg:
             generate_cfg['seed'] = random.randint(a=0, b=2**30)
         if 'lang' in generate_cfg:
