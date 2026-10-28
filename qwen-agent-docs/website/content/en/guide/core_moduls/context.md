@@ -4,7 +4,7 @@ The context management logic of Qwen Agent aims to dynamically truncate input me
 so that the total number of tokens does not exceed the maximum context length supported by the model.
 
 - When calling the `agent.run(...)` or `llm.call(...)` functions, this mechanism will automatically take effect.
-- The context will only be modified when the context length reaches [`max_input_tokens`](../../get_started/configuration/).
+- The context will only be modified when the context length reaches [`max_input_tokens`](../get_started/configuration/).
 
 ## Management Strategy
 Qwen-Agent follows the following process to modify the context:

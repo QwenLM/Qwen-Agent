@@ -20,7 +20,7 @@ Model server's native tool call parser
 
 - Qwen-Agent supports reading the tool call response of the model, which requires enabling the tool call parser parameter when deploying the model.
 - For Qwen3-Coder, it is recommended to use the tool parser of model server, i.e. adding the `--enable-auto-tool-choice` and `--tool-call-parser qwen3_coder` parameters in [vLLM](https://docs.vllm.ai/projects/recipes/en/latest/Qwen/Qwen3-Coder-480B-A35B.html)/SGLang server.
-- This is combine with the `use_raw_api` parameter [usage](../configuration/). Soon, this will become the default mode.
+- This is combine with the `use_raw_api` parameter [usage](./configuration/). Soon, this will become the default mode.
 
 
 Qwen-Agent's built-in tool call parser
