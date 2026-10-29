@@ -80,7 +80,7 @@ class FlightQueryTool(BaseTravelTool):
             query_result = query_result[query_result['seat_class'] == seat_class]
         
         if query_result.empty:
-            return self.fields['not_found'](origin, destination, dep_date)
+            return self.fields['not_found'](origin, destination, dep_date, seat_class)
         
         # Build result grouped by route_index
         flights = []
