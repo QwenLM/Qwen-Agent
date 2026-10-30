@@ -182,7 +182,7 @@ class ParallelDocQA(Assistant):
             content = content[:-3]
         try:
             content_dict = json5.loads(content)
-            return True, content_dict
+            return isinstance(content_dict, dict), content_dict
         except Exception:
             return False, content
 
