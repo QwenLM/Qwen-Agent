@@ -720,26 +720,26 @@ def check_attraction_necessity(daily_plans: List[Dict[str, Any]], meta: Dict[str
     """
     violations: List[str] = []
     
-    def _parse_time_to_hours(time_str: str) -> Optional[float]:
-        """Convert time string to hours (float)."""
+    def _parse_time_to_minutes(time_str: str) -> Optional[int]:
+        """Convert time string to integer minutes."""
         if not time_str:
             return None
         try:
             hour, minute = map(int, time_str.split(":"))
-            return hour + minute / 60.0
+            return hour * 60 + minute
         except:
             return None
     
     def _calculate_duration_minutes(start_str: str, end_str: str) -> int:
         """Calculate duration between two times (in minutes)."""
-        start_h = _parse_time_to_hours(start_str)
-        end_h = _parse_time_to_hours(end_str)
-        if start_h is None or end_h is None:
+        start_minutes = _parse_time_to_minutes(start_str)
+        end_minutes = _parse_time_to_minutes(end_str)
+        if start_minutes is None or end_minutes is None:
             return 0
-        duration_hours = end_h - start_h
-        if duration_hours < 0:
-            duration_hours += 24  # Handle day crossover
-        return int(duration_hours * 60)
+        duration_minutes = end_minutes - start_minutes
+        if duration_minutes < 0:
+            duration_minutes += 24 * 60  # Handle day crossover
+        return duration_minutes
     
     def _get_activity_duration(act: Dict[str, Any]) -> int:
         """Get activity duration (in minutes)."""
