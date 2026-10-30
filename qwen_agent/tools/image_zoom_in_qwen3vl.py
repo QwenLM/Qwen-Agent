@@ -19,12 +19,12 @@ from io import BytesIO
 from math import ceil, floor
 from typing import List, Union
 
-import requests
 from PIL import Image
 
 from qwen_agent.llm.schema import ContentItem
 from qwen_agent.log import logger
 from qwen_agent.tools.base import BaseToolWithFileAccess, register_tool
+from qwen_agent.utils.url_guard import fetch_public_url
 from qwen_agent.utils.utils import extract_images_from_messages
 
 
@@ -140,7 +140,7 @@ class ImageZoomInToolQwen3VL(BaseToolWithFileAccess):
                 image_arg = image_arg[len('file://'):]
 
             if image_arg.startswith('http'):
-                response = requests.get(image_arg)
+                response = fetch_public_url(image_arg)
                 response.raise_for_status()
                 image = Image.open(BytesIO(response.content))
             elif os.path.exists(image_arg):

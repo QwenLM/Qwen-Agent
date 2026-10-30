@@ -23,6 +23,10 @@ any resolved address falls into a non-public range, including IPv4-mapped
 IPv6 addresses. ``fetch_public_url`` applies this check to every hop of a
 redirect chain. Set the environment variable
 ``QWEN_AGENT_ALLOW_PRIVATE_NETWORK=1`` to opt out for intranet deployments.
+
+DNS validation does not pin the connection to a validated IP address.
+Requests resolves the host again when connecting, so DNS rebinding between
+validation and connection is not prevented by this guard.
 """
 
 import ipaddress
