@@ -711,9 +711,9 @@ def check_attraction_necessity(daily_plans: List[Dict[str, Any]], meta: Dict[str
     1. Calculate total duration of attraction-related activities (including attraction visits, travel to/from attractions)
     2. Judge based on available time in destination city:
        - Non-intercity days (full day available): attraction-related duration ≥ 4 hours or ≥2 attractions
-       - Intercity day arrival (arrival < 14:00): ≥1 attraction
-       - Intercity day arrival (arrival ≥ 14:00): no mandatory requirement
-       - Intercity day departure (departure > 14:00): must have at least 1 attraction
+       - Intercity day arrival (arrival < 12:00): ≥1 attraction
+       - Intercity day arrival (arrival ≥ 12:00): no mandatory requirement
+       - Intercity day departure (departure > 16:00): must have at least 1 attraction
        - Other cases: no mandatory requirement
     
     Note: Intercity days departing from or returning to org only check tourist destination city's attractions.
@@ -836,10 +836,10 @@ def check_attraction_necessity(daily_plans: List[Dict[str, Any]], meta: Dict[str
                 departure_time = get_intercity_departure_time(day)
                 if departure_time is not None:
                     if departure_time > 16.0:
-                        # Departure > 14:00: must have at least 1 attraction
+                        # Departure > 16:00: must have at least 1 attraction
                         if attraction_count < 1:
                             violations.append(
-                                f"D{day_idx}: Departure time later than 14:00, must arrange at least 1 attraction (current: {attraction_count})"
+                                f"D{day_idx}: Departure time later than 16:00, must arrange at least 1 attraction (current: {attraction_count})"
                             )
             
             if not is_to_org:
@@ -847,12 +847,12 @@ def check_attraction_necessity(daily_plans: List[Dict[str, Any]], meta: Dict[str
                 arrival_time = get_intercity_arrival_time(day)
                 if arrival_time is not None:
                     if arrival_time < 12.0:
-                        # Arrival < 14:00: ≥1 attraction
+                        # Arrival < 12:00: ≥1 attraction
                         if attraction_count < 1:
                             violations.append(
-                                f"D{day_idx}: Arrival time earlier than 14:00, must arrange at least 1 attraction (current: {attraction_count})"
+                                f"D{day_idx}: Arrival time earlier than 12:00, must arrange at least 1 attraction (current: {attraction_count})"
                             )
-                    # Arrival ≥ 14:00: no mandatory requirement
+                    # Arrival ≥ 12:00: no mandatory requirement
             
             # Update current location
             current_location = to_city_norm
