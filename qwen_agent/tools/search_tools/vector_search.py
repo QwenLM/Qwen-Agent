@@ -1,11 +1,11 @@
 # Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #    http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -41,8 +41,9 @@ class VectorSearch(BaseSearch):
         # Extract raw query
         try:
             query_json = json.loads(query)
-            # This assumes that the user's input will not contain json str with the 'text' attribute
-            if 'text' in query_json:
+            # Only unwrap the structured query format when it contains text.
+            # Other JSON values are still valid plain-text search queries.
+            if isinstance(query_json, dict) and isinstance(query_json.get('text'), str):
                 query = query_json['text']
         except json.decoder.JSONDecodeError:
             pass
