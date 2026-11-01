@@ -138,7 +138,12 @@ class ImageZoomInToolQwen3VL(BaseToolWithFileAccess):
             # open image, currently only support the first image
             image_arg = images[img_idx]
             if image_arg.startswith('file://'):
-                image_arg = url2pathname(image_arg[len('file://'):])
+                raw_path = image_arg[len('file://'):]
+                image_arg = url2pathname(raw_path)
+                # The GUI also prefixes unescaped paths. Prefer the URI target
+                # when both spellings exist, then fall back to a real raw path.
+                if not os.path.exists(image_arg) and os.path.exists(raw_path):
+                    image_arg = raw_path
 
             if image_arg.startswith('http'):
                 response = requests.get(image_arg)

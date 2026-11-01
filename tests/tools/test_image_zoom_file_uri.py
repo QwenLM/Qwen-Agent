@@ -21,12 +21,22 @@ from qwen_agent.llm.schema import ContentItem, Message
 from qwen_agent.tools.image_zoom_in_qwen3vl import ImageZoomInToolQwen3VL
 
 
-@pytest.mark.parametrize('filename,use_uri', [('image with space.png', True), ('图片.png', True),
-                                              ('image#100%.png', True), ('plain.png', False)])
-def test_image_zoom_opens_local_images(tmp_path, filename, use_uri):
+@pytest.mark.parametrize('filename,location_kind', [('image with space.png', 'uri'), ('图片.png', 'uri'),
+                                                    ('image#100%.png', 'uri'), ('image%20name.png', 'uri'),
+                                                    ('image%20name.png', 'gui'), ('plain.png', 'path')])
+def test_image_zoom_opens_local_images(tmp_path, filename, location_kind):
     source = tmp_path / filename
     Image.new('RGB', (64, 64), color='red').save(source)
-    location = source.as_uri() if use_uri else str(source)
+    if location_kind == 'uri':
+        location = source.as_uri()
+        if ' ' in filename:
+            # Prefer the decoded URI even if its escaped spelling also exists.
+            Image.new('RGB', (64, 64), color='blue').save(tmp_path / filename.replace(' ', '%20'))
+    elif location_kind == 'gui':
+        # WebUI.add_text appends file paths without URI-encoding them.
+        location = 'file://' + str(source)
+    else:
+        location = str(source)
     tool = ImageZoomInToolQwen3VL({'work_dir': str(tmp_path / 'out')})
 
     result = tool.call(
