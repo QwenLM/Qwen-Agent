@@ -49,7 +49,6 @@ class ImageGen(BaseTool):
             params = json.loads(params)
 
         messages = [Message(role=USER, content=[ContentItem(text=params['prompt'])])]
-        kwargs.pop('messages')
 
         *_, last = self.llm.chat(messages=messages)
         return last[-1]['content']
