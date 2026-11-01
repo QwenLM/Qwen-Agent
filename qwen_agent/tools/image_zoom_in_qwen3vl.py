@@ -18,6 +18,7 @@ import uuid
 from io import BytesIO
 from math import ceil, floor
 from typing import List, Union
+from urllib.request import url2pathname
 
 import requests
 from PIL import Image
@@ -137,7 +138,7 @@ class ImageZoomInToolQwen3VL(BaseToolWithFileAccess):
             # open image, currently only support the first image
             image_arg = images[img_idx]
             if image_arg.startswith('file://'):
-                image_arg = image_arg[len('file://'):]
+                image_arg = url2pathname(image_arg[len('file://'):])
 
             if image_arg.startswith('http'):
                 response = requests.get(image_arg)
