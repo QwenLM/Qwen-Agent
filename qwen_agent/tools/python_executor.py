@@ -127,11 +127,14 @@ class PythonExecutor(BaseTool):
         self.timeout_length = timeout_length
 
     def call(self, params: Union[str, dict], **kwargs) -> list:
-        try:
-            params = json5.loads(params)
+        if isinstance(params, dict):
             code = params['code']
-        except Exception:
-            code = extract_code(params)
+        else:
+            try:
+                params = json5.loads(params)
+                code = params['code']
+            except Exception:
+                code = extract_code(params)
 
         if not code.strip():
             return ['', '']
