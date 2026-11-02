@@ -432,13 +432,9 @@ class SimpleDocParser(BaseTool):
             logger.info(f'Start parsing {path}...')
             time1 = time.time()
 
+            if not is_http_url(path):
+                path = sanitize_chrome_file_path(path)
             f_type = get_file_type(path)
-            if f_type in PARSER_SUPPORTED_FILE_TYPES:
-                if path.startswith('https://') or path.startswith('http://') or re.match(
-                        r'^[A-Za-z]:\\', path) or re.match(r'^[A-Za-z]:/', path):
-                    path = path
-                else:
-                    path = sanitize_chrome_file_path(path)
 
             os.makedirs(self.data_root, exist_ok=True)
             if is_http_url(path):
