@@ -421,10 +421,23 @@ class BaseChatModel(ABC):
     @staticmethod
     def _conv_qwen_agent_messages_to_oai(messages: List[Union[Message, Dict]]):
         new_messages = []
-        for msg in messages:
-            if msg['role'] == ASSISTANT:
-                if new_messages[-1]['role'] != ASSISTANT:
+        used_call_ids = set()
+        call_counter = 1
+        pending_tool_calls = []
+
+        for m in messages:
+            if isinstance(m, Message):
+                msg = m.model_dump()
+            elif isinstance(m, dict):
+                msg = copy.deepcopy(m)
+            else:
+                msg = dict(m)
+
+            role = msg.get('role')
+            if role == ASSISTANT:
+                if not new_messages or new_messages[-1].get('role') != ASSISTANT:
                     new_messages.append({'role': ASSISTANT})
+                    pending_tool_calls = []
                 if msg.get('content'):
                     new_messages[-1]['content'] = msg['content']
                 if msg.get('reasoning_content'):
@@ -432,21 +445,99 @@ class BaseChatModel(ABC):
                 if msg.get('function_call'):
                     if not new_messages[-1].get('tool_calls'):
                         new_messages[-1]['tool_calls'] = []
+
+                    fn_call = msg['function_call']
+                    fn_name = fn_call.get('name') if isinstance(fn_call, dict) else getattr(fn_call, 'name', '')
+                    fn_args = fn_call.get('arguments') if isinstance(fn_call, dict) else getattr(fn_call, 'arguments', '')
+
+                    raw_id = (msg.get('extra') or {}).get('function_id', None)
+                    if raw_id is not None:
+                        raw_id = str(raw_id).strip()
+
+                    if raw_id and raw_id not in used_call_ids:
+                        call_id = raw_id
+                    else:
+                        while str(call_counter) in used_call_ids:
+                            call_counter += 1
+                        call_id = str(call_counter)
+                        call_counter += 1
+
+                    used_call_ids.add(call_id)
                     new_messages[-1]['tool_calls'].append({
-                        'id': msg.get('extra', {}).get('function_id', '1'),
+                        'id': call_id,
                         'type': 'function',
                         'function': {
-                            'name': msg['function_call']['name'],
-                            'arguments': msg['function_call']['arguments']
+                            'name': fn_name,
+                            'arguments': fn_args
                         }
                     })
-            elif msg['role'] == FUNCTION:
+                    pending_tool_calls.append({
+                        'id': call_id,
+                        'raw_id': raw_id,
+                        'name': fn_name,
+                        'matched': False
+                    })
+                elif msg.get('tool_calls'):
+                    if not new_messages[-1].get('tool_calls'):
+                        new_messages[-1]['tool_calls'] = []
+                    for tool in msg['tool_calls']:
+                        raw_id = tool.get('id', None)
+                        if raw_id is not None:
+                            raw_id = str(raw_id).strip()
+                        if raw_id and raw_id not in used_call_ids:
+                            call_id = raw_id
+                        else:
+                            while str(call_counter) in used_call_ids:
+                                call_counter += 1
+                            call_id = str(call_counter)
+                            call_counter += 1
+                        used_call_ids.add(call_id)
+                        tc_copy = copy.deepcopy(tool)
+                        tc_copy['id'] = call_id
+                        new_messages[-1]['tool_calls'].append(tc_copy)
+                        fn_name = tool.get('function', {}).get('name', '')
+                        pending_tool_calls.append({
+                            'id': call_id,
+                            'raw_id': raw_id,
+                            'name': fn_name,
+                            'matched': False
+                        })
+            elif role == FUNCTION:
                 new_msg = copy.deepcopy(msg)
                 new_msg['role'] = 'tool'
-                new_msg['id'] = msg.get('extra', {}).get('function_id', '1')
+                raw_id = (msg.get('extra') or {}).get('function_id', None)
+                if raw_id is not None:
+                    raw_id = str(raw_id).strip()
+                fn_name = msg.get('name', None)
+
+                matched_tc = None
+                if raw_id:
+                    candidates = [tc for tc in pending_tool_calls if not tc['matched'] and tc['raw_id'] == raw_id]
+                    if len(candidates) == 1:
+                        matched_tc = candidates[0]
+
+                if not matched_tc and fn_name:
+                    candidates = [tc for tc in pending_tool_calls if not tc['matched'] and tc['name'] == fn_name]
+                    if candidates:
+                        matched_tc = candidates[0]
+
+                if not matched_tc:
+                    candidates = [tc for tc in pending_tool_calls if not tc['matched']]
+                    if candidates:
+                        matched_tc = candidates[0]
+
+                if matched_tc:
+                    matched_tc['matched'] = True
+                    matched_id = matched_tc['id']
+                else:
+                    matched_id = raw_id if raw_id else '1'
+
+                new_msg['id'] = matched_id
+                new_msg['tool_call_id'] = matched_id
                 new_messages.append(new_msg)
             else:
                 new_messages.append(msg)
+                pending_tool_calls = []
         return new_messages
 
     def quick_chat_oai(self, messages: List[dict], tools: Optional[list] = None) -> dict:
@@ -466,6 +557,9 @@ class BaseChatModel(ABC):
                 elif msg['role'] == 'tool':
                     new_msg = copy.deepcopy(msg)
                     new_msg['role'] = 'function'
+                    fid = msg.get('tool_call_id') or msg.get('id')
+                    if fid:
+                        new_msg.setdefault('extra', {})['function_id'] = fid
                     new_messages.append(new_msg)
                 elif msg['role'] == 'assistant':
                     if msg['content']:
@@ -478,14 +572,17 @@ class BaseChatModel(ABC):
                         })
                     if msg.get('tool_calls'):
                         for tool in msg.get('tool_calls'):
-                            new_messages.append({
+                            new_tool_msg = {
                                 'role': 'assistant',
                                 'content': '',
                                 'function_call': {
                                     'name': tool['function']['name'],
                                     'arguments': tool['function']['arguments']
                                 }
-                            })
+                            }
+                            if tool.get('id'):
+                                new_tool_msg['extra'] = {'function_id': tool['id']}
+                            new_messages.append(new_tool_msg)
             return new_messages
 
         def _convert_to_oai_message(data):
