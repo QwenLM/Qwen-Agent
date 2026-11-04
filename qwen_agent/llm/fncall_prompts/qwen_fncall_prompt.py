@@ -183,6 +183,7 @@ class QwenFnCallPrompt(BaseFnCallPrompt):
                         new_content = []
                     item_text = item_text[i:]
 
+                tool_id = 1
                 # If has function call:
                 for part in item_text.split(f'{FN_NAME}:'):
                     if not part:
@@ -202,6 +203,9 @@ class QwenFnCallPrompt(BaseFnCallPrompt):
                     for fn_args in list_of_fn_args:
                         fn_args = remove_incomplete_special_tokens(fn_args)
                         fn_args = remove_trailing_comment_of_fn_args(fn_args)
+                        _extra = copy.deepcopy(extra) if extra else {}
+                        _extra['function_id'] = str(tool_id)
+                        tool_id += 1
                         new_messages.append(
                             Message(
                                 role=ASSISTANT,
@@ -210,7 +214,7 @@ class QwenFnCallPrompt(BaseFnCallPrompt):
                                     name=fn_name,
                                     arguments=fn_args,
                                 ),
-                                extra=extra,
+                                extra=_extra,
                             ))
 
                 # Keep only one function call if parallelism is disabled
