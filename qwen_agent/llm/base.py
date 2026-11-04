@@ -590,13 +590,20 @@ def _postprocess_stop_words(messages: List[Message], stop: List[str]) -> List[Me
 
 
 def _truncate_at_stop_word(text: str, stop: List[str]):
-    truncated = False
+    # Truncate at the earliest occurrence of any stop word. Truncating at each
+    # stop word in turn (the previous behaviour) is order-dependent: when the
+    # first stop word in the list matches later than a later one, the cut
+    # destroys that earlier match and its text leaks into the output.
+    # e.g. text='The FINAL END is here, END of story' with
+    # stop=['END', 'FINAL END'] returned 'The FINAL ' instead of 'The '.
+    cut = -1
     for s in stop:
         k = text.find(s)
-        if k >= 0:
-            truncated = True
-            text = text[:k]
-    return truncated, text
+        if k >= 0 and (cut < 0 or k < cut):
+            cut = k
+    if cut < 0:
+        return False, text
+    return True, text[:cut]
 
 
 def _truncate_input_messages_roughly(messages: List[Message], max_tokens: int) -> List[Message]:
