@@ -40,13 +40,13 @@ def load_cart(cart_path: Path) -> Dict[str, Any]:
 def check_case_completion(messages_path: Path) -> bool:
     """
     Check if a case is completed by examining the last message in messages.json.
-    A case is considered incomplete if the last message contains tool_calls.
+    A case is complete only if the last message is an assistant response without tool_calls.
     
     Args:
         messages_path: Path to messages.json file
         
     Returns:
-        True if case is completed (no tool_calls in last message), False otherwise
+        True if case ends with an assistant response without tool_calls, False otherwise
     """
     if not messages_path.exists():
         # If messages.json doesn't exist, consider it incomplete
@@ -64,18 +64,8 @@ def check_case_completion(messages_path: Path) -> bool:
         # Get the last message
         last_message = messages[-1]
         
-        # If last message is a tool response, case is incomplete (waiting for assistant response)
-        if last_message.get("role") == "tool":
-            return False
-        
-        # If last message is assistant with tool_calls, case is incomplete (still calling tools)
-        if last_message.get("role") == "assistant":
-            tool_calls = last_message.get("tool_calls", [])
-            if tool_calls:
-                return False
-        
-        # Last message is assistant without tool_calls, case is completed
-        return True
+        # Only a final assistant response without pending tool calls completes a case.
+        return last_message.get("role") == "assistant" and not last_message.get("tool_calls")
     except Exception as e:
         print(f"⚠️  Warning: Failed to check case completion: {e}")
         # On error, consider it incomplete to be safe
