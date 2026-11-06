@@ -144,7 +144,7 @@ def aggregate_model_results(model_name: str, project_root: Path, travel_output_d
     """
     # Load statistics from each domain
     shopping_stats = load_shopping_statistics(project_root / "shoppingplanning", model_name)
-    travel_stats = load_travel_statistics(project_root / "travelplanning", model_name)
+    travel_stats = load_travel_statistics(project_root / "travelplanning", model_name, output_dir=travel_output_dir)
     
     # Check if we have at least one domain's results
     domains_found = []
