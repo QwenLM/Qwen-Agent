@@ -16,7 +16,7 @@ import datetime
 import json
 import os
 
-from qwen_agent.utils.utils import get_basename_from_url
+from qwen_agent.utils.utils import hash_sha256
 
 
 def save_browsing_meta_data(url: str, title: str, meta_file: str):
@@ -82,9 +82,13 @@ def read_meta_data_by_condition(meta_file: str, **kwargs):
     return records
 
 
+def _get_history_file(url: str, history_dir: str) -> str:
+    return os.path.join(history_dir, hash_sha256(url) + '.json')
+
+
 def save_history(history, url, history_dir):
     history = history or []
-    history_file = os.path.join(history_dir, get_basename_from_url(url) + '.json')
+    history_file = _get_history_file(url, history_dir)
     if not os.path.exists(history_dir):
         os.makedirs(history_dir)
     with open(history_file, 'w', encoding='utf-8') as file:
@@ -92,7 +96,7 @@ def save_history(history, url, history_dir):
 
 
 def read_history(url, history_dir):
-    history_file = os.path.join(history_dir, get_basename_from_url(url) + '.json')
+    history_file = _get_history_file(url, history_dir)
     if os.path.exists(history_file):
         with open(history_file, 'r', encoding='utf-8') as file:
             data = json.load(file)
