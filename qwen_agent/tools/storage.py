@@ -122,7 +122,8 @@ class Storage(BaseTool):
                     k = os.path.join(root, file)[len(path):]
                     if not k.startswith('/'):
                         k = '/' + k
-                    v = read_text_from_file(os.path.join(root, file))
+                    file_path = self._resolve_path(os.path.relpath(os.path.join(root, file), path), path)
+                    v = read_text_from_file(file_path)
                     kvs[k] = v
             return '\n'.join([f'{k}: {v}' for k, v in kvs.items()])
         else:
