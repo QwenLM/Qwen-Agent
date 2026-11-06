@@ -18,7 +18,7 @@ from typing import Dict, Iterator, List, Optional, Union
 
 from qwen_agent.agents import Agent
 from qwen_agent.llm import BaseChatModel
-from qwen_agent.llm.schema import Message
+from qwen_agent.llm.schema import SYSTEM, USER, Message
 from qwen_agent.tools import BaseTool
 
 STOP = '<|STOP|>'
@@ -44,6 +44,8 @@ class HumanSimulator(Agent):
                  **kwargs):
         if system_message:
             system_message = DEFAULT_HUMAN_SIMULATOR_PROMPT + '\n\n' + system_message
+        else:
+            system_message = DEFAULT_HUMAN_SIMULATOR_PROMPT
         super().__init__(function_list=function_list,
                          llm=llm,
                          system_message=system_message,
@@ -52,9 +54,11 @@ class HumanSimulator(Agent):
                          **kwargs)
 
     def _run(self, messages: List[Message], lang: str = 'en', **kwargs) -> Iterator[List[Message]]:
-        if (not messages) or (messages[0].role != 'user'):
+        first_non_system = next((i for i, msg in enumerate(messages) if msg.role != SYSTEM), None)
+        if (first_non_system is None) or (messages[first_non_system].role != USER):
             begin_msg = 'Please role-play as a human user and make your first request.\n\nBegin!'
-            messages = [Message(role='user', content=begin_msg)] + messages
+            insert_at = len(messages) if first_non_system is None else first_non_system
+            messages.insert(insert_at, Message(role=USER, content=begin_msg))
         *_, respones = self._call_llm(messages=messages)
         rng = random.Random(kwargs.get('seed', 42))
         try:
