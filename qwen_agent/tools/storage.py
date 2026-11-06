@@ -55,6 +55,19 @@ class Storage(BaseTool):
         self.root = self.cfg.get('storage_root_path', os.path.join(DEFAULT_WORKSPACE, 'tools', self.name))
         os.makedirs(self.root, exist_ok=True)
 
+    def _resolve_path(self, key: str, path: Optional[str] = None) -> str:
+        """Resolve a storage key while keeping it inside the storage root."""
+        root = os.path.realpath(path or self.root)
+        target = os.path.realpath(os.path.join(root, key))
+        try:
+            inside_root = os.path.commonpath((root, target)) == root
+        except ValueError:
+            # On Windows, paths on different drives cannot share a common path.
+            inside_root = False
+        if not inside_root:
+            raise ValueError(f'Storage key escapes the storage root: {key}')
+        return target
+
     def call(self, params: Union[str, dict], **kwargs) -> str:
         params = self._verify_json_format_args(params)
         operate = params['operate']
@@ -73,12 +86,10 @@ class Storage(BaseTool):
             return self.scan(key)
 
     def put(self, key: str, value: str, path: Optional[str] = None) -> str:
-        path = path or self.root
-
         # one file for one key value pair
-        path = os.path.join(path, key)
+        path = self._resolve_path(key, path)
 
-        path_dir = path[:path.rfind('/') + 1]
+        path_dir = os.path.dirname(path)
         if path_dir:
             os.makedirs(path_dir, exist_ok=True)
 
@@ -86,14 +97,13 @@ class Storage(BaseTool):
         return f'Successfully saved {key}.'
 
     def get(self, key: str, path: Optional[str] = None) -> str:
-        path = path or self.root
-        if not os.path.exists(os.path.join(path, key)):
+        path = self._resolve_path(key, path)
+        if not os.path.exists(path):
             raise KeyNotExistsError(f'Get Failed: {key} does not exist')
-        return read_text_from_file(os.path.join(path, key))
+        return read_text_from_file(path)
 
     def delete(self, key, path: Optional[str] = None) -> str:
-        path = path or self.root
-        path = os.path.join(path, key)
+        path = self._resolve_path(key, path)
         if os.path.exists(path):
             os.remove(path)
             return f'Successfully deleted {key}'
@@ -101,8 +111,7 @@ class Storage(BaseTool):
             return f'Delete Failed: {key} does not exist'
 
     def scan(self, key: str, path: Optional[str] = None) -> str:
-        path = path or self.root
-        path = os.path.join(path, key)
+        path = self._resolve_path(key, path)
         if os.path.exists(path):
             if not os.path.isdir(path):
                 return 'Scan Failed: The scan operation requires passing in a folder path as the key.'
@@ -113,7 +122,8 @@ class Storage(BaseTool):
                     k = os.path.join(root, file)[len(path):]
                     if not k.startswith('/'):
                         k = '/' + k
-                    v = read_text_from_file(os.path.join(root, file))
+                    file_path = self._resolve_path(os.path.relpath(os.path.join(root, file), path), path)
+                    v = read_text_from_file(file_path)
                     kvs[k] = v
             return '\n'.join([f'{k}: {v}' for k, v in kvs.items()])
         else:
