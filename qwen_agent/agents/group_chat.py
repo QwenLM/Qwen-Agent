@@ -1,11 +1,11 @@
 # Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #    http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -217,6 +217,16 @@ class GroupChat(Agent, MultiAgentHub):
         i = 0
         while i < len(messages):
             msg = messages[i]
+            call_end = i + 1
+            result_end = call_end
+            if msg.function_call:
+                # FnCallAgent appends all calls from one response before their results.
+                while (call_end < len(messages) and messages[call_end].role == 'assistant' and
+                       messages[call_end].name == msg.name and messages[call_end].function_call):
+                    call_end += 1
+                result_end = call_end + (call_end - i)
+                assert result_end <= len(messages)
+                assert all(result.role == 'function' for result in messages[call_end:result_end])
             if msg.name == name:
                 if new_msg:
                     # Have 'user' before 'assistant'
@@ -230,29 +240,27 @@ class GroupChat(Agent, MultiAgentHub):
                 new_messages.append(new_msg)
                 new_msg = None
                 if msg.function_call:
-                    # Append the function call msg
-                    assert messages[i + 1].role == 'function'
-                    new_messages.append(copy.deepcopy(messages[i + 1]))
-                    i += 1
+                    # Preserve the complete call/result batch in its original order.
+                    new_messages.extend(copy.deepcopy(messages[i + 1:result_end]))
             else:
-                if isinstance(msg.content, list):
-                    content = '\n'.join([x.text if x.text else '' for x in msg.content]).strip()
-                else:
-                    content = msg.content.strip()
-
-                if content.strip():
-                    if not new_msg:
-                        new_msg = Message('user', f'{msg.name}: {content.strip()}')
+                for other_msg in messages[i:call_end]:
+                    if isinstance(other_msg.content, list):
+                        content = '\n'.join([x.text if x.text else '' for x in other_msg.content]).strip()
                     else:
-                        new_msg.content += f'\n{msg.name}: {content.strip()}'
+                        content = other_msg.content.strip()
+
+                    if content.strip():
+                        if not new_msg:
+                            new_msg = Message('user', f'{other_msg.name}: {content.strip()}')
+                        else:
+                            new_msg.content += f'\n{other_msg.name}: {content.strip()}'
 
                 if msg.function_call:
-                    # Skip the function call msg
-                    assert messages[i + 1].role == 'function'
-                    assert messages[i + 2].role == 'assistant' and messages[i + 2].name == msg.name
-                    i += 1
+                    # Other agents see the assistant's text, not private tool results.
+                    assert result_end < len(messages)
+                    assert messages[result_end].role == 'assistant' and messages[result_end].name == msg.name
 
-            i += 1
+            i = result_end
         if new_msg:
             new_messages.append(new_msg)
 
