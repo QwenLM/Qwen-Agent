@@ -228,7 +228,12 @@ class NousFnCallPrompt(BaseFnCallPrompt):
                                     ),
                                     extra=_extra,
                                 ))
-                    if fn and 'name' in fn and 'arguments' in fn:
+                    if fn and 'name' in fn:
+                        # A well-formed call for a zero-argument tool may omit
+                        # "arguments" entirely; treat it as an empty parameter
+                        # set instead of silently dropping the invocation.
+                        if fn.get('arguments') is None:
+                            fn['arguments'] = {}
                         _extra = copy.deepcopy(extra) if extra else {}
                         _extra['function_id'] = str(tool_id)
                         tool_id += 1
