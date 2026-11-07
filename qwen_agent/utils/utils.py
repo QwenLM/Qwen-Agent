@@ -122,7 +122,8 @@ def get_basename_from_url(path_or_url: str) -> str:
 
     # "https://github.com/" -> "" -> "github.com"
     if not basename:
-        basename = [x.strip() for x in path_or_url.split('/') if x.strip()][-1]
+        parts = [x.strip() for x in path_or_url.split('/') if x.strip()]
+        basename = parts[-1] if parts else ''
 
     return basename
 
