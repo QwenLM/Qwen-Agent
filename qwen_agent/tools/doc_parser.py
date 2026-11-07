@@ -16,7 +16,7 @@ import json
 import os
 import re
 import time
-from typing import Dict, List, Optional, Union
+from typing import Dict, Iterator, List, Optional, Tuple, Union
 
 from pydantic import BaseModel
 
@@ -25,8 +25,29 @@ from qwen_agent.settings import DEFAULT_MAX_REF_TOKEN, DEFAULT_PARSER_PAGE_SIZE,
 from qwen_agent.tools.base import BaseTool, register_tool
 from qwen_agent.tools.simple_doc_parser import PARAGRAPH_SPLIT_SYMBOL, SimpleDocParser, get_plain_doc
 from qwen_agent.tools.storage import KeyNotExistsError, Storage
-from qwen_agent.utils.tokenization_qwen import count_tokens, tokenizer
+from qwen_agent.utils.tokenization_qwen import _is_utf8_boundary, count_tokens, tokenizer
 from qwen_agent.utils.utils import get_basename_from_url, hash_sha256
+
+
+def _split_long_sentence(text: str, max_tokens: int) -> Iterator[Tuple[str, int]]:
+    """Split tokenized text without decoding partial UTF-8 characters."""
+    if max_tokens <= 0:
+        raise ValueError('max_tokens must be positive')
+    tokens = tokenizer.tokenize(text)
+
+    start = 0
+    while start < len(tokens):
+        end = min(start + max_tokens, len(tokens))
+        while end > start and not _is_utf8_boundary(tokens, end):
+            end -= 1
+        if end == start:
+            # The smallest complete UTF-8 token span may exceed a tiny budget.
+            # Keep it intact and make progress, as for an indivisible sentence.
+            end += 1
+            while not _is_utf8_boundary(tokens, end):
+                end += 1
+        yield tokenizer.convert_tokens_to_string(tokens[start:end]), end - start
+        start = end
 
 
 class Chunk(BaseModel):
@@ -213,11 +234,8 @@ class DocParser(BaseTool):
                                 sentences.append([s, token])
                             else:
                                 # Limit the length of a sentence to chunk size
-                                token_list = tokenizer.tokenize(s)
-                                for si in range(0, len(token_list), available_token):
-                                    ss = tokenizer.convert_tokens_to_string(
-                                        token_list[si:min(len(token_list), si + available_token)])
-                                    sentences.append([ss, min(available_token, len(token_list) - si)])
+                                for ss, token_count in _split_long_sentence(s, available_token):
+                                    sentences.append([ss, token_count])
                         sent_index = 0
                         while sent_index < len(sentences):
                             s = sentences[sent_index][0]

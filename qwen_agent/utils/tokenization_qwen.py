@@ -1,17 +1,16 @@
 # Copyright 2023 The Qwen team, Alibaba Group. All rights reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #    http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Tokenization classes for QWen."""
 
 import base64
@@ -52,6 +51,12 @@ def _load_tiktoken_bpe(tiktoken_bpe_file: str) -> Dict[bytes, int]:
     return {
         base64.b64decode(token): int(rank) for token, rank in (line.split() for line in contents.splitlines() if line)
     }
+
+
+def _is_utf8_boundary(tokens: List[Union[bytes, str]], index: int) -> bool:
+    if index == len(tokens) or isinstance(tokens[index], str):
+        return True
+    return tokens[index][0] & 0xc0 != 0x80
 
 
 class QWenTokenizer:
@@ -220,23 +225,32 @@ class QWenTokenizer:
 
     def truncate(self, text: str, max_token: int, start_token: int = 0, keep_both_sides: bool = False) -> str:
         token_list = self.tokenize(text)[start_token:]
+
+        def decode_complete_span(tokens, start=0, end=None):
+            end = len(tokens) if end is None else end
+            while start < end and not _is_utf8_boundary(tokens, start):
+                start += 1
+            while end > start and not _is_utf8_boundary(tokens, end):
+                end -= 1
+            return self.convert_tokens_to_string(tokens[start:end])
+
+        if max_token <= 0:
+            return ''
         if len(token_list) <= max_token:
-            return self.convert_tokens_to_string(token_list)
+            return decode_complete_span(token_list)
 
         if keep_both_sides:
             ellipsis_tokens = self.tokenize("...")
             ellipsis_len = len(ellipsis_tokens)
             available = max_token - ellipsis_len
-            if available <= 0: # Degenerate case: not enough space even for "..."
-                return self.convert_tokens_to_string(token_list[:max_token])
+            if available <= 0:
+                return decode_complete_span(token_list, end=max_token)
 
             left_len = available // 2
             right_len = available - left_len
-            token_list = token_list[:left_len] + ellipsis_tokens + token_list[-right_len:]
-        else:
-            token_list = token_list[:max_token]
-
-        return self.convert_tokens_to_string(token_list)
+            return (decode_complete_span(token_list, end=left_len) + self.convert_tokens_to_string(ellipsis_tokens) +
+                    decode_complete_span(token_list, start=len(token_list) - right_len))
+        return decode_complete_span(token_list, end=max_token)
 
 
 tokenizer = QWenTokenizer(Path(__file__).resolve().parent / 'qwen.tiktoken')
