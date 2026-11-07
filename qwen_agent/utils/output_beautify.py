@@ -40,8 +40,8 @@ def typewriter_print(messages: List[dict], text: str) -> str:
                 content.append(f'{TOOL_CALL_S} {msg["function_call"]["name"]}\n{msg["function_call"]["arguments"]}')
         elif msg['role'] == FUNCTION:
             content.append(f'{TOOL_RESULT_S} {msg["name"]}\n{msg["content"]}')
-        else:
-            raise TypeError
+        # Skip messages with other roles (e.g. user, system) instead of
+        # crashing with TypeError, consistent with multimodal_typewriter_print.
     if content:
         full_text = '\n'.join(content)
         print(full_text[len(text):], end='', flush=True)
