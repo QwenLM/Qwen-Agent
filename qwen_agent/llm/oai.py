@@ -103,6 +103,7 @@ class TextChatAtOAI(BaseFnCallModel):
     ) -> Iterator[List[Message]]:
         messages = self.convert_messages_to_dicts(messages)
         logger.debug(f'LLM Input generate_cfg: \n{generate_cfg}')
+        response = None
         try:
             response = self._chat_complete_create(model=self.model, messages=messages, stream=True, **generate_cfg)
             if delta_stream:
@@ -157,6 +158,9 @@ class TextChatAtOAI(BaseFnCallModel):
                         yield res
         except OpenAIError as ex:
             raise ModelServiceError(exception=ex)
+        finally:
+            if response is not None:
+                response.close()
 
     def _chat_no_stream(
         self,
