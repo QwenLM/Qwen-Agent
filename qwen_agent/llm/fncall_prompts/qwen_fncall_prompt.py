@@ -390,9 +390,32 @@ def remove_trailing_comment_of_fn_args(fn_args: str):
     fn_args = fn_args.strip()
 
     if fn_args.startswith('{'):
-        k = fn_args.rfind('}')
-        if k > 0:
-            fn_args = fn_args[:k + 1]
+        # Cut at the closing brace matching the leading '{', skipping braces
+        # inside JSON string literals, so a trailing comment that itself
+        # contains a '}' cannot corrupt the arguments (rfind('}') would).
+        depth = 0
+        in_string = False
+        escaped = False
+        end = -1
+        for i, ch in enumerate(fn_args):
+            if in_string:
+                if escaped:
+                    escaped = False
+                elif ch == '\\':
+                    escaped = True
+                elif ch == '"':
+                    in_string = False
+            elif ch == '"':
+                in_string = True
+            elif ch == '{':
+                depth += 1
+            elif ch == '}':
+                depth -= 1
+                if depth == 0:
+                    end = i
+                    break
+        if end > 0:
+            fn_args = fn_args[:end + 1]
 
     if fn_args.startswith('```'):
         k = fn_args.rfind('\n```')
