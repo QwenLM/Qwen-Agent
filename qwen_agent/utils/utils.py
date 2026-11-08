@@ -299,8 +299,13 @@ def extract_code(text: str) -> str:
 
 def json_loads(text: str) -> dict:
     text = text.strip('\n')
-    if text.startswith('```') and text.endswith('\n```'):
-        text = '\n'.join(text.split('\n')[1:-1])
+    # Unwrap a markdown fence. Models emit a fenced JSON block with the
+    # closing fence on its own line, but also the compact form where the
+    # closing fence is attached to the last value line.
+    if text.startswith('```') and text.endswith('```'):
+        m = re.match(r'^```[^\n]*\n(.*)\n?```$', text, re.DOTALL)
+        if m:
+            text = m.group(1)
     try:
         return json.loads(text)
     except json.decoder.JSONDecodeError as json_err:
