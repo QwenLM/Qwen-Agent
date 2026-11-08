@@ -122,7 +122,11 @@ def get_basename_from_url(path_or_url: str) -> str:
 
     # "https://github.com/" -> "" -> "github.com"
     if not basename:
-        basename = [x.strip() for x in path_or_url.split('/') if x.strip()][-1]
+        # Drop the query/fragment the same way urlparse did for the path
+        # above, and keep the input itself when it has no segments at all
+        # ('' or '/') instead of crashing with IndexError.
+        segments = [x.strip() for x in path_or_url.split('?')[0].split('/') if x.strip()]
+        basename = segments[-1] if segments else path_or_url
 
     return basename
 
