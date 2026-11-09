@@ -1306,6 +1306,9 @@ def check_budget_accuracy(plan: Dict[str, Any], daily_plans: List[Dict[str, Any]
         plan_total = float(plan_total)
     except:
         return False, f"Invalid total_estimated_budget: {plan_total}"
+
+    if plan_total < 0:
+        return False, f"Invalid negative total_estimated_budget: {plan_total}"
     
     # Get meta info
     people_number = int(meta.get("people_number", 1))
