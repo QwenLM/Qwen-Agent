@@ -109,8 +109,6 @@ class PythonExecutor(BaseTool):
 
     def __init__(self, cfg: Optional[Dict] = None):
         _check_deps_for_python_executor()
-        import multiprocess
-        from multiprocess import Pool
         super().__init__(cfg)
 
         runtime: Optional[Any] = self.cfg.get('runtime', None)
@@ -123,7 +121,6 @@ class PythonExecutor(BaseTool):
         self.answer_symbol = get_answer_symbol
         self.answer_expr = get_answer_expr
         self.get_answer_from_stdout = get_answer_from_stdout
-        self.pool = Pool(multiprocess.cpu_count())
         self.timeout_length = timeout_length
 
     def call(self, params: Union[str, dict], **kwargs) -> list:
