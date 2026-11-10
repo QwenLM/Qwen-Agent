@@ -273,7 +273,17 @@ def get_file_type(path: str) -> Literal['pdf', 'docx', 'pptx', 'txt', 'html', 'c
 
 def extract_urls(text: str) -> List[str]:
     pattern = re.compile(r'https?://\S+')
-    urls = re.findall(pattern, text)
+    urls = []
+    for match in pattern.findall(text):
+        url = match.rstrip('.,;:!?')
+        # Drop closing brackets that do not belong to the URL, e.g. the ")"
+        # of "(https://example.com/a)", while keeping balanced ones such as
+        # "https://en.wikipedia.org/wiki/Python_(programming_language)".
+        while url and url[-1] in ')]}' and url.count(url[-1]) > url.count(
+                {')': '(', ']': '[', '}': '{'}[url[-1]]):
+            url = url[:-1].rstrip('.,;:!?')
+        if url:
+            urls.append(url)
     return urls
 
 
@@ -299,8 +309,13 @@ def extract_code(text: str) -> str:
 
 def json_loads(text: str) -> dict:
     text = text.strip('\n')
-    if text.startswith('```') and text.endswith('\n```'):
-        text = '\n'.join(text.split('\n')[1:-1])
+    # Unwrap a markdown fence. Models emit a fenced JSON block with the
+    # closing fence on its own line, but also the compact form where the
+    # closing fence is attached to the last value line.
+    if text.startswith('```') and text.endswith('```'):
+        m = re.match(r'^```[^\n]*\n(.*)\n?```$', text, re.DOTALL)
+        if m:
+            text = m.group(1)
     try:
         return json.loads(text)
     except json.decoder.JSONDecodeError as json_err:
