@@ -184,25 +184,32 @@ def sanitize_windows_file_path(file_path: str) -> str:
 def save_url_to_local_work_dir(url: str, save_dir: str, save_filename: str = '') -> str:
     if not save_filename:
         save_filename = get_basename_from_url(url)
+    os.makedirs(save_dir, exist_ok=True)
     new_path = os.path.join(save_dir, save_filename)
-    if os.path.exists(new_path):
-        os.remove(new_path)
+    tmp_path = new_path + '.part'
     logger.info(f'Downloading {url} to {new_path}...')
     start_time = time.time()
-    if not is_http_url(url):
-        url = sanitize_chrome_file_path(url)
-        shutil.copy(url, new_path)
-    else:
-        headers = {
-            'User-Agent':
-                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
-        }
-        response = requests.get(url, headers=headers)
-        if response.status_code == 200:
-            with open(new_path, 'wb') as file:
-                file.write(response.content)
+    try:
+        if not is_http_url(url):
+            url = sanitize_chrome_file_path(url)
+            shutil.copy(url, tmp_path)
         else:
-            raise ValueError('Can not download this file. Please check your network or the file link.')
+            headers = {
+                'User-Agent':
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+            }
+            response = requests.get(url, headers=headers)
+            if response.status_code == 200:
+                with open(tmp_path, 'wb') as file:
+                    file.write(response.content)
+            else:
+                raise ValueError('Can not download this file. Please check your network or the file link.')
+        # Replace the destination only once the download has succeeded, so a
+        # failed request leaves an existing file untouched.
+        os.replace(tmp_path, new_path)
+    finally:
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
     end_time = time.time()
     logger.info(f'Finished downloading {url} to {new_path}. Time spent: {end_time - start_time} seconds.')
     return new_path
