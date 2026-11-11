@@ -21,5 +21,27 @@ def test_doc_parser():
     print(res)
 
 
+def test_call_reads_the_chunked_document_from_cache(tmp_path):
+    # A small document is cached under '<hash>_without_chunking' but was looked
+    # up under '<hash>_<page_size>', so every call re-extracted and re-chunked.
+    class CountingExtractor:
+
+        def __init__(self):
+            self.calls = 0
+
+        def call(self, params):
+            self.calls += 1
+            return [{'page_num': 1, 'content': [{'text': 'hello world', 'token': 2}]}]
+
+    tool = DocParser({'path': str(tmp_path)})
+    tool.doc_extractor = CountingExtractor()
+
+    first = tool.call({'url': 'file:///tmp/small.txt'})
+    second = tool.call({'url': 'file:///tmp/small.txt'})
+
+    assert tool.doc_extractor.calls == 1
+    assert first == second
+
+
 if __name__ == '__main__':
     test_doc_parser()
