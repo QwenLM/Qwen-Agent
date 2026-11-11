@@ -16,13 +16,13 @@ import copy
 import json
 import traceback
 from abc import ABC, abstractmethod
-from typing import Dict, Iterator, List, Optional, Tuple, Union
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
 from qwen_agent.llm import get_chat_model
 from qwen_agent.llm.base import BaseChatModel
 from qwen_agent.llm.schema import CONTENT, DEFAULT_SYSTEM_MESSAGE, ROLE, SYSTEM, ContentItem, Message
 from qwen_agent.log import logger
-from qwen_agent.tools import TOOL_REGISTRY, BaseTool, MCPManager
+from qwen_agent.tools import TOOL_REGISTRY, BaseTool, MCPManager, ToolCallDenied, ToolLifecycleHook
 from qwen_agent.tools.base import ToolServiceError
 from qwen_agent.tools.simple_doc_parser import DocParserError
 from qwen_agent.utils.utils import has_chinese_messages, merge_generate_cfgs
@@ -41,6 +41,7 @@ class Agent(ABC):
                  system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
                  name: Optional[str] = None,
                  description: Optional[str] = None,
+                 tool_lifecycle_hooks: Optional[List[ToolLifecycleHook]] = None,
                  **kwargs):
         """Initialization the agent.
 
@@ -52,6 +53,8 @@ class Agent(ABC):
             system_message: The specified system message for LLM chat.
             name: The name of this agent.
             description: The description of this agent, which will be used for multi_agent.
+            tool_lifecycle_hooks: Optional callbacks around tool execution. Hooks can
+              observe calls and raise ToolCallDenied from before_tool_call to reject one.
         """
         if isinstance(llm, dict):
             self.llm = get_chat_model(llm)
@@ -67,6 +70,7 @@ class Agent(ABC):
         self.system_message = system_message
         self.name = name
         self.description = description
+        self.tool_lifecycle_hooks = list(tool_lifecycle_hooks or [])
 
     def run_nonstream(self, messages: List[Union[Dict, Message]], **kwargs) -> Union[List[Message], List[Dict]]:
         """Same as self.run, but with stream=False,
@@ -188,11 +192,35 @@ class Agent(ABC):
         if tool_name not in self.function_map:
             return f'Tool {tool_name} does not exists.'
         tool = self.function_map[tool_name]
+        context = {
+            'agent_name': self.name,
+            'tool': tool,
+        }
+        metadata: Dict[str, Any] = {}
         try:
+            for hook in self.tool_lifecycle_hooks:
+                hook_metadata = hook.before_tool_call(tool_name=tool_name,
+                                                      tool_args=tool_args,
+                                                      context=context)
+                if hook_metadata:
+                    metadata.update(hook_metadata)
             tool_result = tool.call(tool_args, **kwargs)
+            for hook in self.tool_lifecycle_hooks:
+                try:
+                    hook.after_tool_call(tool_name=tool_name,
+                                         tool_args=tool_args,
+                                         result=tool_result,
+                                         context=context,
+                                         metadata=metadata)
+                except Exception as hook_error:
+                    logger.warning('Tool lifecycle after hook failed for `%s`: %s', tool_name, hook_error)
         except (ToolServiceError, DocParserError) as ex:
+            self._notify_tool_error(tool_name, tool_args, ex, context, metadata)
             raise ex
         except Exception as ex:
+            self._notify_tool_error(tool_name, tool_args, ex, context, metadata)
+            if isinstance(ex, ToolCallDenied):
+                return str(ex)
             exception_type = type(ex).__name__
             exception_message = str(ex)
             traceback_info = ''.join(traceback.format_tb(ex.__traceback__))
@@ -208,6 +236,18 @@ class Agent(ABC):
             return tool_result  # multimodal tool results
         else:
             return json.dumps(tool_result, ensure_ascii=False, indent=4)
+
+    def _notify_tool_error(self, tool_name: str, tool_args: Union[str, dict], error: Exception,
+                           context: Dict[str, Any], metadata: Dict[str, Any]) -> None:
+        for hook in self.tool_lifecycle_hooks:
+            try:
+                hook.on_tool_error(tool_name=tool_name,
+                                   tool_args=tool_args,
+                                   error=error,
+                                   context=context,
+                                   metadata=metadata)
+            except Exception as hook_error:
+                logger.warning('Tool lifecycle error hook failed for `%s`: %s', tool_name, hook_error)
 
     def _init_tool(self, tool: Union[str, Dict, BaseTool]):
         if isinstance(tool, BaseTool):
