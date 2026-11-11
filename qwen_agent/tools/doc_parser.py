@@ -202,8 +202,10 @@ class DocParser(BaseTool):
                             available_token = parser_page_size
                     else:
                         # There are excessively long paragraphs present
-                        # Split paragraph to sentences
-                        _sentences = re.split(r'\. |。', txt)
+                        # Split paragraph to sentences. Splitting on the
+                        # delimiter itself would drop the punctuation from
+                        # every sentence, so split after it instead.
+                        _sentences = [s for s in re.split(r'(?<=\. )|(?<=。)', txt) if s]
                         sentences = []
                         for s in _sentences:
                             token = count_tokens(s)
