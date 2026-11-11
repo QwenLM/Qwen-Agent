@@ -21,5 +21,21 @@ def test_doc_parser():
     print(res)
 
 
+def test_split_doc_to_chunk_keeps_sentence_punctuation():
+    # A long paragraph is split at sentence boundaries; the delimiters used to
+    # be discarded, so every chunk lost the '。' / '. ' that ended its sentences.
+    tool = DocParser({'path': '/tmp/doc_parser_test'})
+    doc = [{'page_num': 1, 'content': [{'text': '第一句很重要。第二句也很重要。', 'token': 999}]}]
+
+    chunks = tool.split_doc_to_chunk(doc, 'x.txt', parser_page_size=10)
+
+    assert len(chunks) > 0
+    joined = ''.join(c.content for c in chunks)
+    assert '第一句很重要。' in joined
+    assert '第二句也很重要。' in joined
+    for chunk in chunks:
+        assert chunk.content.rstrip().endswith('。'), chunk.content
+
+
 if __name__ == '__main__':
     test_doc_parser()
