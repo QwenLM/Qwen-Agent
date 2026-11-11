@@ -136,7 +136,6 @@ class DocParser(BaseTool):
                       },
                       token=total_token)
             ]
-            cached_name_chunking = f'{hash_sha256(url)}_without_chunking'
         else:
             content = self.split_doc_to_chunk(doc, url, title=title, parser_page_size=parser_page_size)
 
