@@ -115,14 +115,22 @@ def get_basename_from_url(path_or_url: str) -> str:
     # "/mnt/a/b/c" -> "c"
     # "https://github.com/here?k=v" -> "here"
     # "https://github.com/" -> ""
-    basename = urllib.parse.urlparse(path_or_url).path
-    basename = os.path.basename(basename)
+    parsed = urllib.parse.urlparse(path_or_url)
+    basename = os.path.basename(parsed.path)
     basename = urllib.parse.unquote(basename)
     basename = basename.strip()
 
+    # "" -> ""
+    # "/" -> ""
     # "https://github.com/" -> "" -> "github.com"
+    # "https://github.com/?k=v" -> "" -> "github.com"
+    # "https://github.com/#frag" -> "" -> "github.com"
     if not basename:
-        basename = [x.strip() for x in path_or_url.split('/') if x.strip()][-1]
+        # The parsed path has no leaf, so fall back to the host of a URL. A bare
+        # path keeps returning '' instead of an absolute '/': callers pass the
+        # result to os.path.join, where an absolute component would discard the
+        # directory they joined it to.
+        basename = parsed.netloc.strip()
 
     return basename
 
