@@ -163,7 +163,9 @@ class ParallelDocQA(Assistant):
     def _is_none_response(self, text: str) -> bool:
         none_response_list = ['很抱歉', NO_RESPONSE, "\"res\": \"none\""]
         for none_response in none_response_list:
-            if none_response in text.lower():
+            # The marker is mixed-case ('<None>'), so lower both sides instead
+            # of only the model output.
+            if none_response.lower() in text.lower():
                 return True
         return False
 
