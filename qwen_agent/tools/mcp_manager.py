@@ -457,6 +457,8 @@ class MCPClient:
                     texts.append(content.text)
             if texts:
                 return '\n\n'.join(texts)
+            elif getattr(response, 'structuredContent', None) is not None:
+                return json.dumps(response.structuredContent, ensure_ascii=False)
             else:
                 return 'execute error'
 
