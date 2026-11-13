@@ -115,8 +115,10 @@ class CodeInterpreter(BaseToolWithFileAccess):
         super().call(params=params, files=files)  # copy remote files to work_dir
 
         try:
-            params = json5.loads(params)
-            code = params['code']
+            if isinstance(params, dict):
+                code = params.get('code', '')
+            else:
+                code = json5.loads(params)['code']
         except Exception:
             code = extract_code(params)
 
