@@ -278,8 +278,25 @@ def extract_urls(text: str) -> List[str]:
 
 
 def extract_markdown_urls(md_text: str) -> List[str]:
-    pattern = r'!?\[[^\]]*\]\(([^\)]+)\)'
-    urls = re.findall(pattern, md_text)
+    urls = []
+    # The destination may itself contain parentheses, e.g.
+    # "https://en.wikipedia.org/wiki/Python_(programming_language)", so match
+    # the closing parenthesis that balances the opening one instead of the
+    # first ")".
+    for match in re.finditer(r'!?\[[^\]]*\]\(', md_text):
+        start = match.end()
+        depth = 1
+        end = start
+        while end < len(md_text) and depth > 0:
+            if md_text[end] == '(':
+                depth += 1
+            elif md_text[end] == ')':
+                depth -= 1
+            end += 1
+        if depth > 0:
+            # Unbalanced link: keep the previous behaviour and ignore it.
+            continue
+        urls.append(md_text[start:end - 1])
     return urls
 
 
