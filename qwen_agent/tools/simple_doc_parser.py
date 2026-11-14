@@ -55,6 +55,12 @@ class DocParserError(Exception):
 
 PARAGRAPH_SPLIT_SYMBOL = '\n'
 
+# Block-level tags: their boundaries have to be kept as line breaks when the text of
+# an HTML document is extracted, otherwise the text of adjacent blocks is glued together.
+HTML_BLOCK_TAGS = ('address', 'article', 'aside', 'blockquote', 'br', 'dd', 'div', 'dl', 'dt', 'fieldset', 'figcaption',
+                   'figure', 'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header', 'hr', 'li', 'main', 'nav',
+                   'ol', 'p', 'pre', 'section', 'table', 'td', 'th', 'title', 'tr', 'ul')
+
 
 def parse_word(docx_path: str, extract_image: bool = False):
     if extract_image:
@@ -218,12 +224,15 @@ def parse_html_bs(path: str, extract_image: bool = False):
     with open(path, 'r', encoding='utf-8') as f:
         soup = BeautifulSoup(f, **bs_kwargs)
 
-    text = soup.get_text()
+    # The title is extracted first, before the line breaks inserted below can affect it.
+    title = soup.title.get_text() if soup.title else ''
 
-    if soup.title:
-        title = str(soup.title.string)
-    else:
-        title = ''
+    # Terminate every block-level element with a line break, so that `get_text` does not
+    # concatenate the text of adjacent blocks (e.g. `<p>Hello</p><p>World</p>` -> "HelloWorld").
+    for tag in soup.find_all(HTML_BLOCK_TAGS):
+        tag.append(PARAGRAPH_SPLIT_SYMBOL)
+
+    text = soup.get_text()
 
     text = pre_process_html(text)
     paras = text.split(PARAGRAPH_SPLIT_SYMBOL)
