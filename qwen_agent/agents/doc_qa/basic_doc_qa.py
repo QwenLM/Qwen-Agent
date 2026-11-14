@@ -17,7 +17,7 @@ from typing import Dict, Iterator, List, Optional, Union
 
 from qwen_agent.agents.assistant import Assistant
 from qwen_agent.llm.base import BaseChatModel
-from qwen_agent.llm.schema import CONTENT, DEFAULT_SYSTEM_MESSAGE, ROLE, SYSTEM, Message
+from qwen_agent.llm.schema import CONTENT, DEFAULT_SYSTEM_MESSAGE, ROLE, SYSTEM, ContentItem, Message
 from qwen_agent.tools import BaseTool
 
 DEFAULT_NAME = 'Basic DocQA'
@@ -65,7 +65,11 @@ class BasicDocQA(Assistant):
         messages = copy.deepcopy(messages)
         system_prompt = PROMPT_TEMPLATE[lang].format(ref_doc=knowledge)
         if messages and messages[0][ROLE] == SYSTEM:
-            messages[0][CONTENT] += '\n\n' + system_prompt
+            if isinstance(messages[0][CONTENT], str):
+                messages[0][CONTENT] += '\n\n' + system_prompt
+            else:
+                assert isinstance(messages[0][CONTENT], list)
+                messages[0][CONTENT] += [ContentItem(text='\n\n' + system_prompt)]
         else:
             messages.insert(0, Message(SYSTEM, system_prompt))
 
