@@ -137,11 +137,16 @@ def df_to_md(df) -> str:
     df = df.dropna(how='all')
     df = df.dropna(axis=1, how='all')
     df = df.fillna('')
+    # A cell value may contain the markdown table delimiters themselves: a line break splits
+    # one row into two, and a '|' starts a new column, so both have to be escaped.
+    for column in df.columns:
+        df[column] = df[column].map(lambda value: value.replace('\r', ' ').replace('\n', ' ').replace('|', r'\|')
+                                    if isinstance(value, str) else value)
     md_table = tabulate(df, headers='keys', tablefmt='pipe', showindex=False)
 
     md_table = '\n'.join([
         '|'.join(replace_long_dashes(' ' + cell.strip() + ' ' if cell else '')
-                 for cell in row.split('|'))
+                 for cell in re.split(r'(?<!\\)\|', row))
         for row in md_table.split('\n')
     ])
     return md_table
