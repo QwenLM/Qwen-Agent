@@ -26,7 +26,9 @@ default_plan = """{"action1": "summarize", "action2": "outline", "action3": "exp
 
 
 def is_roman_numeral(s):
-    pattern = r'^(I|V|X|L|C|D|M)+'
+    # The leading roman numeral has to be a whole token (e.g. "III. Methods"), otherwise
+    # every ordinary word starting with I/V/X/L/C/D/M (e.g. "Introduction") is treated as a heading.
+    pattern = r'^(?:I|V|X|L|C|D|M)+(?![A-Za-z])'
     match = re.match(pattern, s)
     return match is not None
 
