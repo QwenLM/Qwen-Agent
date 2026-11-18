@@ -101,6 +101,11 @@ class ImageZoomInToolQwen3VL(BaseToolWithFileAccess):
 
         height = bottom - top
         width = right - left
+        if height <= 0 or width <= 0:
+            # The bbox is empty or lies outside the image after clamping, e.g. the model
+            # returned zero-area or pixel-scale coordinates. Crop the whole image instead
+            # of returning an inverted bbox, which would make the caller fail.
+            return [0, 0, img_width, img_height]
         if height < 32 or width < 32:
             center_x = (left + right) / 2.0
             center_y = (top + bottom) / 2.0
