@@ -6,14 +6,14 @@ This document introduces the usage and development process of the Agent class.
 The Agent class serves as a higher-level interface for Qwen-Agent, where an Agent object integrates the interfaces for tool calls and LLM (Large Language Model).
 The Agent receives a list of messages as input and produces a generator that yields a list of messages, effectively providing a stream of output messages.
 
-Different Agent classes have various workflows. In the [agents](../../../../../../qwen_agent/agents) directory, we provide several different fundamental Agent subclasses.
-For instance, the [ArticleAgent](../../../../../../qwen_agent/agents/article_agent.py) returns a message that includes an article;
-the [BasicDocQA](../../../../../../qwen_agent/agents/doc_qa/basic_doc_qa.py) returns a message that contains the results of a document Q&A Results.
+Different Agent classes have various workflows. In the [agents](https://github.com/QwenLM/Qwen-Agent/tree/main/qwen_agent/agents) directory, we provide several different fundamental Agent subclasses.
+For instance, the [ArticleAgent](https://github.com/QwenLM/Qwen-Agent/blob/main/qwen_agent/agents/article_agent.py) returns a message that includes an article;
+the [BasicDocQA](https://github.com/QwenLM/Qwen-Agent/blob/main/qwen_agent/agents/doc_qa/basic_doc_qa.py) returns a message that contains the results of a document Q&A Results.
 
 These types of Agents have relatively fixed response patterns and are suited for fairly specific use cases.
 
 ### 1.1. Assistant Class
-We offer a generic Agent class: the [Assistant](../../../../../../qwen_agent/agents/assistant.py) class,
+We offer a generic Agent class: the [Assistant](https://github.com/QwenLM/Qwen-Agent/blob/main/qwen_agent/agents/assistant.py) class,
 which, when directly instantiated, can handle the majority of Single-Agent tasks.
 Features:
 - It supports role-playing;
@@ -56,24 +56,24 @@ for response in bot.run(messages=messages):
 """
 ```
 
-In the [examples](../../../../../../examples) directory,
+In the [examples](https://github.com/QwenLM/Qwen-Agent/tree/main/examples) directory,
 we provide more Single-Agent use cases developed based on the Assistant class.
 
 ### 1.2. GroupChat Class
-We also provide a generic Multi-Agent class: the [GroupChat](../../../../../../qwen_agent/agents/group_chat.py) class. This class manages a list of Agents and automatically maintains their speech orders.
+We also provide a generic Multi-Agent class: the [GroupChat](https://github.com/QwenLM/Qwen-Agent/blob/main/qwen_agent/agents/group_chat.py) class. This class manages a list of Agents and automatically maintains their speech orders.
 The features of this class include:
 - Upon receiving external input, it automatically coordinates the speaking order of the built-in Agents and sequentially returns their responses to the user;
 - Human-in-the-loop: The user is also defined as an Agent, and the group chat may request feedback from the user when necessary;
 - The user can interrupt the group chat at any time.
 
-In the [examples](../../../../../../examples) directory, we provide a Gradio [Demo](../../../../../../examples/group_chat_demo.py) for creating and experiencing group chats,
+In the [examples](https://github.com/QwenLM/Qwen-Agent/tree/main/examples) directory, we provide a Gradio [Demo](https://github.com/QwenLM/Qwen-Agent/blob/main/examples/group_chat_demo.py) for creating and experiencing group chats,
 where you can further explore the group chat functionality.
-For development using GroupChat, you can refer to the [Gomoku](../../../../../../examples/group_chat_chess.py) use case.
+For development using GroupChat, you can refer to the [Gomoku](https://github.com/QwenLM/Qwen-Agent/blob/main/examples/group_chat_chess.py) use case.
 
 ## 2. Agent Development
 
 As our Agent class is defined as a workflow for processing messages, we can flexibly develop specific Agent classes.
-By examining the [Agent](../../../../../../qwen_agent/agent.py) base class, it becomes apparent that when we develop an Agent subclass, we only need to implement the function
+By examining the [Agent](https://github.com/QwenLM/Qwen-Agent/blob/main/qwen_agent/agent.py) base class, it becomes apparent that when we develop an Agent subclass, we only need to implement the function
 `._run(self, messages: List[Message], lang: str = 'en', **kwargs) -> Iterator[List[Message]]`,
 which receives a list of messages as input and returns an iterator over lists of messages.
 
@@ -200,4 +200,4 @@ class DocQA(Agent):
 
 ```
 
-Examples of using the `_call_llm(...)` and `_call_tool(...)` functions in combination to call LLMs and Tools can be found by examining the implementation of [ReActChat](../../../../../../qwen_agent/agents/react_chat.py) and [Assistant](../../../../../../qwen_agent/agents/assistant.py).
+Examples of using the `_call_llm(...)` and `_call_tool(...)` functions in combination to call LLMs and Tools can be found by examining the implementation of [ReActChat](https://github.com/QwenLM/Qwen-Agent/blob/main/qwen_agent/agents/react_chat.py) and [Assistant](https://github.com/QwenLM/Qwen-Agent/blob/main/qwen_agent/agents/assistant.py).

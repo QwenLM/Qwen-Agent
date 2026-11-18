@@ -14,9 +14,9 @@ The LLM is uniformly calling using the interface `get_chat_model(cfg: Optional[D
 - model_server: The model service address
 - generate_cfg: The parameters for model generation
 
-LLM classes uniformly use the `llm.chat(...)` interface to generate responses, supporting input of message lists, functions, and other parameters. For a detailed parameter list, see [BaseChatModel](../../../../../../qwen_agent/llm/base.py).
+LLM classes uniformly use the `llm.chat(...)` interface to generate responses, supporting input of message lists, functions, and other parameters. For a detailed parameter list, see [BaseChatModel](https://github.com/QwenLM/Qwen-Agent/blob/main/qwen_agent/llm/base.py).
 
-See a complete example of LLM usage at [Function Calling](../../../../../../examples/function_calling.py).
+See a complete example of LLM usage at [Function Calling](https://github.com/QwenLM/Qwen-Agent/blob/main/examples/function_calling.py).
 
 ```py
 
@@ -77,11 +77,11 @@ Note that in order to maintain the consistency of output type in the Agent,
 the Agent’s `_call_llm(...)` interface by default accesses the LLM using a streaming generation method.
 
 ## 2. LLM Development
-Qwen-Agent provides a mechanism for registering LLMs. In the [LLM Base Class](../../../../../../qwen_agent/llm/base.py), a uniform `llm.chat(...)` interface is implemented.
+Qwen-Agent provides a mechanism for registering LLMs. In the [LLM Base Class](https://github.com/QwenLM/Qwen-Agent/blob/main/qwen_agent/llm/base.py), a uniform `llm.chat(...)` interface is implemented.
 Newly registered LLMs only need to implement three specific functions:
 - A non-streaming generation interface;
 - A streaming generation interface (If the LLM itself does not support streaming generation, the non-streaming results can be wrapped into a generator for return);
 - A function call interface.
 
-If the newly registered LLM does not support function calls, it can inherit from the [BaseFnCallModel](../../../../../../qwen_agent/llm/function_calling.py) class implemented in Qwen-Agent.
+If the newly registered LLM does not support function calls, it can inherit from the [BaseFnCallModel](https://github.com/QwenLM/Qwen-Agent/blob/main/qwen_agent/llm/function_calling.py) class implemented in Qwen-Agent.
 This class has implemented Function Calling based on the general conversational interface by wrapping a tool call Prompt similar to ReAct.

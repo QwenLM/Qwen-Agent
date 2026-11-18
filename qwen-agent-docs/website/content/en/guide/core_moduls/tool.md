@@ -26,7 +26,7 @@ The tools can be passed in through `function_list: Optional[List[Union[str, Dict
 The supported input types include the tool name, tool configuration file, or the tool object itself.
 For instance, you can use `code_interpreter`, `{'name': 'code_interpreter', 'timeout': 10}`, or `CodeInterpreter()`.
 
-Note that for the convenience of inputting tool results into LLMs, the Agent’s `_call_tool(...)` interface converts all returned results from the tools into string type. For more details, see the [Agent class](../../../../../../qwen_agent/agent.py).
+Note that for the convenience of inputting tool results into LLMs, the Agent’s `_call_tool(...)` interface converts all returned results from the tools into string type. For more details, see the [Agent class](https://github.com/QwenLM/Qwen-Agent/blob/main/qwen_agent/agent.py).
 
 ## 2. Tool Development
 
