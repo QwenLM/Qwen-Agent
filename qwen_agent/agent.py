@@ -117,7 +117,6 @@ class Agent(ABC):
                     new_messages[0][CONTENT] = self.system_message + '\n\n' + new_messages[0][CONTENT]
                 else:
                     assert isinstance(new_messages[0][CONTENT], list)
-                    assert new_messages[0][CONTENT][0].text
                     new_messages[0][CONTENT] = [ContentItem(text=self.system_message + '\n\n')
                                                ] + new_messages[0][CONTENT]  # noqa
 
