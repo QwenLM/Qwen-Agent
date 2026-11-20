@@ -72,12 +72,16 @@ class MemoAssistant(Assistant):
                     param = json5.loads(msg.function_call.arguments)
                 except Exception:
                     continue
-                if param['operate'] in ['put', 'update']:
-                    all_kv[param['key']] = param['value']
-                elif param['operate'] == 'delete' and param['key'] in all_kv:
-                    all_kv.pop(param['key'])
-                else:
-                    pass
+                if not isinstance(param, dict):
+                    continue
+                key = param.get('key')
+                if not isinstance(key, str):
+                    continue
+                operate = param.get('operate')
+                if operate in ('put', 'update') and isinstance(param.get('value'), str):
+                    all_kv[key] = param['value']
+                elif operate == 'delete':
+                    all_kv.pop(key, None)
         all_kv_str = '\n'.join([f'{k}: {v}' for k, v in all_kv.items()])
         sys_memory_prompt = MEMORY_PROMPT.format(storage_info=all_kv_str)
         if messages and messages[0].role == SYSTEM:
