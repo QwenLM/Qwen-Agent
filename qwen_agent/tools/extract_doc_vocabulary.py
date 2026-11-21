@@ -71,10 +71,9 @@ class ExtractDocVocabulary(BaseTool):
 
             vectorizer = TfidfVectorizer(tokenizer=string_tokenizer, stop_words=WORDS_TO_IGNORE)
             tfidf_matrix = vectorizer.fit_transform(docs)
-            sorted_items = sorted(zip(vectorizer.get_feature_names_out(),
-                                      tfidf_matrix.toarray().flatten()),
-                                  key=lambda x: x[1],
-                                  reverse=True)
+            # Aggregate across documents so each term has one corpus-wide score.
+            scores = tfidf_matrix.mean(axis=0).A1
+            sorted_items = sorted(zip(vectorizer.get_feature_names_out(), scores), key=lambda x: x[1], reverse=True)
             all_voc = ', '.join([term for term, score in sorted_items])
             if document_id:
                 self.db.call({'operate': 'put', 'key': document_id, 'value': json.dumps(all_voc, ensure_ascii=False)})
