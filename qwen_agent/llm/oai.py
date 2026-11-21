@@ -166,6 +166,24 @@ class TextChatAtOAI(BaseFnCallModel):
         messages = self.convert_messages_to_dicts(messages)
         try:
             response = self._chat_complete_create(model=self.model, messages=messages, stream=False, **generate_cfg)
+            message = response.choices[0].message
+            tool_calls = getattr(message, 'tool_calls', None)
+            if tool_calls:
+                # Keep the structured tool calls, the same way `_chat_stream` does:
+                # a non-streaming reply must not lose the tools the model asked for.
+                res = []
+                if getattr(message, 'reasoning_content', None):
+                    res.append(
+                        Message(role=ASSISTANT, content='', reasoning_content=message.reasoning_content))
+                if message.content:
+                    res.append(Message(role=ASSISTANT, content=message.content))
+                for tc in tool_calls:
+                    res.append(
+                        Message(role=ASSISTANT,
+                                content='',
+                                function_call=FunctionCall(name=tc.function.name, arguments=tc.function.arguments),
+                                extra={'function_id': tc.id}))
+                return res
             if hasattr(response.choices[0].message, 'reasoning_content'):
                 return [
                     Message(role=ASSISTANT,

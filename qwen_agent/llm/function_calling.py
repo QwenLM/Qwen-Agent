@@ -73,12 +73,33 @@ class BaseFnCallModel(BaseChatModel, ABC):
     ) -> List[Message]:
         messages = super()._postprocess_messages(messages, fncall_mode=fncall_mode, generate_cfg=generate_cfg)
         if fncall_mode:
-            messages = self.fncall_prompt.postprocess_fncall_messages(
-                messages=messages,
+            postprocess_kwargs = dict(
                 parallel_function_calls=generate_cfg.get('parallel_function_calls', False),
                 function_choice=generate_cfg.get('function_choice', 'auto'),
                 thought_in_content=generate_cfg.get('thought_in_content', False),
             )
+            # The prompt-specific postprocessor only understands the text format (e.g. `<tool_call>` blocks).
+            # However, a model service may answer with structured tool calls instead (OpenAI `tool_calls`,
+            # which `_chat_stream` and `TextChatAtOAI._chat_no_stream` turn into `function_call` messages).
+            # Such a message has to be kept as it is, otherwise the tool call is dropped and the caller
+            # receives an empty response.
+            new_messages = []
+            text_messages = []
+
+            def _flush_text_messages():
+                if text_messages:
+                    new_messages.extend(
+                        self.fncall_prompt.postprocess_fncall_messages(messages=text_messages, **postprocess_kwargs))
+                    text_messages.clear()
+
+            for msg in messages:
+                if msg.function_call:
+                    _flush_text_messages()
+                    new_messages.append(msg)
+                else:
+                    text_messages.append(msg)
+            _flush_text_messages()
+            messages = new_messages
         return messages
 
     def _remove_fncall_messages(self, messages: List[Message], lang: Literal['en', 'zh']) -> List[Message]:
