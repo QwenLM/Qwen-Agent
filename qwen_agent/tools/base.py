@@ -90,11 +90,14 @@ def is_tool_schema(obj: dict) -> bool:
         assert isinstance(obj['description'], str)
         assert isinstance(obj['parameters'], dict)
 
-        assert set(obj['parameters'].keys()) == {'type', 'properties', 'required'}
-        assert obj['parameters']['type'] == 'object'
-        assert isinstance(obj['parameters']['properties'], dict)
-        assert isinstance(obj['parameters']['required'], list)
-        assert set(obj['parameters']['required']).issubset(set(obj['parameters']['properties'].keys()))
+        # Per OpenAI's function-calling spec, "properties" and "required" are
+        # optional (a schema where every parameter is optional is valid), and
+        # other JSON-Schema keywords such as "$defs" may appear alongside them.
+        assert obj['parameters'].get('type') == 'object'
+        assert isinstance(obj['parameters'].get('properties', {}), dict)
+        required = obj['parameters'].get('required', [])
+        assert isinstance(required, list)
+        assert set(required).issubset(set(obj['parameters'].get('properties', {}).keys()))
     except AssertionError:
         return False
     try:
