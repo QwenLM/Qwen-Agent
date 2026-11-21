@@ -219,6 +219,11 @@ class QWenTokenizer:
         return len(self.tokenize(text))
 
     def truncate(self, text: str, max_token: int, start_token: int = 0, keep_both_sides: bool = False) -> str:
+        if max_token <= 0:
+            # A non-positive budget cannot hold a single token. Slicing with a negative bound would
+            # silently keep len(token_list) - |max_token| tokens, i.e. almost the whole text.
+            return ''
+
         token_list = self.tokenize(text)[start_token:]
         if len(token_list) <= max_token:
             return self.convert_tokens_to_string(token_list)
