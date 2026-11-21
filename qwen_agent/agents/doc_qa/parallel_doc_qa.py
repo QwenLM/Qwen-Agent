@@ -257,6 +257,16 @@ class ParallelDocQA(Assistant):
                           lang: str = 'en',
                           knowledge: str = '',
                           instruction: str = '') -> tuple:
-        doc_qa = ParallelDocQAMember(llm=self.llm)
-        *_, last = doc_qa.run(messages=messages, knowledge=knowledge, lang=lang, instruction=instruction)
-        return index, last[-1].content
+        # One chunk's LLM error must not kill the whole parallel run:
+        # parallel_exec re-raises any task exception, which would discard the
+        # in-flight results of all other chunks and bypass the retry loop
+        # below. Report the chunk as a none-response so it is retried like
+        # any other flaky member answer.
+        try:
+            doc_qa = ParallelDocQAMember(llm=self.llm)
+            *_, last = doc_qa.run(messages=messages, knowledge=knowledge, lang=lang, instruction=instruction)
+            return index, last[-1].content
+        except Exception:
+            logger.error('Member agent for chunk %s failed with an exception; will retry.', index)
+            print_traceback()
+            return index, NO_RESPONSE

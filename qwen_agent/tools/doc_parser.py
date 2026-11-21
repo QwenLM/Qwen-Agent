@@ -126,7 +126,11 @@ class DocParser(BaseTool):
         logger.info(f'Start chunking {url} ({title})...')
         time1 = time.time()
         if total_token <= max_ref_token:
-            # The whole doc is one chunk
+            # The whole doc is one chunk. Keep the cache key read above
+            # ({url_hash}_{parser_page_size}): this path used to write under
+            # "{url_hash}_without_chunking", a key nothing ever reads, so the
+            # parse cache never hit for small documents and every call
+            # re-parsed the doc while piling up dead cache entries.
             content = [
                 Chunk(content=get_plain_doc(doc),
                       metadata={
@@ -136,7 +140,6 @@ class DocParser(BaseTool):
                       },
                       token=total_token)
             ]
-            cached_name_chunking = f'{hash_sha256(url)}_without_chunking'
         else:
             content = self.split_doc_to_chunk(doc, url, title=title, parser_page_size=parser_page_size)
 
