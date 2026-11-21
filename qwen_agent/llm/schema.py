@@ -90,7 +90,10 @@ class ContentItem(BaseModelCompatibleDict):
                  file: Optional[str] = None,
                  audio: Optional[Union[str, dict]] = None,
                  video: Optional[Union[str, list]] = None):
-        super().__init__(text=text, image=image, file=file, audio=audio, video=video)
+        # An empty value carries no content, so treat it as "not provided", the same way
+        # `check_exclusivity` does. Otherwise the field is counted as absent for validation
+        # while `model_dump()` still serialises it, and `get_type_and_value()` fails to unpack.
+        super().__init__(text=text, image=image or None, file=file or None, audio=audio or None, video=video or None)
 
     @model_validator(mode='after')
     def check_exclusivity(self):
