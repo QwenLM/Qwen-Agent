@@ -18,6 +18,7 @@ from typing import Dict, Iterator, List, Literal, Optional, Union
 
 from qwen_agent.llm.base import BaseChatModel
 from qwen_agent.llm.schema import ASSISTANT, FUNCTION, USER, ContentItem, Message
+from qwen_agent.utils.utils import normalize_stop_words
 
 
 class BaseFnCallModel(BaseChatModel, ABC):
@@ -28,7 +29,7 @@ class BaseFnCallModel(BaseChatModel, ABC):
         if fncall_prompt_type == 'qwen':
             from qwen_agent.llm.fncall_prompts.qwen_fncall_prompt import FN_STOP_WORDS, QwenFnCallPrompt
             self.fncall_prompt = QwenFnCallPrompt()
-            stop = self.generate_cfg.get('stop', [])
+            stop = normalize_stop_words(self.generate_cfg.get('stop'))
             self.generate_cfg['stop'] = stop + [x for x in FN_STOP_WORDS if x not in stop]
         elif fncall_prompt_type == 'nous':
             from qwen_agent.llm.fncall_prompts.nous_fncall_prompt import NousFnCallPrompt

@@ -484,13 +484,28 @@ def extract_images_from_messages(messages: List[Message]) -> List[str]:
     return files
 
 
+def normalize_stop_words(stop: Optional[Union[str, List[str]]]) -> List[str]:
+    """Normalize a `stop` generation config value to a list of stop sequences.
+
+    `stop` may be given as a single string or as a list of strings, and every consumer of the
+    generation config iterates over it, so a plain string must not be iterated character by character.
+    """
+    if not stop:
+        return []
+    if isinstance(stop, str):
+        return [stop]
+    return list(stop)
+
+
 def merge_generate_cfgs(base_generate_cfg: Optional[dict], new_generate_cfg: Optional[dict]) -> dict:
     generate_cfg: dict = copy.deepcopy(base_generate_cfg or {})
+    if 'stop' in generate_cfg:
+        generate_cfg['stop'] = normalize_stop_words(generate_cfg['stop'])
     if new_generate_cfg:
         for k, v in new_generate_cfg.items():
             if k == 'stop':
                 stop = generate_cfg.get('stop', [])
-                stop = stop + [s for s in v if s not in stop]
+                stop = stop + [s for s in normalize_stop_words(v) if s not in stop]
                 generate_cfg['stop'] = stop
             else:
                 generate_cfg[k] = v
