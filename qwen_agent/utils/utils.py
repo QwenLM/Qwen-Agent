@@ -288,6 +288,11 @@ def extract_code(text: str) -> str:
     triple_match = re.search(r'```[^\n]*\n(.+?)```', text, re.DOTALL)
     if triple_match:
         text = triple_match.group(1)
+    elif re.search(r'```[^\n]*\n', text):
+        # Unclosed fence — e.g. output truncated before the closing fence.
+        # Return what follows the opening fence line instead of the raw
+        # markers, mirroring the truncated-fence handling in json_loads.
+        text = re.split(r'```[^\n]*\n', text, maxsplit=1)[1]
     else:
         try:
             text = json5.loads(text)['code']

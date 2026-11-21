@@ -72,45 +72,74 @@ class Storage(BaseTool):
         else:
             return self.scan(key)
 
-    def put(self, key: str, value: str, path: Optional[str] = None) -> str:
+    def _resolve_key_path(self, key: str, path: Optional[str] = None,
+                          allow_root: bool = False) -> str:
+        """Resolve a key to an absolute path inside the storage root.
+
+        Keys come from the model, so they must not escape the storage root
+        (e.g. ``../x`` or ``sub/../../x``) or name the root itself (the
+        documented default key ``/`` ends up here after call() strips the
+        leading slash). Windows-style separators are normalized so ``a\\b``
+        nests like ``a/b`` instead of naming one file with a backslash.
+        """
         path = path or self.root
+        key = key.replace('\\', '/')
+        if os.path.isabs(key):
+            raise ValueError(
+                f'Invalid key: {key} must be a relative path inside the storage root')
+        full = os.path.realpath(os.path.join(path, key))
+        root = os.path.realpath(path)
+        if full == root:
+            if allow_root:
+                return full
+            raise ValueError(
+                'Invalid key: the key must name a file or folder inside the '
+                'storage root, not the root itself')
+        if not full.startswith(root + os.sep):
+            raise ValueError(
+                f'Invalid key: {key} escapes the storage root')
+        return full
+
+    def put(self, key: str, value: str, path: Optional[str] = None) -> str:
+        full = self._resolve_key_path(key, path)
 
         # one file for one key value pair
-        path = os.path.join(path, key)
+        os.makedirs(os.path.dirname(full), exist_ok=True)
 
-        path_dir = path[:path.rfind('/') + 1]
-        if path_dir:
-            os.makedirs(path_dir, exist_ok=True)
-
-        save_text_to_file(path, value)
+        save_text_to_file(full, value)
         return f'Successfully saved {key}.'
 
     def get(self, key: str, path: Optional[str] = None) -> str:
-        path = path or self.root
-        if not os.path.exists(os.path.join(path, key)):
+        full = self._resolve_key_path(key, path)
+        if not os.path.isfile(full):
             raise KeyNotExistsError(f'Get Failed: {key} does not exist')
-        return read_text_from_file(os.path.join(path, key))
+        return read_text_from_file(full)
 
     def delete(self, key, path: Optional[str] = None) -> str:
-        path = path or self.root
-        path = os.path.join(path, key)
-        if os.path.exists(path):
-            os.remove(path)
+        full = self._resolve_key_path(key, path)
+        if os.path.exists(full):
+            if os.path.isdir(full):
+                return f'Delete Failed: {key} is a folder, not a file'
+            os.remove(full)
             return f'Successfully deleted {key}'
         else:
             return f'Delete Failed: {key} does not exist'
 
     def scan(self, key: str, path: Optional[str] = None) -> str:
-        path = path or self.root
-        path = os.path.join(path, key)
-        if os.path.exists(path):
-            if not os.path.isdir(path):
+        base = path or self.root
+        full = self._resolve_key_path(key, path, allow_root=True)
+        if os.path.exists(full):
+            if not os.path.isdir(full):
                 return 'Scan Failed: The scan operation requires passing in a folder path as the key.'
-            # All key-value pairs
+            # All key-value pairs. Keys are reported relative to the storage
+            # root (not the scanned subfolder), so scanning "docs" returns
+            # keys like "/docs/readme.txt" that put/get can consume.
             kvs = {}
-            for root, dirs, files in os.walk(path):
+            base_real = os.path.realpath(base)
+            for root, dirs, files in os.walk(full):
                 for file in files:
-                    k = os.path.join(root, file)[len(path):]
+                    k = os.path.join(root, file)[len(base_real):]
+                    k = k.replace('\\', '/')
                     if not k.startswith('/'):
                         k = '/' + k
                     v = read_text_from_file(os.path.join(root, file))
