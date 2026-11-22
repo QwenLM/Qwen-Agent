@@ -69,8 +69,12 @@ class Storage(BaseTool):
             return self.get(key)
         elif operate == 'delete':
             return self.delete(key)
-        else:
+        elif operate == 'scan':
             return self.scan(key)
+        else:
+            raise ValueError(
+                f'Invalid operate: {operate!r}. '
+                'Supported operations are "put", "get", "delete" and "scan".')
 
     def put(self, key: str, value: str, path: Optional[str] = None) -> str:
         path = path or self.root
