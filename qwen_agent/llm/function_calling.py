@@ -99,10 +99,12 @@ class BaseFnCallModel(BaseChatModel, ABC):
                 else:
                     assert msg.role == FUNCTION
                     if msg.content:
-                        assert len(msg.content) == 1
-                        assert isinstance(msg.content[0], ContentItem)
-                        assert isinstance(msg.content[0].text, str)
-                        tool_result = msg.content[0].text
+                        texts = [
+                            item.text for item in msg.content
+                            if isinstance(item, ContentItem)
+                            and isinstance(item.text, str)
+                        ]
+                        tool_result = '\n'.join(texts) if texts else 'No result.'
                     else:
                         tool_result = 'No result.'
                     if lang == 'zh':
