@@ -110,10 +110,10 @@ def clean_en_token(token: str) -> str:
 
 def tokenize_and_filter(input_text: str) -> str:
     patterns = r"""(?x)                    # Enable verbose mode, allowing regex to be on multiple lines and ignore whitespace
-                (?:[A-Za-z]\.)+          # Match abbreviations, e.g., U.S.A.
+                (?<![\w.+-])\w[\w+-]*(?:\.[\w+-]+)*@(?:[\w-]+\.)+[\w-]+  # Match email addresses before their component words
+                |(?:[A-Za-z]\.)+         # Match abbreviations, e.g., U.S.A.
                 |\d+(?:\.\d+)?%?         # Match numbers, including percentages
                 |\w+(?:[-']\w+)*         # Match words, allowing for hyphens and apostrophes
-                |(?:[\w\-\']@)+\w+       # Match email addresses
                 """
 
     tokens = re.findall(patterns, input_text)

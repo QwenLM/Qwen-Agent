@@ -12,7 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
+
 from qwen_agent.tools import KeywordSearch
+from qwen_agent.tools.search_tools.keyword_search import split_text_into_keywords
+
+
+@pytest.mark.parametrize('address',
+                         ['Alice@Example.COM', 'alice.smith+ops@example.co.uk', '2026-team@sub-domain.example.com'])
+def test_keyword_search_preserves_email_address(address):
+    assert split_text_into_keywords(f'({address}),') == [address.lower()]
 
 
 def test_keyword_search():
