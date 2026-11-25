@@ -41,6 +41,23 @@ def register_llm(model_type):
     return decorator
 
 
+def resolve_hf_revision_kwargs(model_id_or_path: str, cfg: Optional[Dict] = None) -> Dict[str, str]:
+    """Return `{'revision': ...}` when pinned in `cfg`, otherwise warn for non-local Hub IDs."""
+    revision = (cfg or {}).get('revision')
+    if revision is not None:
+        if not isinstance(revision, str):
+            raise ValueError('`revision` in llm config must be a string when provided.')
+        revision = revision.strip()
+    if revision:
+        return {'revision': revision}
+    if not os.path.exists(model_id_or_path):
+        logger.warning(
+            f'No `revision` specified for {model_id_or_path!r}; loading from Hugging Face Hub without '
+            'a pinned commit hash or tag will follow the mutable default branch.'
+        )
+    return {}
+
+
 class ModelServiceError(Exception):
 
     def __init__(self,
