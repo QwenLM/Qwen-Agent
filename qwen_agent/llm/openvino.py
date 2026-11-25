@@ -17,7 +17,7 @@ from pprint import pformat
 from threading import Thread
 from typing import Dict, Iterator, List, Optional
 
-from qwen_agent.llm.base import register_llm
+from qwen_agent.llm.base import register_llm, resolve_hf_revision_kwargs
 from qwen_agent.llm.function_calling import BaseFnCallModel
 from qwen_agent.llm.schema import ASSISTANT, Message
 from qwen_agent.log import logger
@@ -38,8 +38,12 @@ class OpenVINO(BaseFnCallModel):
         llm_cfg = {
             'ov_model_dir': 'Qwen2-7B-Instruct-ov',
             'model_type': 'openvino',
-            'device': 'cpu'
+            'device': 'cpu',
+            'revision': '<commit-hash-or-tag>',  # optional; pins Hub model/tokenizer
             }
+        Note:
+            When `ov_model_dir` is a Hugging Face Hub model ID, omitting `'revision'`
+            follows the repository's mutable default branch.
         system_instruction = '''After receiving the user's request, you should:
         - first draw an image and obtain the image url,
         - then run code `request.get(image_url)` to download the image,
@@ -71,13 +75,16 @@ class OpenVINO(BaseFnCallModel):
                               'Please install it with: '
                               "pip install -U 'transformers'") from e
 
+        revision_kwargs = resolve_hf_revision_kwargs(cfg['ov_model_dir'], cfg)
+
         self.ov_model = OVModelForCausalLM.from_pretrained(
             cfg['ov_model_dir'],
             device=cfg.get('device', 'cpu'),
             ov_config=cfg.get('ov_config', {}),
-            config=AutoConfig.from_pretrained(cfg['ov_model_dir']),
+            config=AutoConfig.from_pretrained(cfg['ov_model_dir'], **revision_kwargs),
+            **revision_kwargs,
         )
-        self.tokenizer = AutoTokenizer.from_pretrained(cfg['ov_model_dir'])
+        self.tokenizer = AutoTokenizer.from_pretrained(cfg['ov_model_dir'], **revision_kwargs)
 
     def _get_stopping_criteria(self, generate_cfg: dict):
         from transformers.generation.stopping_criteria import StoppingCriteria, StoppingCriteriaList

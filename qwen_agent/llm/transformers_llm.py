@@ -17,7 +17,7 @@ from pprint import pformat
 from threading import Thread
 from typing import Dict, Iterator, List, Optional
 
-from qwen_agent.llm.base import register_llm
+from qwen_agent.llm.base import register_llm, resolve_hf_revision_kwargs
 from qwen_agent.llm.function_calling import BaseFnCallModel
 from qwen_agent.llm.schema import ASSISTANT, Message
 from qwen_agent.llm.schema import IMAGE, AUDIO, VIDEO
@@ -33,9 +33,14 @@ class Transformers(BaseFnCallModel):
         llm_cfg = {
             'model': 'Qwen/Qwen3-4B',
             'model_type': 'transformers',
-            'device': 'cuda'
+            'device': 'cuda',
+            'revision': '<commit-hash-or-tag>',  # optional; pins Hub weights/tokenizer
         }
         bot = Assistant(llm=llm_cfg, ...)
+
+    Note:
+        When loading from Hugging Face Hub, omitting `'revision'` follows the repository's
+        mutable default branch and makes reloads non-reproducible.
     """
     def __init__(self, cfg: Optional[Dict] = None):
         super().__init__(cfg)
@@ -50,14 +55,16 @@ class Transformers(BaseFnCallModel):
         except ImportError as e:
             raise ImportError('Could not import classes from transformers. '
                               'Please install it with `pip install -U transformers`') from e
-        
-        self.hf_config = AutoConfig.from_pretrained(cfg['model'])
+
+        revision_kwargs = resolve_hf_revision_kwargs(cfg['model'], cfg)
+
+        self.hf_config = AutoConfig.from_pretrained(cfg['model'], **revision_kwargs)
         arch = self.hf_config.architectures[0]
         if len(self.hf_config.architectures) > 1:
             logger.warning(f'The config for the transformers model type contains more than one architecture, choosing the first: {arch}')
 
         # try loading a processor, if got a tokenizer, regarding the model as text-only
-        processor = AutoProcessor.from_pretrained(cfg['model'])
+        processor = AutoProcessor.from_pretrained(cfg['model'], **revision_kwargs)
         if isinstance(processor, (PreTrainedTokenizer, PreTrainedTokenizerFast)):
             logger.info(f'Regarding the transformers model as text-only since its processor is a tokenizer.')
             self.tokenizer = processor
@@ -68,7 +75,12 @@ class Transformers(BaseFnCallModel):
             self._support_multimodal_input = True
 
         model_cls = getattr(transformers, arch)
-        self.hf_model = model_cls.from_pretrained(cfg['model'], config=self.hf_config, torch_dtype='auto').to(cfg.get('device', 'cpu'))
+        self.hf_model = model_cls.from_pretrained(
+            cfg['model'],
+            config=self.hf_config,
+            torch_dtype='auto',
+            **revision_kwargs,
+        ).to(cfg.get('device', 'cpu'))
 
     @property
     def support_multimodal_input(self) -> bool:
