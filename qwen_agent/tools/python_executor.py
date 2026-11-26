@@ -155,6 +155,9 @@ class PythonExecutor(BaseTool):
         timeout_length=20,
     ):
         from timeout_decorator import timeout
+        if os.name == 'nt':
+            # ProcessPool.map enforces the task timeout; Windows has no SIGALRM.
+            timeout_length = None
         try:
             if get_answer_from_stdout:
                 program_io = io.StringIO()
@@ -199,7 +202,7 @@ class PythonExecutor(BaseTool):
                 runtime=self.runtime,
                 answer_symbol=self.answer_symbol,
                 answer_expr=self.answer_expr,
-                timeout_length=self.timeout_length,  # this timeout not work
+                timeout_length=self.timeout_length,
             )
             future = pool.map(executor, all_code_snippets, timeout=self.timeout_length)
             iterator = future.result()
