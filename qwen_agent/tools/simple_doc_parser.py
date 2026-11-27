@@ -88,11 +88,19 @@ def parse_ppt(path: str, extract_image: bool = False):
     except PackageNotFoundError as ex:
         logger.warning(ex)
         return []
+
+    def iter_leaf_shapes(shapes):
+        for shape in shapes:
+            if hasattr(shape, 'shapes'):
+                yield from iter_leaf_shapes(shape.shapes)
+            else:
+                yield shape
+
     doc = []
     for slide_number, slide in enumerate(ppt.slides):
         page = {'page_num': slide_number + 1, 'content': []}
 
-        for shape in slide.shapes:
+        for shape in iter_leaf_shapes(slide.shapes):
             if not shape.has_text_frame and not shape.has_table:
                 pass
 
