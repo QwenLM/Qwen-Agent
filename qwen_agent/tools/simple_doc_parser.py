@@ -244,47 +244,47 @@ def parse_pdf(pdf_path: str, extract_image: bool = False) -> List[dict]:
 
     doc = []
     import pdfplumber
-    pdf = pdfplumber.open(pdf_path)
-    for i, page_layout in enumerate(extract_pages(pdf_path)):
-        page = {'page_num': page_layout.pageid, 'content': []}
+    with pdfplumber.open(pdf_path) as pdf:
+        for i, page_layout in enumerate(extract_pages(pdf_path)):
+            page = {'page_num': page_layout.pageid, 'content': []}
 
-        elements = []
-        for element in page_layout:
-            elements.append(element)
+            elements = []
+            for element in page_layout:
+                elements.append(element)
 
-        # Init params for table
-        table_num = 0
-        tables = []
+            # Init params for table
+            table_num = 0
+            tables = []
 
-        for element in elements:
-            if isinstance(element, LTRect):
-                if not tables:
-                    tables = extract_tables(pdf, i)
-                if table_num < len(tables):
-                    table_string = table_converter(tables[table_num])
-                    table_num += 1
-                    if table_string:
-                        page['content'].append({'table': table_string, 'obj': element})
-            elif isinstance(element, LTTextContainer):
-                # Delete line breaks in the same paragraph
-                text = element.get_text()
-                # Todo: Further analysis using font
-                font = get_font(element)
-                if text.strip():
-                    new_content_item = {'text': text, 'obj': element}
-                    if font:
-                        new_content_item['font-size'] = round(font[1])
-                        # new_content_item['font-name'] = font[0]
-                    page['content'].append(new_content_item)
-            elif extract_image and isinstance(element, LTImage):
-                # Todo: ocr
-                raise ValueError('Currently, extracting images is not supported!')
-            else:
-                pass
+            for element in elements:
+                if isinstance(element, LTRect):
+                    if not tables:
+                        tables = extract_tables(pdf, i)
+                    if table_num < len(tables):
+                        table_string = table_converter(tables[table_num])
+                        table_num += 1
+                        if table_string:
+                            page['content'].append({'table': table_string, 'obj': element})
+                elif isinstance(element, LTTextContainer):
+                    # Delete line breaks in the same paragraph
+                    text = element.get_text()
+                    # Todo: Further analysis using font
+                    font = get_font(element)
+                    if text.strip():
+                        new_content_item = {'text': text, 'obj': element}
+                        if font:
+                            new_content_item['font-size'] = round(font[1])
+                            # new_content_item['font-name'] = font[0]
+                        page['content'].append(new_content_item)
+                elif extract_image and isinstance(element, LTImage):
+                    # Todo: ocr
+                    raise ValueError('Currently, extracting images is not supported!')
+                else:
+                    pass
 
-        # merge elements
-        page['content'] = postprocess_page_content(page['content'])
-        doc.append(page)
+            # merge elements
+            page['content'] = postprocess_page_content(page['content'])
+            doc.append(page)
 
     return doc
 
