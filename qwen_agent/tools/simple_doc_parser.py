@@ -98,7 +98,7 @@ def parse_ppt(path: str, extract_image: bool = False):
 
             if shape.has_text_frame:
                 for paragraph in shape.text_frame.paragraphs:
-                    paragraph_text = ''.join(run.text for run in paragraph.runs)
+                    paragraph_text = paragraph.text.replace('\v', '\n')
                     paragraph_text = clean_paragraph(paragraph_text)
                     if paragraph_text.strip():
                         page['content'].append({'text': paragraph_text})
