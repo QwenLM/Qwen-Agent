@@ -156,7 +156,7 @@ def parse_excel(file_path: str, extract_image: bool = False) -> List[dict]:
     excel_file = pd.ExcelFile(file_path)
     md_tables = []
     for sheet_name in excel_file.sheet_names:
-        df = pd.read_excel(file_path, sheet_name=sheet_name)
+        df = pd.read_excel(file_path, sheet_name=sheet_name, keep_default_na=False, na_values=[''])
         md_table = df_to_md(df)
         md_tables.append(f'### Sheet: {sheet_name}\n{md_table}')
 
@@ -170,7 +170,11 @@ def parse_csv(file_path: str, extract_image: bool = False) -> List[dict]:
     import pandas as pd
     md_tables = []
     try:
-        df = pd.read_csv(file_path, encoding_errors='replace', on_bad_lines='skip')
+        df = pd.read_csv(file_path,
+                         encoding_errors='replace',
+                         on_bad_lines='skip',
+                         keep_default_na=False,
+                         na_values=[''])
     except Exception as ex:
         # Directly converted from Excel
         logger.warning(ex)
@@ -188,7 +192,12 @@ def parse_tsv(file_path: str, extract_image: bool = False) -> List[dict]:
     import pandas as pd
     md_tables = []
     try:
-        df = pd.read_csv(file_path, sep='\t', encoding_errors='replace', on_bad_lines='skip')
+        df = pd.read_csv(file_path,
+                         sep='\t',
+                         encoding_errors='replace',
+                         on_bad_lines='skip',
+                         keep_default_na=False,
+                         na_values=[''])
     except Exception as ex:
         # Directly converted from Excel
         logger.warning(ex)
