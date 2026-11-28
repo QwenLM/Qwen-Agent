@@ -61,17 +61,32 @@ def parse_word(docx_path: str, extract_image: bool = False):
         raise ValueError('Currently, extracting images is not supported!')
 
     from docx import Document
+    from docx.oxml.table import CT_Tbl
+    from docx.oxml.text.paragraph import CT_P
+    from docx.table import Table
+    from docx.text.paragraph import Paragraph
+
+    def cell_text(cell):
+        if not cell.tables:
+            return cell.text
+        parts = []
+        for block in cell._tc.iterchildren():
+            if isinstance(block, CT_P):
+                parts.append(Paragraph(block, cell).text)
+            elif isinstance(block, CT_Tbl):
+                parts.append(table_text(Table(block, cell)))
+        return '\n'.join(parts)
+
+    def table_text(table):
+        return '\n'.join('|' + '|'.join(cell_text(cell) for cell in row.cells) + '|' for row in table.rows)
+
     doc = Document(docx_path)
 
     content = []
     for para in doc.paragraphs:
         content.append({'text': para.text})
     for table in doc.tables:
-        tbl = []
-        for row in table.rows:
-            tbl.append('|' + '|'.join([cell.text for cell in row.cells]) + '|')
-        tbl = '\n'.join(tbl)
-        content.append({'table': tbl})
+        content.append({'table': table_text(table)})
 
     # Due to the pages in Word are not fixed, the entire document is returned as one page
     return [{'page_num': 1, 'content': content}]
